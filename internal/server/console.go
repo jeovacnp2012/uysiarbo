@@ -86,6 +86,12 @@ func (h *handlers) home(w http.ResponseWriter, r *http.Request) {
 				d.Ultimos = h.ultimosEventos(ctx, q, nil)
 			}
 		}
+		if pr.Pode("bairro_visualizar") {
+			d.Atalhos = append(d.Atalhos,
+				views.Atalho{Titulo: "Bairros", Descricao: "Bairros, responsáveis e quarteirões.", Href: "/bairros"},
+				views.Atalho{Titulo: "Cidades", Descricao: "Os municípios atendidos.", Href: "/cidades"},
+			)
+		}
 		if pr.Pode("conf_usuario") {
 			d.Atalhos = append(d.Atalhos, views.Atalho{Titulo: "Usuários", Descricao: "Cadastre pessoas, escolha o papel e resete senhas.", Href: "/usuarios"})
 		}
@@ -97,7 +103,11 @@ func (h *handlers) home(w http.ResponseWriter, r *http.Request) {
 		}
 		for _, b := range authz.Padrao.Blocos {
 			if pr.PodeBloco(authz.Padrao, b.Nome) {
-				d.Modulos = append(d.Modulos, b.Nome)
+				m := views.Modulo{Nome: b.Nome}
+				if pronto, ok := modulosProntos[b.Nome]; ok && pr.Pode(pronto.permissao) {
+					m.Href = pronto.href
+				}
+				d.Modulos = append(d.Modulos, m)
 			}
 		}
 	} else {
@@ -204,7 +214,11 @@ var nomesDeCampo = map[string]string{
 	"total_permissoes": "Total de permissões", "tentativa": "Tentativa nº", "troca_pendente": "Troca de senha pendente",
 	"troca_obrigatoria": "Troca obrigatória", "sessoes_encerradas": "Sessões encerradas",
 	"metodo": "Método", "caminho": "Caminho",
-	"clientes": "Clientes", "com_erro": "Com erro",
+	"clientes": "Clientes", "com_erro": "Com erro", "cidade": "Cidade", "mutirao": "Mutirão", "classificacao": "Classificação",
+	"zona": "Zona", "categoria": "Categoria", "latitude": "Latitude", "longitude": "Longitude", "altitude": "Altitude (m)",
+	"distancia_centro": "Distância do centro (km)", "producao": "Entra no relatório de produção",
+	"responsaveis_adicionados": "Responsáveis acrescentados", "responsaveis_removidos": "Responsáveis retirados",
+	"criados": "Criados", "ja_existiam": "Já existiam", "quarteiroes": "Quarteirões", "uf": "UF",
 }
 
 func nomeDeCampo(k string) string {
@@ -609,4 +623,12 @@ func (h *handlers) masterResetarSenha(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.mostrarSenha(w, r, false, u.Nome, u.Email, senha)
+}
+
+// modulosProntos são os blocos do catálogo que já têm tela. Cada etapa nova acrescenta o seu aqui
+// (o painel inicial mostra "disponível" e leva à tela, em vez de "em construção").
+var modulosProntos = map[string]struct{ href, permissao string }{
+	"Bairros":      {"/bairros", "bairro_visualizar"},
+	"Auditoria":    {"/auditoria", "auditoria_sistema"},
+	"Configuração": {"/usuarios", "conf_usuario"},
 }

@@ -49,10 +49,17 @@ templ Home(l Layout, d PainelData) {
 				</p>
 				<div class="grade-modulos">
 					for _, m := range d.Modulos {
-						<div class="modulo">
-							<span>{ m }</span>
-							<span class="selo selo-aviso">em construção</span>
-						</div>
+						if m.Href != "" {
+							<a class="modulo modulo-pronto" href={ templ.SafeURL(m.Href) }>
+								<span>{ m.Nome }</span>
+								<span class="selo selo-ok">disponível</span>
+							</a>
+						} else {
+							<div class="modulo">
+								<span>{ m.Nome }</span>
+								<span class="selo selo-aviso">em construção</span>
+							</div>
+						}
 					}
 				</div>
 			</section>

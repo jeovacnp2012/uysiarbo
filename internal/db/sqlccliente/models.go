@@ -27,6 +27,40 @@ type Auditorium struct {
 	Detalhes   []byte             `json:"detalhes"`
 }
 
+type Bairro struct {
+	ID              int64              `json:"id"`
+	CidadeID        int64              `json:"cidade_id"`
+	Nome            string             `json:"nome"`
+	Mutirao         bool               `json:"mutirao"`
+	Status          string             `json:"status"`
+	Ibge            string             `json:"ibge"`
+	Classificacao   string             `json:"classificacao"`
+	Zona            string             `json:"zona"`
+	Categoria       string             `json:"categoria"`
+	Latitude        pgtype.Float8      `json:"latitude"`
+	Longitude       pgtype.Float8      `json:"longitude"`
+	Altitude        pgtype.Float8      `json:"altitude"`
+	DistanciaCentro pgtype.Float8      `json:"distancia_centro"`
+	Producao        bool               `json:"producao"`
+	CriadoEm        pgtype.Timestamptz `json:"criado_em"`
+	AtualizadoEm    pgtype.Timestamptz `json:"atualizado_em"`
+}
+
+type BairroResponsavei struct {
+	BairroID  int64 `json:"bairro_id"`
+	UsuarioID int64 `json:"usuario_id"`
+}
+
+type Cidade struct {
+	ID           int64              `json:"id"`
+	Nome         string             `json:"nome"`
+	Uf           string             `json:"uf"`
+	Ibge         string             `json:"ibge"`
+	Ativo        bool               `json:"ativo"`
+	CriadoEm     pgtype.Timestamptz `json:"criado_em"`
+	AtualizadoEm pgtype.Timestamptz `json:"atualizado_em"`
+}
+
 type ClienteInfo struct {
 	Chave    string             `json:"chave"`
 	Valor    string             `json:"valor"`
@@ -45,6 +79,14 @@ type Papei struct {
 type PapelPermisso struct {
 	PapelID   int64  `json:"papel_id"`
 	Permissao string `json:"permissao"`
+}
+
+type Quarteiro struct {
+	ID       int64              `json:"id"`
+	BairroID int64              `json:"bairro_id"`
+	Nome     string             `json:"nome"`
+	Ativo    bool               `json:"ativo"`
+	CriadoEm pgtype.Timestamptz `json:"criado_em"`
 }
 
 type Sesso struct {

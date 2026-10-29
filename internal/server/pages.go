@@ -89,6 +89,9 @@ func (s *handlers) menu(r *http.Request) []views.NavItem {
 	if a.sess != nil {
 		pr := a.sess.Principal
 		if _, cliente := tenant.FromContext(r.Context()); cliente {
+			if pr.Pode("bairro_visualizar") {
+				itens = append(itens, views.NavItem{Label: "Bairros", Href: "/bairros"}, views.NavItem{Label: "Cidades", Href: "/cidades"})
+			}
 			if pr.Pode("conf_usuario") {
 				itens = append(itens, views.NavItem{Label: "Usuários", Href: "/usuarios"})
 			}

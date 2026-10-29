@@ -270,7 +270,7 @@ func TestMasterVeTodasAsTelasEmCadaAmbiente(t *testing.T) {
 			t.Errorf("o menu do master no cliente deveria ter %s", link)
 		}
 	}
-	if n := strings.Count(corpo, `class="modulo"`); n != 23 {
+	if n := strings.Count(corpo, `class="modulo`); n != 23 {
 		t.Errorf("o master deveria ver os 23 módulos no cliente, vê %d", n)
 	}
 	for _, path := range []string{"/usuarios", "/papeis", "/auditoria", "/usuarios/novo", "/papeis/novo"} {

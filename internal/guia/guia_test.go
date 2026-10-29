@@ -3,6 +3,8 @@ package guia
 import (
 	"strings"
 	"testing"
+
+	"uysiarbo/internal/authz"
 )
 
 func TestGuiaPadraoCarrega(t *testing.T) {
@@ -34,12 +36,11 @@ func TestGuiaPadraoCarrega(t *testing.T) {
 	}
 }
 
-func TestEveryPermissaoDoGuiaExisteNoCatalogo(t *testing.T) {
+func TestPermissaoDoGuiaExisteNoCatalogo(t *testing.T) {
 	// Um artigo restrito por uma permissão que não existe nunca apareceria para ninguém (só para o master).
-	validas := map[string]bool{"conf_usuario": true, "conf_papel": true, "auditoria_sistema": true, PermissaoMaster: true}
 	for _, a := range Padrao.Artigos {
-		if a.Permissao != "" && !validas[a.Permissao] {
-			t.Errorf("artigo %q usa a permissão %q, que não está na lista conhecida do teste", a.Slug, a.Permissao)
+		if a.Permissao != "" && a.Permissao != PermissaoMaster && !authz.Padrao.Existe(a.Permissao) {
+			t.Errorf("artigo %q usa a permissão %q, que não existe no catálogo", a.Slug, a.Permissao)
 		}
 	}
 }

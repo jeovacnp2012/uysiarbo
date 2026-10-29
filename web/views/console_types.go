@@ -111,7 +111,7 @@ type PainelData struct {
 	Usuario           string
 	Master            bool
 	Atalhos           []Atalho
-	Modulos           []string // blocos do catálogo que a pessoa pode usar
+	Modulos           []Modulo // blocos do catálogo que a pessoa pode usar
 	ClientesAtivos    int
 	ClientesSuspensos int
 	Ultimos           []AuditoriaLinha

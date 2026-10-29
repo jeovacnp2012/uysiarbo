@@ -868,3 +868,72 @@ form.inline {
     color: var(--texto);
     font: inherit;
 }
+
+/* ---------- Território (cidades, bairros, quarteirões) ---------- */
+.sem-borda {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+    display: grid;
+    gap: 1rem;
+}
+
+.grade-form {
+    display: grid;
+    gap: 0.9rem;
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+}
+
+.grade-marcar {
+    display: grid;
+    gap: 0.4rem;
+    grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+}
+
+.alerta-ok {
+    background: var(--ok-fundo);
+    color: var(--ok);
+}
+
+.alerta-aviso {
+    background: var(--aviso-fundo);
+    color: var(--aviso);
+}
+
+.modulo-pronto {
+    color: var(--texto);
+    text-decoration: none;
+    border-color: var(--marca);
+    background: var(--marca-fraca);
+}
+
+.modulo-pronto:hover {
+    filter: brightness(1.05);
+}
+
+.grade-quarteiroes {
+    display: grid;
+    gap: 0.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+}
+
+.quarteirao {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.4rem 0.6rem;
+    border: 1px solid var(--borda);
+    border-radius: var(--radius);
+    background: var(--superficie);
+}
+
+.quarteirao-inativo {
+    opacity: 0.6;
+    border-style: dashed;
+}
+
+.btn {
+    white-space: nowrap;
+}

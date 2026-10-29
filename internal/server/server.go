@@ -96,6 +96,20 @@ func New(d Deps) http.Handler {
 
 	r.Get("/auditoria", h.auditoriaPagina)
 
+	r.Get("/cidades", h.exigir("bairro_visualizar", h.cidadesLista))
+	r.Get("/cidades/nova", h.exigir("bairro_adicionar", h.cidadeNovaForm))
+	r.Post("/cidades", h.exigir("bairro_adicionar", h.cidadeSalvar))
+	r.Get("/cidades/{id}", h.exigir("bairro_visualizar", h.cidadeEditarForm))
+	r.Post("/cidades/{id}", h.exigir("bairro_adicionar", h.cidadeSalvar))
+
+	r.Get("/bairros", h.exigir("bairro_visualizar", h.bairrosLista))
+	r.Get("/bairros/novo", h.exigir("bairro_adicionar", h.bairroNovoForm))
+	r.Post("/bairros", h.exigir("bairro_adicionar", h.bairroSalvar))
+	r.Get("/bairros/{id}", h.exigir("bairro_visualizar", h.bairroEditarForm))
+	r.Post("/bairros/{id}", h.exigir("bairro_adicionar", h.bairroSalvar))
+	r.Post("/bairros/{id}/quarteiroes", h.exigir("bairro_adicionar", h.quarteiraoCriar))
+	r.Post("/bairros/{id}/quarteiroes/{qid}/ativo", h.exigir("bairro_adicionar", h.quarteiraoAtivo))
+
 	r.Get("/guia", h.guiaLista)
 	r.Get("/guia/{slug}", h.guiaArtigo)
 	r.Get("/novidades", h.novidades)
