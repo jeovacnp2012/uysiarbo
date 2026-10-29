@@ -85,7 +85,7 @@ Objetivo: leitura e gravação por sistemas externos, de forma segura.
 - [x] 3.5 Ficha do local (seções reservadas por etapa, grupos do local e histórico de alterações) e Grupos de Locais (criar, acrescentar por bairro/quarteirão/tipo, retirar, clonar, excluir, exportar CSV sem dados pessoais; versão 1.0.010). **Mostrar o grupo no mapa entra na 3.6.**
 - [x] 3.6 Mapa base (MapLibre GL 4.7.1 em `web/static/vendor`; fundo OpenStreetMap configurável por `MAP_TILE_URL`): bairros, quarteirões, locais e grupos, com filtros, escopo do papel e "Ver no mapa" nas fichas (versão 1.0.011)
 - [x] 3.7 Geocodificação por endereço/CEP: **gratuita** (ViaCEP + Nominatim/OpenStreetMap, decidido em 2026-10-29), 1 consulta/s, cache de 1 dia, provedor configurável (`GEOCODE_PROVIDER`); botões no cadastro do local (versão 1.0.012). Em lote para locais sem coordenadas: fica para a fila de tarefas (4.4)
-- [ ] 3.8 Controle de acesso por bairro/quarteirão/local ("apenas atribuídos")
+- [x] 3.8 Controle de acesso por bairro/quarteirão/local ("apenas atribuídos"): método "pelo responsável do bairro" ou "pela lista de acessos" (tabela `acessos_local`, funções `usuario_ve_*` no banco, tela Controle de acesso, acesso por local na ficha); aplicado em listas, fichas, grupos, mapa, lote e quarteirões (versão 1.0.013)
 - [ ] 3.9 API: leitura e gravação de bairros, quarteirões e locais
 **Entrega:** cadastrar e consultar a base territorial inteira de uma prefeitura.
 

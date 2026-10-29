@@ -34,8 +34,7 @@ WHERE (sqlc.arg(busca)::text = '' OR position(lower(sqlc.arg(busca)::text) in lo
   AND (sqlc.narg(cidade_id)::bigint IS NULL OR b.cidade_id = sqlc.narg(cidade_id)::bigint)
   AND (sqlc.arg(status)::text = '' OR b.status = sqlc.arg(status)::text)
   AND (sqlc.arg(categoria)::text = '' OR b.categoria = sqlc.arg(categoria)::text)
-  AND (sqlc.narg(somente_usuario)::bigint IS NULL OR EXISTS (
-        SELECT 1 FROM bairro_responsaveis r WHERE r.bairro_id = b.id AND r.usuario_id = sqlc.narg(somente_usuario)::bigint))
+  AND (sqlc.narg(somente_usuario)::bigint IS NULL OR usuario_ve_bairro(sqlc.narg(somente_usuario)::bigint, b.id))
 ORDER BY lower(b.nome)
 LIMIT sqlc.arg(limite)::int OFFSET sqlc.arg(deslocamento)::int;
 
@@ -46,8 +45,7 @@ WHERE (sqlc.arg(busca)::text = '' OR position(lower(sqlc.arg(busca)::text) in lo
   AND (sqlc.narg(cidade_id)::bigint IS NULL OR b.cidade_id = sqlc.narg(cidade_id)::bigint)
   AND (sqlc.arg(status)::text = '' OR b.status = sqlc.arg(status)::text)
   AND (sqlc.arg(categoria)::text = '' OR b.categoria = sqlc.arg(categoria)::text)
-  AND (sqlc.narg(somente_usuario)::bigint IS NULL OR EXISTS (
-        SELECT 1 FROM bairro_responsaveis r WHERE r.bairro_id = b.id AND r.usuario_id = sqlc.narg(somente_usuario)::bigint));
+  AND (sqlc.narg(somente_usuario)::bigint IS NULL OR usuario_ve_bairro(sqlc.narg(somente_usuario)::bigint, b.id));
 
 -- name: GetBairro :one
 SELECT * FROM bairros WHERE id = $1;
@@ -95,3 +93,18 @@ SELECT * FROM quarteiroes WHERE id = $1;
 
 -- name: SetQuarteiraoAtivo :execrows
 UPDATE quarteiroes SET ativo = $3 WHERE id = $1 AND bairro_id = $2;
+
+-- name: ListQuarteiroesVisiveisDoBairro :many
+SELECT q.* FROM quarteiroes q
+WHERE q.bairro_id = sqlc.arg(bairro_id)::bigint
+  AND (sqlc.narg(somente_usuario)::bigint IS NULL OR usuario_ve_quarteirao(sqlc.narg(somente_usuario)::bigint, q.id, q.bairro_id))
+ORDER BY NULLIF(regexp_replace(q.nome, '\D', '', 'g'), '')::bigint NULLS LAST, lower(q.nome);
+
+-- name: UsuarioVeBairro :one
+SELECT usuario_ve_bairro(sqlc.arg(usuario)::bigint, sqlc.arg(bairro)::bigint)::boolean;
+
+-- name: UsuarioVeQuarteirao :one
+SELECT usuario_ve_quarteirao(sqlc.arg(usuario)::bigint, q.id, q.bairro_id)::boolean FROM quarteiroes q WHERE q.id = sqlc.arg(quarteirao)::bigint;
+
+-- name: UsuarioVeLocal :one
+SELECT usuario_ve_local(sqlc.arg(usuario)::bigint, l.id, l.bairro_id, l.quarteirao_id)::boolean FROM locais l WHERE l.id = sqlc.arg(local)::bigint;

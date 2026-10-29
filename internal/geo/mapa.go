@@ -41,7 +41,7 @@ func BairrosGeoJSON(ctx context.Context, db DBTX, e Escopo, bairroID int64) (Col
 	rows, err := db.Query(ctx, `
 SELECT b.id, b.nome, ST_AsGeoJSON(ST_SimplifyPreserveTopology(g.geom, 0.00003), 6)
 FROM bairro_geometrias g JOIN bairros b ON b.id = g.bairro_id
-WHERE ($1::bigint IS NULL OR EXISTS (SELECT 1 FROM bairro_responsaveis r WHERE r.bairro_id = b.id AND r.usuario_id = $1::bigint))
+WHERE ($1::bigint IS NULL OR usuario_ve_bairro($1::bigint, b.id))
   AND ($2::bigint = 0 OR b.id = $2::bigint)
 ORDER BY b.id`, e.Somente, bairroID)
 	if err != nil {
@@ -68,7 +68,7 @@ FROM quarteirao_geometrias g
 JOIN quarteiroes q ON q.id = g.quarteirao_id AND q.ativo
 JOIN bairros b ON b.id = q.bairro_id
 WHERE g.geom && ST_MakeEnvelope($1, $2, $3, $4, 4326)
-  AND ($5::bigint IS NULL OR EXISTS (SELECT 1 FROM bairro_responsaveis r WHERE r.bairro_id = b.id AND r.usuario_id = $5::bigint))
+  AND ($5::bigint IS NULL OR usuario_ve_quarteirao($5::bigint, q.id, b.id))
   AND ($6::bigint = 0 OR b.id = $6::bigint)
 ORDER BY q.id LIMIT $7`, caixa.O, caixa.S, caixa.L, caixa.N, e.Somente, bairroID, LimiteDeLocais+1)
 	if err != nil {
@@ -100,7 +100,7 @@ type FiltroDeLocais struct {
 }
 
 const condicoesDeLocais = `
-  AND ($1::bigint IS NULL OR EXISTS (SELECT 1 FROM bairro_responsaveis r WHERE r.bairro_id = l.bairro_id AND r.usuario_id = $1::bigint))
+  AND ($1::bigint IS NULL OR usuario_ve_local($1::bigint, l.id, l.bairro_id, l.quarteirao_id))
   AND (NOT $2::boolean OR l.tipo = 'ponto_estrategico')
   AND ($3::boolean OR l.ativo)
   AND ($4::bigint = 0 OR l.bairro_id = $4::bigint)

@@ -78,7 +78,7 @@ func TestRotulosCobremAsAcoesConhecidas(t *testing.T) {
 		"usuario.criar", "usuario.editar", "usuario.resetar_senha", "papel.criar", "papel.editar",
 		"cliente.criar", "cliente.sincronizar", "cliente.status", "cliente.editar", "master.criar", "master.resetar_senha",
 		"versao.criar", "requisicao.escrita", "cidade.criar", "cidade.editar", "bairro.criar", "bairro.editar",
-		"quarteirao.criar", "quarteirao.status", "bairro.limite", "bairro.limite_remover", "grupo.criar", "grupo.editar", "grupo.excluir", "grupo.clonar", "grupo.locais_adicionar", "grupo.local_remover", "grupo.limpar", "grupo.exportar", "local.criar", "local.editar", "local.desativar", "local.reativar", "local.chave_nova", "local.lote", "quarteirao.limites",
+		"quarteirao.criar", "quarteirao.status", "bairro.limite", "bairro.limite_remover", "acesso.metodo", "acesso.criar", "acesso.remover", "grupo.criar", "grupo.editar", "grupo.excluir", "grupo.clonar", "grupo.locais_adicionar", "grupo.local_remover", "grupo.limpar", "grupo.exportar", "local.criar", "local.editar", "local.desativar", "local.reativar", "local.chave_nova", "local.lote", "quarteirao.limites",
 	} {
 		if Rotulo(acao) == acao {
 			t.Errorf("a ação %q não tem rótulo em português", acao)

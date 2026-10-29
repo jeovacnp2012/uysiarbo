@@ -18,8 +18,7 @@ WHERE ($1::text = '' OR position(lower($1::text) in lower(l.endereco || ' ' || l
   AND ($2::bigint IS NULL OR l.bairro_id = $2::bigint)
   AND ($3::text = '' OR l.tipo = $3::text)
   AND ($4::text = '' OR l.ativo = ($4::text = 'ativo'))
-  AND ($5::bigint IS NULL OR EXISTS (
-        SELECT 1 FROM bairro_responsaveis r WHERE r.bairro_id = l.bairro_id AND r.usuario_id = $5::bigint))
+  AND ($5::bigint IS NULL OR usuario_ve_local($5::bigint, l.id, l.bairro_id, l.quarteirao_id))
   AND (NOT $6::boolean OR l.tipo = 'ponto_estrategico')
   AND ($7::boolean OR l.ativo)
 `
@@ -277,8 +276,7 @@ const listBairrosAtivosParaLocal = `-- name: ListBairrosAtivosParaLocal :many
 SELECT b.id, b.nome, c.nome AS cidade_nome, c.uf AS cidade_uf
 FROM bairros b JOIN cidades c ON c.id = b.cidade_id
 WHERE b.status = 'ativo'
-  AND ($1::bigint IS NULL OR EXISTS (
-        SELECT 1 FROM bairro_responsaveis r WHERE r.bairro_id = b.id AND r.usuario_id = $1::bigint))
+  AND ($1::bigint IS NULL OR usuario_ve_bairro($1::bigint, b.id))
 ORDER BY lower(b.nome)
 `
 
@@ -325,8 +323,7 @@ WHERE ($1::text = '' OR position(lower($1::text) in lower(l.endereco || ' ' || l
   AND ($2::bigint IS NULL OR l.bairro_id = $2::bigint)
   AND ($3::text = '' OR l.tipo = $3::text)
   AND ($4::text = '' OR l.ativo = ($4::text = 'ativo'))
-  AND ($5::bigint IS NULL OR EXISTS (
-        SELECT 1 FROM bairro_responsaveis r WHERE r.bairro_id = l.bairro_id AND r.usuario_id = $5::bigint))
+  AND ($5::bigint IS NULL OR usuario_ve_local($5::bigint, l.id, l.bairro_id, l.quarteirao_id))
   AND (NOT $6::boolean OR l.tipo = 'ponto_estrategico')
   AND ($7::boolean OR l.ativo)
 ORDER BY lower(b.nome), lower(l.endereco), l.numero, l.id
@@ -405,17 +402,23 @@ func (q *Queries) ListLocais(ctx context.Context, arg ListLocaisParams) ([]ListL
 }
 
 const listQuarteiroesAtivosDoBairro = `-- name: ListQuarteiroesAtivosDoBairro :many
-SELECT id, nome FROM quarteiroes WHERE bairro_id = $1 AND ativo
+SELECT q.id, q.nome FROM quarteiroes q WHERE q.bairro_id = $1::bigint AND q.ativo
+  AND ($2::bigint IS NULL OR usuario_ve_quarteirao($2::bigint, q.id, q.bairro_id))
 ORDER BY NULLIF(regexp_replace(nome, '\D', '', 'g'), '')::bigint NULLS LAST, lower(nome)
 `
+
+type ListQuarteiroesAtivosDoBairroParams struct {
+	BairroID       int64       `json:"bairro_id"`
+	SomenteUsuario pgtype.Int8 `json:"somente_usuario"`
+}
 
 type ListQuarteiroesAtivosDoBairroRow struct {
 	ID   int64  `json:"id"`
 	Nome string `json:"nome"`
 }
 
-func (q *Queries) ListQuarteiroesAtivosDoBairro(ctx context.Context, bairroID int64) ([]ListQuarteiroesAtivosDoBairroRow, error) {
-	rows, err := q.db.Query(ctx, listQuarteiroesAtivosDoBairro, bairroID)
+func (q *Queries) ListQuarteiroesAtivosDoBairro(ctx context.Context, arg ListQuarteiroesAtivosDoBairroParams) ([]ListQuarteiroesAtivosDoBairroRow, error) {
+	rows, err := q.db.Query(ctx, listQuarteiroesAtivosDoBairro, arg.BairroID, arg.SomenteUsuario)
 	if err != nil {
 		return nil, err
 	}

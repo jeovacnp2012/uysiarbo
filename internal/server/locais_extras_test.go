@@ -15,7 +15,11 @@ func umLocal(t *testing.T, m *mundo, n *navegador, b, q int64, extras ...string)
 	t.Helper()
 	quer(t, n.post("/locais", formLocal(b, q, extras...)), http.StatusSeeOther)
 	ls, _ := m.cliQ.ListLocais(t.Context(), sqlccliente.ListLocaisParams{Limite: 100, VerDesativados: true})
-	return ls[len(ls)-1].ID
+	var maior int64
+	for _, l := range ls { // a lista vem ordenada por endereço: o novo é o de maior id
+		maior = max(maior, l.ID)
+	}
+	return maior
 }
 
 func TestChaveEQRCodeDoLocal(t *testing.T) {

@@ -181,8 +181,19 @@ type LocalFormData struct {
 	PodeGrupos          bool        // pode ver os grupos
 	PodeGerenciarGrupos bool
 	MostrarHistorico    bool
+	MostrarAcesso       bool // pode gerir acessos e o método é "pela lista de acessos"
+	Acessos             []AcessoDoLocal
+	UsuariosAcesso      []CidadeOpcao
 	Historico           []AuditoriaLinha // últimas alterações deste local
 	Secoes              []SecaoFicha     // espaços reservados para os módulos seguintes
+}
+
+// AcessoDoLocal é quem tem acesso a um local, e por qual atribuição (local, quarteirão ou bairro).
+type AcessoDoLocal struct {
+	ID      int64
+	Usuario string
+	Origem  string
+	Direto  bool // atribuição feita no próprio local (pode ser retirada aqui)
 }
 
 type GrupoMini struct {

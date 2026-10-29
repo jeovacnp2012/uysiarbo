@@ -59,11 +59,7 @@ func (h *handlers) localVisivel(ctx context.Context, r *http.Request, q *sqlccli
 		return false, nil
 	}
 	if somente.Valid {
-		resp, err := q.ListResponsaveisDoBairro(ctx, l.BairroID)
-		if err != nil {
-			return false, err
-		}
-		return slices.Contains(resp, somente.Int64), nil
+		return q.UsuarioVeLocal(ctx, sqlccliente.UsuarioVeLocalParams{Usuario: somente.Int64, Local: l.ID})
 	}
 	return true, nil
 }
@@ -415,7 +411,7 @@ func (h *handlers) montarFormLocal(ctx context.Context, r *http.Request, q *sqlc
 		PodeDesativar: h.principal(r).Pode("local_desativar"), Ativo: true, Localizacao: h.localizacaoLigada(), Erro: erro, CSRF: csrfToken(ctx),
 	}
 	if escolhido != 0 {
-		qs, err := q.ListQuarteiroesAtivosDoBairro(ctx, escolhido)
+		qs, err := q.ListQuarteiroesAtivosDoBairro(ctx, sqlccliente.ListQuarteiroesAtivosDoBairroParams{BairroID: escolhido, SomenteUsuario: somente})
 		if err != nil {
 			return form, err
 		}
@@ -521,7 +517,8 @@ func (h *handlers) localQuarteiroes(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	qs, err := q.ListQuarteiroesAtivosDoBairro(r.Context(), bid)
+	somente, _ := h.escopoLocais(r)
+	qs, err := q.ListQuarteiroesAtivosDoBairro(r.Context(), sqlccliente.ListQuarteiroesAtivosDoBairroParams{BairroID: bid, SomenteUsuario: somente})
 	if err != nil {
 		h.falhaInterna(w, r, "listar quarteirões", err)
 		return
@@ -539,11 +536,20 @@ func (h *handlers) bairroVisivelParaLocal(ctx context.Context, r *http.Request, 
 	if !somente.Valid {
 		return true, nil
 	}
-	resp, err := q.ListResponsaveisDoBairro(ctx, bairroID)
-	if err != nil {
-		return false, err
+	return q.UsuarioVeBairro(ctx, sqlccliente.UsuarioVeBairroParams{Usuario: somente.Int64, Bairro: bairroID})
+}
+
+// quarteiraoVisivelParaLocal respeita "local: apenas atribuídos" no nível do quarteirão.
+func (h *handlers) quarteiraoVisivelParaLocal(ctx context.Context, r *http.Request, q *sqlccliente.Queries, quarteiraoID int64) (bool, error) {
+	somente, _ := h.escopoLocais(r)
+	if !somente.Valid {
+		return true, nil
 	}
-	return slices.Contains(resp, somente.Int64), nil
+	ok, err := q.UsuarioVeQuarteirao(ctx, sqlccliente.UsuarioVeQuarteiraoParams{Usuario: somente.Int64, Quarteirao: quarteiraoID})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, nil
+	}
+	return ok, err
 }
 
 // ------------------------------------------------------------------- Salvar
@@ -610,6 +616,13 @@ func (h *handlers) localSalvar(w http.ResponseWriter, r *http.Request) {
 		return
 	} else if !ok {
 		falha("Escolha um bairro em que você é responsável.")
+		return
+	}
+	if ok, err := h.quarteiraoVisivelParaLocal(ctx, r, q, p.QuarteiraoID); err != nil {
+		h.falhaInterna(w, r, "escopo do quarteirão", err)
+		return
+	} else if !ok {
+		falha("Escolha um quarteirão ao qual você tem acesso.")
 		return
 	}
 	if _, soPE := h.escopoLocais(r); soPE && p.Tipo != "ponto_estrategico" {

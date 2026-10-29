@@ -325,6 +325,43 @@ templ LocalForm(l Layout, d LocalFormData) {
 					</div>
 				</div>
 			</section>
+			if d.MostrarAcesso {
+				<section class="cartao form-admin" id="acesso">
+					<h2>Quem tem acesso a este local</h2>
+					<p class="subtitulo">Vale para quem tem a permissão "apenas atribuídos". O acesso pode vir do bairro, do quarteirão ou deste local.</p>
+					if len(d.Acessos) == 0 {
+						<p class="subtitulo">Ninguém recebeu acesso a este local, ao quarteirão ou ao bairro.</p>
+					} else {
+						<ul class="lista-simples">
+							for _, a := range d.Acessos {
+								<li>
+									{ a.Usuario } <span class="subtitulo">({ a.Origem })</span>
+									if a.Direto {
+										<form method="post" action={ templ.SafeURL("/parametros/acesso/" + strconv.FormatInt(a.ID, 10) + "/remover") } class="inline">
+											<input type="hidden" name="csrf" value={ d.CSRF }/>
+											<input type="hidden" name="voltar" value={ "/locais/" + strconv.FormatInt(d.ID, 10) }/>
+											<button type="submit" class="btn btn-icone" aria-label={ "Retirar o acesso de " + a.Usuario }>Retirar</button>
+										</form>
+									}
+								</li>
+							}
+						</ul>
+					}
+					<form method="post" action={ templ.SafeURL("/locais/" + strconv.FormatInt(d.ID, 10) + "/acesso") } class="form-admin">
+						<input type="hidden" name="csrf" value={ d.CSRF }/>
+						<div class="campo">
+							<label for="acesso_usuario">Dar acesso a este local</label>
+							<select id="acesso_usuario" name="usuario_id" required>
+								<option value="">Escolha a pessoa</option>
+								@opcoesDe(d.UsuariosAcesso)
+							</select>
+						</div>
+						<div class="form-acoes">
+							<button type="submit" class="btn">Dar acesso</button>
+						</div>
+					</form>
+				</section>
+			}
 			if d.PodeGrupos {
 				<section class="cartao form-admin" id="grupos">
 					<h2>Grupos de locais</h2>

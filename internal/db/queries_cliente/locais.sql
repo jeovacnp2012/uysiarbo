@@ -10,8 +10,7 @@ WHERE (sqlc.arg(busca)::text = '' OR position(lower(sqlc.arg(busca)::text) in lo
   AND (sqlc.narg(bairro_id)::bigint IS NULL OR l.bairro_id = sqlc.narg(bairro_id)::bigint)
   AND (sqlc.arg(tipo)::text = '' OR l.tipo = sqlc.arg(tipo)::text)
   AND (sqlc.arg(situacao)::text = '' OR l.ativo = (sqlc.arg(situacao)::text = 'ativo'))
-  AND (sqlc.narg(somente_usuario)::bigint IS NULL OR EXISTS (
-        SELECT 1 FROM bairro_responsaveis r WHERE r.bairro_id = l.bairro_id AND r.usuario_id = sqlc.narg(somente_usuario)::bigint))
+  AND (sqlc.narg(somente_usuario)::bigint IS NULL OR usuario_ve_local(sqlc.narg(somente_usuario)::bigint, l.id, l.bairro_id, l.quarteirao_id))
   AND (NOT sqlc.arg(somente_pe)::boolean OR l.tipo = 'ponto_estrategico')
   AND (sqlc.arg(ver_desativados)::boolean OR l.ativo)
 ORDER BY lower(b.nome), lower(l.endereco), l.numero, l.id
@@ -24,8 +23,7 @@ WHERE (sqlc.arg(busca)::text = '' OR position(lower(sqlc.arg(busca)::text) in lo
   AND (sqlc.narg(bairro_id)::bigint IS NULL OR l.bairro_id = sqlc.narg(bairro_id)::bigint)
   AND (sqlc.arg(tipo)::text = '' OR l.tipo = sqlc.arg(tipo)::text)
   AND (sqlc.arg(situacao)::text = '' OR l.ativo = (sqlc.arg(situacao)::text = 'ativo'))
-  AND (sqlc.narg(somente_usuario)::bigint IS NULL OR EXISTS (
-        SELECT 1 FROM bairro_responsaveis r WHERE r.bairro_id = l.bairro_id AND r.usuario_id = sqlc.narg(somente_usuario)::bigint))
+  AND (sqlc.narg(somente_usuario)::bigint IS NULL OR usuario_ve_local(sqlc.narg(somente_usuario)::bigint, l.id, l.bairro_id, l.quarteirao_id))
   AND (NOT sqlc.arg(somente_pe)::boolean OR l.tipo = 'ponto_estrategico')
   AND (sqlc.arg(ver_desativados)::boolean OR l.ativo);
 
@@ -51,15 +49,15 @@ WHERE id = $1
 RETURNING *;
 
 -- name: ListQuarteiroesAtivosDoBairro :many
-SELECT id, nome FROM quarteiroes WHERE bairro_id = $1 AND ativo
+SELECT q.id, q.nome FROM quarteiroes q WHERE q.bairro_id = sqlc.arg(bairro_id)::bigint AND q.ativo
+  AND (sqlc.narg(somente_usuario)::bigint IS NULL OR usuario_ve_quarteirao(sqlc.narg(somente_usuario)::bigint, q.id, q.bairro_id))
 ORDER BY NULLIF(regexp_replace(nome, '\D', '', 'g'), '')::bigint NULLS LAST, lower(nome);
 
 -- name: ListBairrosAtivosParaLocal :many
 SELECT b.id, b.nome, c.nome AS cidade_nome, c.uf AS cidade_uf
 FROM bairros b JOIN cidades c ON c.id = b.cidade_id
 WHERE b.status = 'ativo'
-  AND (sqlc.narg(somente_usuario)::bigint IS NULL OR EXISTS (
-        SELECT 1 FROM bairro_responsaveis r WHERE r.bairro_id = b.id AND r.usuario_id = sqlc.narg(somente_usuario)::bigint))
+  AND (sqlc.narg(somente_usuario)::bigint IS NULL OR usuario_ve_bairro(sqlc.narg(somente_usuario)::bigint, b.id))
 ORDER BY lower(b.nome);
 
 -- name: SetLocalAtivo :execrows

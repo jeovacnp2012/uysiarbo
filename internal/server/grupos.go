@@ -357,6 +357,13 @@ func (h *handlers) grupoAdicionar(w http.ResponseWriter, r *http.Request) {
 			h.falhaInterna(w, r, "buscar quarteirão", err)
 			return
 		}
+		if ok, err := h.quarteiraoVisivelParaLocal(ctx, r, q, qt.ID); err != nil {
+			h.falhaInterna(w, r, "escopo do quarteirão", err)
+			return
+		} else if !ok {
+			falha("Escolha um quarteirão ao qual você tem acesso.")
+			return
+		}
 		quart, quartNome = pgtype.Int8{Int64: qt.ID, Valid: true}, qt.Nome
 	}
 	tipo := r.PostFormValue("tipo")
@@ -556,7 +563,8 @@ func (h *handlers) grupoQuarteiroes(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	qs, err := q.ListQuarteiroesAtivosDoBairro(r.Context(), bid)
+	somente, _ := h.escopoLocais(r)
+	qs, err := q.ListQuarteiroesAtivosDoBairro(r.Context(), sqlccliente.ListQuarteiroesAtivosDoBairroParams{BairroID: bid, SomenteUsuario: somente})
 	if err != nil {
 		h.falhaInterna(w, r, "listar quarteirões", err)
 		return

@@ -235,6 +235,13 @@ func (h *handlers) loteSalvar(w http.ResponseWriter, r *http.Request) {
 		h.falhaInterna(w, r, "buscar quarteirão", err)
 		return
 	}
+	if ok, err := h.quarteiraoVisivelParaLocal(ctx, r, q, qt.ID); err != nil {
+		h.falhaInterna(w, r, "escopo do quarteirão", err)
+		return
+	} else if !ok {
+		falha("Escolha um quarteirão ao qual você tem acesso.")
+		return
+	}
 
 	tx, err := pool.Begin(ctx)
 	if err != nil {

@@ -1,0 +1,146 @@
+package views
+
+import "strconv"
+
+type AcessoLinha struct {
+	ID         int64
+	Usuario    string
+	Tipo       string
+	Referencia string
+	Descricao  string
+	Desde      string
+}
+
+type AcessoData struct {
+	Metodo        string // "responsavel_bairro" ou "parametro"
+	Usuarios      []CidadeOpcao
+	Bairros       []CidadeOpcao
+	FiltroUsuario int64
+	Linhas        []AcessoLinha
+	Aviso         string
+	Erro          string
+	CSRF          string
+}
+
+templ Acesso(l Layout, d AcessoData) {
+	@Base(l) {
+		@PageHeader("Controle de acesso aos locais", "Define o que cada pessoa com a permissão \"apenas atribuídos\" enxerga: bairros, quarteirões e locais.") {
+		}
+		if d.Aviso != "" {
+			<p class="alerta alerta-ok" role="status">{ d.Aviso }</p>
+		}
+		if d.Erro != "" {
+			<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
+		}
+		<form method="post" action="/parametros/acesso/metodo" class="cartao form-admin">
+			<input type="hidden" name="csrf" value={ d.CSRF }/>
+			<h2>Método</h2>
+			<label class="marcar">
+				<input type="radio" name="metodo" value="responsavel_bairro" checked?={ d.Metodo == "responsavel_bairro" }/>
+				<span><strong>Pelo responsável do bairro</strong> <span class="subtitulo">cada pessoa enxerga os bairros em que está marcada como responsável (na ficha do bairro).</span></span>
+			</label>
+			<label class="marcar">
+				<input type="radio" name="metodo" value="parametro" checked?={ d.Metodo == "parametro" }/>
+				<span><strong>Pela lista de acessos</strong> <span class="subtitulo">a lista abaixo diz o que cada pessoa enxerga: um bairro inteiro, um quarteirão ou um local.</span></span>
+			</label>
+			<div class="form-acoes">
+				<button type="submit" class="btn btn-primario">Salvar método</button>
+			</div>
+		</form>
+		if d.Metodo != "parametro" {
+			<p class="alerta alerta-aviso" role="status">O método atual é o do responsável do bairro: as atribuições abaixo só passam a valer se você escolher "Pela lista de acessos".</p>
+		}
+		<form method="post" action="/parametros/acesso" class="cartao form-admin">
+			<input type="hidden" name="csrf" value={ d.CSRF }/>
+			<h2>Conceder acesso</h2>
+			<p class="subtitulo">Escolha a pessoa e o bairro. Para limitar a um quarteirão, escolha-o também. O acesso a um local específico é dado na ficha do local.</p>
+			<div class="grade-form">
+				<div class="campo">
+					<label for="a-usuario">Pessoa</label>
+					<select id="a-usuario" name="usuario_id" required>
+						<option value="">Escolha a pessoa</option>
+						@opcoesDe(d.Usuarios)
+					</select>
+				</div>
+				<div class="campo">
+					<label for="a-bairro">Bairro</label>
+					<select
+						id="a-bairro"
+						name="bairro_id"
+						required
+						hx-get="/parametros/acesso/quarteiroes"
+						hx-target="#a-quarteirao"
+						hx-trigger="change"
+						hx-include="this"
+					>
+						<option value="">Escolha o bairro</option>
+						@opcoesDe(d.Bairros)
+					</select>
+				</div>
+				<div class="campo">
+					<label for="a-quarteirao">Quarteirão (opcional)</label>
+					<select id="a-quarteirao" name="quarteirao_id">
+						<option value="">Todos os quarteirões do bairro</option>
+					</select>
+				</div>
+				<div class="campo">
+					<label for="a-descricao">Descrição (opcional)</label>
+					<input id="a-descricao" name="descricao" type="text" maxlength="200"/>
+				</div>
+			</div>
+			<div class="form-acoes">
+				<button type="submit" class="btn btn-primario">Conceder acesso</button>
+			</div>
+		</form>
+		<form method="get" action="/parametros/acesso" class="cartao filtros">
+			<div class="campo">
+				<label for="f-usuario">Ver os acessos de</label>
+				<select id="f-usuario" name="usuario">
+					<option value="">Todas as pessoas</option>
+					@opcoesDe(d.Usuarios)
+				</select>
+			</div>
+			<div class="form-acoes">
+				<button type="submit" class="btn btn-primario">Filtrar</button>
+				<a class="btn" href="/parametros/acesso">Limpar</a>
+			</div>
+		</form>
+		<section class="cartao">
+			<div class="tabela-wrap">
+				<table class="tabela">
+					<thead>
+						<tr>
+							<th scope="col">Pessoa</th>
+							<th scope="col">Acesso</th>
+							<th scope="col">Desde</th>
+							<th scope="col"><span class="sr-only">Ações</span></th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, a := range d.Linhas {
+							<tr>
+								<td data-rotulo="Pessoa">{ a.Usuario }</td>
+								<td data-rotulo="Acesso">
+									<span class="selo">{ a.Tipo }</span> { a.Referencia }
+									if a.Descricao != "" {
+										<div class="subtitulo">{ a.Descricao }</div>
+									}
+								</td>
+								<td data-rotulo="Desde">{ a.Desde }</td>
+								<td data-rotulo="Ações">
+									<form method="post" action={ templ.SafeURL("/parametros/acesso/" + strconv.FormatInt(a.ID, 10) + "/remover") } class="inline">
+										<input type="hidden" name="csrf" value={ d.CSRF }/>
+										<button type="submit" class="btn btn-icone" aria-label={ "Retirar o acesso de " + a.Usuario }>Retirar</button>
+									</form>
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+				if len(d.Linhas) == 0 {
+					<div class="tabela-vazia">Nenhum acesso concedido.</div>
+				}
+			</div>
+		</section>
+	}
+}

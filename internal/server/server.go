@@ -131,6 +131,13 @@ func New(d Deps) http.Handler {
 	r.Get("/mapa/quarteiroes.geojson", h.exigir("bairro_visualizar", h.mapaQuarteiroes))
 	r.Get("/mapa/locais.geojson", h.exigir("local_visualizar", h.mapaLocais))
 
+	r.Get("/parametros/acesso", h.exigir("acesso_local", h.acessoPagina))
+	r.Get("/parametros/acesso/quarteiroes", h.exigir("acesso_local", h.grupoQuarteiroes))
+	r.Post("/parametros/acesso", h.exigir("acesso_local", h.acessoCriar))
+	r.Post("/parametros/acesso/metodo", h.exigir("acesso_local", h.acessoMetodo))
+	r.Post("/parametros/acesso/{id}/remover", h.exigir("acesso_local", h.acessoRemover))
+	r.Post("/locais/{id}/acesso", h.exigir("acesso_local", h.localAcessoCriar))
+
 	r.Get("/grupos", h.exigir("local_grupo_visualizar", h.gruposLista))
 	r.Get("/grupos/novo", h.exigir("local_grupo_gerenciar", h.grupoNovoForm))
 	r.Get("/grupos/quarteiroes", h.exigir("local_grupo_gerenciar", h.grupoQuarteiroes))

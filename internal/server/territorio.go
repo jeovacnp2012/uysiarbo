@@ -45,11 +45,7 @@ func (h *handlers) bairroVisivel(ctx context.Context, r *http.Request, q *sqlccl
 	if !somente.Valid {
 		return true, nil
 	}
-	resp, err := q.ListResponsaveisDoBairro(ctx, id)
-	if err != nil {
-		return false, err
-	}
-	return slices.Contains(resp, somente.Int64), nil
+	return q.UsuarioVeBairro(ctx, sqlccliente.UsuarioVeBairroParams{Usuario: somente.Int64, Bairro: id})
 }
 
 // ------------------------------------------------------------------- Cidades
@@ -420,7 +416,7 @@ func (h *handlers) montarFormBairro(ctx context.Context, r *http.Request, q *sql
 		PodeEditar: h.principal(r).Pode("bairro_adicionar"), Aviso: aviso, Erro: erro, CSRF: csrfToken(ctx),
 	}
 	if id != 0 {
-		qs, err := q.ListQuarteiroesDoBairro(ctx, id)
+		qs, err := q.ListQuarteiroesVisiveisDoBairro(ctx, sqlccliente.ListQuarteiroesVisiveisDoBairroParams{BairroID: id, SomenteUsuario: h.somenteUsuario(r)})
 		if err != nil {
 			return form, err
 		}

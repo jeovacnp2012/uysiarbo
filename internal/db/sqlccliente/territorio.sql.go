@@ -43,8 +43,7 @@ WHERE ($1::text = '' OR position(lower($1::text) in lower(b.nome)) > 0)
   AND ($2::bigint IS NULL OR b.cidade_id = $2::bigint)
   AND ($3::text = '' OR b.status = $3::text)
   AND ($4::text = '' OR b.categoria = $4::text)
-  AND ($5::bigint IS NULL OR EXISTS (
-        SELECT 1 FROM bairro_responsaveis r WHERE r.bairro_id = b.id AND r.usuario_id = $5::bigint))
+  AND ($5::bigint IS NULL OR usuario_ve_bairro($5::bigint, b.id))
 `
 
 type CountBairrosParams struct {
@@ -250,8 +249,7 @@ WHERE ($1::text = '' OR position(lower($1::text) in lower(b.nome)) > 0)
   AND ($2::bigint IS NULL OR b.cidade_id = $2::bigint)
   AND ($3::text = '' OR b.status = $3::text)
   AND ($4::text = '' OR b.categoria = $4::text)
-  AND ($5::bigint IS NULL OR EXISTS (
-        SELECT 1 FROM bairro_responsaveis r WHERE r.bairro_id = b.id AND r.usuario_id = $5::bigint))
+  AND ($5::bigint IS NULL OR usuario_ve_bairro($5::bigint, b.id))
 ORDER BY lower(b.nome)
 LIMIT $7::int OFFSET $6::int
 `
@@ -410,6 +408,44 @@ ORDER BY NULLIF(regexp_replace(nome, '\D', '', 'g'), '')::bigint NULLS LAST, low
 // ------------------------------------------------------------ Quarteirões
 func (q *Queries) ListQuarteiroesDoBairro(ctx context.Context, bairroID int64) ([]Quarteiro, error) {
 	rows, err := q.db.Query(ctx, listQuarteiroesDoBairro, bairroID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Quarteiro
+	for rows.Next() {
+		var i Quarteiro
+		if err := rows.Scan(
+			&i.ID,
+			&i.BairroID,
+			&i.Nome,
+			&i.Ativo,
+			&i.CriadoEm,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listQuarteiroesVisiveisDoBairro = `-- name: ListQuarteiroesVisiveisDoBairro :many
+SELECT q.id, q.bairro_id, q.nome, q.ativo, q.criado_em FROM quarteiroes q
+WHERE q.bairro_id = $1::bigint
+  AND ($2::bigint IS NULL OR usuario_ve_quarteirao($2::bigint, q.id, q.bairro_id))
+ORDER BY NULLIF(regexp_replace(q.nome, '\D', '', 'g'), '')::bigint NULLS LAST, lower(q.nome)
+`
+
+type ListQuarteiroesVisiveisDoBairroParams struct {
+	BairroID       int64       `json:"bairro_id"`
+	SomenteUsuario pgtype.Int8 `json:"somente_usuario"`
+}
+
+func (q *Queries) ListQuarteiroesVisiveisDoBairro(ctx context.Context, arg ListQuarteiroesVisiveisDoBairroParams) ([]Quarteiro, error) {
+	rows, err := q.db.Query(ctx, listQuarteiroesVisiveisDoBairro, arg.BairroID, arg.SomenteUsuario)
 	if err != nil {
 		return nil, err
 	}
@@ -604,4 +640,52 @@ func (q *Queries) UpdateCidade(ctx context.Context, arg UpdateCidadeParams) (Cid
 		&i.AtualizadoEm,
 	)
 	return i, err
+}
+
+const usuarioVeBairro = `-- name: UsuarioVeBairro :one
+SELECT usuario_ve_bairro($1::bigint, $2::bigint)::boolean
+`
+
+type UsuarioVeBairroParams struct {
+	Usuario int64 `json:"usuario"`
+	Bairro  int64 `json:"bairro"`
+}
+
+func (q *Queries) UsuarioVeBairro(ctx context.Context, arg UsuarioVeBairroParams) (bool, error) {
+	row := q.db.QueryRow(ctx, usuarioVeBairro, arg.Usuario, arg.Bairro)
+	var column_1 bool
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
+const usuarioVeLocal = `-- name: UsuarioVeLocal :one
+SELECT usuario_ve_local($1::bigint, l.id, l.bairro_id, l.quarteirao_id)::boolean FROM locais l WHERE l.id = $2::bigint
+`
+
+type UsuarioVeLocalParams struct {
+	Usuario int64 `json:"usuario"`
+	Local   int64 `json:"local"`
+}
+
+func (q *Queries) UsuarioVeLocal(ctx context.Context, arg UsuarioVeLocalParams) (bool, error) {
+	row := q.db.QueryRow(ctx, usuarioVeLocal, arg.Usuario, arg.Local)
+	var column_1 bool
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
+const usuarioVeQuarteirao = `-- name: UsuarioVeQuarteirao :one
+SELECT usuario_ve_quarteirao($1::bigint, q.id, q.bairro_id)::boolean FROM quarteiroes q WHERE q.id = $2::bigint
+`
+
+type UsuarioVeQuarteiraoParams struct {
+	Usuario    int64 `json:"usuario"`
+	Quarteirao int64 `json:"quarteirao"`
+}
+
+func (q *Queries) UsuarioVeQuarteirao(ctx context.Context, arg UsuarioVeQuarteiraoParams) (bool, error) {
+	row := q.db.QueryRow(ctx, usuarioVeQuarteirao, arg.Usuario, arg.Quarteirao)
+	var column_1 bool
+	err := row.Scan(&column_1)
+	return column_1, err
 }

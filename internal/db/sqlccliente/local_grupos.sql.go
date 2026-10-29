@@ -18,8 +18,7 @@ WHERE l.ativo
   AND l.bairro_id = $2::bigint
   AND ($3::bigint IS NULL OR l.quarteirao_id = $3::bigint)
   AND ($4::text = '' OR l.tipo = $4::text)
-  AND ($5::bigint IS NULL OR EXISTS (
-        SELECT 1 FROM bairro_responsaveis r WHERE r.bairro_id = l.bairro_id AND r.usuario_id = $5::bigint))
+  AND ($5::bigint IS NULL OR usuario_ve_local($5::bigint, l.id, l.bairro_id, l.quarteirao_id))
   AND (NOT $6::boolean OR l.tipo = 'ponto_estrategico')
 ON CONFLICT DO NOTHING
 `
@@ -68,8 +67,7 @@ func (q *Queries) AddLocalAoGrupo(ctx context.Context, arg AddLocalAoGrupoParams
 const clearLocaisDoGrupo = `-- name: ClearLocaisDoGrupo :execrows
 DELETE FROM local_grupo_itens i USING locais l
 WHERE i.grupo_id = $1::bigint AND l.id = i.local_id
-  AND ($2::bigint IS NULL OR EXISTS (
-        SELECT 1 FROM bairro_responsaveis r WHERE r.bairro_id = l.bairro_id AND r.usuario_id = $2::bigint))
+  AND ($2::bigint IS NULL OR usuario_ve_local($2::bigint, l.id, l.bairro_id, l.quarteirao_id))
   AND (NOT $3::boolean OR l.tipo = 'ponto_estrategico')
   AND ($4::boolean OR l.ativo)
 `
@@ -98,8 +96,7 @@ const copyLocaisDoGrupo = `-- name: CopyLocaisDoGrupo :execrows
 INSERT INTO local_grupo_itens (grupo_id, local_id)
 SELECT $1::bigint, l.id FROM local_grupo_itens i JOIN locais l ON l.id = i.local_id
 WHERE i.grupo_id = $2::bigint
-  AND ($3::bigint IS NULL OR EXISTS (
-        SELECT 1 FROM bairro_responsaveis r WHERE r.bairro_id = l.bairro_id AND r.usuario_id = $3::bigint))
+  AND ($3::bigint IS NULL OR usuario_ve_local($3::bigint, l.id, l.bairro_id, l.quarteirao_id))
   AND (NOT $4::boolean OR l.tipo = 'ponto_estrategico')
   AND ($5::boolean OR l.ativo)
 ON CONFLICT DO NOTHING
@@ -130,8 +127,7 @@ func (q *Queries) CopyLocaisDoGrupo(ctx context.Context, arg CopyLocaisDoGrupoPa
 const countLocaisDoGrupo = `-- name: CountLocaisDoGrupo :one
 SELECT count(*)::int FROM local_grupo_itens i JOIN locais l ON l.id = i.local_id
 WHERE i.grupo_id = $1::bigint
-  AND ($2::bigint IS NULL OR EXISTS (
-        SELECT 1 FROM bairro_responsaveis r WHERE r.bairro_id = l.bairro_id AND r.usuario_id = $2::bigint))
+  AND ($2::bigint IS NULL OR usuario_ve_local($2::bigint, l.id, l.bairro_id, l.quarteirao_id))
   AND (NOT $3::boolean OR l.tipo = 'ponto_estrategico')
   AND ($4::boolean OR l.ativo)
 `
@@ -261,8 +257,7 @@ const listGrupos = `-- name: ListGrupos :many
 SELECT g.id, g.nome, g.descricao, g.criado_em,
        (SELECT count(*) FROM local_grupo_itens i JOIN locais l ON l.id = i.local_id
          WHERE i.grupo_id = g.id
-           AND ($1::bigint IS NULL OR EXISTS (
-                 SELECT 1 FROM bairro_responsaveis r WHERE r.bairro_id = l.bairro_id AND r.usuario_id = $1::bigint))
+           AND ($1::bigint IS NULL OR usuario_ve_local($1::bigint, l.id, l.bairro_id, l.quarteirao_id))
            AND (NOT $2::boolean OR l.tipo = 'ponto_estrategico')
            AND ($3::boolean OR l.ativo))::int AS total_locais
 FROM local_grupos g
@@ -386,8 +381,7 @@ JOIN locais l ON l.id = i.local_id
 JOIN bairros b ON b.id = l.bairro_id
 JOIN quarteiroes q ON q.id = l.quarteirao_id
 WHERE i.grupo_id = $1::bigint
-  AND ($2::bigint IS NULL OR EXISTS (
-        SELECT 1 FROM bairro_responsaveis r WHERE r.bairro_id = l.bairro_id AND r.usuario_id = $2::bigint))
+  AND ($2::bigint IS NULL OR usuario_ve_local($2::bigint, l.id, l.bairro_id, l.quarteirao_id))
   AND (NOT $3::boolean OR l.tipo = 'ponto_estrategico')
   AND ($4::boolean OR l.ativo)
 ORDER BY lower(b.nome), lower(l.endereco), l.numero, l.id

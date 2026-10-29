@@ -46,6 +46,24 @@ func (h *handlers) completarFichaDoLocal(ctx context.Context, r *http.Request, q
 		}
 		form.PodeGerenciarGrupos = pr.Pode("local_grupo_gerenciar")
 	}
+	if pr.Pode("acesso_local") && h.metodoDeAcesso(r, q) == acessoParametro {
+		form.MostrarAcesso = true
+		rows, err := q.ListAcessosDoLocal(ctx, sqlccliente.ListAcessosDoLocalParams{Local: l.ID, Quarteirao: l.QuarteiraoID, Bairro: l.BairroID})
+		if err != nil {
+			return err
+		}
+		for _, a := range rows {
+			origem := map[string]string{"local": "neste local", "quarteirao": "pelo quarteirão", "bairro": "pelo bairro"}[a.Tipo]
+			form.Acessos = append(form.Acessos, views.AcessoDoLocal{ID: a.ID, Usuario: a.UsuarioNome, Origem: origem, Direto: a.Tipo == "local"})
+		}
+		us, err := q.ListUsuariosAtivosParaResponsavel(ctx)
+		if err != nil {
+			return err
+		}
+		for _, u := range us {
+			form.UsuariosAcesso = append(form.UsuariosAcesso, views.CidadeOpcao{ID: u.ID, Rotulo: u.Nome + " — " + u.Email})
+		}
+	}
 	if form.MostrarHistorico = pr.Pode("auditoria_sistema"); form.MostrarHistorico {
 		regs, err := q.ListAuditoriaDaEntidade(ctx, sqlccliente.ListAuditoriaDaEntidadeParams{Entidade: "local", EntidadeID: strconv.FormatInt(l.ID, 10), Limit: 15})
 		if err != nil {

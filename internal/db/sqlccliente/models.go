@@ -8,6 +8,16 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type AcessosLocal struct {
+	ID           int64              `json:"id"`
+	UsuarioID    int64              `json:"usuario_id"`
+	Tipo         string             `json:"tipo"`
+	ReferenciaID int64              `json:"referencia_id"`
+	Descricao    string             `json:"descricao"`
+	CriadoPor    pgtype.Int8        `json:"criado_por"`
+	CriadoEm     pgtype.Timestamptz `json:"criado_em"`
+}
+
 type Auditorium struct {
 	ID         int64              `json:"id"`
 	Quando     pgtype.Timestamptz `json:"quando"`
