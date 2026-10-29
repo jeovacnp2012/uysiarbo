@@ -12,6 +12,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 
 	"uysiarbo/internal/httpx"
+	"uysiarbo/internal/tenant"
 	"uysiarbo/web"
 )
 
@@ -22,22 +23,26 @@ type Pinger interface {
 
 // Deps reúne o que o servidor precisa para atender.
 type Deps struct {
-	Log  *slog.Logger
-	DB   Pinger
-	Info AppInfoReader
+	Log      *slog.Logger
+	DB       Pinger
+	Catalog  Catalog          // catálogo (schema public)
+	Resolver *tenant.Resolver // nil = sem clientes: tudo é console (usado em testes simples)
+	Pools    *tenant.Pools    // conexões por schema de cliente
 }
 
 type handlers struct {
-	log  *slog.Logger
-	info AppInfoReader
+	log   *slog.Logger
+	cat   Catalog
+	pools *tenant.Pools
 }
 
 func New(d Deps) http.Handler {
-	h := &handlers{log: d.Log, info: d.Info}
+	h := &handlers{log: d.Log, cat: d.Catalog, pools: d.Pools}
 
 	r := chi.NewRouter()
 	r.Use(requestID, middleware.RealIP, accessLog(d.Log), recoverer(d.Log))
 	r.Use(middleware.Timeout(30 * time.Second))
+	r.Use(tenancy(d.Log, d.Resolver))
 
 	r.Get("/healthz", health)
 	r.Get("/readyz", ready(d.Log, d.DB))

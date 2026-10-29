@@ -18,6 +18,9 @@ import (
 
 var ErrJaExiste = errors.New("já existe um cliente com esse identificador")
 
+// ErrSubdominioReservado: o subdomínio já tem outro uso no servidor.
+var ErrSubdominioReservado = errors.New("subdomínio reservado")
+
 type Input struct {
 	Nome       string
 	Slug       string
@@ -41,6 +44,10 @@ func (s *Service) Provision(ctx context.Context, in Input) (sqlc.Cliente, error)
 	}
 	if in.Plano == "" {
 		in.Plano = "padrao"
+	}
+	in.Subdominio = strings.ToLower(strings.TrimSpace(in.Subdominio))
+	if Reservados[in.Subdominio] || strings.HasPrefix(in.Subdominio, "chamados") {
+		return sqlc.Cliente{}, fmt.Errorf("%w: %q", ErrSubdominioReservado, in.Subdominio)
 	}
 	schema := "c_" + in.Slug
 	if !db.SchemaClienteRe.MatchString(schema) {
@@ -68,6 +75,10 @@ func (s *Service) Provision(ctx context.Context, in Input) (sqlc.Cliente, error)
 
 	if err := db.MigrateCliente(ctx, s.URL, schema, "up"); err != nil {
 		return cliente, fmt.Errorf("migrar schema %s (o cliente fica em \"provisionando\"; repita o comando): %w", schema, err)
+	}
+	// Grava o nome do cliente dentro do próprio schema (usado nas telas e como prova do isolamento).
+	if _, err := s.Pool.Exec(ctx, "INSERT INTO "+pgx.Identifier{schema, "cliente_info"}.Sanitize()+" (chave, valor) VALUES ('nome', $1) ON CONFLICT (chave) DO UPDATE SET valor = EXCLUDED.valor", cliente.Nome); err != nil {
+		return cliente, fmt.Errorf("gravar nome no schema: %w", err)
 	}
 	cliente, err = q.UpdateClienteStatus(ctx, sqlc.UpdateClienteStatusParams{ID: cliente.ID, Status: "ativo"})
 	if err != nil {

@@ -37,3 +37,18 @@ func TestLoadSemArquivoUsaPadroes(t *testing.T) {
 		t.Errorf("padrões inesperados: %+v", cfg)
 	}
 }
+
+func TestLoadDominiosPadraoEPersonalizados(t *testing.T) {
+	os.Unsetenv("APP_BASE_DOMAIN")
+	os.Unsetenv("APP_ADMIN_HOST")
+	cfg, _ := Load(filepath.Join(t.TempDir(), "nao-existe.env"))
+	if cfg.BaseDomain != "local" || cfg.AdminHost != "uysiarbo.local" {
+		t.Errorf("padrões: %+v", cfg)
+	}
+	t.Setenv("APP_BASE_DOMAIN", "InovarSistemas.biz")
+	t.Setenv("APP_ADMIN_HOST", "uysiarbo.inovarsistemas.biz")
+	cfg, _ = Load(filepath.Join(t.TempDir(), "nao-existe.env"))
+	if cfg.BaseDomain != "inovarsistemas.biz" || cfg.AdminHost != "uysiarbo.inovarsistemas.biz" {
+		t.Errorf("personalizados: %+v", cfg)
+	}
+}

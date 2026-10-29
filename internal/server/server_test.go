@@ -107,7 +107,7 @@ func (fakeInfo) GetAppInfo(context.Context, string) (sqlc.AppInfo, error) {
 }
 
 func newTestServer(db Pinger) http.Handler {
-	return New(Deps{Log: newTestLogger(), DB: db, Info: fakeInfo{}})
+	return New(Deps{Log: newTestLogger(), DB: db, Catalog: fakeInfo{}})
 }
 
 func get(t *testing.T, target string) *httptest.ResponseRecorder {
@@ -123,7 +123,7 @@ func TestHomeRenderizaLayout(t *testing.T) {
 		t.Fatalf("status = %d, quer 200", rec.Code)
 	}
 	body := rec.Body.String()
-	for _, quer := range []string{"<!doctype html>", "UYSI ARBO", "menu-item", "Olá, mundo", `aria-current`} {
+	for _, quer := range []string{"<!doctype html>", "UYSI ARBO", "menu-item", "Console da plataforma", `aria-current`} {
 		if !strings.Contains(strings.ToLower(body), strings.ToLower(quer)) {
 			t.Errorf("página sem %q", quer)
 		}
@@ -163,3 +163,5 @@ func TestEstaticos(t *testing.T) {
 		}
 	}
 }
+
+func (fakeInfo) ListClientes(context.Context) ([]sqlc.Cliente, error) { return nil, nil }

@@ -85,7 +85,7 @@ func TestProvisionIsolaClientes(t *testing.T) {
 			t.Fatal(err)
 		}
 		defer conn.Close()
-		if _, err := conn.ExecContext(ctx, "INSERT INTO cliente_info (chave, valor) VALUES ('nome', $1)", valor); err != nil {
+		if _, err := conn.ExecContext(ctx, "INSERT INTO cliente_info (chave, valor) VALUES ('marca', $1)", valor); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -95,7 +95,7 @@ func TestProvisionIsolaClientes(t *testing.T) {
 	for schema, quer := range map[string]string{"c_alfa": "A", "c_beta": "B"} {
 		var n int
 		var valor string
-		err := s.Pool.QueryRow(ctx, `SELECT count(*), max(valor) FROM `+schema+`.cliente_info`).Scan(&n, &valor)
+		err := s.Pool.QueryRow(ctx, `SELECT count(*), max(valor) FROM `+schema+`.cliente_info WHERE chave = 'marca'`).Scan(&n, &valor)
 		if err != nil || n != 1 || valor != quer {
 			t.Errorf("%s: n=%d valor=%q err=%v (quer 1 e %q)", schema, n, valor, err, quer)
 		}
@@ -165,5 +165,58 @@ func TestMigrateAllAplicaEmTodosOsClientes(t *testing.T) {
 	}
 	if !existe(t, s, "c_beta", "cliente_info") || !existe(t, s, "c_alfa", "cliente_info") {
 		t.Error("MigrateAll não deixou todos os clientes em dia")
+	}
+}
+
+func TestSubdominioReservadoERecusado(t *testing.T) {
+	s, _ := novoServico(t)
+	for _, sub := range []string{"www", "labpront", "perene", "uysiarbo", "chamadosvg", "WWW"} {
+		_, err := s.Provision(context.Background(), tenant.Input{Nome: "X", Slug: "xyz", Subdominio: sub})
+		if !errors.Is(err, tenant.ErrSubdominioReservado) {
+			t.Errorf("subdomínio %q: err = %v, quer ErrSubdominioReservado", sub, err)
+		}
+	}
+	if lista, _ := sqlc.New(s.Pool).ListClientes(context.Background()); len(lista) != 0 {
+		t.Errorf("nada deveria ter sido criado, mas há %d clientes", len(lista))
+	}
+}
+
+func TestPoolsIsolaPorSchema(t *testing.T) {
+	s, url := novoServico(t)
+	ctx := context.Background()
+	for _, slug := range []string{"alfa", "beta"} {
+		if _, err := s.Provision(ctx, tenant.Input{Nome: "Cliente " + slug, Slug: slug}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	pools := &tenant.Pools{URL: url}
+	defer pools.Close()
+
+	for _, schema := range []string{"c_alfa", "c_beta"} {
+		pool, err := pools.Get(ctx, schema)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var nome, caminho string
+		// Sem citar o schema: quem decide é o search_path da conexão.
+		if err := pool.QueryRow(ctx, "SELECT valor FROM cliente_info WHERE chave = 'nome'").Scan(&nome); err != nil {
+			t.Fatal(err)
+		}
+		_ = pool.QueryRow(ctx, "SHOW search_path").Scan(&caminho)
+		if nome != "Cliente "+schema[2:] || !strings.Contains(caminho, schema) {
+			t.Errorf("%s: nome=%q search_path=%q", schema, nome, caminho)
+		}
+	}
+	if _, err := pools.Get(ctx, "public; DROP SCHEMA public"); err == nil {
+		t.Error("nome de schema inválido deveria ser recusado")
+	}
+}
+
+func TestResolverNormalizaEConsulta(t *testing.T) {
+	if got := tenant.NormalizeHost("UysiarboNM.Inovarsistemas.biz:8443"); got != "uysiarbonm.inovarsistemas.biz" {
+		t.Errorf("NormalizeHost = %q", got)
+	}
+	if got := tenant.NormalizeHost("exemplo.com."); got != "exemplo.com" {
+		t.Errorf("NormalizeHost com ponto final = %q", got)
 	}
 }

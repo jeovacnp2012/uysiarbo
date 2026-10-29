@@ -1,5 +1,6 @@
 version: "2"
 sql:
+  # Catálogo (schema public)
   - engine: postgresql
     schema: migrations/public
     queries: internal/db/queries
@@ -7,5 +8,15 @@ sql:
       go:
         package: sqlc
         out: internal/db/sqlc
+        sql_package: pgx/v5
+        emit_json_tags: true
+  # Schema de cada cliente (as queries rodam com search_path = c_<slug>, public)
+  - engine: postgresql
+    schema: migrations/cliente
+    queries: internal/db/queries_cliente
+    gen:
+      go:
+        package: sqlccliente
+        out: internal/db/sqlccliente
         sql_package: pgx/v5
         emit_json_tags: true

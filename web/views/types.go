@@ -12,9 +12,19 @@ type NavItem struct {
 }
 
 type Layout struct {
-	Title  string
-	Active string // Href do item de menu ativo
-	Nav    []NavItem
+	Title   string
+	Active  string // Href do item de menu ativo
+	Nav     []NavItem
+	Cliente string // nome do cliente (prefeitura), quando o endereço é de um cliente
+}
+
+// HomeData são os dados da página inicial: do cliente (prefeitura) ou do console da plataforma.
+type HomeData struct {
+	Sistema  string
+	Console  bool   // true no endereço do console, sem cliente
+	Cliente  string // nome lido de dentro do schema do cliente
+	Schema   string
+	Clientes int // total de clientes (só no console)
 }
 
 // Pagination descreve a paginação de uma listagem.

@@ -23,10 +23,10 @@ if ($LASTEXITCODE -ne 0) { Falhar "templ generate" }
 if ($antes -ne (Digital "web/views/*_templ.go")) { Falhar "os *_templ.go estavam desatualizados; foram regenerados, confira e commite" }
 
 Write-Host "==> sqlc (código gerado em dia)"
-$antes = Digital "internal/db/sqlc/*.go"
+$antes = Digital "internal/db/sqlc*/*.go"
 go tool sqlc generate
 if ($LASTEXITCODE -ne 0) { Falhar "sqlc generate" }
-if ($antes -ne (Digital "internal/db/sqlc/*.go")) { Falhar "o código do sqlc estava desatualizado; foi regenerado, confira e commite" }
+if ($antes -ne (Digital "internal/db/sqlc*/*.go")) { Falhar "o código do sqlc estava desatualizado; foi regenerado, confira e commite" }
 
 Write-Host "==> go vet"
 go vet ./...

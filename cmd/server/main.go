@@ -15,6 +15,7 @@ import (
 	"uysiarbo/internal/db"
 	"uysiarbo/internal/db/sqlc"
 	"uysiarbo/internal/server"
+	"uysiarbo/internal/tenant"
 )
 
 // version é preenchida no build (-ldflags "-X main.version=...").
@@ -70,9 +71,18 @@ func run() error {
 	}
 	defer pool.Close()
 
+	pools := &tenant.Pools{URL: cfg.DatabaseURL}
+	defer pools.Close()
+
 	srv := &http.Server{
-		Addr:              cfg.Addr,
-		Handler:           server.New(server.Deps{Log: log, DB: pool, Info: sqlc.New(pool)}),
+		Addr: cfg.Addr,
+		Handler: server.New(server.Deps{
+			Log:      log,
+			DB:       pool,
+			Catalog:  sqlc.New(pool),
+			Resolver: &tenant.Resolver{Pool: pool, BaseDomain: cfg.BaseDomain, AdminHost: cfg.AdminHost},
+			Pools:    pools,
+		}),
 		ReadHeaderTimeout: 5 * time.Second,
 		IdleTimeout:       60 * time.Second,
 	}

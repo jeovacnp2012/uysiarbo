@@ -32,6 +32,9 @@ templ Base(l Layout) {
 						<img src="/static/brand/uysi-symbol.png" alt=""/>
 						<span>UYSI ARBO</span>
 					</a>
+					if l.Cliente != "" {
+						<div class="menu-cliente">{ l.Cliente }</div>
+					}
 					<nav class="menu-lista">
 						for _, item := range l.Nav {
 							<a class="menu-item" href={ templ.SafeURL(item.Href) } aria-current?={ item.Href == l.Active }>{ item.Label }</a>

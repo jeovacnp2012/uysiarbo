@@ -152,6 +152,15 @@ h3 {
     object-fit: contain;
 }
 
+.menu-cliente {
+    padding: 0.6rem 1.25rem;
+    border-bottom: 1px solid var(--borda);
+    background: var(--marca-fraca);
+    color: var(--marca);
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
 .menu-lista {
     flex: 1;
     overflow-y: auto;

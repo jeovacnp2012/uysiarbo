@@ -13,6 +13,8 @@ type Config struct {
 	Env             string
 	Addr            string
 	DatabaseURL     string
+	BaseDomain      string // cada cliente é "<subdominio>.<BaseDomain>"
+	AdminHost       string // endereço do console da plataforma (sem cliente)
 	ShutdownTimeout time.Duration
 }
 
@@ -25,6 +27,8 @@ func Load(envFile string) (Config, error) {
 		Env:             get("APP_ENV", "local"),
 		Addr:            get("APP_ADDR", ":8090"),
 		DatabaseURL:     os.Getenv("DATABASE_URL"),
+		BaseDomain:      strings.ToLower(get("APP_BASE_DOMAIN", "local")),
+		AdminHost:       strings.ToLower(get("APP_ADMIN_HOST", "uysiarbo.local")),
 		ShutdownTimeout: 10 * time.Second,
 	}
 	return cfg, nil

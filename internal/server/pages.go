@@ -8,12 +8,15 @@ import (
 	"strings"
 
 	"uysiarbo/internal/db/sqlc"
+	"uysiarbo/internal/db/sqlccliente"
+	"uysiarbo/internal/tenant"
 	"uysiarbo/web/views"
 )
 
-// AppInfoReader lê informações da aplicação gravadas no banco.
-type AppInfoReader interface {
+// Catalog é o que as páginas leem do catálogo (schema public).
+type Catalog interface {
 	GetAppInfo(ctx context.Context, chave string) (sqlc.AppInfo, error)
+	ListClientes(ctx context.Context) ([]sqlc.Cliente, error)
 }
 
 var nav = []views.NavItem{
@@ -21,23 +24,45 @@ var nav = []views.NavItem{
 	{Label: "Componentes", Href: "/componentes"},
 }
 
-func layout(title, active string) views.Layout {
-	return views.Layout{Title: title, Active: active, Nav: nav}
+// layout monta o layout da página; no endereço de um cliente, mostra o nome dele no menu.
+func (s *handlers) layout(r *http.Request, title, active string) views.Layout {
+	l := views.Layout{Title: title, Active: active, Nav: nav}
+	if c, ok := tenant.FromContext(r.Context()); ok {
+		l.Cliente = c.Nome
+	}
+	return l
 }
 
 func (s *handlers) home(w http.ResponseWriter, r *http.Request) {
-	sistema := "indisponível"
-	if info, err := s.info.GetAppInfo(r.Context(), "sistema"); err == nil {
-		sistema = info.Valor
+	data := views.HomeData{Sistema: "indisponível"}
+	if info, err := s.cat.GetAppInfo(r.Context(), "sistema"); err == nil {
+		data.Sistema = info.Valor
 	} else {
 		s.log.Warn("ler app_info", "erro", err)
 	}
-	render(w, r, views.Home(layout("Início", "/"), sistema))
+
+	if c, ok := tenant.FromContext(r.Context()); ok {
+		// Lê de dentro do schema do cliente: a conexão só enxerga o schema dele.
+		data.Cliente, data.Schema = "indisponível", c.SchemaNome
+		if pool, err := s.pools.Get(r.Context(), c.SchemaNome); err != nil {
+			s.log.Error("pool do cliente", "cliente", c.Slug, "erro", err)
+		} else if info, err := sqlccliente.New(pool).GetClienteInfo(r.Context(), "nome"); err == nil {
+			data.Cliente = info.Valor
+		} else {
+			s.log.Error("ler cliente_info", "cliente", c.Slug, "erro", err)
+		}
+	} else {
+		data.Console = true
+		if lista, err := s.cat.ListClientes(r.Context()); err == nil {
+			data.Clientes = len(lista)
+		}
+	}
+	render(w, r, views.Home(s.layout(r, "Início", "/"), data))
 }
 
 func (s *handlers) components(w http.ResponseWriter, r *http.Request) {
 	f, rows, p := demoPage(r)
-	render(w, r, views.Components(layout("Componentes", "/componentes"), f, rows, p))
+	render(w, r, views.Components(s.layout(r, "Componentes", "/componentes"), f, rows, p))
 }
 
 // componentsTable devolve só o trecho da tabela (chamado pelo HTMX ao filtrar e paginar).
