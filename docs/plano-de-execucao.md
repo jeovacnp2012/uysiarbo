@@ -40,7 +40,7 @@ Objetivo: base técnica pronta para receber qualquer módulo.
 - [x] 0.1 Repositório Git, módulo Go (`go.mod`), estrutura de pastas (`cmd/`, `internal/`, `web/`, `migrations/`, `docs/`)
 - [x] 0.2 Ambiente local: Postgres 18 + PostGIS 3.6.2 do Laragon (sem Docker); `.env.example`; `scripts/criar-banco.ps1` (comando único)
 - [x] 0.3 Servidor HTTP (`chi`), configuração (`.env`), logs estruturados (`slog`), erros padronizados em JSON, health check `/healthz`, encerramento gracioso
-- [ ] 0.4 Migrações (`goose`) e acesso a dados (`sqlc` + `pgx`); primeira migração de teste
+- [x] 0.4 Migrações (`goose`, embutidas no binário; `go run ./cmd/migrate up|down|status|reset`) e acesso a dados (`sqlc` + `pgx`, `go tool sqlc generate`); primeira migração `00001_criar_app_info`; `/readyz` com ping no banco
 - [ ] 0.5 Front base: layout com menu lateral, tema, `templ` + HTMX + Alpine, componentes de tabela paginada, filtros, modal, toasts
 - [ ] 0.6 CI (testes e lint) e script de build para um único binário
 **Entrega:** "olá mundo" com layout, banco e testes rodando.
@@ -50,9 +50,11 @@ Objetivo: múltiplas prefeituras isoladas, com usuários e permissões.
 - [ ] 1.1 Schema `public` (catálogo): tabela de clientes, domínio/subdomínio, plano, status
 - [ ] 1.2 Provisionamento: criar schema novo + rodar todas as migrações nele; comando para migrar **todos** os schemas
 - [ ] 1.3 Resolução do cliente por requisição (subdomínio ou domínio) e `search_path` seguro por conexão
-- [ ] 1.4 Usuários, papéis e permissões (modelo inspirado nas ~190 permissões e 24 categorias do sistema atual)
+- [ ] 1.4 Usuários, papéis e permissões (modelo inspirado nas ~190 permissões e 24 categorias do sistema atual): permissões **granulares organizadas por blocos** e **perfis diversos** (papéis). **Usuário master: JEOVA OLIVEIRA, e-mail de acesso `jeovacnp2012@gmail.com`**: nenhuma regra de permissão, restrição de bloco, "apenas atribuídos" ou escopo de cliente se aplica a ele; vê e faz tudo, em todos os clientes. O master é protegido (não pode ser excluído, rebaixado ou ter o acesso reduzido por outro usuário); a senha dele nunca é registrada em arquivo, plano ou código.
 - [ ] 1.5 Login com Google reCAPTCHA v2 (verificação do token no servidor), sessão em cookie seguro, bloqueio por tentativas, recuperação de senha
-- [ ] 1.6 Telas: Usuários, Papéis (editor de permissões por categoria, com busca e "marcar todas")
+- [ ] 1.5.1 **Reset de senha por administrador**: ao resetar a senha de alguém, o sistema gera uma senha **forte** e a **mostra uma única vez** a quem resetou (com botão copiar). No próximo login do usuário com essa senha temporária, o sistema o obriga a **escolher a própria senha** antes de continuar (a temporária deixa de valer). Registrar o reset na auditoria (quem resetou, para quem, quando), sem guardar a senha
+- [ ] 1.5.2 **Revelar senha**: todo campo de senha da interface (login, troca, criação, reset) tem a opção de mostrar/ocultar o que foi digitado
+- [ ] 1.6 Telas: Usuários, Papéis (editor de permissões por bloco/categoria, com busca e "marcar todas")
 - [ ] 1.7 Auditoria básica (quem fez o quê, antes/depois)
 - [ ] 1.8 **Guia do sistema** (esqueleto, com busca) e **Novidades/Versões** (cadastro + tela + aviso de versão nova)
 **Entrega:** entrar como administrador de uma prefeitura de teste, criar usuários e papéis, ver Guia e Novidades.
@@ -144,17 +146,17 @@ Objetivo: migrar dados de outros sistemas e de planilhas, com segurança.
 - [ ] 12.3 SINAN / e-SUS / SUS: levantar formato oficial, exportar e/ou importar notificações
 - [ ] 12.4 Banners (editor visual)
 
-## Etapa 13 — Aplicativo do tablet (Flutter)
-- [ ] 13.1 Autenticação, download de dados por ciclo (respeitando os parâmetros de "dias de download")
-- [ ] 13.2 Visita offline completa, fotos e assinatura
-- [ ] 13.3 GPS contínuo (rastro a cada 5 s) e sincronização em lote
-- [ ] 13.4 Campanha, diária, ovitrampa, EDL, investigação e drone no app
+## Etapa 13 — Produção, segurança e LGPD
+- [ ] 13.1 Deploy na VPS (Nginx, serviço systemd, Postgres, TLS) e script de atualização sem queda
+- [ ] 13.2 Backups e restauração testada, por schema de cliente
+- [ ] 13.3 LGPD: criptografia de CPF/telefone, registro de acesso a dados pessoais, retenção e exclusão
+- [ ] 13.4 Observabilidade (logs, métricas, alertas) e testes de carga
 
-## Etapa 14 — Produção, segurança e LGPD
-- [ ] 14.1 Deploy na VPS (Nginx, serviço systemd, Postgres, TLS) e script de atualização sem queda
-- [ ] 14.2 Backups e restauração testada, por schema de cliente
-- [ ] 14.3 LGPD: criptografia de CPF/telefone, registro de acesso a dados pessoais, retenção e exclusão
-- [ ] 14.4 Observabilidade (logs, métricas, alertas) e testes de carga
+## Etapa 14 — Aplicativo do tablet (Flutter) — **última etapa do projeto**
+- [ ] 14.1 Autenticação, download de dados por ciclo (respeitando os parâmetros de "dias de download")
+- [ ] 14.2 Visita offline completa, fotos e assinatura
+- [ ] 14.3 GPS contínuo (rastro a cada 5 s) e sincronização em lote
+- [ ] 14.4 Campanha, diária, ovitrampa, EDL, investigação e drone no app
 
 ---
 
@@ -169,7 +171,7 @@ Objetivo: migrar dados de outros sistemas e de planilhas, com segurança.
 | 5 | Formato oficial de integração com SINAN/e-SUS (varia por município/estado) | Etapa 12 |
 | 6 | Quais conectores de "outros sistemas" interessam primeiro, e se haverá acesso/exportação de exemplo | Etapa 4 |
 | 7 | Fórmulas do IIP, Breteau e cobertura, e exemplos reais de PDFs a reproduzir | Etapas 7 e 8 |
-| 8 | Modelo comercial: haverá plano/licença por cliente (limite de usuários, módulos por contrato)? | Etapa 1 ou 14 |
+| 8 | Modelo comercial: haverá plano/licença por cliente (limite de usuários, módulos por contrato)? | Etapa 1 ou 13 |
 
 ## 3. Como vamos trabalhar
 - Uma **sub-etapa por vez**: eu proponho o que será feito, executo, testo e mostro; você aprova e seguimos.

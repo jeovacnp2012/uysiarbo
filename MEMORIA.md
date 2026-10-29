@@ -20,7 +20,9 @@ Nova versão do Geo Controle (controle de endemias/dengue para prefeituras) em G
 - Etapa 0: **0.1 concluída** (repo, `go.mod`, pastas, `cmd/server/main.go` "olá mundo").
 - **0.2 concluída** (Postgres 18 + PostGIS do Laragon, `.env.example`, `scripts/criar-banco.ps1`; `.env` local criado, o `postgres` local não exige senha).
 - **0.3 concluída**: `internal/config` (.env + ambiente), `internal/httpx` (JSON e erro padrão `{error:{code,message,request_id}}`), `internal/server` (chi, request-id, log de acesso, recoverer, `/healthz`), `cmd/server` com shutdown gracioso. Testes: `go test ./...`. Rodar: `go run ./cmd/server` (porta `APP_ADDR`, padrão `:8080`). `/readyz` com ping no banco entra na 0.4.
-- Próximas: 0.4 goose+sqlc+pgx → 0.5 front base → 0.6 CI/build.
+- **0.4 concluída**: `migrations/` (goose, embutido via `embed`), `internal/db` (pool pgx, `Migrate`), `internal/db/queries` + `sqlc.yaml` → `internal/db/sqlc` (gerado; regenerar com `go tool sqlc generate`), `cmd/migrate`, `/readyz`. O servidor não sobe sem banco. Testes de integração usam o banco `uysiarbo_test` (`TEST_DATABASE_URL` para mudar). Rodar scripts .ps1 com `powershell -ExecutionPolicy Bypass -File ...` (a política padrão bloqueia).
+- **Decisão (2026-10-29): o app Flutter do tablet é a ÚLTIMA etapa do projeto (agora Etapa 14, depois de Produção/Etapa 13).** A API de sincronização em lote (6.4) continua no backend, antes.
+- Próximas: 0.5 front base (templ + HTMX + Alpine; layout, tema, componentes) → 0.6 CI/build.
 
 ## Ambiente (PC principal do dono)
 - Windows 11, Laragon em `C:\laragon\www\uysiarbo`, Go 1.27.3.
@@ -30,7 +32,13 @@ Nova versão do Geo Controle (controle de endemias/dengue para prefeituras) em G
 - Depois: copiar `.env.example` para `.env` e rodar `powershell -File scripts\criar-banco.ps1` (cria o banco `uysiarbo` e habilita o PostGIS).
 - Em outro PC: instalar Go, clonar o repositório, ler este arquivo e o plano.
 
-## VPS de produção (referência para a etapa 14)
+## Requisitos de acesso definidos pelo usuário (etapa 1, ver plano 1.4, 1.5.1 e 1.5.2)
+- Usuário **master**: JEOVA OLIVEIRA (`jeovacnp2012@gmail.com`). Nada de permissão se aplica a ele; vê e faz tudo, em todos os clientes. Protegido contra exclusão/rebaixamento. Senha dele nunca em arquivo/código.
+- Permissões granulares por **blocos**, com **perfis** (papéis) diversos.
+- **Reset de senha**: gera senha forte, mostra uma vez a quem resetou; no próximo login a pessoa é obrigada a definir a própria senha.
+- **Todo campo de senha** tem opção de revelar/ocultar.
+
+## VPS de produção (referência para a etapa 13 (produção))
 Detalhes e credenciais ficam em `C:\laragon\www\VPS_STATUS.md` (fora do Git; **nunca copiar senhas para este arquivo**). Resumo útil:
 - Rapid Cloud, Ubuntu 22.04. Acesso por SSH com chave, usuário `jeova` (não é root; `sudo` pede senha, então o Claude nunca roda sudo: imprime o comando para o usuário rodar).
 - Stack já instalada: PostgreSQL 18, Nginx (roda como usuário `nginx`), Supervisor, Certbot, Valkey, UFW e Fail2ban. **Não tem Go instalado e não sabemos se o PostGIS está instalado**; conferir antes do deploy.
