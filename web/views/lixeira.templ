@@ -1,0 +1,114 @@
+package views
+
+import (
+	"strconv"
+	"time"
+)
+
+type LixeiraLinha struct {
+	ID          int64
+	Rotulo      string
+	Contexto    string
+	Quando      time.Time
+	QuandoTexto string
+	Por         string
+}
+
+type LixeiraAba struct {
+	Chave  string
+	Rotulo string
+	Total  int
+	Ativa  bool
+}
+
+type LixeiraData struct {
+	Abas           []LixeiraAba
+	Atual          string
+	Rotulo         string
+	Linhas         []LixeiraLinha
+	PodeDefinitivo bool
+	Aviso          string
+	CSRF           string
+}
+
+type AvisoDeExclusaoData struct {
+	Titulo  string
+	Motivos []string
+	Voltar  string
+}
+
+templ AvisoDeExclusao(l Layout, d AvisoDeExclusaoData) {
+	@Base(l) {
+		@PageHeader(d.Titulo, "A ação foi cancelada e nada foi alterado.") {
+			<a class="btn" href={ templ.SafeURL(d.Voltar) }>Voltar</a>
+		}
+		<section class="cartao">
+			for _, m := range d.Motivos {
+				<p class="alerta alerta-aviso" role="alert">{ m }</p>
+			}
+		</section>
+	}
+}
+
+templ Lixeira(l Layout, d LixeiraData) {
+	@Base(l) {
+		@PageHeader("Lixeira", "O que foi excluído fica aqui: dá para restaurar. A exclusão definitiva só vale para quem tem autorização e quando nada mais depende do registro.") {
+		}
+		if d.Aviso != "" {
+			<p class="alerta alerta-ok" role="status">{ d.Aviso }</p>
+		}
+		<nav class="abas" aria-label="Tipos de registro">
+			for _, a := range d.Abas {
+				<a class={ "aba", templ.KV("aba-ativa", a.Ativa) } href={ templ.SafeURL("/lixeira?tipo=" + a.Chave) } aria-current?={ a.Ativa }>{ a.Rotulo } <span class="selo">{ strconv.Itoa(a.Total) }</span></a>
+			}
+		</nav>
+		<section class="cartao">
+			<div class="tabela-wrap">
+				<table class="tabela">
+					<thead>
+						<tr>
+							<th scope="col">{ d.Rotulo }</th>
+							<th scope="col">Excluído em</th>
+							<th scope="col">Por</th>
+							<th scope="col"><span class="sr-only">Ações</span></th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, x := range d.Linhas {
+							<tr>
+								<td data-rotulo={ d.Rotulo }>
+									<strong>{ x.Rotulo }</strong>
+									if x.Contexto != "" {
+										<div class="subtitulo">{ x.Contexto }</div>
+									}
+								</td>
+								<td data-rotulo="Excluído em">{ x.QuandoTexto }</td>
+								<td data-rotulo="Por">{ x.Por }</td>
+								<td data-rotulo="Ações">
+									<form method="post" action={ templ.SafeURL("/lixeira/" + d.Atual + "/" + strconv.FormatInt(x.ID, 10) + "/restaurar") } class="inline">
+										<input type="hidden" name="csrf" value={ d.CSRF }/>
+										<button type="submit" class="btn btn-icone" aria-label={ "Restaurar " + x.Rotulo }>Restaurar</button>
+									</form>
+									if d.PodeDefinitivo {
+										<form
+											method="post"
+											action={ templ.SafeURL("/lixeira/" + d.Atual + "/" + strconv.FormatInt(x.ID, 10) + "/excluir-definitivo") }
+											class="inline"
+											onsubmit="return confirm('Excluir definitivamente? Isso não pode ser desfeito.')"
+										>
+											<input type="hidden" name="csrf" value={ d.CSRF }/>
+											<button type="submit" class="btn btn-icone" aria-label={ "Excluir definitivamente " + x.Rotulo }>Excluir definitivamente</button>
+										</form>
+									}
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+				if len(d.Linhas) == 0 {
+					<div class="tabela-vazia">Nada na lixeira neste tipo.</div>
+				}
+			</div>
+		</section>
+	}
+}

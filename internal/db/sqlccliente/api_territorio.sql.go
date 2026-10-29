@@ -12,7 +12,7 @@ import (
 )
 
 const createQuarteiraoApi = `-- name: CreateQuarteiraoApi :one
-INSERT INTO quarteiroes (bairro_id, nome, ativo, id_externo) VALUES ($1, $2, $3, $4) RETURNING id, bairro_id, nome, ativo, criado_em, id_externo, atualizado_em
+INSERT INTO quarteiroes (bairro_id, nome, ativo, id_externo) VALUES ($1, $2, $3, $4) RETURNING id, bairro_id, nome, ativo, criado_em, id_externo, atualizado_em, deleted_at, deleted_by
 `
 
 type CreateQuarteiraoApiParams struct {
@@ -38,12 +38,14 @@ func (q *Queries) CreateQuarteiraoApi(ctx context.Context, arg CreateQuarteiraoA
 		&i.CriadoEm,
 		&i.IDExterno,
 		&i.AtualizadoEm,
+		&i.DeletedAt,
+		&i.DeletedBy,
 	)
 	return i, err
 }
 
 const getBairroPorIdExterno = `-- name: GetBairroPorIdExterno :one
-SELECT id, cidade_id, nome, mutirao, status, ibge, classificacao, zona, categoria, latitude, longitude, altitude, distancia_centro, producao, criado_em, atualizado_em, id_externo FROM bairros WHERE id_externo = $1
+SELECT id, cidade_id, nome, mutirao, status, ibge, classificacao, zona, categoria, latitude, longitude, altitude, distancia_centro, producao, criado_em, atualizado_em, id_externo, deleted_at, deleted_by FROM bairros WHERE id_externo = $1 AND deleted_at IS NULL
 `
 
 func (q *Queries) GetBairroPorIdExterno(ctx context.Context, idExterno pgtype.Text) (Bairro, error) {
@@ -67,12 +69,14 @@ func (q *Queries) GetBairroPorIdExterno(ctx context.Context, idExterno pgtype.Te
 		&i.CriadoEm,
 		&i.AtualizadoEm,
 		&i.IDExterno,
+		&i.DeletedAt,
+		&i.DeletedBy,
 	)
 	return i, err
 }
 
 const getLocalPorIdExterno = `-- name: GetLocalPorIdExterno :one
-SELECT id, tipo, cep, endereco, numero, referencia, bairro_id, quarteirao_id, lado, sequencia, complemento, latitude, longitude, proprietario, proprietario_telefone, proprietario_cpf, proprietario_whatsapp, proprietario_email, aceita_whatsapp, aceita_email, inquilino, inquilino_telefone, humanos, cachorros, gatos, roedores, ativo, criado_por, criado_em, atualizado_em, qr_chave, id_externo FROM locais WHERE id_externo = $1
+SELECT id, tipo, cep, endereco, numero, referencia, bairro_id, quarteirao_id, lado, sequencia, complemento, latitude, longitude, proprietario, proprietario_telefone, proprietario_cpf, proprietario_whatsapp, proprietario_email, aceita_whatsapp, aceita_email, inquilino, inquilino_telefone, humanos, cachorros, gatos, roedores, ativo, criado_por, criado_em, atualizado_em, qr_chave, id_externo, deleted_at, deleted_by FROM locais WHERE id_externo = $1 AND deleted_at IS NULL
 `
 
 func (q *Queries) GetLocalPorIdExterno(ctx context.Context, idExterno pgtype.Text) (Locai, error) {
@@ -111,12 +115,14 @@ func (q *Queries) GetLocalPorIdExterno(ctx context.Context, idExterno pgtype.Tex
 		&i.AtualizadoEm,
 		&i.QrChave,
 		&i.IDExterno,
+		&i.DeletedAt,
+		&i.DeletedBy,
 	)
 	return i, err
 }
 
 const getQuarteiraoPorIdExterno = `-- name: GetQuarteiraoPorIdExterno :one
-SELECT id, bairro_id, nome, ativo, criado_em, id_externo, atualizado_em FROM quarteiroes WHERE id_externo = $1
+SELECT id, bairro_id, nome, ativo, criado_em, id_externo, atualizado_em, deleted_at, deleted_by FROM quarteiroes WHERE id_externo = $1 AND deleted_at IS NULL
 `
 
 func (q *Queries) GetQuarteiraoPorIdExterno(ctx context.Context, idExterno pgtype.Text) (Quarteiro, error) {
@@ -130,35 +136,39 @@ func (q *Queries) GetQuarteiraoPorIdExterno(ctx context.Context, idExterno pgtyp
 		&i.CriadoEm,
 		&i.IDExterno,
 		&i.AtualizadoEm,
+		&i.DeletedAt,
+		&i.DeletedBy,
 	)
 	return i, err
 }
 
 const listBairrosApi = `-- name: ListBairrosApi :many
 
-SELECT id, cidade_id, nome, mutirao, status, ibge, classificacao, zona, categoria, latitude, longitude, altitude, distancia_centro, producao, criado_em, atualizado_em, id_externo FROM bairros
-WHERE id > $1::bigint
-  AND ($2::bigint IS NULL OR cidade_id = $2::bigint)
-  AND ($3::text = '' OR status = $3::text)
-  AND ($4::text = '' OR position(lower($4::text) in lower(nome)) > 0)
-  AND ($5::text = '' OR id_externo = $5::text)
-  AND ($6::timestamptz IS NULL OR atualizado_em >= $6::timestamptz)
-ORDER BY id LIMIT $7::int
+SELECT id, cidade_id, nome, mutirao, status, ibge, classificacao, zona, categoria, latitude, longitude, altitude, distancia_centro, producao, criado_em, atualizado_em, id_externo, deleted_at, deleted_by FROM bairros
+WHERE (deleted_at IS NULL OR $1::boolean) AND id > $2::bigint
+  AND ($3::bigint IS NULL OR cidade_id = $3::bigint)
+  AND ($4::text = '' OR status = $4::text)
+  AND ($5::text = '' OR position(lower($5::text) in lower(nome)) > 0)
+  AND ($6::text = '' OR id_externo = $6::text)
+  AND ($7::timestamptz IS NULL OR atualizado_em >= $7::timestamptz)
+ORDER BY id LIMIT $8::int
 `
 
 type ListBairrosApiParams struct {
-	Depois          int64              `json:"depois"`
-	CidadeID        pgtype.Int8        `json:"cidade_id"`
-	Status          string             `json:"status"`
-	Busca           string             `json:"busca"`
-	IDExterno       string             `json:"id_externo"`
-	AtualizadoDesde pgtype.Timestamptz `json:"atualizado_desde"`
-	Limite          int32              `json:"limite"`
+	IncluirExcluidos bool               `json:"incluir_excluidos"`
+	Depois           int64              `json:"depois"`
+	CidadeID         pgtype.Int8        `json:"cidade_id"`
+	Status           string             `json:"status"`
+	Busca            string             `json:"busca"`
+	IDExterno        string             `json:"id_externo"`
+	AtualizadoDesde  pgtype.Timestamptz `json:"atualizado_desde"`
+	Limite           int32              `json:"limite"`
 }
 
 // ---------------------------------------------------------------- API: território (leitura e id_externo)
 func (q *Queries) ListBairrosApi(ctx context.Context, arg ListBairrosApiParams) ([]Bairro, error) {
 	rows, err := q.db.Query(ctx, listBairrosApi,
+		arg.IncluirExcluidos,
 		arg.Depois,
 		arg.CidadeID,
 		arg.Status,
@@ -192,6 +202,8 @@ func (q *Queries) ListBairrosApi(ctx context.Context, arg ListBairrosApiParams) 
 			&i.CriadoEm,
 			&i.AtualizadoEm,
 			&i.IDExterno,
+			&i.DeletedAt,
+			&i.DeletedBy,
 		); err != nil {
 			return nil, err
 		}
@@ -204,32 +216,34 @@ func (q *Queries) ListBairrosApi(ctx context.Context, arg ListBairrosApiParams) 
 }
 
 const listLocaisApi = `-- name: ListLocaisApi :many
-SELECT id, tipo, cep, endereco, numero, referencia, bairro_id, quarteirao_id, lado, sequencia, complemento, latitude, longitude, proprietario, proprietario_telefone, proprietario_cpf, proprietario_whatsapp, proprietario_email, aceita_whatsapp, aceita_email, inquilino, inquilino_telefone, humanos, cachorros, gatos, roedores, ativo, criado_por, criado_em, atualizado_em, qr_chave, id_externo FROM locais
-WHERE id > $1::bigint
-  AND ($2::bigint IS NULL OR bairro_id = $2::bigint)
-  AND ($3::bigint IS NULL OR quarteirao_id = $3::bigint)
-  AND ($4::text = '' OR tipo = $4::text)
-  AND ($5::boolean IS NULL OR ativo = $5::boolean)
-  AND ($6::text = '' OR position(lower($6::text) in lower(endereco || ' ' || numero)) > 0)
-  AND ($7::text = '' OR id_externo = $7::text)
-  AND ($8::timestamptz IS NULL OR atualizado_em >= $8::timestamptz)
-ORDER BY id LIMIT $9::int
+SELECT id, tipo, cep, endereco, numero, referencia, bairro_id, quarteirao_id, lado, sequencia, complemento, latitude, longitude, proprietario, proprietario_telefone, proprietario_cpf, proprietario_whatsapp, proprietario_email, aceita_whatsapp, aceita_email, inquilino, inquilino_telefone, humanos, cachorros, gatos, roedores, ativo, criado_por, criado_em, atualizado_em, qr_chave, id_externo, deleted_at, deleted_by FROM locais
+WHERE (deleted_at IS NULL OR $1::boolean) AND id > $2::bigint
+  AND ($3::bigint IS NULL OR bairro_id = $3::bigint)
+  AND ($4::bigint IS NULL OR quarteirao_id = $4::bigint)
+  AND ($5::text = '' OR tipo = $5::text)
+  AND ($6::boolean IS NULL OR ativo = $6::boolean)
+  AND ($7::text = '' OR position(lower($7::text) in lower(endereco || ' ' || numero)) > 0)
+  AND ($8::text = '' OR id_externo = $8::text)
+  AND ($9::timestamptz IS NULL OR atualizado_em >= $9::timestamptz)
+ORDER BY id LIMIT $10::int
 `
 
 type ListLocaisApiParams struct {
-	Depois          int64              `json:"depois"`
-	BairroID        pgtype.Int8        `json:"bairro_id"`
-	QuarteiraoID    pgtype.Int8        `json:"quarteirao_id"`
-	Tipo            string             `json:"tipo"`
-	Ativo           pgtype.Bool        `json:"ativo"`
-	Busca           string             `json:"busca"`
-	IDExterno       string             `json:"id_externo"`
-	AtualizadoDesde pgtype.Timestamptz `json:"atualizado_desde"`
-	Limite          int32              `json:"limite"`
+	IncluirExcluidos bool               `json:"incluir_excluidos"`
+	Depois           int64              `json:"depois"`
+	BairroID         pgtype.Int8        `json:"bairro_id"`
+	QuarteiraoID     pgtype.Int8        `json:"quarteirao_id"`
+	Tipo             string             `json:"tipo"`
+	Ativo            pgtype.Bool        `json:"ativo"`
+	Busca            string             `json:"busca"`
+	IDExterno        string             `json:"id_externo"`
+	AtualizadoDesde  pgtype.Timestamptz `json:"atualizado_desde"`
+	Limite           int32              `json:"limite"`
 }
 
 func (q *Queries) ListLocaisApi(ctx context.Context, arg ListLocaisApiParams) ([]Locai, error) {
 	rows, err := q.db.Query(ctx, listLocaisApi,
+		arg.IncluirExcluidos,
 		arg.Depois,
 		arg.BairroID,
 		arg.QuarteiraoID,
@@ -280,6 +294,8 @@ func (q *Queries) ListLocaisApi(ctx context.Context, arg ListLocaisApiParams) ([
 			&i.AtualizadoEm,
 			&i.QrChave,
 			&i.IDExterno,
+			&i.DeletedAt,
+			&i.DeletedBy,
 		); err != nil {
 			return nil, err
 		}
@@ -292,26 +308,28 @@ func (q *Queries) ListLocaisApi(ctx context.Context, arg ListLocaisApiParams) ([
 }
 
 const listQuarteiroesApi = `-- name: ListQuarteiroesApi :many
-SELECT id, bairro_id, nome, ativo, criado_em, id_externo, atualizado_em FROM quarteiroes
-WHERE id > $1::bigint
-  AND ($2::bigint IS NULL OR bairro_id = $2::bigint)
-  AND ($3::boolean IS NULL OR ativo = $3::boolean)
-  AND ($4::text = '' OR id_externo = $4::text)
-  AND ($5::timestamptz IS NULL OR atualizado_em >= $5::timestamptz)
-ORDER BY id LIMIT $6::int
+SELECT id, bairro_id, nome, ativo, criado_em, id_externo, atualizado_em, deleted_at, deleted_by FROM quarteiroes
+WHERE (deleted_at IS NULL OR $1::boolean) AND id > $2::bigint
+  AND ($3::bigint IS NULL OR bairro_id = $3::bigint)
+  AND ($4::boolean IS NULL OR ativo = $4::boolean)
+  AND ($5::text = '' OR id_externo = $5::text)
+  AND ($6::timestamptz IS NULL OR atualizado_em >= $6::timestamptz)
+ORDER BY id LIMIT $7::int
 `
 
 type ListQuarteiroesApiParams struct {
-	Depois          int64              `json:"depois"`
-	BairroID        pgtype.Int8        `json:"bairro_id"`
-	Ativo           pgtype.Bool        `json:"ativo"`
-	IDExterno       string             `json:"id_externo"`
-	AtualizadoDesde pgtype.Timestamptz `json:"atualizado_desde"`
-	Limite          int32              `json:"limite"`
+	IncluirExcluidos bool               `json:"incluir_excluidos"`
+	Depois           int64              `json:"depois"`
+	BairroID         pgtype.Int8        `json:"bairro_id"`
+	Ativo            pgtype.Bool        `json:"ativo"`
+	IDExterno        string             `json:"id_externo"`
+	AtualizadoDesde  pgtype.Timestamptz `json:"atualizado_desde"`
+	Limite           int32              `json:"limite"`
 }
 
 func (q *Queries) ListQuarteiroesApi(ctx context.Context, arg ListQuarteiroesApiParams) ([]Quarteiro, error) {
 	rows, err := q.db.Query(ctx, listQuarteiroesApi,
+		arg.IncluirExcluidos,
 		arg.Depois,
 		arg.BairroID,
 		arg.Ativo,
@@ -334,6 +352,8 @@ func (q *Queries) ListQuarteiroesApi(ctx context.Context, arg ListQuarteiroesApi
 			&i.CriadoEm,
 			&i.IDExterno,
 			&i.AtualizadoEm,
+			&i.DeletedAt,
+			&i.DeletedBy,
 		); err != nil {
 			return nil, err
 		}
@@ -346,7 +366,7 @@ func (q *Queries) ListQuarteiroesApi(ctx context.Context, arg ListQuarteiroesApi
 }
 
 const setBairroIdExterno = `-- name: SetBairroIdExterno :one
-UPDATE bairros SET id_externo = $2 WHERE id = $1 RETURNING id, cidade_id, nome, mutirao, status, ibge, classificacao, zona, categoria, latitude, longitude, altitude, distancia_centro, producao, criado_em, atualizado_em, id_externo
+UPDATE bairros SET id_externo = $2 WHERE id = $1 RETURNING id, cidade_id, nome, mutirao, status, ibge, classificacao, zona, categoria, latitude, longitude, altitude, distancia_centro, producao, criado_em, atualizado_em, id_externo, deleted_at, deleted_by
 `
 
 type SetBairroIdExternoParams struct {
@@ -375,12 +395,14 @@ func (q *Queries) SetBairroIdExterno(ctx context.Context, arg SetBairroIdExterno
 		&i.CriadoEm,
 		&i.AtualizadoEm,
 		&i.IDExterno,
+		&i.DeletedAt,
+		&i.DeletedBy,
 	)
 	return i, err
 }
 
 const setLocalIdExterno = `-- name: SetLocalIdExterno :one
-UPDATE locais SET id_externo = $2 WHERE id = $1 RETURNING id, tipo, cep, endereco, numero, referencia, bairro_id, quarteirao_id, lado, sequencia, complemento, latitude, longitude, proprietario, proprietario_telefone, proprietario_cpf, proprietario_whatsapp, proprietario_email, aceita_whatsapp, aceita_email, inquilino, inquilino_telefone, humanos, cachorros, gatos, roedores, ativo, criado_por, criado_em, atualizado_em, qr_chave, id_externo
+UPDATE locais SET id_externo = $2 WHERE id = $1 RETURNING id, tipo, cep, endereco, numero, referencia, bairro_id, quarteirao_id, lado, sequencia, complemento, latitude, longitude, proprietario, proprietario_telefone, proprietario_cpf, proprietario_whatsapp, proprietario_email, aceita_whatsapp, aceita_email, inquilino, inquilino_telefone, humanos, cachorros, gatos, roedores, ativo, criado_por, criado_em, atualizado_em, qr_chave, id_externo, deleted_at, deleted_by
 `
 
 type SetLocalIdExternoParams struct {
@@ -424,12 +446,14 @@ func (q *Queries) SetLocalIdExterno(ctx context.Context, arg SetLocalIdExternoPa
 		&i.AtualizadoEm,
 		&i.QrChave,
 		&i.IDExterno,
+		&i.DeletedAt,
+		&i.DeletedBy,
 	)
 	return i, err
 }
 
 const setQuarteiraoIdExterno = `-- name: SetQuarteiraoIdExterno :one
-UPDATE quarteiroes SET id_externo = $2 WHERE id = $1 RETURNING id, bairro_id, nome, ativo, criado_em, id_externo, atualizado_em
+UPDATE quarteiroes SET id_externo = $2 WHERE id = $1 RETURNING id, bairro_id, nome, ativo, criado_em, id_externo, atualizado_em, deleted_at, deleted_by
 `
 
 type SetQuarteiraoIdExternoParams struct {
@@ -448,12 +472,14 @@ func (q *Queries) SetQuarteiraoIdExterno(ctx context.Context, arg SetQuarteiraoI
 		&i.CriadoEm,
 		&i.IDExterno,
 		&i.AtualizadoEm,
+		&i.DeletedAt,
+		&i.DeletedBy,
 	)
 	return i, err
 }
 
 const updateQuarteirao = `-- name: UpdateQuarteirao :one
-UPDATE quarteiroes SET nome = $2, ativo = $3, atualizado_em = now() WHERE id = $1 RETURNING id, bairro_id, nome, ativo, criado_em, id_externo, atualizado_em
+UPDATE quarteiroes SET nome = $2, ativo = $3, atualizado_em = now() WHERE id = $1 RETURNING id, bairro_id, nome, ativo, criado_em, id_externo, atualizado_em, deleted_at, deleted_by
 `
 
 type UpdateQuarteiraoParams struct {
@@ -473,6 +499,8 @@ func (q *Queries) UpdateQuarteirao(ctx context.Context, arg UpdateQuarteiraoPara
 		&i.CriadoEm,
 		&i.IDExterno,
 		&i.AtualizadoEm,
+		&i.DeletedAt,
+		&i.DeletedBy,
 	)
 	return i, err
 }

@@ -45,6 +45,7 @@ func tempo(t pgtype.Timestamptz) time.Time { return t.Time }
 // ------------------------------------------------------------------- Bairros
 
 type apiBairro struct {
+	ExcluidoEm      any       `json:"excluido_em"` // preenchido se o registro foi excluído (só aparece com updated_since)
 	ID              int64     `json:"id"`
 	CidadeID        int64     `json:"cidade_id"`
 	Nome            string    `json:"nome"`
@@ -69,7 +70,7 @@ func bairroParaAPI(b sqlccliente.Bairro) apiBairro {
 		ID: b.ID, CidadeID: b.CidadeID, Nome: b.Nome, Categoria: b.Categoria, Classificacao: b.Classificacao, Status: b.Status, Ibge: b.Ibge,
 		Zona: b.Zona, Mutirao: b.Mutirao, Producao: b.Producao, Latitude: optFloat(b.Latitude), Longitude: optFloat(b.Longitude),
 		Altitude: optFloat(b.Altitude), DistanciaCentro: optFloat(b.DistanciaCentro), IDExterno: optTexto(b.IDExterno),
-		CriadoEm: tempo(b.CriadoEm), AtualizadoEm: tempo(b.AtualizadoEm),
+		CriadoEm: tempo(b.CriadoEm), AtualizadoEm: tempo(b.AtualizadoEm), ExcluidoEm: optTempo(b.DeletedAt),
 	}
 }
 
@@ -98,7 +99,7 @@ func (h *handlers) apiBairrosLista(w http.ResponseWriter, r *http.Request) {
 	limite := limiteDaURL(r)
 	rows, err := q.ListBairrosApi(r.Context(), sqlccliente.ListBairrosApiParams{
 		Depois: depois, CidadeID: cidade, Status: qs.Get("status"), Busca: strings.TrimSpace(qs.Get("q")), IDExterno: qs.Get("id_externo"),
-		AtualizadoDesde: desde, Limite: limite + 1,
+		AtualizadoDesde: desde, Limite: limite + 1, IncluirExcluidos: desde.Valid,
 	})
 	if err != nil {
 		h.falhaInterna(w, r, "listar bairros", err)
@@ -342,6 +343,7 @@ func (h *handlers) apiBairroAlterar(w http.ResponseWriter, r *http.Request) {
 // ------------------------------------------------------------------- Quarteirões
 
 type apiQuarteirao struct {
+	ExcluidoEm   any       `json:"excluido_em"` // preenchido se o registro foi excluído (só aparece com updated_since)
 	ID           int64     `json:"id"`
 	BairroID     int64     `json:"bairro_id"`
 	Nome         string    `json:"nome"`
@@ -352,7 +354,7 @@ type apiQuarteirao struct {
 }
 
 func quarteiraoParaAPI(x sqlccliente.Quarteiro) apiQuarteirao {
-	return apiQuarteirao{ID: x.ID, BairroID: x.BairroID, Nome: x.Nome, Ativo: x.Ativo, IDExterno: optTexto(x.IDExterno), CriadoEm: tempo(x.CriadoEm), AtualizadoEm: tempo(x.AtualizadoEm)}
+	return apiQuarteirao{ID: x.ID, BairroID: x.BairroID, Nome: x.Nome, Ativo: x.Ativo, IDExterno: optTexto(x.IDExterno), CriadoEm: tempo(x.CriadoEm), AtualizadoEm: tempo(x.AtualizadoEm), ExcluidoEm: optTempo(x.DeletedAt)}
 }
 
 func (h *handlers) apiQuarteiroesLista(w http.ResponseWriter, r *http.Request) {
@@ -382,7 +384,7 @@ func (h *handlers) apiQuarteiroesLista(w http.ResponseWriter, r *http.Request) {
 	}
 	limite := limiteDaURL(r)
 	rows, err := q.ListQuarteiroesApi(r.Context(), sqlccliente.ListQuarteiroesApiParams{
-		Depois: depois, BairroID: bairro, Ativo: ativo, IDExterno: r.URL.Query().Get("id_externo"), AtualizadoDesde: desde, Limite: limite + 1,
+		Depois: depois, BairroID: bairro, Ativo: ativo, IDExterno: r.URL.Query().Get("id_externo"), AtualizadoDesde: desde, Limite: limite + 1, IncluirExcluidos: desde.Valid,
 	})
 	if err != nil {
 		h.falhaInterna(w, r, "listar quarteirões", err)
@@ -564,6 +566,7 @@ func (h *handlers) apiQuarteiraoAlterar(w http.ResponseWriter, r *http.Request) 
 // ------------------------------------------------------------------- Locais
 
 type apiLocal struct {
+	ExcluidoEm           any       `json:"excluido_em"` // preenchido se o registro foi excluído (só aparece com updated_since)
 	ID                   int64     `json:"id"`
 	Tipo                 string    `json:"tipo"`
 	CEP                  string    `json:"cep"`
@@ -605,7 +608,7 @@ func localParaAPI(l sqlccliente.Locai) apiLocal {
 		ProprietarioTelefone: l.ProprietarioTelefone, ProprietarioWhatsapp: l.ProprietarioWhatsapp, ProprietarioEmail: l.ProprietarioEmail,
 		AceitaWhatsapp: l.AceitaWhatsapp, AceitaEmail: l.AceitaEmail, Inquilino: l.Inquilino, InquilinoTelefone: l.InquilinoTelefone,
 		Humanos: optInt(l.Humanos), Cachorros: optInt(l.Cachorros), Gatos: optInt(l.Gatos), Roedores: optInt(l.Roedores),
-		IDExterno: optTexto(l.IDExterno), CriadoEm: tempo(l.CriadoEm), AtualizadoEm: tempo(l.AtualizadoEm),
+		IDExterno: optTexto(l.IDExterno), CriadoEm: tempo(l.CriadoEm), AtualizadoEm: tempo(l.AtualizadoEm), ExcluidoEm: optTempo(l.DeletedAt),
 	}
 }
 
@@ -647,7 +650,7 @@ func (h *handlers) apiLocaisLista(w http.ResponseWriter, r *http.Request) {
 	limite := limiteDaURL(r)
 	rows, err := q.ListLocaisApi(r.Context(), sqlccliente.ListLocaisApiParams{
 		Depois: depois, BairroID: bairro, QuarteiraoID: quart, Tipo: tipo, Ativo: ativo, Busca: strings.TrimSpace(qs.Get("q")),
-		IDExterno: qs.Get("id_externo"), AtualizadoDesde: desde, Limite: limite + 1,
+		IDExterno: qs.Get("id_externo"), AtualizadoDesde: desde, Limite: limite + 1, IncluirExcluidos: desde.Valid,
 	})
 	if err != nil {
 		h.falhaInterna(w, r, "listar locais", err)

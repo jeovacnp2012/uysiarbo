@@ -428,6 +428,16 @@ templ LocalForm(l Layout, d LocalFormData) {
 					}
 				</section>
 			}
+			if d.PodeEditar {
+			<section class="cartao form-admin" id="excluir">
+				<h2>Excluir local</h2>
+				<p class="subtitulo">O local sai das listas, do mapa e dos grupos. Nada é apagado de verdade: vai para a Lixeira e dá para restaurar.</p>
+				<form method="post" action={ templ.SafeURL("/locais/" + strconv.FormatInt(d.ID, 10) + "/excluir") } class="inline" onsubmit="return confirm('Enviar para a lixeira?')">
+					<input type="hidden" name="csrf" value={ d.CSRF }/>
+					<button type="submit" class="btn">Excluir local</button>
+				</form>
+			</section>
+			}
 			if d.PodeDesativar {
 				<section class="cartao form-admin" id="situacao">
 					<h2>Situação</h2>

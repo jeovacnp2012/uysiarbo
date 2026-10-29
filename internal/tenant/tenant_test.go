@@ -232,8 +232,8 @@ func TestProvisionCriaPapelAdministrador(t *testing.T) {
 	var total, restritivas int
 	err := s.Pool.QueryRow(ctx, `SELECT p.nome, count(pp.permissao) FROM c_alfa.papeis p
 		JOIN c_alfa.papel_permissoes pp ON pp.papel_id = p.id GROUP BY p.nome`).Scan(&nome, &total)
-	if err != nil || nome != tenant.NomePapelAdministrador || total != 160 {
-		t.Fatalf("papel=%q permissões=%d err=%v (quer Administrador e 160)", nome, total, err)
+	if err != nil || nome != tenant.NomePapelAdministrador || total != 163 {
+		t.Fatalf("papel=%q permissões=%d err=%v (quer Administrador e 163)", nome, total, err)
 	}
 	// O Administrador não recebe as permissões restritivas (apenas as minhas, apenas atribuídos).
 	if err := s.Pool.QueryRow(ctx, `SELECT count(*) FROM c_alfa.papel_permissoes
@@ -330,7 +330,7 @@ func TestSincronizarTodosAcrescentaPermissoesQueFaltam(t *testing.T) {
 	}
 	var n int
 	_ = s.Pool.QueryRow(ctx, `SELECT count(*) FROM c_alfa.papel_permissoes`).Scan(&n)
-	if n != 160 {
-		t.Errorf("permissões = %d, quer 160 (sincronizar deveria repor as que faltavam)", n)
+	if n != 163 {
+		t.Errorf("permissões = %d, quer 163 (sincronizar deveria repor as que faltavam)", n)
 	}
 }

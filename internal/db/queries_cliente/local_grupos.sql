@@ -5,16 +5,16 @@
 -- name: ListGrupos :many
 SELECT g.id, g.nome, g.descricao, g.criado_em,
        (SELECT count(*) FROM local_grupo_itens i JOIN locais l ON l.id = i.local_id
-         WHERE i.grupo_id = g.id
+         WHERE i.grupo_id = g.id AND l.deleted_at IS NULL
            AND (sqlc.narg(somente_usuario)::bigint IS NULL OR usuario_ve_local(sqlc.narg(somente_usuario)::bigint, l.id, l.bairro_id, l.quarteirao_id))
            AND (NOT sqlc.arg(somente_pe)::boolean OR l.tipo = 'ponto_estrategico')
            AND (sqlc.arg(ver_desativados)::boolean OR l.ativo))::int AS total_locais
 FROM local_grupos g
-WHERE (sqlc.arg(busca)::text = '' OR position(lower(sqlc.arg(busca)::text) in lower(g.nome || ' ' || g.descricao)) > 0)
+WHERE g.deleted_at IS NULL AND (sqlc.arg(busca)::text = '' OR position(lower(sqlc.arg(busca)::text) in lower(g.nome || ' ' || g.descricao)) > 0)
 ORDER BY lower(g.nome);
 
 -- name: GetGrupo :one
-SELECT * FROM local_grupos WHERE id = $1;
+SELECT * FROM local_grupos WHERE id = $1 AND deleted_at IS NULL;
 
 -- name: CreateGrupo :one
 INSERT INTO local_grupos (nome, descricao, criado_por) VALUES ($1, $2, $3) RETURNING *;
@@ -22,12 +22,9 @@ INSERT INTO local_grupos (nome, descricao, criado_por) VALUES ($1, $2, $3) RETUR
 -- name: UpdateGrupo :one
 UPDATE local_grupos SET nome = $2, descricao = $3, atualizado_em = now() WHERE id = $1 RETURNING *;
 
--- name: DeleteGrupo :execrows
-DELETE FROM local_grupos WHERE id = $1;
-
 -- name: CountLocaisDoGrupo :one
 SELECT count(*)::int FROM local_grupo_itens i JOIN locais l ON l.id = i.local_id
-WHERE i.grupo_id = sqlc.arg(grupo_id)::bigint
+WHERE i.grupo_id = sqlc.arg(grupo_id)::bigint AND l.deleted_at IS NULL
   AND (sqlc.narg(somente_usuario)::bigint IS NULL OR usuario_ve_local(sqlc.narg(somente_usuario)::bigint, l.id, l.bairro_id, l.quarteirao_id))
   AND (NOT sqlc.arg(somente_pe)::boolean OR l.tipo = 'ponto_estrategico')
   AND (sqlc.arg(ver_desativados)::boolean OR l.ativo);
@@ -39,7 +36,7 @@ FROM local_grupo_itens i
 JOIN locais l ON l.id = i.local_id
 JOIN bairros b ON b.id = l.bairro_id
 JOIN quarteiroes q ON q.id = l.quarteirao_id
-WHERE i.grupo_id = sqlc.arg(grupo_id)::bigint
+WHERE i.grupo_id = sqlc.arg(grupo_id)::bigint AND l.deleted_at IS NULL
   AND (sqlc.narg(somente_usuario)::bigint IS NULL OR usuario_ve_local(sqlc.narg(somente_usuario)::bigint, l.id, l.bairro_id, l.quarteirao_id))
   AND (NOT sqlc.arg(somente_pe)::boolean OR l.tipo = 'ponto_estrategico')
   AND (sqlc.arg(ver_desativados)::boolean OR l.ativo)
@@ -49,7 +46,7 @@ LIMIT sqlc.arg(limite)::int OFFSET sqlc.arg(deslocamento)::int;
 -- name: AddLocaisAoGrupoPorFiltro :execrows
 INSERT INTO local_grupo_itens (grupo_id, local_id)
 SELECT sqlc.arg(grupo_id)::bigint, l.id FROM locais l
-WHERE l.ativo
+WHERE l.ativo AND l.deleted_at IS NULL
   AND l.bairro_id = sqlc.arg(bairro_id)::bigint
   AND (sqlc.narg(quarteirao_id)::bigint IS NULL OR l.quarteirao_id = sqlc.narg(quarteirao_id)::bigint)
   AND (sqlc.arg(tipo)::text = '' OR l.tipo = sqlc.arg(tipo)::text)
@@ -73,7 +70,7 @@ WHERE i.grupo_id = sqlc.arg(grupo_id)::bigint AND l.id = i.local_id
 -- name: CopyLocaisDoGrupo :execrows
 INSERT INTO local_grupo_itens (grupo_id, local_id)
 SELECT sqlc.arg(destino)::bigint, l.id FROM local_grupo_itens i JOIN locais l ON l.id = i.local_id
-WHERE i.grupo_id = sqlc.arg(origem)::bigint
+WHERE i.grupo_id = sqlc.arg(origem)::bigint AND l.deleted_at IS NULL
   AND (sqlc.narg(somente_usuario)::bigint IS NULL OR usuario_ve_local(sqlc.narg(somente_usuario)::bigint, l.id, l.bairro_id, l.quarteirao_id))
   AND (NOT sqlc.arg(somente_pe)::boolean OR l.tipo = 'ponto_estrategico')
   AND (sqlc.arg(ver_desativados)::boolean OR l.ativo)
@@ -81,13 +78,13 @@ ON CONFLICT DO NOTHING;
 
 -- name: ListGruposDoLocal :many
 SELECT g.id, g.nome FROM local_grupos g JOIN local_grupo_itens i ON i.grupo_id = g.id
-WHERE i.local_id = $1 ORDER BY lower(g.nome);
+WHERE i.local_id = $1 AND g.deleted_at IS NULL ORDER BY lower(g.nome);
 
 -- name: ListGruposParaEscolher :many
-SELECT id, nome FROM local_grupos ORDER BY lower(nome);
+SELECT id, nome FROM local_grupos WHERE deleted_at IS NULL ORDER BY lower(nome);
 
 -- name: ListAuditoriaDaEntidade :many
 SELECT * FROM auditoria WHERE entidade = $1 AND entidade_id = $2 ORDER BY quando DESC, id DESC LIMIT $3;
 
 -- name: NomeDeGrupoExiste :one
-SELECT EXISTS (SELECT 1 FROM local_grupos WHERE lower(nome) = lower($1));
+SELECT EXISTS (SELECT 1 FROM local_grupos WHERE lower(nome) = lower($1) AND deleted_at IS NULL);

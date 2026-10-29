@@ -93,7 +93,7 @@ func TestListasDePapeisEUsuarios(t *testing.T) {
 	m := novoMundo(t)
 	ana := m.comAna(t)
 
-	quer(t, ana.get("/papeis"), http.StatusOK, "Administrador", "160", "Novo papel")
+	quer(t, ana.get("/papeis"), http.StatusOK, "Administrador", "163", "Novo papel")
 	quer(t, ana.get("/usuarios"), http.StatusOK, "Ana Souza", "você", "Bruno Lima", "Troca de senha pendente", "Novo usuário")
 	// O menu mostra as duas opções.
 	corpo := ana.get("/").Body.String()
@@ -132,8 +132,8 @@ func TestEditorDePermissoesMostraBlocosEBusca(t *testing.T) {
 	if n := strings.Count(rec.Body.String(), `<details class="bloco"`); n != 23 {
 		t.Errorf("blocos = %d, quer 23", n)
 	}
-	if n := strings.Count(rec.Body.String(), `name="perm"`); n != 171 {
-		t.Errorf("caixas de permissão = %d, quer 171", n)
+	if n := strings.Count(rec.Body.String(), `name="perm"`); n != 174 {
+		t.Errorf("caixas de permissão = %d, quer 174", n)
 	}
 	// Ana não tem as restritivas, então não pode concedê-las: aparecem desabilitadas.
 	if !regexp.MustCompile(`value="visita_visualizar_minha"[^>]*disabled`).MatchString(rec.Body.String()) {

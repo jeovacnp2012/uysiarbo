@@ -18,9 +18,14 @@ type Catalog interface {
 	ListClientes(ctx context.Context) ([]sqlc.Cliente, error)
 }
 
+// avisosPorCodigo são as mensagens de sucesso que uma tela pode pedir pela URL (?aviso=codigo): só texto fixo daqui.
+var avisosPorCodigo = map[string]string{
+	"excluido": "Enviado para a Lixeira. Dá para restaurar em Administração → Lixeira.",
+}
+
 // layout monta o layout da página; no endereço de um cliente, mostra o nome dele no menu.
 func (s *handlers) layout(r *http.Request, title, active string) views.Layout {
-	l := views.Layout{Title: title, Active: active, Nav: s.menu(r), CSRF: csrfToken(r.Context())}
+	l := views.Layout{Title: title, Active: active, Nav: s.menu(r), CSRF: csrfToken(r.Context()), Aviso: avisosPorCodigo[r.URL.Query().Get("aviso")]}
 	if id, versao := s.ultimaVersao(r.Context()); versao != "" {
 		l.Versao = versao
 		if a, ok := authFrom(r.Context()); ok && a.sess != nil {

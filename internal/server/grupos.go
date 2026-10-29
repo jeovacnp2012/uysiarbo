@@ -239,17 +239,12 @@ func (h *handlers) grupoSalvar(w http.ResponseWriter, r *http.Request) {
 func s64txt(n int64) string { return strconv.FormatInt(n, 10) }
 
 func (h *handlers) grupoExcluir(w http.ResponseWriter, r *http.Request) {
-	g, q, ok := h.grupoDaURL(w, r)
+	g, _, ok := h.grupoDaURL(w, r)
 	if !ok {
 		return
 	}
-	if _, err := q.DeleteGrupo(r.Context(), g.ID); err != nil {
-		h.falhaInterna(w, r, "excluir grupo", err)
-		return
-	}
-	// só o grupo some: os locais continuam cadastrados
-	h.auditar(r, audit.Evento{Acao: "grupo.excluir", Entidade: "grupo", EntidadeID: s64txt(g.ID), Rotulo: g.Nome, Antes: map[string]any{"nome": g.Nome, "descricao": g.Descricao}})
-	http.Redirect(w, r, "/grupos?ok=excluido", http.StatusSeeOther)
+	// exclusão lógica: o grupo vai para a Lixeira (os locais continuam cadastrados e podem voltar ao grupo restaurado)
+	h.excluirRegistro(w, r, "grupo", g.ID, "/grupos?aviso=excluido", "/grupos/"+s64txt(g.ID))
 }
 
 // grupoClonar cria "Cópia de X" com os locais que a pessoa enxerga.

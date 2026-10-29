@@ -66,6 +66,7 @@ type handlers struct {
 	mapaTiles, mapaCredito string
 	geocoder               geocode.Geocoder
 	api                    *apiEstado
+	imp                    *motorImp
 
 	tenants  *tenant.Service
 	resolver *tenant.Resolver
@@ -90,6 +91,7 @@ func New(d Deps) http.Handler {
 		h.mapaTiles, h.mapaCredito = "https://tile.openstreetmap.org/{z}/{x}/{y}.png", "© contribuidores do OpenStreetMap"
 	}
 	h.presenca = &presenca.Registro{}
+	h.imp = &motorImp{}
 	h.api = &apiEstado{chave: d.APIKey, tocadoEm: map[int64]time.Time{}}
 
 	r := chi.NewRouter()
@@ -156,6 +158,28 @@ func New(d Deps) http.Handler {
 	r.Get("/mapa/bairros.geojson", h.exigir("bairro_visualizar", h.mapaBairros))
 	r.Get("/mapa/quarteiroes.geojson", h.exigir("bairro_visualizar", h.mapaQuarteiroes))
 	r.Get("/mapa/locais.geojson", h.exigir("local_visualizar", h.mapaLocais))
+
+	r.Get("/lixeira", h.exigir("conf_lixeira", h.lixeiraPagina))
+	r.Post("/lixeira/{tipo}/{id}/restaurar", h.exigir("conf_lixeira", h.lixeiraRestaurar))
+	r.Post("/lixeira/{tipo}/{id}/excluir-definitivo", h.exigir("conf_exclusao_definitiva", h.lixeiraExcluirDefinitivo))
+	r.Post("/cidades/{id}/excluir", h.exigir("bairro_adicionar", h.cidadeExcluir))
+	r.Post("/bairros/{id}/excluir", h.exigir("bairro_adicionar", h.bairroExcluir))
+	r.Post("/bairros/{id}/quarteiroes/{qid}/excluir", h.exigir("bairro_adicionar", h.quarteiraoExcluir))
+	r.Post("/locais/{id}/excluir", h.exigir("local_adicionar", h.localExcluir))
+
+	r.Get("/importacoes", h.exigir("conf_importacao", h.importacoesLista))
+	r.Get("/importacoes/nova", h.exigir("conf_importacao", h.importacaoNova))
+	r.Get("/importacoes/modelo/{arquivo}", h.exigir("conf_importacao", h.importacaoModelo))
+	r.Post("/importacoes", h.exigir("conf_importacao", h.importacaoEnviar))
+	r.Get("/importacoes/{id}", h.exigir("conf_importacao", h.importacaoFicha))
+	r.Get("/importacoes/{id}/progresso", h.exigir("conf_importacao", h.importacaoProgresso))
+	r.Get("/importacoes/{id}/relatorio.csv", h.exigir("conf_importacao", h.importacaoRelatorio))
+	r.Get("/importacoes/{id}/erros.csv", h.exigir("conf_importacao", h.importacaoErros))
+	r.Post("/importacoes/{id}/executar", h.exigir("conf_importacao", h.importacaoExecutar))
+	r.Post("/importacoes/{id}/retomar", h.exigir("conf_importacao", h.importacaoRetomar))
+	r.Post("/importacoes/{id}/interromper", h.exigir("conf_importacao", h.importacaoInterromper))
+	r.Post("/importacoes/{id}/cancelar", h.exigir("conf_importacao", h.importacaoCancelar))
+	r.Post("/importacoes/{id}/desfazer", h.exigir("conf_importacao", h.importacaoDesfazer))
 
 	r.Get("/parametros/api", h.exigir("conf_api", h.apiListaPagina))
 	r.Get("/parametros/api/nova", h.exigir("conf_api", h.apiNovaForm))

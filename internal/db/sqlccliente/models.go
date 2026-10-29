@@ -94,6 +94,8 @@ type Bairro struct {
 	CriadoEm        pgtype.Timestamptz `json:"criado_em"`
 	AtualizadoEm    pgtype.Timestamptz `json:"atualizado_em"`
 	IDExterno       pgtype.Text        `json:"id_externo"`
+	DeletedAt       pgtype.Timestamptz `json:"deleted_at"`
+	DeletedBy       pgtype.Int8        `json:"deleted_by"`
 }
 
 type BairroGeometria struct {
@@ -115,12 +117,58 @@ type Cidade struct {
 	Ativo        bool               `json:"ativo"`
 	CriadoEm     pgtype.Timestamptz `json:"criado_em"`
 	AtualizadoEm pgtype.Timestamptz `json:"atualizado_em"`
+	DeletedAt    pgtype.Timestamptz `json:"deleted_at"`
+	DeletedBy    pgtype.Int8        `json:"deleted_by"`
 }
 
 type ClienteInfo struct {
 	Chave    string             `json:"chave"`
 	Valor    string             `json:"valor"`
 	CriadoEm pgtype.Timestamptz `json:"criado_em"`
+}
+
+type ImportacaoLinha struct {
+	ImportacaoID int64       `json:"importacao_id"`
+	Linha        int32       `json:"linha"`
+	Acao         string      `json:"acao"`
+	Mensagem     string      `json:"mensagem"`
+	AlvoID       pgtype.Int8 `json:"alvo_id"`
+	Dados        []byte      `json:"dados"`
+	Antes        []byte      `json:"antes"`
+	Original     []byte      `json:"original"`
+	Resultado    pgtype.Text `json:"resultado"`
+	ResultadoMsg string      `json:"resultado_msg"`
+	RegistroID   pgtype.Int8 `json:"registro_id"`
+}
+
+type Importaco struct {
+	ID                  int64              `json:"id"`
+	Tipo                string             `json:"tipo"`
+	Origem              string             `json:"origem"`
+	ArquivoNome         string             `json:"arquivo_nome"`
+	ArquivoHash         []byte             `json:"arquivo_hash"`
+	AtualizarExistentes bool               `json:"atualizar_existentes"`
+	Status              string             `json:"status"`
+	TotalLinhas         int32              `json:"total_linhas"`
+	PrevCriar           int32              `json:"prev_criar"`
+	PrevAtualizar       int32              `json:"prev_atualizar"`
+	PrevIgnorar         int32              `json:"prev_ignorar"`
+	PrevErro            int32              `json:"prev_erro"`
+	Processadas         int32              `json:"processadas"`
+	Criados             int32              `json:"criados"`
+	Atualizados         int32              `json:"atualizados"`
+	Ignorados           int32              `json:"ignorados"`
+	Erros               int32              `json:"erros"`
+	Desfeitos           int32              `json:"desfeitos"`
+	ColunasIgnoradas    string             `json:"colunas_ignoradas"`
+	ResponsavelID       pgtype.Int8        `json:"responsavel_id"`
+	ResponsavelNome     string             `json:"responsavel_nome"`
+	Mensagem            string             `json:"mensagem"`
+	CriadoEm            pgtype.Timestamptz `json:"criado_em"`
+	IniciadoEm          pgtype.Timestamptz `json:"iniciado_em"`
+	ConcluidoEm         pgtype.Timestamptz `json:"concluido_em"`
+	DesfeitoEm          pgtype.Timestamptz `json:"desfeito_em"`
+	Cabecalho           []byte             `json:"cabecalho"`
 }
 
 type Locai struct {
@@ -156,6 +204,8 @@ type Locai struct {
 	AtualizadoEm         pgtype.Timestamptz `json:"atualizado_em"`
 	QrChave              string             `json:"qr_chave"`
 	IDExterno            pgtype.Text        `json:"id_externo"`
+	DeletedAt            pgtype.Timestamptz `json:"deleted_at"`
+	DeletedBy            pgtype.Int8        `json:"deleted_by"`
 }
 
 type LocalGrupo struct {
@@ -165,6 +215,8 @@ type LocalGrupo struct {
 	CriadoPor    pgtype.Int8        `json:"criado_por"`
 	CriadoEm     pgtype.Timestamptz `json:"criado_em"`
 	AtualizadoEm pgtype.Timestamptz `json:"atualizado_em"`
+	DeletedAt    pgtype.Timestamptz `json:"deleted_at"`
+	DeletedBy    pgtype.Int8        `json:"deleted_by"`
 }
 
 type LocalGrupoIten struct {
@@ -201,6 +253,8 @@ type Quarteiro struct {
 	CriadoEm     pgtype.Timestamptz `json:"criado_em"`
 	IDExterno    pgtype.Text        `json:"id_externo"`
 	AtualizadoEm pgtype.Timestamptz `json:"atualizado_em"`
+	DeletedAt    pgtype.Timestamptz `json:"deleted_at"`
+	DeletedBy    pgtype.Int8        `json:"deleted_by"`
 }
 
 type Sesso struct {

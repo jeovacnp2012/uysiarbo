@@ -1,15 +1,16 @@
 -- ---------------------------------------------------------------- Cidades
 
 -- name: ListCidades :many
-SELECT c.*, (SELECT count(*) FROM bairros b WHERE b.cidade_id = c.id)::int AS total_bairros
+SELECT c.*, (SELECT count(*) FROM bairros b WHERE b.cidade_id = c.id AND b.deleted_at IS NULL)::int AS total_bairros
 FROM cidades c
+WHERE c.deleted_at IS NULL
 ORDER BY lower(c.nome), c.uf;
 
 -- name: ListCidadesAtivas :many
-SELECT * FROM cidades WHERE ativo ORDER BY lower(nome), uf;
+SELECT * FROM cidades WHERE ativo AND deleted_at IS NULL ORDER BY lower(nome), uf;
 
 -- name: GetCidade :one
-SELECT * FROM cidades WHERE id = $1;
+SELECT * FROM cidades WHERE id = $1 AND deleted_at IS NULL;
 
 -- name: CreateCidade :one
 INSERT INTO cidades (nome, uf, ibge) VALUES ($1, $2, $3) RETURNING *;
@@ -24,13 +25,13 @@ RETURNING *;
 -- name: ListBairros :many
 SELECT b.id, b.cidade_id, b.nome, b.mutirao, b.status, b.categoria, b.classificacao,
        c.nome AS cidade_nome, c.uf AS cidade_uf,
-       (SELECT count(*) FROM quarteiroes q WHERE q.bairro_id = b.id)::int AS total_quarteiroes,
+       (SELECT count(*) FROM quarteiroes q WHERE q.bairro_id = b.id AND q.deleted_at IS NULL)::int AS total_quarteiroes,
        COALESCE((SELECT string_agg(u.nome, ', ' ORDER BY u.nome)
                  FROM bairro_responsaveis r JOIN usuarios u ON u.id = r.usuario_id
                  WHERE r.bairro_id = b.id), '')::text AS responsaveis
 FROM bairros b
 JOIN cidades c ON c.id = b.cidade_id
-WHERE (sqlc.arg(busca)::text = '' OR position(lower(sqlc.arg(busca)::text) in lower(b.nome)) > 0)
+WHERE b.deleted_at IS NULL AND (sqlc.arg(busca)::text = '' OR position(lower(sqlc.arg(busca)::text) in lower(b.nome)) > 0)
   AND (sqlc.narg(cidade_id)::bigint IS NULL OR b.cidade_id = sqlc.narg(cidade_id)::bigint)
   AND (sqlc.arg(status)::text = '' OR b.status = sqlc.arg(status)::text)
   AND (sqlc.arg(categoria)::text = '' OR b.categoria = sqlc.arg(categoria)::text)
@@ -41,14 +42,14 @@ LIMIT sqlc.arg(limite)::int OFFSET sqlc.arg(deslocamento)::int;
 -- name: CountBairros :one
 SELECT count(*)::int
 FROM bairros b
-WHERE (sqlc.arg(busca)::text = '' OR position(lower(sqlc.arg(busca)::text) in lower(b.nome)) > 0)
+WHERE b.deleted_at IS NULL AND (sqlc.arg(busca)::text = '' OR position(lower(sqlc.arg(busca)::text) in lower(b.nome)) > 0)
   AND (sqlc.narg(cidade_id)::bigint IS NULL OR b.cidade_id = sqlc.narg(cidade_id)::bigint)
   AND (sqlc.arg(status)::text = '' OR b.status = sqlc.arg(status)::text)
   AND (sqlc.arg(categoria)::text = '' OR b.categoria = sqlc.arg(categoria)::text)
   AND (sqlc.narg(somente_usuario)::bigint IS NULL OR usuario_ve_bairro(sqlc.narg(somente_usuario)::bigint, b.id));
 
 -- name: GetBairro :one
-SELECT * FROM bairros WHERE id = $1;
+SELECT * FROM bairros WHERE id = $1 AND deleted_at IS NULL;
 
 -- name: CreateBairro :one
 INSERT INTO bairros (cidade_id, nome, mutirao, status, ibge, classificacao, zona, categoria,
@@ -81,22 +82,22 @@ SELECT id, nome, email FROM usuarios WHERE ativo ORDER BY lower(nome);
 -- ------------------------------------------------------------ Quarteirões
 
 -- name: ListQuarteiroesDoBairro :many
-SELECT * FROM quarteiroes WHERE bairro_id = $1
+SELECT * FROM quarteiroes WHERE bairro_id = $1 AND deleted_at IS NULL
 ORDER BY NULLIF(regexp_replace(nome, '\D', '', 'g'), '')::bigint NULLS LAST, lower(nome);
 
 -- name: CreateQuarteirao :execrows
 INSERT INTO quarteiroes (bairro_id, nome) VALUES ($1, $2)
-ON CONFLICT (bairro_id, lower(nome)) DO NOTHING;
+ON CONFLICT (bairro_id, lower(nome)) WHERE deleted_at IS NULL DO NOTHING;
 
 -- name: GetQuarteirao :one
-SELECT * FROM quarteiroes WHERE id = $1;
+SELECT * FROM quarteiroes WHERE id = $1 AND deleted_at IS NULL;
 
 -- name: SetQuarteiraoAtivo :execrows
 UPDATE quarteiroes SET ativo = $3, atualizado_em = now() WHERE id = $1 AND bairro_id = $2;
 
 -- name: ListQuarteiroesVisiveisDoBairro :many
 SELECT q.* FROM quarteiroes q
-WHERE q.bairro_id = sqlc.arg(bairro_id)::bigint
+WHERE q.bairro_id = sqlc.arg(bairro_id)::bigint AND q.deleted_at IS NULL
   AND (sqlc.narg(somente_usuario)::bigint IS NULL OR usuario_ve_quarteirao(sqlc.narg(somente_usuario)::bigint, q.id, q.bairro_id))
 ORDER BY NULLIF(regexp_replace(q.nome, '\D', '', 'g'), '')::bigint NULLS LAST, lower(q.nome);
 
@@ -104,7 +105,7 @@ ORDER BY NULLIF(regexp_replace(q.nome, '\D', '', 'g'), '')::bigint NULLS LAST, l
 SELECT usuario_ve_bairro(sqlc.arg(usuario)::bigint, sqlc.arg(bairro)::bigint)::boolean;
 
 -- name: UsuarioVeQuarteirao :one
-SELECT usuario_ve_quarteirao(sqlc.arg(usuario)::bigint, q.id, q.bairro_id)::boolean FROM quarteiroes q WHERE q.id = sqlc.arg(quarteirao)::bigint;
+SELECT usuario_ve_quarteirao(sqlc.arg(usuario)::bigint, q.id, q.bairro_id)::boolean FROM quarteiroes q WHERE q.id = sqlc.arg(quarteirao)::bigint AND q.deleted_at IS NULL;
 
 -- name: UsuarioVeLocal :one
-SELECT usuario_ve_local(sqlc.arg(usuario)::bigint, l.id, l.bairro_id, l.quarteirao_id)::boolean FROM locais l WHERE l.id = sqlc.arg(local)::bigint;
+SELECT usuario_ve_local(sqlc.arg(usuario)::bigint, l.id, l.bairro_id, l.quarteirao_id)::boolean FROM locais l WHERE l.id = sqlc.arg(local)::bigint AND l.deleted_at IS NULL;

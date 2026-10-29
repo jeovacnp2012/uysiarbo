@@ -319,7 +319,7 @@ func (q *Queries) ListApiCredenciais(ctx context.Context) ([]ListApiCredenciaisR
 
 const listCidadesApi = `-- name: ListCidadesApi :many
 
-SELECT id, nome, uf, ibge, ativo, criado_em, atualizado_em FROM cidades WHERE id > $1 ORDER BY id LIMIT $2
+SELECT id, nome, uf, ibge, ativo, criado_em, atualizado_em, deleted_at, deleted_by FROM cidades WHERE id > $1 AND deleted_at IS NULL ORDER BY id LIMIT $2
 `
 
 type ListCidadesApiParams struct {
@@ -345,6 +345,8 @@ func (q *Queries) ListCidadesApi(ctx context.Context, arg ListCidadesApiParams) 
 			&i.Ativo,
 			&i.CriadoEm,
 			&i.AtualizadoEm,
+			&i.DeletedAt,
+			&i.DeletedBy,
 		); err != nil {
 			return nil, err
 		}

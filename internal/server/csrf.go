@@ -5,8 +5,10 @@ import (
 	"crypto/rand"
 	"crypto/subtle"
 	"encoding/base64"
+	"errors"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 const csrfCookie = "uysi_csrf"
@@ -48,7 +50,20 @@ func csrf(next http.Handler) http.Handler {
 			}
 			enviado := r.Header.Get("X-CSRF-Token")
 			if enviado == "" {
-				_ = r.ParseForm()
+				if strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/form-data") {
+					// envio de arquivo: o token vem num campo do formulário, que só aparece depois de ler o corpo
+					// (com limite, já que isso acontece antes do login ser conferido)
+					r.Body = http.MaxBytesReader(w, r.Body, 16<<20)
+					if err := r.ParseMultipartForm(1 << 20); err != nil {
+						var grande *http.MaxBytesError
+						if errors.As(err, &grande) {
+							http.Error(w, "Arquivo grande demais.", http.StatusRequestEntityTooLarge)
+							return
+						}
+					}
+				} else {
+					_ = r.ParseForm()
+				}
 				enviado = r.PostFormValue("csrf")
 			}
 			if token == "" || subtle.ConstantTimeCompare([]byte(enviado), []byte(token)) != 1 {

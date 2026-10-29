@@ -216,3 +216,6 @@ auditoria_sistema|Histórico geral do sistema|
 conf_usuario|Usuário|
 conf_papel|Papel de usuário|
 conf_api|API e integrações|
+conf_importacao|Importação de dados|
+conf_lixeira|Lixeira (ver e restaurar)|
+conf_exclusao_definitiva|Excluir definitivamente (force delete)|

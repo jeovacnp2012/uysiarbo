@@ -14,7 +14,7 @@ import (
 const addLocaisAoGrupoPorFiltro = `-- name: AddLocaisAoGrupoPorFiltro :execrows
 INSERT INTO local_grupo_itens (grupo_id, local_id)
 SELECT $1::bigint, l.id FROM locais l
-WHERE l.ativo
+WHERE l.ativo AND l.deleted_at IS NULL
   AND l.bairro_id = $2::bigint
   AND ($3::bigint IS NULL OR l.quarteirao_id = $3::bigint)
   AND ($4::text = '' OR l.tipo = $4::text)
@@ -95,7 +95,7 @@ func (q *Queries) ClearLocaisDoGrupo(ctx context.Context, arg ClearLocaisDoGrupo
 const copyLocaisDoGrupo = `-- name: CopyLocaisDoGrupo :execrows
 INSERT INTO local_grupo_itens (grupo_id, local_id)
 SELECT $1::bigint, l.id FROM local_grupo_itens i JOIN locais l ON l.id = i.local_id
-WHERE i.grupo_id = $2::bigint
+WHERE i.grupo_id = $2::bigint AND l.deleted_at IS NULL
   AND ($3::bigint IS NULL OR usuario_ve_local($3::bigint, l.id, l.bairro_id, l.quarteirao_id))
   AND (NOT $4::boolean OR l.tipo = 'ponto_estrategico')
   AND ($5::boolean OR l.ativo)
@@ -126,7 +126,7 @@ func (q *Queries) CopyLocaisDoGrupo(ctx context.Context, arg CopyLocaisDoGrupoPa
 
 const countLocaisDoGrupo = `-- name: CountLocaisDoGrupo :one
 SELECT count(*)::int FROM local_grupo_itens i JOIN locais l ON l.id = i.local_id
-WHERE i.grupo_id = $1::bigint
+WHERE i.grupo_id = $1::bigint AND l.deleted_at IS NULL
   AND ($2::bigint IS NULL OR usuario_ve_local($2::bigint, l.id, l.bairro_id, l.quarteirao_id))
   AND (NOT $3::boolean OR l.tipo = 'ponto_estrategico')
   AND ($4::boolean OR l.ativo)
@@ -152,7 +152,7 @@ func (q *Queries) CountLocaisDoGrupo(ctx context.Context, arg CountLocaisDoGrupo
 }
 
 const createGrupo = `-- name: CreateGrupo :one
-INSERT INTO local_grupos (nome, descricao, criado_por) VALUES ($1, $2, $3) RETURNING id, nome, descricao, criado_por, criado_em, atualizado_em
+INSERT INTO local_grupos (nome, descricao, criado_por) VALUES ($1, $2, $3) RETURNING id, nome, descricao, criado_por, criado_em, atualizado_em, deleted_at, deleted_by
 `
 
 type CreateGrupoParams struct {
@@ -171,24 +171,14 @@ func (q *Queries) CreateGrupo(ctx context.Context, arg CreateGrupoParams) (Local
 		&i.CriadoPor,
 		&i.CriadoEm,
 		&i.AtualizadoEm,
+		&i.DeletedAt,
+		&i.DeletedBy,
 	)
 	return i, err
 }
 
-const deleteGrupo = `-- name: DeleteGrupo :execrows
-DELETE FROM local_grupos WHERE id = $1
-`
-
-func (q *Queries) DeleteGrupo(ctx context.Context, id int64) (int64, error) {
-	result, err := q.db.Exec(ctx, deleteGrupo, id)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected(), nil
-}
-
 const getGrupo = `-- name: GetGrupo :one
-SELECT id, nome, descricao, criado_por, criado_em, atualizado_em FROM local_grupos WHERE id = $1
+SELECT id, nome, descricao, criado_por, criado_em, atualizado_em, deleted_at, deleted_by FROM local_grupos WHERE id = $1 AND deleted_at IS NULL
 `
 
 func (q *Queries) GetGrupo(ctx context.Context, id int64) (LocalGrupo, error) {
@@ -201,6 +191,8 @@ func (q *Queries) GetGrupo(ctx context.Context, id int64) (LocalGrupo, error) {
 		&i.CriadoPor,
 		&i.CriadoEm,
 		&i.AtualizadoEm,
+		&i.DeletedAt,
+		&i.DeletedBy,
 	)
 	return i, err
 }
@@ -256,12 +248,12 @@ const listGrupos = `-- name: ListGrupos :many
 
 SELECT g.id, g.nome, g.descricao, g.criado_em,
        (SELECT count(*) FROM local_grupo_itens i JOIN locais l ON l.id = i.local_id
-         WHERE i.grupo_id = g.id
+         WHERE i.grupo_id = g.id AND l.deleted_at IS NULL
            AND ($1::bigint IS NULL OR usuario_ve_local($1::bigint, l.id, l.bairro_id, l.quarteirao_id))
            AND (NOT $2::boolean OR l.tipo = 'ponto_estrategico')
            AND ($3::boolean OR l.ativo))::int AS total_locais
 FROM local_grupos g
-WHERE ($4::text = '' OR position(lower($4::text) in lower(g.nome || ' ' || g.descricao)) > 0)
+WHERE g.deleted_at IS NULL AND ($4::text = '' OR position(lower($4::text) in lower(g.nome || ' ' || g.descricao)) > 0)
 ORDER BY lower(g.nome)
 `
 
@@ -316,7 +308,7 @@ func (q *Queries) ListGrupos(ctx context.Context, arg ListGruposParams) ([]ListG
 
 const listGruposDoLocal = `-- name: ListGruposDoLocal :many
 SELECT g.id, g.nome FROM local_grupos g JOIN local_grupo_itens i ON i.grupo_id = g.id
-WHERE i.local_id = $1 ORDER BY lower(g.nome)
+WHERE i.local_id = $1 AND g.deleted_at IS NULL ORDER BY lower(g.nome)
 `
 
 type ListGruposDoLocalRow struct {
@@ -345,7 +337,7 @@ func (q *Queries) ListGruposDoLocal(ctx context.Context, localID int64) ([]ListG
 }
 
 const listGruposParaEscolher = `-- name: ListGruposParaEscolher :many
-SELECT id, nome FROM local_grupos ORDER BY lower(nome)
+SELECT id, nome FROM local_grupos WHERE deleted_at IS NULL ORDER BY lower(nome)
 `
 
 type ListGruposParaEscolherRow struct {
@@ -380,7 +372,7 @@ FROM local_grupo_itens i
 JOIN locais l ON l.id = i.local_id
 JOIN bairros b ON b.id = l.bairro_id
 JOIN quarteiroes q ON q.id = l.quarteirao_id
-WHERE i.grupo_id = $1::bigint
+WHERE i.grupo_id = $1::bigint AND l.deleted_at IS NULL
   AND ($2::bigint IS NULL OR usuario_ve_local($2::bigint, l.id, l.bairro_id, l.quarteirao_id))
   AND (NOT $3::boolean OR l.tipo = 'ponto_estrategico')
   AND ($4::boolean OR l.ativo)
@@ -457,7 +449,7 @@ func (q *Queries) ListLocaisDoGrupo(ctx context.Context, arg ListLocaisDoGrupoPa
 }
 
 const nomeDeGrupoExiste = `-- name: NomeDeGrupoExiste :one
-SELECT EXISTS (SELECT 1 FROM local_grupos WHERE lower(nome) = lower($1))
+SELECT EXISTS (SELECT 1 FROM local_grupos WHERE lower(nome) = lower($1) AND deleted_at IS NULL)
 `
 
 func (q *Queries) NomeDeGrupoExiste(ctx context.Context, lower string) (bool, error) {
@@ -485,7 +477,7 @@ func (q *Queries) RemoveLocalDoGrupo(ctx context.Context, arg RemoveLocalDoGrupo
 }
 
 const updateGrupo = `-- name: UpdateGrupo :one
-UPDATE local_grupos SET nome = $2, descricao = $3, atualizado_em = now() WHERE id = $1 RETURNING id, nome, descricao, criado_por, criado_em, atualizado_em
+UPDATE local_grupos SET nome = $2, descricao = $3, atualizado_em = now() WHERE id = $1 RETURNING id, nome, descricao, criado_por, criado_em, atualizado_em, deleted_at, deleted_by
 `
 
 type UpdateGrupoParams struct {
@@ -504,6 +496,8 @@ func (q *Queries) UpdateGrupo(ctx context.Context, arg UpdateGrupoParams) (Local
 		&i.CriadoPor,
 		&i.CriadoEm,
 		&i.AtualizadoEm,
+		&i.DeletedAt,
+		&i.DeletedBy,
 	)
 	return i, err
 }

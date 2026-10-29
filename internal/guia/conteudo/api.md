@@ -27,7 +27,7 @@ Têm a forma `recurso:read` e `recurso:write`; **gravar não dá direito de ler*
 ## Território: bairros, quarteirões e locais
 Cada recurso tem listar (`GET /api/v1/locais`), buscar (`GET /api/v1/locais/{id}`), criar (`POST`) e alterar (`PATCH`, só os campos enviados; `null` limpa um campo opcional). Os campos estão no contrato OpenAPI. Algumas regras:
 
-- **A API não apaga nada.** Para tirar um local ou quarteirão de uso, grave `"ativo": false`; ele continua nas listas, marcado como inativo.
+- **A API não apaga nada.** Para tirar um local ou quarteirão de uso, grave `"ativo": false`; ele continua nas listas, marcado como inativo. Registros **excluídos** no sistema (que vão para a Lixeira) somem das listas comuns e da busca por id; na **sincronização** (`updated_since`) eles aparecem com o campo **`excluido_em`** preenchido, para o aplicativo removê-los do tablet.
 - **As mesmas regras das telas valem na API**: endereço sem repetição no quarteirão, quarteirão do bairro escolhido, latitude e longitude juntas, etc. Quem erra recebe `422 validation_error` com a explicação, ou `409 conflict` para repetição.
 - **O CPF do proprietário não passa pela API**: nem sai nas leituras, nem entra nas gravações; o que já está cadastrado é preservado quando o local é alterado.
 - **O que a API altera aparece na Auditoria**, com o nome da credencial.

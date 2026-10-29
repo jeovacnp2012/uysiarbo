@@ -156,7 +156,7 @@ func TestGrupoAcrescentarRetirarEExcluir(t *testing.T) {
 
 	// Excluir o grupo não apaga os locais.
 	rec = ana.post("/grupos/"+id+"/excluir", url.Values{})
-	if rec.Code != http.StatusSeeOther || local(rec) != "/grupos?ok=excluido" {
+	if rec.Code != http.StatusSeeOther || local(rec) != "/grupos?aviso=excluido" {
 		t.Fatalf("excluir: %d %q", rec.Code, local(rec))
 	}
 	quer(t, ana.get("/grupos/"+id), http.StatusNotFound)

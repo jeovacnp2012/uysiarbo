@@ -14,7 +14,7 @@ import (
 const countLocais = `-- name: CountLocais :one
 SELECT count(*)::int
 FROM locais l
-WHERE ($1::text = '' OR position(lower($1::text) in lower(l.endereco || ' ' || l.numero || ' ' || l.proprietario)) > 0)
+WHERE l.deleted_at IS NULL AND ($1::text = '' OR position(lower($1::text) in lower(l.endereco || ' ' || l.numero || ' ' || l.proprietario)) > 0)
   AND ($2::bigint IS NULL OR l.bairro_id = $2::bigint)
   AND ($3::text = '' OR l.tipo = $3::text)
   AND ($4::text = '' OR l.ativo = ($4::text = 'ativo'))
@@ -54,7 +54,7 @@ INSERT INTO locais (tipo, cep, endereco, numero, referencia, bairro_id, quarteir
                     proprietario_email, aceita_whatsapp, aceita_email, inquilino, inquilino_telefone,
                     humanos, cachorros, gatos, roedores, criado_por)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26)
-RETURNING id, tipo, cep, endereco, numero, referencia, bairro_id, quarteirao_id, lado, sequencia, complemento, latitude, longitude, proprietario, proprietario_telefone, proprietario_cpf, proprietario_whatsapp, proprietario_email, aceita_whatsapp, aceita_email, inquilino, inquilino_telefone, humanos, cachorros, gatos, roedores, ativo, criado_por, criado_em, atualizado_em, qr_chave, id_externo
+RETURNING id, tipo, cep, endereco, numero, referencia, bairro_id, quarteirao_id, lado, sequencia, complemento, latitude, longitude, proprietario, proprietario_telefone, proprietario_cpf, proprietario_whatsapp, proprietario_email, aceita_whatsapp, aceita_email, inquilino, inquilino_telefone, humanos, cachorros, gatos, roedores, ativo, criado_por, criado_em, atualizado_em, qr_chave, id_externo, deleted_at, deleted_by
 `
 
 type CreateLocalParams struct {
@@ -149,6 +149,8 @@ func (q *Queries) CreateLocal(ctx context.Context, arg CreateLocalParams) (Locai
 		&i.AtualizadoEm,
 		&i.QrChave,
 		&i.IDExterno,
+		&i.DeletedAt,
+		&i.DeletedBy,
 	)
 	return i, err
 }
@@ -188,7 +190,7 @@ func (q *Queries) CreateLocalLote(ctx context.Context, arg CreateLocalLoteParams
 }
 
 const getLocal = `-- name: GetLocal :one
-SELECT id, tipo, cep, endereco, numero, referencia, bairro_id, quarteirao_id, lado, sequencia, complemento, latitude, longitude, proprietario, proprietario_telefone, proprietario_cpf, proprietario_whatsapp, proprietario_email, aceita_whatsapp, aceita_email, inquilino, inquilino_telefone, humanos, cachorros, gatos, roedores, ativo, criado_por, criado_em, atualizado_em, qr_chave, id_externo FROM locais WHERE id = $1
+SELECT id, tipo, cep, endereco, numero, referencia, bairro_id, quarteirao_id, lado, sequencia, complemento, latitude, longitude, proprietario, proprietario_telefone, proprietario_cpf, proprietario_whatsapp, proprietario_email, aceita_whatsapp, aceita_email, inquilino, inquilino_telefone, humanos, cachorros, gatos, roedores, ativo, criado_por, criado_em, atualizado_em, qr_chave, id_externo, deleted_at, deleted_by FROM locais WHERE id = $1 AND deleted_at IS NULL
 `
 
 func (q *Queries) GetLocal(ctx context.Context, id int64) (Locai, error) {
@@ -227,12 +229,14 @@ func (q *Queries) GetLocal(ctx context.Context, id int64) (Locai, error) {
 		&i.AtualizadoEm,
 		&i.QrChave,
 		&i.IDExterno,
+		&i.DeletedAt,
+		&i.DeletedBy,
 	)
 	return i, err
 }
 
 const getLocalPorChave = `-- name: GetLocalPorChave :one
-SELECT id, tipo, cep, endereco, numero, referencia, bairro_id, quarteirao_id, lado, sequencia, complemento, latitude, longitude, proprietario, proprietario_telefone, proprietario_cpf, proprietario_whatsapp, proprietario_email, aceita_whatsapp, aceita_email, inquilino, inquilino_telefone, humanos, cachorros, gatos, roedores, ativo, criado_por, criado_em, atualizado_em, qr_chave, id_externo FROM locais WHERE qr_chave = $1
+SELECT id, tipo, cep, endereco, numero, referencia, bairro_id, quarteirao_id, lado, sequencia, complemento, latitude, longitude, proprietario, proprietario_telefone, proprietario_cpf, proprietario_whatsapp, proprietario_email, aceita_whatsapp, aceita_email, inquilino, inquilino_telefone, humanos, cachorros, gatos, roedores, ativo, criado_por, criado_em, atualizado_em, qr_chave, id_externo, deleted_at, deleted_by FROM locais WHERE qr_chave = $1 AND deleted_at IS NULL
 `
 
 func (q *Queries) GetLocalPorChave(ctx context.Context, qrChave string) (Locai, error) {
@@ -271,6 +275,8 @@ func (q *Queries) GetLocalPorChave(ctx context.Context, qrChave string) (Locai, 
 		&i.AtualizadoEm,
 		&i.QrChave,
 		&i.IDExterno,
+		&i.DeletedAt,
+		&i.DeletedBy,
 	)
 	return i, err
 }
@@ -278,7 +284,7 @@ func (q *Queries) GetLocalPorChave(ctx context.Context, qrChave string) (Locai, 
 const listBairrosAtivosParaLocal = `-- name: ListBairrosAtivosParaLocal :many
 SELECT b.id, b.nome, c.nome AS cidade_nome, c.uf AS cidade_uf
 FROM bairros b JOIN cidades c ON c.id = b.cidade_id
-WHERE b.status = 'ativo'
+WHERE b.status = 'ativo' AND b.deleted_at IS NULL
   AND ($1::bigint IS NULL OR usuario_ve_bairro($1::bigint, b.id))
 ORDER BY lower(b.nome)
 `
@@ -322,7 +328,7 @@ SELECT l.id, l.tipo, l.endereco, l.numero, l.lado, l.sequencia, l.complemento, l
 FROM locais l
 JOIN bairros b ON b.id = l.bairro_id
 JOIN quarteiroes q ON q.id = l.quarteirao_id
-WHERE ($1::text = '' OR position(lower($1::text) in lower(l.endereco || ' ' || l.numero || ' ' || l.proprietario)) > 0)
+WHERE l.deleted_at IS NULL AND ($1::text = '' OR position(lower($1::text) in lower(l.endereco || ' ' || l.numero || ' ' || l.proprietario)) > 0)
   AND ($2::bigint IS NULL OR l.bairro_id = $2::bigint)
   AND ($3::text = '' OR l.tipo = $3::text)
   AND ($4::text = '' OR l.ativo = ($4::text = 'ativo'))
@@ -405,7 +411,7 @@ func (q *Queries) ListLocais(ctx context.Context, arg ListLocaisParams) ([]ListL
 }
 
 const listQuarteiroesAtivosDoBairro = `-- name: ListQuarteiroesAtivosDoBairro :many
-SELECT q.id, q.nome FROM quarteiroes q WHERE q.bairro_id = $1::bigint AND q.ativo
+SELECT q.id, q.nome FROM quarteiroes q WHERE q.bairro_id = $1::bigint AND q.ativo AND q.deleted_at IS NULL
   AND ($2::bigint IS NULL OR usuario_ve_quarteirao($2::bigint, q.id, q.bairro_id))
 ORDER BY NULLIF(regexp_replace(nome, '\D', '', 'g'), '')::bigint NULLS LAST, lower(nome)
 `
@@ -478,7 +484,7 @@ SET tipo = $2, cep = $3, endereco = $4, numero = $5, referencia = $6, bairro_id 
     aceita_email = $20, inquilino = $21, inquilino_telefone = $22, humanos = $23, cachorros = $24, gatos = $25,
     roedores = $26, atualizado_em = now()
 WHERE id = $1
-RETURNING id, tipo, cep, endereco, numero, referencia, bairro_id, quarteirao_id, lado, sequencia, complemento, latitude, longitude, proprietario, proprietario_telefone, proprietario_cpf, proprietario_whatsapp, proprietario_email, aceita_whatsapp, aceita_email, inquilino, inquilino_telefone, humanos, cachorros, gatos, roedores, ativo, criado_por, criado_em, atualizado_em, qr_chave, id_externo
+RETURNING id, tipo, cep, endereco, numero, referencia, bairro_id, quarteirao_id, lado, sequencia, complemento, latitude, longitude, proprietario, proprietario_telefone, proprietario_cpf, proprietario_whatsapp, proprietario_email, aceita_whatsapp, aceita_email, inquilino, inquilino_telefone, humanos, cachorros, gatos, roedores, ativo, criado_por, criado_em, atualizado_em, qr_chave, id_externo, deleted_at, deleted_by
 `
 
 type UpdateLocalParams struct {
@@ -573,6 +579,8 @@ func (q *Queries) UpdateLocal(ctx context.Context, arg UpdateLocalParams) (Locai
 		&i.AtualizadoEm,
 		&i.QrChave,
 		&i.IDExterno,
+		&i.DeletedAt,
+		&i.DeletedBy,
 	)
 	return i, err
 }

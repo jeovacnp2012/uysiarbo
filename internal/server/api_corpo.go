@@ -164,3 +164,11 @@ func optInt(i pgtype.Int4) any {
 	}
 	return i.Int32
 }
+
+// optTempo devolve a data para o JSON (null quando não há).
+func optTempo(t pgtype.Timestamptz) any {
+	if !t.Valid {
+		return nil
+	}
+	return t.Time
+}

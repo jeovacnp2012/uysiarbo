@@ -103,6 +103,16 @@ templ CidadeForm(l Layout, d CidadeFormData) {
 				</div>
 			}
 		</form>
+		if !d.Novo() && d.PodeEditar {
+			<section class="cartao form-admin" id="excluir">
+				<h2>Excluir cidade</h2>
+				<p class="subtitulo">Só é possível se a cidade não tiver bairros ativos. Nada é apagado de verdade: vai para a Lixeira e dá para restaurar.</p>
+				<form method="post" action={ templ.SafeURL("/cidades/" + strconv.FormatInt(d.ID, 10) + "/excluir") } class="inline" onsubmit="return confirm('Enviar para a lixeira?')">
+					<input type="hidden" name="csrf" value={ d.CSRF }/>
+					<button type="submit" class="btn">Excluir cidade</button>
+				</form>
+			</section>
+		}
 	}
 }
 
@@ -415,6 +425,10 @@ templ BairroForm(l Layout, d BairroFormData) {
 										<button type="submit" class="btn btn-icone" aria-label={ "Reativar o quarteirão " + q.Nome }>Reativar</button>
 									}
 								</form>
+								<form method="post" action={ templ.SafeURL("/bairros/" + strconv.FormatInt(d.ID, 10) + "/quarteiroes/" + strconv.FormatInt(q.ID, 10) + "/excluir") } class="inline" onsubmit="return confirm('Enviar este quarteirão para a lixeira?')">
+									<input type="hidden" name="csrf" value={ d.CSRF }/>
+									<button type="submit" class="btn btn-icone" aria-label={ "Excluir o quarteirão " + q.Nome }>Excluir</button>
+								</form>
 							} else if !q.Ativo {
 								<span class="selo selo-aviso">inativo</span>
 							}
@@ -425,6 +439,16 @@ templ BairroForm(l Layout, d BairroFormData) {
 					<div class="tabela-vazia">Nenhum quarteirão cadastrado neste bairro.</div>
 				}
 			</section>
+			if d.PodeEditar {
+		<section class="cartao form-admin" id="excluir">
+			<h2>Excluir bairro</h2>
+			<p class="subtitulo">Só é possível se o bairro não tiver quarteirões nem locais ativos. Nada é apagado de verdade: vai para a Lixeira e dá para restaurar.</p>
+			<form method="post" action={ templ.SafeURL("/bairros/" + strconv.FormatInt(d.ID, 10) + "/excluir") } class="inline" onsubmit="return confirm('Enviar para a lixeira?')">
+				<input type="hidden" name="csrf" value={ d.CSRF }/>
+				<button type="submit" class="btn">Excluir bairro</button>
+			</form>
+		</section>
+			}
 		}
 	}
 }

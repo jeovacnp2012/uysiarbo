@@ -70,4 +70,4 @@ DELETE FROM api_idempotencia WHERE criado_em < now() - interval '24 hours';
 -- ---------------------------------------------------------------- API: cidades (recurso simples da Etapa 2)
 
 -- name: ListCidadesApi :many
-SELECT * FROM cidades WHERE id > $1 ORDER BY id LIMIT $2;
+SELECT * FROM cidades WHERE id > $1 AND deleted_at IS NULL ORDER BY id LIMIT $2;

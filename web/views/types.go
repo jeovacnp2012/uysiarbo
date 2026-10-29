@@ -49,6 +49,8 @@ type Layout struct {
 
 	Versao       string // versão atual do sistema (rodapé do menu)
 	NovidadeNova bool   // há uma versão nas Novidades que a pessoa ainda não viu
+
+	Aviso string // mensagem de sucesso no topo da página (vem de ?aviso=<código>)
 }
 
 // Pagination descreve a paginação de uma listagem.

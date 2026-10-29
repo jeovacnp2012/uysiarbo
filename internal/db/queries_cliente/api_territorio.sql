@@ -2,7 +2,7 @@
 
 -- name: ListBairrosApi :many
 SELECT * FROM bairros
-WHERE id > sqlc.arg(depois)::bigint
+WHERE (deleted_at IS NULL OR sqlc.arg(incluir_excluidos)::boolean) AND id > sqlc.arg(depois)::bigint
   AND (sqlc.narg(cidade_id)::bigint IS NULL OR cidade_id = sqlc.narg(cidade_id)::bigint)
   AND (sqlc.arg(status)::text = '' OR status = sqlc.arg(status)::text)
   AND (sqlc.arg(busca)::text = '' OR position(lower(sqlc.arg(busca)::text) in lower(nome)) > 0)
@@ -12,7 +12,7 @@ ORDER BY id LIMIT sqlc.arg(limite)::int;
 
 -- name: ListQuarteiroesApi :many
 SELECT * FROM quarteiroes
-WHERE id > sqlc.arg(depois)::bigint
+WHERE (deleted_at IS NULL OR sqlc.arg(incluir_excluidos)::boolean) AND id > sqlc.arg(depois)::bigint
   AND (sqlc.narg(bairro_id)::bigint IS NULL OR bairro_id = sqlc.narg(bairro_id)::bigint)
   AND (sqlc.narg(ativo)::boolean IS NULL OR ativo = sqlc.narg(ativo)::boolean)
   AND (sqlc.arg(id_externo)::text = '' OR id_externo = sqlc.arg(id_externo)::text)
@@ -21,7 +21,7 @@ ORDER BY id LIMIT sqlc.arg(limite)::int;
 
 -- name: ListLocaisApi :many
 SELECT * FROM locais
-WHERE id > sqlc.arg(depois)::bigint
+WHERE (deleted_at IS NULL OR sqlc.arg(incluir_excluidos)::boolean) AND id > sqlc.arg(depois)::bigint
   AND (sqlc.narg(bairro_id)::bigint IS NULL OR bairro_id = sqlc.narg(bairro_id)::bigint)
   AND (sqlc.narg(quarteirao_id)::bigint IS NULL OR quarteirao_id = sqlc.narg(quarteirao_id)::bigint)
   AND (sqlc.arg(tipo)::text = '' OR tipo = sqlc.arg(tipo)::text)
@@ -32,13 +32,13 @@ WHERE id > sqlc.arg(depois)::bigint
 ORDER BY id LIMIT sqlc.arg(limite)::int;
 
 -- name: GetBairroPorIdExterno :one
-SELECT * FROM bairros WHERE id_externo = $1;
+SELECT * FROM bairros WHERE id_externo = $1 AND deleted_at IS NULL;
 
 -- name: GetQuarteiraoPorIdExterno :one
-SELECT * FROM quarteiroes WHERE id_externo = $1;
+SELECT * FROM quarteiroes WHERE id_externo = $1 AND deleted_at IS NULL;
 
 -- name: GetLocalPorIdExterno :one
-SELECT * FROM locais WHERE id_externo = $1;
+SELECT * FROM locais WHERE id_externo = $1 AND deleted_at IS NULL;
 
 -- name: SetBairroIdExterno :one
 UPDATE bairros SET id_externo = $2 WHERE id = $1 RETURNING *;

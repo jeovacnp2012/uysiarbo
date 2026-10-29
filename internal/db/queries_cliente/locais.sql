@@ -6,7 +6,7 @@ SELECT l.id, l.tipo, l.endereco, l.numero, l.lado, l.sequencia, l.complemento, l
 FROM locais l
 JOIN bairros b ON b.id = l.bairro_id
 JOIN quarteiroes q ON q.id = l.quarteirao_id
-WHERE (sqlc.arg(busca)::text = '' OR position(lower(sqlc.arg(busca)::text) in lower(l.endereco || ' ' || l.numero || ' ' || l.proprietario)) > 0)
+WHERE l.deleted_at IS NULL AND (sqlc.arg(busca)::text = '' OR position(lower(sqlc.arg(busca)::text) in lower(l.endereco || ' ' || l.numero || ' ' || l.proprietario)) > 0)
   AND (sqlc.narg(bairro_id)::bigint IS NULL OR l.bairro_id = sqlc.narg(bairro_id)::bigint)
   AND (sqlc.arg(tipo)::text = '' OR l.tipo = sqlc.arg(tipo)::text)
   AND (sqlc.arg(situacao)::text = '' OR l.ativo = (sqlc.arg(situacao)::text = 'ativo'))
@@ -19,7 +19,7 @@ LIMIT sqlc.arg(limite)::int OFFSET sqlc.arg(deslocamento)::int;
 -- name: CountLocais :one
 SELECT count(*)::int
 FROM locais l
-WHERE (sqlc.arg(busca)::text = '' OR position(lower(sqlc.arg(busca)::text) in lower(l.endereco || ' ' || l.numero || ' ' || l.proprietario)) > 0)
+WHERE l.deleted_at IS NULL AND (sqlc.arg(busca)::text = '' OR position(lower(sqlc.arg(busca)::text) in lower(l.endereco || ' ' || l.numero || ' ' || l.proprietario)) > 0)
   AND (sqlc.narg(bairro_id)::bigint IS NULL OR l.bairro_id = sqlc.narg(bairro_id)::bigint)
   AND (sqlc.arg(tipo)::text = '' OR l.tipo = sqlc.arg(tipo)::text)
   AND (sqlc.arg(situacao)::text = '' OR l.ativo = (sqlc.arg(situacao)::text = 'ativo'))
@@ -28,7 +28,7 @@ WHERE (sqlc.arg(busca)::text = '' OR position(lower(sqlc.arg(busca)::text) in lo
   AND (sqlc.arg(ver_desativados)::boolean OR l.ativo);
 
 -- name: GetLocal :one
-SELECT * FROM locais WHERE id = $1;
+SELECT * FROM locais WHERE id = $1 AND deleted_at IS NULL;
 
 -- name: CreateLocal :one
 INSERT INTO locais (tipo, cep, endereco, numero, referencia, bairro_id, quarteirao_id, lado, sequencia, complemento,
@@ -49,14 +49,14 @@ WHERE id = $1
 RETURNING *;
 
 -- name: ListQuarteiroesAtivosDoBairro :many
-SELECT q.id, q.nome FROM quarteiroes q WHERE q.bairro_id = sqlc.arg(bairro_id)::bigint AND q.ativo
+SELECT q.id, q.nome FROM quarteiroes q WHERE q.bairro_id = sqlc.arg(bairro_id)::bigint AND q.ativo AND q.deleted_at IS NULL
   AND (sqlc.narg(somente_usuario)::bigint IS NULL OR usuario_ve_quarteirao(sqlc.narg(somente_usuario)::bigint, q.id, q.bairro_id))
 ORDER BY NULLIF(regexp_replace(nome, '\D', '', 'g'), '')::bigint NULLS LAST, lower(nome);
 
 -- name: ListBairrosAtivosParaLocal :many
 SELECT b.id, b.nome, c.nome AS cidade_nome, c.uf AS cidade_uf
 FROM bairros b JOIN cidades c ON c.id = b.cidade_id
-WHERE b.status = 'ativo'
+WHERE b.status = 'ativo' AND b.deleted_at IS NULL
   AND (sqlc.narg(somente_usuario)::bigint IS NULL OR usuario_ve_bairro(sqlc.narg(somente_usuario)::bigint, b.id))
 ORDER BY lower(b.nome);
 
@@ -74,4 +74,4 @@ WHERE id = $1
 RETURNING qr_chave;
 
 -- name: GetLocalPorChave :one
-SELECT * FROM locais WHERE qr_chave = $1;
+SELECT * FROM locais WHERE qr_chave = $1 AND deleted_at IS NULL;
