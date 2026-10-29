@@ -46,6 +46,12 @@ type Bairro struct {
 	AtualizadoEm    pgtype.Timestamptz `json:"atualizado_em"`
 }
 
+type BairroGeometria struct {
+	BairroID     int64              `json:"bairro_id"`
+	Geom         interface{}        `json:"geom"`
+	AtualizadoEm pgtype.Timestamptz `json:"atualizado_em"`
+}
+
 type BairroResponsavei struct {
 	BairroID  int64 `json:"bairro_id"`
 	UsuarioID int64 `json:"usuario_id"`
@@ -79,6 +85,12 @@ type Papei struct {
 type PapelPermisso struct {
 	PapelID   int64  `json:"papel_id"`
 	Permissao string `json:"permissao"`
+}
+
+type QuarteiraoGeometria struct {
+	QuarteiraoID int64              `json:"quarteirao_id"`
+	Geom         interface{}        `json:"geom"`
+	AtualizadoEm pgtype.Timestamptz `json:"atualizado_em"`
 }
 
 type Quarteiro struct {

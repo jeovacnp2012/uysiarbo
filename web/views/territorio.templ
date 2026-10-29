@@ -340,6 +340,38 @@ templ BairroForm(l Layout, d BairroFormData) {
 			}
 		</form>
 		if !d.Novo() {
+			<section class="cartao form-admin" id="limite">
+				<h2>Limite no mapa</h2>
+				if d.ErroLimite != "" {
+					<p class="alerta alerta-erro" role="alert">{ d.ErroLimite }</p>
+				}
+				if d.Limite != nil {
+					<p class="subtitulo">Polígono gravado: <strong>{ d.Limite.AreaHa } ha</strong>, ponto interno {d.Limite.Latitude}, {d.Limite.Longitude}.</p>
+				} else {
+					<p class="subtitulo">Este bairro ainda não tem limite no mapa.</p>
+				}
+				if d.PodeEditar {
+					<form method="post" action={ templ.SafeURL("/bairros/" + strconv.FormatInt(d.ID, 10) + "/limite") } class="form-admin">
+						<input type="hidden" name="csrf" value={ d.CSRF }/>
+						<div class="campo">
+							<label for="geojson">GeoJSON do bairro (um polígono, em longitude/latitude)</label>
+							<textarea id="geojson" name="geojson" rows="5" spellcheck="false" placeholder={ `{"type":"Polygon","coordinates":[[[-56.09,-13.83],[-56.07,-13.83],[-56.07,-13.81],[-56.09,-13.83]]]}` }>{ d.GeoJSONTexto }</textarea>
+						</div>
+						<div class="form-acoes">
+							<button type="submit" name="acao" value="salvar" class="btn btn-primario">
+								if d.Limite != nil {
+									Substituir limite
+								} else {
+									Gravar limite
+								}
+							</button>
+							if d.Limite != nil {
+								<button type="submit" name="acao" value="remover" class="btn">Remover limite</button>
+							}
+						</div>
+					</form>
+				}
+			</section>
 			<section class="cartao form-admin" id="quarteiroes">
 				<h2>Quarteirões <span class="selo">{ strconv.Itoa(len(d.Quarteiroes)) }</span></h2>
 				if d.PodeEditar {
@@ -353,11 +385,24 @@ templ BairroForm(l Layout, d BairroFormData) {
 							<button type="submit" class="btn btn-primario">Adicionar quarteirões</button>
 						</div>
 					</form>
+					<form method="post" action={ templ.SafeURL("/bairros/" + strconv.FormatInt(d.ID, 10) + "/quarteiroes/limites") } class="form-admin">
+						<input type="hidden" name="csrf" value={ d.CSRF }/>
+						<div class="campo">
+							<label for="geojson-q">Importar limites dos quarteirões (FeatureCollection; cada polígono com a propriedade "nome")</label>
+							<textarea id="geojson-q" name="geojson" rows="3" spellcheck="false"></textarea>
+						</div>
+						<div class="form-acoes">
+							<button type="submit" class="btn">Importar limites</button>
+						</div>
+					</form>
 				}
 				<div class="grade-quarteiroes">
 					for _, q := range d.Quarteiroes {
 						<div class={ "quarteirao", templ.KV("quarteirao-inativo", !q.Ativo) }>
 							<strong>{ q.Nome }</strong>
+							if q.ComLimite {
+								<span class="selo">no mapa</span>
+							}
 							if d.PodeEditar {
 								<form method="post" action={ templ.SafeURL("/bairros/" + strconv.FormatInt(d.ID, 10) + "/quarteiroes/" + strconv.FormatInt(q.ID, 10) + "/ativo") } class="inline">
 									<input type="hidden" name="csrf" value={ d.CSRF }/>

@@ -427,6 +427,9 @@ func (h *handlers) montarFormBairro(ctx context.Context, r *http.Request, q *sql
 		for _, x := range qs {
 			form.Quarteiroes = append(form.Quarteiroes, views.QuarteiraoLinha{ID: x.ID, Nome: x.Nome, Ativo: x.Ativo})
 		}
+		if err := h.completarLimites(ctx, r, id, &form); err != nil {
+			return form, err
+		}
 	}
 	return form, nil
 }
@@ -482,6 +485,20 @@ func (h *handlers) bairroEditarForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	aviso := ""
+	switch {
+	case r.URL.Query().Get("limite") == "gravado":
+		aviso = "Limite do bairro gravado."
+	case r.URL.Query().Get("limite") == "removido":
+		aviso = "Limite do bairro removido."
+	case r.URL.Query().Has("limites"):
+		c, _ := strconv.Atoi(r.URL.Query().Get("limites"))
+		n, _ := strconv.Atoi(r.URL.Query().Get("novos"))
+		aviso = fmt.Sprintf("%d limite(s) de quarteirão importado(s)", c)
+		if n > 0 {
+			aviso += fmt.Sprintf(", %d quarteirão(ões) novo(s) criado(s)", n)
+		}
+		aviso += "."
+	}
 	if r.URL.Query().Has("criados") {
 		c, _ := strconv.Atoi(r.URL.Query().Get("criados"))
 		e, _ := strconv.Atoi(r.URL.Query().Get("existiam"))

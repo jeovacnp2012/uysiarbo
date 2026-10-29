@@ -79,7 +79,7 @@ Objetivo: leitura e gravação por sistemas externos, de forma segura.
 
 ## Etapa 3 — Território: cidades, bairros, quarteirões e locais
 - [x] 3.1 Cidades (nome, UF, IBGE, ativa), Bairros (todos os campos do sistema atual: situação, categoria, classificação, zona, IBGE, coordenadas, altitude, distância do centro, mutirão, entra na produção) com **responsáveis** (e escopo "apenas atribuídos" funcionando), e Quarteirões em lote (um por linha ou faixa `1-20`, desativar/reativar); telas, filtros, paginação, auditoria com antes/depois; módulo Bairros "disponível" no painel (versão 1.0.005)
-- [ ] 3.2 Geometrias PostGIS: polígonos de bairro/quarteirão e pontos de local
+- [x] 3.2 Geometrias PostGIS: polígonos de bairro e quarteirão (GeoJSON colado/importado, validado e consertado pelo PostGIS; versão 1.0.007). **O ponto do local entra na 3.3**, junto com a tabela de locais.
 - [ ] 3.3 Local (cadastro completo: moradores, habitantes, tipo, endereço, referência, lado, sequência, complemento)
 - [ ] 3.4 Cadastro em lote por sequência/complemento, desativação lógica, QR/chave do local
 - [ ] 3.5 Ficha do local (seções vazias que os módulos seguintes vão preencher) e Grupos de Locais (clonar, exportar)

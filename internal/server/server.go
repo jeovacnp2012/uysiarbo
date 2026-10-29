@@ -113,7 +113,9 @@ func New(d Deps) http.Handler {
 	r.Post("/bairros", h.exigir("bairro_adicionar", h.bairroSalvar))
 	r.Get("/bairros/{id}", h.exigir("bairro_visualizar", h.bairroEditarForm))
 	r.Post("/bairros/{id}", h.exigir("bairro_adicionar", h.bairroSalvar))
+	r.Post("/bairros/{id}/limite", h.exigir("bairro_adicionar", h.bairroLimite))
 	r.Post("/bairros/{id}/quarteiroes", h.exigir("bairro_adicionar", h.quarteiraoCriar))
+	r.Post("/bairros/{id}/quarteiroes/limites", h.exigir("bairro_adicionar", h.quarteiraoLimites))
 	r.Post("/bairros/{id}/quarteiroes/{qid}/ativo", h.exigir("bairro_adicionar", h.quarteiraoAtivo))
 
 	r.Get("/guia", h.guiaLista)

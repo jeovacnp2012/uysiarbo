@@ -66,9 +66,18 @@ type ResponsavelOpcao struct {
 }
 
 type QuarteiraoLinha struct {
-	ID    int64
-	Nome  string
-	Ativo bool
+	ID        int64
+	Nome      string
+	Ativo     bool
+	ComLimite bool // tem polígono gravado no mapa
+}
+
+// LimiteInfo descreve o polígono gravado de um bairro.
+type LimiteInfo struct {
+	AreaHa    string // hectares, já formatado
+	Latitude  string
+	Longitude string
+	GeoJSON   string
 }
 
 type BairroFormData struct {
@@ -88,6 +97,9 @@ type BairroFormData struct {
 	Distancia     string
 	Responsaveis  []ResponsavelOpcao
 	Quarteiroes   []QuarteiraoLinha
+	Limite        *LimiteInfo // nil = bairro sem limite no mapa
+	ErroLimite    string      // erro ao salvar o limite ou importar quarteirões
+	GeoJSONTexto  string      // o que a pessoa colou, para não perder quando há erro
 	PodeEditar    bool
 	Aviso         string // mensagem de sucesso (ex.: quarteirões criados)
 	Erro          string
