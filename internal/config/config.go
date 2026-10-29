@@ -17,6 +17,8 @@ type Config struct {
 	AdminHost       string // endereço do console da plataforma (sem cliente)
 	RecaptchaSite   string // chave pública do reCAPTCHA v2 (vai para a página)
 	RecaptchaSecret string // chave secreta: só no servidor, nunca na página
+	MapTileURL      string // modelo de endereço dos blocos do mapa base, com {z}/{x}/{y}
+	MapAttribution  string // crédito do mapa base, mostrado no canto do mapa
 	ShutdownTimeout time.Duration
 }
 
@@ -33,6 +35,8 @@ func Load(envFile string) (Config, error) {
 		AdminHost:       strings.ToLower(get("APP_ADMIN_HOST", "uysiarbo.local")),
 		RecaptchaSite:   os.Getenv("RECAPTCHA_SITE_KEY"),
 		RecaptchaSecret: os.Getenv("RECAPTCHA_SECRET_KEY"),
+		MapTileURL:      get("MAP_TILE_URL", "https://tile.openstreetmap.org/{z}/{x}/{y}.png"),
+		MapAttribution:  get("MAP_ATTRIBUTION", "© contribuidores do OpenStreetMap"),
 		ShutdownTimeout: 10 * time.Second,
 	}
 	if cfg.IsProduction() && (cfg.RecaptchaSite == "" || cfg.RecaptchaSecret == "") {

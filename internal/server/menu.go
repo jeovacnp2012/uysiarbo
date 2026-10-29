@@ -46,6 +46,10 @@ func (s *handlers) menu(r *http.Request) []views.NavGrupo {
 		add(pr.Pode("local_grupo_visualizar"), "Grupos de locais", "/grupos")
 		incluir("Território", "territorio")
 
+		if pr.Pode("bairro_visualizar") || pr.Pode("local_visualizar") {
+			menu = append(menu, views.NavGrupo{Label: "Mapa", Icone: "mapa", Href: "/mapa"})
+		}
+
 		add(pr.Pode("conf_usuario"), "Usuários", "/usuarios")
 		add(pr.Pode("conf_papel"), "Papéis", "/papeis")
 		add(pr.Pode("auditoria_sistema"), "Auditoria", "/auditoria")

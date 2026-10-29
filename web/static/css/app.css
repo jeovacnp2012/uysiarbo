@@ -1075,3 +1075,12 @@ form.inline {
 .grade-secoes { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: .75rem; }
 .secao-ficha { border: 1px dashed var(--borda, #cbd5e1); border-radius: .5rem; padding: .75rem; display: grid; gap: .35rem; }
 .lista-simples { margin: 0 0 1rem; padding-left: 1.25rem; }
+
+/* Mapa */
+.mapa-cartao { padding: .75rem; display: grid; gap: .6rem; }
+.mapa { width: 100%; height: 65vh; min-height: 22rem; border-radius: .5rem; border: 1px solid var(--borda, #cbd5e1); }
+.mapa-camadas { display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; align-items: center; }
+.mapa-legenda { display: flex; flex-wrap: wrap; gap: .4rem 1rem; font-size: .85rem; }
+.mapa-legenda .ponto { display: inline-block; width: .7rem; height: .7rem; border-radius: 50%; border: 1px solid #fff; box-shadow: 0 0 0 1px #64748b; margin-right: .3rem; }
+.ponto-residencial { background: #2563eb; } .ponto-comercio { background: #d97706; } .ponto-terreno_baldio { background: #65a30d; }
+.ponto-ponto_estrategico { background: #dc2626; } .ponto-outro { background: #7c3aed; } .ponto-inativo { background: #94a3b8; }

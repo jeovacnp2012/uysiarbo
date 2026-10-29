@@ -72,6 +72,7 @@ templ GrupoForm(l Layout, d GrupoFormData) {
 		} else {
 			@PageHeader("Grupo de locais", d.Nome) {
 				<a class="btn" href="/grupos">Voltar</a>
+				<a class="btn" href={ templ.SafeURL("/mapa?grupo=" + strconv.FormatInt(d.ID, 10)) }>Ver no mapa</a>
 				<a class="btn" href={ templ.SafeURL("/grupos/" + strconv.FormatInt(d.ID, 10) + "/exportar.csv") }>Exportar planilha</a>
 			}
 			@Presenca("grupo", strconv.FormatInt(d.ID, 10), modoDaTela(d.PodeGerenciar))

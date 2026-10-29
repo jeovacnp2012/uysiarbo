@@ -643,6 +643,7 @@ func (h *handlers) masterResetarSenha(w http.ResponseWriter, r *http.Request) {
 var modulosProntos = map[string]struct{ href, permissao string }{
 	"Bairros":      {"/bairros", "bairro_visualizar"},
 	"Locais":       {"/locais", "local_visualizar"},
+	"Mapa":         {"/mapa", "bairro_visualizar"},
 	"Auditoria":    {"/auditoria", "auditoria_sistema"},
 	"Configuração": {"/usuarios", "conf_usuario"},
 }

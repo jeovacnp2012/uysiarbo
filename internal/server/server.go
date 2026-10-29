@@ -39,6 +39,10 @@ type Deps struct {
 	RecaptchaSite string  // chave pública do reCAPTCHA (vai para a tela de entrar)
 	Producao      bool    // cookies sempre Secure
 
+	// Mapa base (blocos de imagem). Vazio = OpenStreetMap.
+	MapTileURL     string
+	MapAttribution string
+
 	// Tenants permite ao console criar clientes e masters (nil = telas do console desligadas).
 	Tenants *tenant.Service
 }
@@ -51,6 +55,8 @@ type handlers struct {
 	captcha Captcha
 	siteKey string
 	prod    bool
+
+	mapaTiles, mapaCredito string
 
 	tenants  *tenant.Service
 	resolver *tenant.Resolver
@@ -66,6 +72,10 @@ func New(d Deps) http.Handler {
 	h := &handlers{log: d.Log, cat: d.Catalog, pools: d.Pools, pub: d.Public, captcha: d.Captcha, siteKey: d.RecaptchaSite, prod: d.Producao, tenants: d.Tenants, resolver: d.Resolver}
 	if h.captcha == nil {
 		h.captcha = SemCaptcha{}
+	}
+	h.mapaTiles, h.mapaCredito = d.MapTileURL, d.MapAttribution
+	if h.mapaTiles == "" {
+		h.mapaTiles, h.mapaCredito = "https://tile.openstreetmap.org/{z}/{x}/{y}.png", "© contribuidores do OpenStreetMap"
 	}
 	h.presenca = &presenca.Registro{}
 
@@ -107,6 +117,11 @@ func New(d Deps) http.Handler {
 	r.Post("/cidades", h.exigir("bairro_adicionar", h.cidadeSalvar))
 	r.Get("/cidades/{id}", h.exigir("bairro_visualizar", h.cidadeEditarForm))
 	r.Post("/cidades/{id}", h.exigir("bairro_adicionar", h.cidadeSalvar))
+
+	r.Get("/mapa", h.mapaPagina)
+	r.Get("/mapa/bairros.geojson", h.exigir("bairro_visualizar", h.mapaBairros))
+	r.Get("/mapa/quarteiroes.geojson", h.exigir("bairro_visualizar", h.mapaQuarteiroes))
+	r.Get("/mapa/locais.geojson", h.exigir("local_visualizar", h.mapaLocais))
 
 	r.Get("/grupos", h.exigir("local_grupo_visualizar", h.gruposLista))
 	r.Get("/grupos/novo", h.exigir("local_grupo_gerenciar", h.grupoNovoForm))

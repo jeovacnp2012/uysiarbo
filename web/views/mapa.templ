@@ -1,0 +1,90 @@
+package views
+
+import "strconv"
+
+// MapaData são as escolhas da tela do mapa. O mapa em si é desenhado por web/static/js/mapa.js,
+// que lê estes valores dos atributos data-* do elemento #mapa.
+type MapaData struct {
+	TilesURL      string
+	Credito       string
+	CamadaBairros bool
+	CamadaLocais  bool
+	Bairro        int64
+	Grupo         int64
+	Local         int64
+	Tipo          string
+	Bairros       []CidadeOpcao
+	Grupos        []CidadeOpcao
+	Tipos         []CidadeOpcao
+}
+
+templ Mapa(l Layout, d MapaData) {
+	@Base(l) {
+		@PageHeader("Mapa", "Bairros, quarteirões e locais no mapa. Clique em um item para ver os detalhes.") {
+		}
+		<form method="get" action="/mapa" class="cartao filtros">
+			<div class="campo">
+				<label for="m-bairro">Bairro</label>
+				<select id="m-bairro" name="bairro">
+					<option value="">Todos</option>
+					@opcoesDe(d.Bairros)
+				</select>
+			</div>
+			if len(d.Grupos) > 0 {
+				<div class="campo">
+					<label for="m-grupo">Grupo de locais</label>
+					<select id="m-grupo" name="grupo">
+						<option value="">Todos</option>
+						@opcoesDe(d.Grupos)
+					</select>
+				</div>
+			}
+			<div class="campo">
+				<label for="m-tipo">Tipo de local</label>
+				<select id="m-tipo" name="tipo">
+					<option value="">Todos</option>
+					@opcoesDe(d.Tipos)
+				</select>
+			</div>
+			<div class="form-acoes">
+				<button type="submit" class="btn btn-primario">Aplicar</button>
+				<a class="btn" href="/mapa">Limpar</a>
+			</div>
+		</form>
+		<section class="cartao mapa-cartao">
+			<div class="mapa-camadas" role="group" aria-label="Camadas do mapa">
+				if d.CamadaBairros {
+					<label class="marcar"><input type="checkbox" data-camada="bairros" checked/> Bairros</label>
+					<label class="marcar"><input type="checkbox" data-camada="quarteiroes" checked/> Quarteirões</label>
+				}
+				if d.CamadaLocais {
+					<label class="marcar"><input type="checkbox" data-camada="locais" checked/> Locais</label>
+				}
+				<span class="subtitulo" id="mapa-status" role="status" aria-live="polite"></span>
+			</div>
+			<div
+				id="mapa"
+				class="mapa"
+				data-tiles={ d.TilesURL }
+				data-credito={ d.Credito }
+				data-bairros?={ d.CamadaBairros }
+				data-locais?={ d.CamadaLocais }
+				data-bairro={ strconv.FormatInt(d.Bairro, 10) }
+				data-grupo={ strconv.FormatInt(d.Grupo, 10) }
+				data-local={ strconv.FormatInt(d.Local, 10) }
+				data-tipo={ d.Tipo }
+			></div>
+			<div class="mapa-legenda">
+				<span><i class="ponto ponto-residencial"></i> Residencial</span>
+				<span><i class="ponto ponto-comercio"></i> Comércio</span>
+				<span><i class="ponto ponto-terreno_baldio"></i> Terreno baldio</span>
+				<span><i class="ponto ponto-ponto_estrategico"></i> Ponto estratégico</span>
+				<span><i class="ponto ponto-outro"></i> Outro</span>
+				<span><i class="ponto ponto-inativo"></i> Inativo</span>
+			</div>
+		</section>
+		<link rel="stylesheet" href={ asset("/static/vendor/maplibre-gl.css") }/>
+		<script src={ asset("/static/vendor/maplibre-gl.js") }></script>
+		<script src={ asset("/static/js/mapa.js") }></script>
+	}
+}

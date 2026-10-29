@@ -230,6 +230,7 @@ templ BairroForm(l Layout, d BairroFormData) {
 		} else {
 			@PageHeader("Bairro", d.Nome) {
 				<a class="btn" href="/bairros">Voltar</a>
+				<a class="btn" href={ templ.SafeURL("/mapa?bairro=" + strconv.FormatInt(d.ID, 10)) }>Ver no mapa</a>
 			}
 			@Presenca("bairro", strconv.FormatInt(d.ID, 10), modoDaTela(d.PodeEditar))
 		}

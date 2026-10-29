@@ -138,6 +138,7 @@ templ LocalForm(l Layout, d LocalFormData) {
 		} else {
 			@PageHeader("Local", d.Campos.Endereco + ", " + d.Campos.Numero) {
 				<a class="btn" href="/locais">Voltar</a>
+				<a class="btn" href={ templ.SafeURL("/mapa?local=" + strconv.FormatInt(d.ID, 10)) }>Ver no mapa</a>
 			}
 			@Presenca("local", strconv.FormatInt(d.ID, 10), modoDaTela(d.PodeEditar))
 			if d.Aviso != "" {
