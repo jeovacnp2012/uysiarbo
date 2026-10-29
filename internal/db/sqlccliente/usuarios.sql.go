@@ -60,7 +60,7 @@ func (q *Queries) CreateSessaoUsuario(ctx context.Context, arg CreateSessaoUsuar
 const createUsuario = `-- name: CreateUsuario :one
 INSERT INTO usuarios (nome, email, telefone, senha_hash, papel_id, login_web, login_tablet, deve_trocar_senha)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-RETURNING id, nome, email, telefone, senha_hash, papel_id, login_web, login_tablet, ativo, deve_trocar_senha, ultimo_acesso, criado_em, atualizado_em, tentativas_falhas, bloqueado_ate
+RETURNING id, nome, email, telefone, senha_hash, papel_id, login_web, login_tablet, ativo, deve_trocar_senha, ultimo_acesso, criado_em, atualizado_em, tentativas_falhas, bloqueado_ate, novidade_vista_id
 `
 
 type CreateUsuarioParams struct {
@@ -102,6 +102,7 @@ func (q *Queries) CreateUsuario(ctx context.Context, arg CreateUsuarioParams) (U
 		&i.AtualizadoEm,
 		&i.TentativasFalhas,
 		&i.BloqueadoAte,
+		&i.NovidadeVistaID,
 	)
 	return i, err
 }
@@ -173,7 +174,7 @@ func (q *Queries) GetSessao(ctx context.Context, tokenHash []byte) (Sesso, error
 }
 
 const getUsuarioByEmail = `-- name: GetUsuarioByEmail :one
-SELECT id, nome, email, telefone, senha_hash, papel_id, login_web, login_tablet, ativo, deve_trocar_senha, ultimo_acesso, criado_em, atualizado_em, tentativas_falhas, bloqueado_ate FROM usuarios WHERE lower(email) = lower($1)
+SELECT id, nome, email, telefone, senha_hash, papel_id, login_web, login_tablet, ativo, deve_trocar_senha, ultimo_acesso, criado_em, atualizado_em, tentativas_falhas, bloqueado_ate, novidade_vista_id FROM usuarios WHERE lower(email) = lower($1)
 `
 
 func (q *Queries) GetUsuarioByEmail(ctx context.Context, lower string) (Usuario, error) {
@@ -195,12 +196,13 @@ func (q *Queries) GetUsuarioByEmail(ctx context.Context, lower string) (Usuario,
 		&i.AtualizadoEm,
 		&i.TentativasFalhas,
 		&i.BloqueadoAte,
+		&i.NovidadeVistaID,
 	)
 	return i, err
 }
 
 const getUsuarioByID = `-- name: GetUsuarioByID :one
-SELECT id, nome, email, telefone, senha_hash, papel_id, login_web, login_tablet, ativo, deve_trocar_senha, ultimo_acesso, criado_em, atualizado_em, tentativas_falhas, bloqueado_ate FROM usuarios WHERE id = $1
+SELECT id, nome, email, telefone, senha_hash, papel_id, login_web, login_tablet, ativo, deve_trocar_senha, ultimo_acesso, criado_em, atualizado_em, tentativas_falhas, bloqueado_ate, novidade_vista_id FROM usuarios WHERE id = $1
 `
 
 func (q *Queries) GetUsuarioByID(ctx context.Context, id int64) (Usuario, error) {
@@ -222,12 +224,13 @@ func (q *Queries) GetUsuarioByID(ctx context.Context, id int64) (Usuario, error)
 		&i.AtualizadoEm,
 		&i.TentativasFalhas,
 		&i.BloqueadoAte,
+		&i.NovidadeVistaID,
 	)
 	return i, err
 }
 
 const listUsuarios = `-- name: ListUsuarios :many
-SELECT id, nome, email, telefone, senha_hash, papel_id, login_web, login_tablet, ativo, deve_trocar_senha, ultimo_acesso, criado_em, atualizado_em, tentativas_falhas, bloqueado_ate FROM usuarios ORDER BY nome
+SELECT id, nome, email, telefone, senha_hash, papel_id, login_web, login_tablet, ativo, deve_trocar_senha, ultimo_acesso, criado_em, atualizado_em, tentativas_falhas, bloqueado_ate, novidade_vista_id FROM usuarios ORDER BY nome
 `
 
 func (q *Queries) ListUsuarios(ctx context.Context) ([]Usuario, error) {
@@ -255,6 +258,7 @@ func (q *Queries) ListUsuarios(ctx context.Context) ([]Usuario, error) {
 			&i.AtualizadoEm,
 			&i.TentativasFalhas,
 			&i.BloqueadoAte,
+			&i.NovidadeVistaID,
 		); err != nil {
 			return nil, err
 		}
@@ -351,6 +355,20 @@ func (q *Queries) RegistrarSucessoUsuario(ctx context.Context, id int64) error {
 	return err
 }
 
+const setUsuarioNovidadeVista = `-- name: SetUsuarioNovidadeVista :exec
+UPDATE usuarios SET novidade_vista_id = GREATEST(novidade_vista_id, $2) WHERE id = $1
+`
+
+type SetUsuarioNovidadeVistaParams struct {
+	ID              int64 `json:"id"`
+	NovidadeVistaID int64 `json:"novidade_vista_id"`
+}
+
+func (q *Queries) SetUsuarioNovidadeVista(ctx context.Context, arg SetUsuarioNovidadeVistaParams) error {
+	_, err := q.db.Exec(ctx, setUsuarioNovidadeVista, arg.ID, arg.NovidadeVistaID)
+	return err
+}
+
 const setUsuarioSenha = `-- name: SetUsuarioSenha :exec
 UPDATE usuarios
 SET senha_hash = $2, deve_trocar_senha = $3, tentativas_falhas = 0, bloqueado_ate = NULL, atualizado_em = now()
@@ -386,7 +404,7 @@ const updateUsuario = `-- name: UpdateUsuario :one
 UPDATE usuarios
 SET nome = $2, telefone = $3, papel_id = $4, login_web = $5, login_tablet = $6, ativo = $7, atualizado_em = now()
 WHERE id = $1
-RETURNING id, nome, email, telefone, senha_hash, papel_id, login_web, login_tablet, ativo, deve_trocar_senha, ultimo_acesso, criado_em, atualizado_em, tentativas_falhas, bloqueado_ate
+RETURNING id, nome, email, telefone, senha_hash, papel_id, login_web, login_tablet, ativo, deve_trocar_senha, ultimo_acesso, criado_em, atualizado_em, tentativas_falhas, bloqueado_ate, novidade_vista_id
 `
 
 type UpdateUsuarioParams struct {
@@ -426,6 +444,7 @@ func (q *Queries) UpdateUsuario(ctx context.Context, arg UpdateUsuarioParams) (U
 		&i.AtualizadoEm,
 		&i.TentativasFalhas,
 		&i.BloqueadoAte,
+		&i.NovidadeVistaID,
 	)
 	return i, err
 }

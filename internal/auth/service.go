@@ -33,6 +33,7 @@ type Conta struct {
 	DeveTrocarSenha bool
 	BloqueadoAte    time.Time // zero se não está bloqueada
 	Tentativas      int       // falhas seguidas de senha
+	NovidadeVista   int64     // última versão das Novidades que a pessoa já viu
 	PapelID         int64     // só para usuário de cliente
 	Master          bool      // só para conta da plataforma: nenhuma regra de permissão se aplica
 }
@@ -79,6 +80,8 @@ type ContaStore interface {
 	RegistrarSucesso(ctx context.Context, id string) error
 	DefinirSenha(ctx context.Context, id, hash string, deveTrocar bool) error
 	Permissoes(ctx context.Context, c Conta) ([]string, error)
+	// MarcarNovidadeVista guarda que a pessoa já viu as Novidades até esta versão.
+	MarcarNovidadeVista(ctx context.Context, id string, versaoID int64) error
 }
 
 // SessaoRegistro é uma sessão como guardada no banco (só o hash do token).
@@ -370,4 +373,20 @@ func hashDoToken(token string) ([]byte, bool) {
 	}
 	h := sha256.Sum256([]byte(token))
 	return h[:], true
+}
+
+// MarcarNovidadeVista registra que a pessoa viu as Novidades até a versão dada (nunca volta atrás).
+func (s *Service) MarcarNovidadeVista(ctx context.Context, sess *Sessao, versaoID int64) error {
+	if versaoID <= sess.Conta.NovidadeVista {
+		return nil
+	}
+	loja, err := s.loja(sess.Conta.Tipo)
+	if err != nil {
+		return err
+	}
+	if err := loja.MarcarNovidadeVista(ctx, sess.Conta.ID, versaoID); err != nil {
+		return err
+	}
+	sess.Conta.NovidadeVista = versaoID
+	return nil
 }

@@ -156,6 +156,8 @@ var Rotulos = map[string]string{
 	"papel.editar":          "Editou um papel",
 	"cliente.criar":         "Criou um cliente",
 	"cliente.sincronizar":   "Sincronizou os papéis padrão",
+	"cliente.status":        "Mudou a situação de um cliente",
+	"versao.criar":          "Registrou uma versão nas Novidades",
 	"master.criar":          "Criou um usuário master",
 	"master.resetar_senha":  "Resetou a senha de um master",
 	"requisicao.escrita":    "Gravação no sistema (registro automático)",

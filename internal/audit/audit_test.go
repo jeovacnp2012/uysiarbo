@@ -70,3 +70,17 @@ func TestRotulos(t *testing.T) {
 		t.Error("ação desconhecida deve aparecer como está")
 	}
 }
+
+// Toda ação que o sistema registra precisa ter rótulo em português; senão a tela mostraria o código cru.
+func TestRotulosCobremAsAcoesConhecidas(t *testing.T) {
+	for _, acao := range []string{
+		"login.sucesso", "login.falha", "login.bloqueio", "logout", "senha.trocar",
+		"usuario.criar", "usuario.editar", "usuario.resetar_senha", "papel.criar", "papel.editar",
+		"cliente.criar", "cliente.sincronizar", "cliente.status", "master.criar", "master.resetar_senha",
+		"versao.criar", "requisicao.escrita",
+	} {
+		if Rotulo(acao) == acao {
+			t.Errorf("a ação %q não tem rótulo em português", acao)
+		}
+	}
+}

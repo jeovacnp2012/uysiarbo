@@ -66,3 +66,6 @@ UPDATE usuarios
 SET nome = $2, telefone = $3, papel_id = $4, login_web = $5, login_tablet = $6, ativo = $7, atualizado_em = now()
 WHERE id = $1
 RETURNING *;
+
+-- name: SetUsuarioNovidadeVista :exec
+UPDATE usuarios SET novidade_vista_id = GREATEST(novidade_vista_id, $2) WHERE id = $1;

@@ -57,7 +57,7 @@ func (p PlataformaContas) conta(u sqlc.PlataformaUsuario) (Conta, error) {
 	}
 	return Conta{
 		ID: uuidString(u.ID), Tipo: TipoPlataforma, Nome: u.Nome, Email: u.Email, SenhaHash: u.SenhaHash,
-		Ativo: u.Ativo, DeveTrocarSenha: u.DeveTrocarSenha, BloqueadoAte: tempo(u.BloqueadoAte), Master: u.Master, Tentativas: int(u.TentativasFalhas),
+		Ativo: u.Ativo, DeveTrocarSenha: u.DeveTrocarSenha, BloqueadoAte: tempo(u.BloqueadoAte), Master: u.Master, Tentativas: int(u.TentativasFalhas), NovidadeVista: u.NovidadeVistaID,
 	}, nil
 }
 
@@ -156,7 +156,7 @@ func (ClienteContas) Tipo() Tipo { return TipoUsuario }
 func conta(u sqlccliente.Usuario) Conta {
 	return Conta{
 		ID: strconv.FormatInt(u.ID, 10), Tipo: TipoUsuario, Nome: u.Nome, Email: u.Email, SenhaHash: u.SenhaHash,
-		Ativo: u.Ativo, DeveTrocarSenha: u.DeveTrocarSenha, BloqueadoAte: tempo(u.BloqueadoAte), PapelID: u.PapelID, Tentativas: int(u.TentativasFalhas),
+		Ativo: u.Ativo, DeveTrocarSenha: u.DeveTrocarSenha, BloqueadoAte: tempo(u.BloqueadoAte), PapelID: u.PapelID, Tentativas: int(u.TentativasFalhas), NovidadeVista: u.NovidadeVistaID,
 	}
 }
 
@@ -258,4 +258,20 @@ func (s ClienteSessoes) RemoverDaConta(ctx context.Context, tipo Tipo, contaID s
 		return err
 	}
 	return s.Q.DeleteSessoesDoUsuario(ctx, sqlccliente.DeleteSessoesDoUsuarioParams{UsuarioID: pgtype.Int8{Int64: n, Valid: true}, TokenHash: manter})
+}
+
+func (p PlataformaContas) MarcarNovidadeVista(ctx context.Context, id string, versaoID int64) error {
+	uid, err := parseUUID(id)
+	if err != nil {
+		return err
+	}
+	return p.Q.SetPlataformaNovidadeVista(ctx, sqlc.SetPlataformaNovidadeVistaParams{ID: uid, NovidadeVistaID: versaoID})
+}
+
+func (c ClienteContas) MarcarNovidadeVista(ctx context.Context, id string, versaoID int64) error {
+	n, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		return err
+	}
+	return c.Q.SetUsuarioNovidadeVista(ctx, sqlccliente.SetUsuarioNovidadeVistaParams{ID: n, NovidadeVistaID: versaoID})
 }

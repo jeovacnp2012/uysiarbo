@@ -1,0 +1,147 @@
+package views
+
+import "strconv"
+
+// GuiaLista é a página inicial do Guia, com busca.
+templ GuiaLista(l Layout, d GuiaListaData) {
+	@Base(l) {
+		@PageHeader("Guia do sistema", "Explica cada tela, passo a passo, em linguagem simples.") {
+		}
+		<form method="get" action="/guia" class="cartao filtros" role="search">
+			<div class="campo">
+				<label for="busca-guia">Buscar no guia</label>
+				<input id="busca-guia" name="q" type="search" value={ d.Q } placeholder="Ex.: resetar senha, subdomínio, papel" autofocus/>
+			</div>
+			<div class="form-acoes">
+				<button type="submit" class="btn btn-primario">Buscar</button>
+				if d.Q != "" {
+					<a class="btn" href="/guia">Limpar</a>
+				}
+			</div>
+		</form>
+		<section class="cartao">
+			if d.Q != "" {
+				<p class="subtitulo">{ strconv.Itoa(len(d.Itens)) } resultado(s) para "{ d.Q }".</p>
+			}
+			<div class="grade-atalhos">
+				for _, it := range d.Itens {
+					<a class="atalho" href={ templ.SafeURL("/guia/" + it.Slug) }>
+						<strong>{ it.Titulo }</strong>
+						if d.Q != "" && it.Trecho != "" {
+							<span class="subtitulo">{ it.Trecho }</span>
+						} else {
+							<span class="subtitulo">{ it.Resumo }</span>
+						}
+					</a>
+				}
+			</div>
+			if len(d.Itens) == 0 {
+				<div class="tabela-vazia">Nada encontrado. Tente outras palavras.</div>
+			}
+		</section>
+	}
+}
+
+// GuiaArtigo mostra um artigo do Guia, com a lista dos outros ao lado.
+templ GuiaArtigo(l Layout, d GuiaArtigoData) {
+	@Base(l) {
+		@PageHeader(d.Titulo, "") {
+			<a class="btn" href="/guia">Todos os artigos</a>
+		}
+		<div class="guia-layout">
+			<article class="cartao guia-texto">
+				@templ.Raw(d.HTML)
+			</article>
+			<nav class="cartao guia-lateral" aria-label="Outros artigos">
+				<strong>Outros artigos</strong>
+				for _, o := range d.Outros {
+					<a href={ templ.SafeURL("/guia/" + o.Slug) } aria-current?={ o.Slug == d.Slug }>{ o.Titulo }</a>
+				}
+			</nav>
+		</div>
+	}
+}
+
+// ---- Novidades ----
+
+templ Novidades(l Layout, d NovidadesData) {
+	@Base(l) {
+		@PageHeader("Novidades", "O que mudou em cada versão do sistema.") {
+			if d.PodeRegistrar {
+				<a class="btn btn-primario" href="/novidades/nova">Registrar versão</a>
+			}
+		}
+		for _, v := range d.Versoes {
+			<section class="cartao versao">
+				<div class="versao-topo">
+					<h2>Versão { v.Versao } · { v.Titulo }</h2>
+					<span class="subtitulo">{ v.Data }</span>
+					if v.Nova {
+						<span class="selo selo-aviso">nova</span>
+					}
+				</div>
+				@listaVersao("Novo", "selo-ok", v.Novos)
+				@listaVersao("Melhorado", "", v.Melhorados)
+				@listaVersao("Corrigido", "selo-aviso", v.Corrigidos)
+			</section>
+		}
+		if len(d.Versoes) == 0 {
+			<section class="cartao"><div class="tabela-vazia">Nenhuma versão registrada ainda.</div></section>
+		}
+	}
+}
+
+templ listaVersao(rotulo, classe string, itens []string) {
+	if len(itens) > 0 {
+		<div class="versao-grupo">
+			<span class={ "selo " + classe }>{ rotulo }</span>
+			<ul>
+				for _, t := range itens {
+					<li>{ t }</li>
+				}
+			</ul>
+		</div>
+	}
+}
+
+templ VersaoForm(l Layout, d VersaoFormData) {
+	@Base(l) {
+		@PageHeader("Registrar versão", "Descreva o que mudou em linguagem simples, uma frase por linha.") {
+			<a class="btn" href="/novidades">Voltar</a>
+		}
+		<form method="post" action="/novidades" class="cartao form-admin">
+			<input type="hidden" name="csrf" value={ d.CSRF }/>
+			if d.Erro != "" {
+				<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
+			}
+			<div class="campo">
+				<label for="versao">Número da versão (formato 1.0.005)</label>
+				<input id="versao" name="versao" type="text" value={ d.Versao } required/>
+			</div>
+			<div class="campo">
+				<label for="titulo">Título</label>
+				<input id="titulo" name="titulo" type="text" value={ d.Titulo } maxlength="100" required/>
+			</div>
+			<div class="campo">
+				<label for="data">Data de publicação</label>
+				<input id="data" name="data" type="date" value={ d.Data } required/>
+			</div>
+			<div class="campo">
+				<label for="novo">Novo (uma frase por linha)</label>
+				<textarea id="novo" name="novo" rows="4">{ d.Novo }</textarea>
+			</div>
+			<div class="campo">
+				<label for="melhorado">Melhorado</label>
+				<textarea id="melhorado" name="melhorado" rows="3">{ d.Melhorado }</textarea>
+			</div>
+			<div class="campo">
+				<label for="corrigido">Corrigido</label>
+				<textarea id="corrigido" name="corrigido" rows="3">{ d.Corrigido }</textarea>
+			</div>
+			<div class="form-acoes">
+				<button type="submit" class="btn btn-primario">Publicar versão</button>
+				<a class="btn" href="/novidades">Cancelar</a>
+			</div>
+		</form>
+	}
+}

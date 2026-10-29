@@ -5,6 +5,7 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/a-h/templ"
@@ -52,6 +53,9 @@ type handlers struct {
 
 	tenants  *tenant.Service
 	resolver *tenant.Resolver
+
+	vmu    sync.Mutex
+	vatual versaoAtual
 }
 
 func New(d Deps) http.Handler {
@@ -91,6 +95,12 @@ func New(d Deps) http.Handler {
 	r.Post("/usuarios/{id}/resetar-senha", h.exigir("conf_usuario", h.usuarioResetarSenha))
 
 	r.Get("/auditoria", h.auditoriaPagina)
+
+	r.Get("/guia", h.guiaLista)
+	r.Get("/guia/{slug}", h.guiaArtigo)
+	r.Get("/novidades", h.novidades)
+	r.Get("/novidades/nova", h.somenteMaster(h.versaoNovaForm))
+	r.Post("/novidades", h.somenteMaster(h.versaoCriar))
 
 	r.Get("/clientes", h.somenteMaster(h.clientesLista))
 	r.Get("/clientes/novo", h.somenteMaster(h.clienteNovoForm))

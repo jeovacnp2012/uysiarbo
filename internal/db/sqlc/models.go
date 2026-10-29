@@ -59,6 +59,7 @@ type PlataformaUsuario struct {
 	TentativasFalhas int32              `json:"tentativas_falhas"`
 	BloqueadoAte     pgtype.Timestamptz `json:"bloqueado_ate"`
 	UltimoAcesso     pgtype.Timestamptz `json:"ultimo_acesso"`
+	NovidadeVistaID  int64              `json:"novidade_vista_id"`
 }
 
 type SessoesPlataforma struct {
@@ -69,4 +70,21 @@ type SessoesPlataforma struct {
 	UltimoUso pgtype.Timestamptz `json:"ultimo_uso"`
 	Ip        string             `json:"ip"`
 	UserAgent string             `json:"user_agent"`
+}
+
+type VersaoIten struct {
+	ID       int64  `json:"id"`
+	VersaoID int64  `json:"versao_id"`
+	Tipo     string `json:"tipo"`
+	Texto    string `json:"texto"`
+	Ordem    int32  `json:"ordem"`
+}
+
+type Verso struct {
+	ID          int64              `json:"id"`
+	Versao      string             `json:"versao"`
+	Titulo      string             `json:"titulo"`
+	PublicadaEm pgtype.Date        `json:"publicada_em"`
+	CriadoEm    pgtype.Timestamptz `json:"criado_em"`
+	CriadoPor   string             `json:"criado_por"`
 }

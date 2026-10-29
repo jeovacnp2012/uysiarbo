@@ -22,6 +22,9 @@ type Layout struct {
 	Cliente string // nome do cliente (prefeitura), quando o endereço é de um cliente
 	Usuario string // nome de quem está logado
 	CSRF    string // token CSRF, enviado nos formulários e nas chamadas HTMX
+
+	Versao       string // versão atual do sistema (rodapé do menu)
+	NovidadeNova bool   // há uma versão nas Novidades que a pessoa ainda não viu
 }
 
 // Pagination descreve a paginação de uma listagem.

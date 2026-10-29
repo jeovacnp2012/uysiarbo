@@ -779,3 +779,92 @@ form.inline {
 .tabela td {
     overflow-wrap: anywhere;
 }
+
+/* ---------- Guia e Novidades ---------- */
+.guia-layout {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: 1fr;
+    align-items: start;
+}
+
+@media (min-width: 56rem) {
+    .guia-layout {
+        grid-template-columns: 1fr 16rem;
+    }
+}
+
+.guia-texto {
+    line-height: 1.65;
+}
+
+.guia-texto h1 {
+    display: none;
+}
+
+.guia-texto h2 {
+    margin: 1.5rem 0 0.5rem;
+    font-size: 1.2rem;
+}
+
+.guia-texto ul,
+.guia-texto ol {
+    padding-left: 1.3rem;
+}
+
+.guia-texto code {
+    padding: 0.1rem 0.35rem;
+    border-radius: 0.35rem;
+    background: var(--marca-fraca);
+    font-size: 0.9em;
+}
+
+.guia-lateral {
+    display: grid;
+    gap: 0.4rem;
+}
+
+.guia-lateral a {
+    padding: 0.35rem 0.5rem;
+    border-radius: 0.5rem;
+    color: var(--texto);
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+.guia-lateral a:hover,
+.guia-lateral a[aria-current] {
+    background: var(--marca-fraca);
+    color: var(--marca);
+}
+
+.versao-topo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.versao-grupo {
+    display: grid;
+    grid-template-columns: 6.5rem 1fr;
+    gap: 0.5rem;
+    margin-top: 0.6rem;
+    align-items: start;
+}
+
+.versao-grupo ul {
+    margin: 0;
+    padding-left: 1.1rem;
+}
+
+.campo textarea {
+    width: 100%;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid var(--borda);
+    border-radius: var(--radius);
+    background: var(--superficie);
+    color: var(--texto);
+    font: inherit;
+}

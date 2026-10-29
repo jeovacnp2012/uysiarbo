@@ -14,7 +14,7 @@ import (
 const createPlataformaUsuario = `-- name: CreatePlataformaUsuario :one
 INSERT INTO plataforma_usuarios (nome, email, senha_hash, master, deve_trocar_senha)
 VALUES ($1, $2, $3, $4, $5)
-RETURNING id, nome, email, senha_hash, master, ativo, deve_trocar_senha, criado_em, atualizado_em, tentativas_falhas, bloqueado_ate, ultimo_acesso
+RETURNING id, nome, email, senha_hash, master, ativo, deve_trocar_senha, criado_em, atualizado_em, tentativas_falhas, bloqueado_ate, ultimo_acesso, novidade_vista_id
 `
 
 type CreatePlataformaUsuarioParams struct {
@@ -47,6 +47,7 @@ func (q *Queries) CreatePlataformaUsuario(ctx context.Context, arg CreatePlatafo
 		&i.TentativasFalhas,
 		&i.BloqueadoAte,
 		&i.UltimoAcesso,
+		&i.NovidadeVistaID,
 	)
 	return i, err
 }
@@ -108,7 +109,7 @@ func (q *Queries) DeleteSessoesPlataformaExpiradas(ctx context.Context) error {
 }
 
 const getPlataformaUsuarioByEmail = `-- name: GetPlataformaUsuarioByEmail :one
-SELECT id, nome, email, senha_hash, master, ativo, deve_trocar_senha, criado_em, atualizado_em, tentativas_falhas, bloqueado_ate, ultimo_acesso FROM plataforma_usuarios WHERE lower(email) = lower($1)
+SELECT id, nome, email, senha_hash, master, ativo, deve_trocar_senha, criado_em, atualizado_em, tentativas_falhas, bloqueado_ate, ultimo_acesso, novidade_vista_id FROM plataforma_usuarios WHERE lower(email) = lower($1)
 `
 
 func (q *Queries) GetPlataformaUsuarioByEmail(ctx context.Context, lower string) (PlataformaUsuario, error) {
@@ -127,12 +128,13 @@ func (q *Queries) GetPlataformaUsuarioByEmail(ctx context.Context, lower string)
 		&i.TentativasFalhas,
 		&i.BloqueadoAte,
 		&i.UltimoAcesso,
+		&i.NovidadeVistaID,
 	)
 	return i, err
 }
 
 const getPlataformaUsuarioByID = `-- name: GetPlataformaUsuarioByID :one
-SELECT id, nome, email, senha_hash, master, ativo, deve_trocar_senha, criado_em, atualizado_em, tentativas_falhas, bloqueado_ate, ultimo_acesso FROM plataforma_usuarios WHERE id = $1
+SELECT id, nome, email, senha_hash, master, ativo, deve_trocar_senha, criado_em, atualizado_em, tentativas_falhas, bloqueado_ate, ultimo_acesso, novidade_vista_id FROM plataforma_usuarios WHERE id = $1
 `
 
 func (q *Queries) GetPlataformaUsuarioByID(ctx context.Context, id pgtype.UUID) (PlataformaUsuario, error) {
@@ -151,6 +153,7 @@ func (q *Queries) GetPlataformaUsuarioByID(ctx context.Context, id pgtype.UUID) 
 		&i.TentativasFalhas,
 		&i.BloqueadoAte,
 		&i.UltimoAcesso,
+		&i.NovidadeVistaID,
 	)
 	return i, err
 }
@@ -175,7 +178,7 @@ func (q *Queries) GetSessaoPlataforma(ctx context.Context, tokenHash []byte) (Se
 }
 
 const listPlataformaUsuarios = `-- name: ListPlataformaUsuarios :many
-SELECT id, nome, email, senha_hash, master, ativo, deve_trocar_senha, criado_em, atualizado_em, tentativas_falhas, bloqueado_ate, ultimo_acesso FROM plataforma_usuarios ORDER BY nome
+SELECT id, nome, email, senha_hash, master, ativo, deve_trocar_senha, criado_em, atualizado_em, tentativas_falhas, bloqueado_ate, ultimo_acesso, novidade_vista_id FROM plataforma_usuarios ORDER BY nome
 `
 
 func (q *Queries) ListPlataformaUsuarios(ctx context.Context) ([]PlataformaUsuario, error) {
@@ -200,6 +203,7 @@ func (q *Queries) ListPlataformaUsuarios(ctx context.Context) ([]PlataformaUsuar
 			&i.TentativasFalhas,
 			&i.BloqueadoAte,
 			&i.UltimoAcesso,
+			&i.NovidadeVistaID,
 		); err != nil {
 			return nil, err
 		}
@@ -246,7 +250,7 @@ const setPlataformaUsuarioSenha = `-- name: SetPlataformaUsuarioSenha :one
 UPDATE plataforma_usuarios
 SET senha_hash = $2, deve_trocar_senha = $3, tentativas_falhas = 0, bloqueado_ate = NULL, atualizado_em = now()
 WHERE id = $1
-RETURNING id, nome, email, senha_hash, master, ativo, deve_trocar_senha, criado_em, atualizado_em, tentativas_falhas, bloqueado_ate, ultimo_acesso
+RETURNING id, nome, email, senha_hash, master, ativo, deve_trocar_senha, criado_em, atualizado_em, tentativas_falhas, bloqueado_ate, ultimo_acesso, novidade_vista_id
 `
 
 type SetPlataformaUsuarioSenhaParams struct {
@@ -271,6 +275,7 @@ func (q *Queries) SetPlataformaUsuarioSenha(ctx context.Context, arg SetPlatafor
 		&i.TentativasFalhas,
 		&i.BloqueadoAte,
 		&i.UltimoAcesso,
+		&i.NovidadeVistaID,
 	)
 	return i, err
 }

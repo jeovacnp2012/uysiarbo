@@ -21,6 +21,12 @@ type Catalog interface {
 // layout monta o layout da página; no endereço de um cliente, mostra o nome dele no menu.
 func (s *handlers) layout(r *http.Request, title, active string) views.Layout {
 	l := views.Layout{Title: title, Active: active, Nav: s.menu(r), CSRF: csrfToken(r.Context())}
+	if id, versao := s.ultimaVersao(r.Context()); versao != "" {
+		l.Versao = versao
+		if a, ok := authFrom(r.Context()); ok && a.sess != nil {
+			l.NovidadeNova = id > a.sess.Conta.NovidadeVista
+		}
+	}
 	if c, ok := tenant.FromContext(r.Context()); ok {
 		l.Cliente = c.Nome
 	}
@@ -99,6 +105,9 @@ func (s *handlers) menu(r *http.Request) []views.NavItem {
 				views.NavItem{Label: "Auditoria", Href: "/auditoria"},
 			)
 		}
+	}
+	if a.sess != nil {
+		itens = append(itens, views.NavItem{Label: "Guia", Href: "/guia"}, views.NavItem{Label: "Novidades", Href: "/novidades"})
 	}
 	return append(itens, views.NavItem{Label: "Componentes", Href: "/componentes"})
 }

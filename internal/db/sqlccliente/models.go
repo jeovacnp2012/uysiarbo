@@ -74,4 +74,5 @@ type Usuario struct {
 	AtualizadoEm     pgtype.Timestamptz `json:"atualizado_em"`
 	TentativasFalhas int32              `json:"tentativas_falhas"`
 	BloqueadoAte     pgtype.Timestamptz `json:"bloqueado_ate"`
+	NovidadeVistaID  int64              `json:"novidade_vista_id"`
 }

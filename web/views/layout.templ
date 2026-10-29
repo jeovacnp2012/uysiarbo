@@ -40,7 +40,7 @@ templ Base(l Layout) {
 							<a class="menu-item" href={ templ.SafeURL(item.Href) } aria-current?={ item.Href == l.Active }>{ item.Label }</a>
 						}
 					</nav>
-					<div class="menu-rodape">Versão { Version }</div>
+					<div class="menu-rodape">Versão { versaoTexto(l) }</div>
 				</aside>
 				<div class="conteudo">
 					<header class="barra">
@@ -48,6 +48,9 @@ templ Base(l Layout) {
 						<div class="barra-titulo">{ l.Title }</div>
 						if l.Usuario != "" {
 							<span class="barra-usuario">{ l.Usuario }</span>
+						}
+						if l.NovidadeNova {
+							<a class="btn btn-icone" href="/novidades">Novidades <span class="selo selo-aviso">nova</span></a>
 						}
 						<button
 							type="button"
