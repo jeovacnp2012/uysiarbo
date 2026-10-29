@@ -18,6 +18,45 @@ type AcessosLocal struct {
 	CriadoEm     pgtype.Timestamptz `json:"criado_em"`
 }
 
+type ApiChamada struct {
+	ID           int64              `json:"id"`
+	CredencialID int64              `json:"credencial_id"`
+	Quando       pgtype.Timestamptz `json:"quando"`
+	Metodo       string             `json:"metodo"`
+	Caminho      string             `json:"caminho"`
+	Status       int32              `json:"status"`
+	DuracaoMs    int32              `json:"duracao_ms"`
+	Ip           string             `json:"ip"`
+	RequestID    string             `json:"request_id"`
+}
+
+type ApiCredenciai struct {
+	ID              int64              `json:"id"`
+	Nome            string             `json:"nome"`
+	Descricao       string             `json:"descricao"`
+	ClientID        string             `json:"client_id"`
+	SegredoHash     []byte             `json:"segredo_hash"`
+	VersaoSegredo   int32              `json:"versao_segredo"`
+	Escopos         []string           `json:"escopos"`
+	Ativo           bool               `json:"ativo"`
+	ValidaAte       pgtype.Timestamptz `json:"valida_ate"`
+	LimitePorMinuto int32              `json:"limite_por_minuto"`
+	CriadoPor       pgtype.Int8        `json:"criado_por"`
+	CriadoEm        pgtype.Timestamptz `json:"criado_em"`
+	AtualizadoEm    pgtype.Timestamptz `json:"atualizado_em"`
+	RotacionadoEm   pgtype.Timestamptz `json:"rotacionado_em"`
+	UltimoUsoEm     pgtype.Timestamptz `json:"ultimo_uso_em"`
+}
+
+type ApiIdempotencium struct {
+	CredencialID int64              `json:"credencial_id"`
+	Chave        string             `json:"chave"`
+	HashPedido   []byte             `json:"hash_pedido"`
+	Status       int32              `json:"status"`
+	Resposta     []byte             `json:"resposta"`
+	CriadoEm     pgtype.Timestamptz `json:"criado_em"`
+}
+
 type Auditorium struct {
 	ID         int64              `json:"id"`
 	Quando     pgtype.Timestamptz `json:"quando"`

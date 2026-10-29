@@ -1,0 +1,315 @@
+package views
+
+import "strconv"
+
+type ApiCredLinha struct {
+	ID        int64
+	Nome      string
+	ClientID  string
+	Escopos   int
+	Ativa     bool
+	Validade  string // "sem validade", data, ou "vencida em ..."
+	Vencida   bool
+	UltimoUso string
+	Chamadas  int
+}
+
+type ApiListaData struct {
+	Linhas        []ApiCredLinha
+	PodeEditar    bool
+	Aviso         string
+	DocumentacaoURL string
+}
+
+// ApiEscopoLinha é um recurso com as duas caixas (ler e gravar) do formulário.
+type ApiEscopoLinha struct {
+	Rotulo   string
+	Leitura  string // texto do escopo, ex.: "cidades:read"
+	Escrita  string
+	LeituraM bool
+	EscritaM bool
+}
+
+type ApiChamadaLinha struct {
+	Quando   string
+	Metodo   string
+	Caminho  string
+	Status   int
+	Duracao  int
+	IP       string
+}
+
+type ApiResumo struct {
+	Janela  string
+	Total   int
+	ComErro int
+	MediaMs int
+}
+
+type ApiFormData struct {
+	ID          int64 // 0 = nova
+	Nome        string
+	Descricao   string
+	Escopos     []ApiEscopoLinha
+	ValidaAte   string // yyyy-mm-dd ou vazio
+	Limite      int
+	Ativa       bool
+	ClientID    string
+	Criada      string
+	Rotacionada string
+	UltimoUso   string
+	Resumos     []ApiResumo
+	Chamadas    []ApiChamadaLinha
+	Aviso       string
+	Erro        string
+	CSRF        string
+}
+
+func (d ApiFormData) Nova() bool { return d.ID == 0 }
+
+// ApiSegredoData é a tela que mostra o segredo UMA vez, logo depois de criar ou rotacionar.
+type ApiSegredoData struct {
+	ID       int64
+	Nome     string
+	ClientID string
+	Segredo  string
+	URLToken string // https://<cliente>/api/v1/token
+	Rotacao  bool
+}
+
+templ ApiLista(l Layout, d ApiListaData) {
+	@Base(l) {
+		@PageHeader("API e integrações", "Credenciais para sistemas externos lerem e gravarem dados deste ambiente.") {
+			<a class="btn" href="/api/v1/openapi.yaml">Contrato OpenAPI</a>
+			if d.PodeEditar {
+				<a class="btn btn-primario" href="/parametros/api/nova">Nova credencial</a>
+			}
+		}
+		if d.Aviso != "" {
+			<p class="alerta alerta-ok" role="status">{ d.Aviso }</p>
+		}
+		<section class="cartao">
+			<div class="tabela-wrap">
+				<table class="tabela">
+					<thead>
+						<tr>
+							<th scope="col">Credencial</th>
+							<th scope="col">Escopos</th>
+							<th scope="col">Validade</th>
+							<th scope="col">Último uso</th>
+							<th scope="col">Chamadas (24 h)</th>
+							<th scope="col">Situação</th>
+							<th scope="col"><span class="sr-only">Ações</span></th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, c := range d.Linhas {
+							<tr>
+								<td data-rotulo="Credencial"><strong>{ c.Nome }</strong><div class="subtitulo"><code>{ c.ClientID }</code></div></td>
+								<td data-rotulo="Escopos">{ strconv.Itoa(c.Escopos) }</td>
+								<td data-rotulo="Validade">{ c.Validade }</td>
+								<td data-rotulo="Último uso">{ c.UltimoUso }</td>
+								<td data-rotulo="Chamadas">{ strconv.Itoa(c.Chamadas) }</td>
+								<td data-rotulo="Situação">
+									if !c.Ativa {
+										<span class="selo selo-aviso">Desativada</span>
+									} else if c.Vencida {
+										<span class="selo selo-aviso">Vencida</span>
+									} else {
+										<span class="selo selo-ok">Ativa</span>
+									}
+								</td>
+								<td data-rotulo="Ações"><a class="btn" href={ templ.SafeURL("/parametros/api/" + strconv.FormatInt(c.ID, 10)) }>Abrir</a></td>
+							</tr>
+						}
+					</tbody>
+				</table>
+				if len(d.Linhas) == 0 {
+					<div class="tabela-vazia">Nenhuma credencial criada.</div>
+				}
+			</div>
+		</section>
+	}
+}
+
+templ ApiForm(l Layout, d ApiFormData) {
+	@Base(l) {
+		if d.Nova() {
+			@PageHeader("Nova credencial de API", "O segredo aparece uma única vez, logo depois de salvar.") {
+				<a class="btn" href="/parametros/api">Voltar</a>
+			}
+		} else {
+			@PageHeader("Credencial de API", d.Nome) {
+				<a class="btn" href="/parametros/api">Voltar</a>
+			}
+		}
+		if d.Aviso != "" {
+			<p class="alerta alerta-ok" role="status">{ d.Aviso }</p>
+		}
+		<form
+			method="post"
+			if d.Nova() {
+				action="/parametros/api"
+			} else {
+				action={ templ.SafeURL("/parametros/api/" + strconv.FormatInt(d.ID, 10)) }
+			}
+			class="cartao form-admin"
+		>
+			<input type="hidden" name="csrf" value={ d.CSRF }/>
+			if d.Erro != "" {
+				<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
+			}
+			<div class="campo">
+				<label for="nome">Nome (quem usa esta credencial)</label>
+				<input id="nome" name="nome" type="text" value={ d.Nome } maxlength="100" required/>
+			</div>
+			<div class="campo">
+				<label for="descricao">Descrição (opcional)</label>
+				<input id="descricao" name="descricao" type="text" value={ d.Descricao } maxlength="300"/>
+			</div>
+			<h2>Escopos</h2>
+			<p class="subtitulo">O que esta credencial pode fazer. Gravar não dá direito de ler.</p>
+			<div class="tabela-wrap">
+				<table class="tabela">
+					<thead>
+						<tr>
+							<th scope="col">Recurso</th>
+							<th scope="col">Ler</th>
+							<th scope="col">Gravar</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, e := range d.Escopos {
+							<tr>
+								<td data-rotulo="Recurso">{ e.Rotulo }</td>
+								<td data-rotulo="Ler"><input type="checkbox" name="escopo" value={ e.Leitura } checked?={ e.LeituraM } aria-label={ "Ler " + e.Rotulo }/></td>
+								<td data-rotulo="Gravar"><input type="checkbox" name="escopo" value={ e.Escrita } checked?={ e.EscritaM } aria-label={ "Gravar " + e.Rotulo }/></td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+			<p class="subtitulo">Hoje a API expõe o recurso <strong>Cidades</strong>; os demais entram nas próximas versões.</p>
+			<div class="grade-form">
+				<div class="campo">
+					<label for="valida_ate">Válida até (opcional)</label>
+					<input id="valida_ate" name="valida_ate" type="date" value={ d.ValidaAte }/>
+				</div>
+				<div class="campo">
+					<label for="limite">Chamadas por minuto</label>
+					<input id="limite" name="limite" type="number" min="1" max="10000" value={ strconv.Itoa(d.Limite) }/>
+				</div>
+			</div>
+			<div class="form-acoes">
+				<button type="submit" class="btn btn-primario">Salvar</button>
+				<a class="btn" href="/parametros/api">Cancelar</a>
+			</div>
+		</form>
+		if !d.Nova() {
+			<section class="cartao form-admin" id="situacao">
+				<h2>Identificação e segredo</h2>
+				<p>Identificador (client_id): <code>{ d.ClientID }</code></p>
+				<p class="subtitulo">Criada em { d.Criada }. Último uso: { d.UltimoUso }.
+					if d.Rotacionada != "" {
+						Segredo trocado em { d.Rotacionada }.
+					}
+				</p>
+				<div class="form-acoes">
+					<form method="post" action={ templ.SafeURL("/parametros/api/" + strconv.FormatInt(d.ID, 10) + "/rotacionar") } class="inline">
+						<input type="hidden" name="csrf" value={ d.CSRF }/>
+						<button type="submit" class="btn">Gerar novo segredo</button>
+					</form>
+					<form method="post" action={ templ.SafeURL("/parametros/api/" + strconv.FormatInt(d.ID, 10) + "/ativo") } class="inline">
+						<input type="hidden" name="csrf" value={ d.CSRF }/>
+						if d.Ativa {
+							<input type="hidden" name="ativo" value="0"/>
+							<button type="submit" class="btn">Desativar credencial</button>
+						} else {
+							<input type="hidden" name="ativo" value="1"/>
+							<button type="submit" class="btn btn-primario">Reativar credencial</button>
+						}
+					</form>
+				</div>
+				<p class="subtitulo">Gerar novo segredo ou desativar derruba na hora os tokens já emitidos; o sistema que usa a credencial precisa do segredo novo.</p>
+			</section>
+			<section class="cartao" id="consumo">
+				<h2>Consumo</h2>
+				<div class="tabela-wrap">
+					<table class="tabela">
+						<thead>
+							<tr>
+								<th scope="col">Período</th>
+								<th scope="col">Chamadas</th>
+								<th scope="col">Com erro</th>
+								<th scope="col">Tempo médio</th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, r := range d.Resumos {
+								<tr>
+									<td data-rotulo="Período">{ r.Janela }</td>
+									<td data-rotulo="Chamadas">{ strconv.Itoa(r.Total) }</td>
+									<td data-rotulo="Com erro">{ strconv.Itoa(r.ComErro) }</td>
+									<td data-rotulo="Tempo médio">{ strconv.Itoa(r.MediaMs) } ms</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+				<h3>Últimas chamadas</h3>
+				<div class="tabela-wrap">
+					<table class="tabela">
+						<tbody>
+							for _, c := range d.Chamadas {
+								<tr>
+									<td data-rotulo="Quando">{ c.Quando }</td>
+									<td data-rotulo="Pedido"><code>{ c.Metodo } { c.Caminho }</code></td>
+									<td data-rotulo="Resultado">
+										if c.Status >= 400 {
+											<span class="selo selo-aviso">{ strconv.Itoa(c.Status) }</span>
+										} else {
+											<span class="selo selo-ok">{ strconv.Itoa(c.Status) }</span>
+										}
+									</td>
+									<td data-rotulo="Tempo">{ strconv.Itoa(c.Duracao) } ms</td>
+									<td data-rotulo="Origem">{ c.IP }</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+					if len(d.Chamadas) == 0 {
+						<div class="tabela-vazia">Nenhuma chamada ainda.</div>
+					}
+				</div>
+			</section>
+		}
+	}
+}
+
+templ ApiSegredo(l Layout, d ApiSegredoData) {
+	@Base(l) {
+		@PageHeader("Credencial de API", d.Nome) {
+			<a class="btn" href={ templ.SafeURL("/parametros/api/" + strconv.FormatInt(d.ID, 10)) }>Concluir</a>
+		}
+		<section class="cartao form-admin">
+			if d.Rotacao {
+				<p class="alerta alerta-aviso" role="alert">Segredo novo gerado. Os tokens emitidos com o segredo antigo deixaram de valer.</p>
+			} else {
+				<p class="alerta alerta-ok" role="status">Credencial criada.</p>
+			}
+			<p class="alerta alerta-aviso" role="alert"><strong>Copie o segredo agora.</strong> Ele não será mostrado de novo e não fica guardado em lugar nenhum: se for perdido, gere um novo.</p>
+			<div class="campo">
+				<label for="s-client">client_id</label>
+				<input id="s-client" type="text" value={ d.ClientID } readonly onfocus="this.select()"/>
+			</div>
+			<div class="campo">
+				<label for="s-segredo">client_secret</label>
+				<input id="s-segredo" type="text" value={ d.Segredo } readonly onfocus="this.select()" autocomplete="off"/>
+			</div>
+			<h2>Como usar</h2>
+			<p class="subtitulo">Troque o segredo por um token (vale 15 minutos) e use-o nas chamadas:</p>
+			<pre class="codigo">{ "curl -s -X POST " + d.URLToken + " \\\n  -d grant_type=client_credentials \\\n  -d client_id=" + d.ClientID + " \\\n  -d client_secret=SEU_SEGREDO\n\ncurl -s https://<este-endereco>/api/v1/cidades -H \"Authorization: Bearer SEU_TOKEN\"" }</pre>
+			<p class="subtitulo">O contrato completo está em <a href="/api/v1/openapi.yaml">/api/v1/openapi.yaml</a> e o passo a passo, no Guia do sistema.</p>
+		</section>
+	}
+}

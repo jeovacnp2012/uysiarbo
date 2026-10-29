@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/go-chi/chi/v5/middleware"
@@ -54,6 +55,9 @@ func atorDaConta(c auth.Conta) audit.Ator {
 
 // atorDaSessao é quem está logado na requisição (vazio se ninguém).
 func atorDaSessao(r *http.Request) audit.Ator {
+	if c, ok := credencialDe(r.Context()); ok { // chamada da API: o autor é a credencial
+		return audit.Ator{Tipo: audit.AtorAPI, ID: strconv.FormatInt(c.ID, 10), Nome: c.Nome, Email: c.ClientID}
+	}
 	if a, ok := authFrom(r.Context()); ok && a.sess != nil {
 		return atorDaConta(a.sess.Conta)
 	}
@@ -101,7 +105,7 @@ func naoAuditar(r *http.Request) {
 // e o resultado. Assim, uma tela nova nunca passa em branco por esquecimento.
 func (h *handlers) auditoriaGenerica(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if h.pub == nil || semCliente(r.URL.Path) {
+		if h.pub == nil || semCliente(r.URL.Path) || ehAPI(r.URL.Path) {
 			next.ServeHTTP(w, r)
 			return
 		}

@@ -221,6 +221,7 @@ var nomesDeCampo = map[string]string{
 	"zona": "Zona", "categoria": "Categoria", "latitude": "Latitude", "longitude": "Longitude", "altitude": "Altitude (m)",
 	"distancia_centro": "Distância do centro (km)", "producao": "Entra no relatório de produção",
 	"responsaveis_adicionados": "Responsáveis acrescentados", "responsaveis_removidos": "Responsáveis retirados",
+	"escopos": "Escopos", "validade": "Validade", "limite_por_minuto": "Chamadas por minuto", "client_id": "Identificador (client_id)", "versao_do_segredo": "Versão do segredo",
 	"alvo": "Onde", "referencia": "Referência", "acrescentados": "Acrescentados", "retirados": "Retirados", "locais": "Locais", "origem": "Origem", "endereco": "Endereço", "numero": "Número",
 	"tipo": "Tipo", "lado": "Lado", "sequencia": "Sequência", "bairro": "Bairro", "quarteirao": "Quarteirão",
 	"criados": "Criados", "ja_existiam": "Já existiam", "quarteiroes": "Quarteirões", "uf": "UF",

@@ -24,6 +24,8 @@ type Config struct {
 	GeocodeContact  string // e-mail ou site de quem opera o sistema (o Nominatim exige identificação)
 	ViaCEPURL       string // para trocar o endereço do serviço (vazio = o oficial)
 	NominatimURL    string
+
+	APIJWTSecret    string // chave que assina os tokens da API (vazia = gerada a cada início, só fora de produção)
 	ShutdownTimeout time.Duration
 }
 
@@ -45,11 +47,18 @@ func Load(envFile string) (Config, error) {
 		GeocodeContact:  os.Getenv("GEOCODE_CONTACT"),
 		ViaCEPURL:       os.Getenv("GEOCODE_VIACEP_URL"),
 		NominatimURL:    os.Getenv("GEOCODE_NOMINATIM_URL"),
+		APIJWTSecret:    os.Getenv("API_JWT_SECRET"),
 		MapAttribution:  get("MAP_ATTRIBUTION", "© contribuidores do OpenStreetMap"),
 		ShutdownTimeout: 10 * time.Second,
 	}
 	if cfg.IsProduction() && (cfg.RecaptchaSite == "" || cfg.RecaptchaSecret == "") {
 		return Config{}, fmt.Errorf("em produção, RECAPTCHA_SITE_KEY e RECAPTCHA_SECRET_KEY são obrigatórias")
+	}
+	if cfg.APIJWTSecret != "" && len(cfg.APIJWTSecret) < 32 {
+		return Config{}, fmt.Errorf("API_JWT_SECRET precisa ter pelo menos 32 caracteres")
+	}
+	if cfg.IsProduction() && cfg.APIJWTSecret == "" {
+		return Config{}, fmt.Errorf("em produção, API_JWT_SECRET é obrigatória (use 32 ou mais caracteres aleatórios)")
 	}
 	return cfg, nil
 }

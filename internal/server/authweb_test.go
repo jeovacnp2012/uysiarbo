@@ -40,6 +40,9 @@ type captchaFalso struct {
 
 func (c *captchaFalso) Verificar(context.Context, string, string) (bool, error) { return c.ok, c.err }
 
+// chaveDaAPITeste assina os tokens da API nos testes.
+var chaveDaAPITeste = []byte("chave-de-teste-da-api-com-32-bytes!!")
+
 type mundo struct {
 	h        http.Handler
 	captcha  *captchaFalso
@@ -102,7 +105,7 @@ func novoMundo(t *testing.T) *mundo {
 	return &mundo{captcha: cap, masterPw: masterPw, cliQ: q, pool: pool, pubQ: sqlc.New(pool), geo: gf, h: New(Deps{
 		Log: log, DB: pool, Catalog: sqlc.New(pool), Pools: pools,
 		Resolver: &tenant.Resolver{Pool: pool, BaseDomain: "inovarsistemas.biz", AdminHost: hostConsole},
-		Public:   sqlc.New(pool), Captcha: cap, RecaptchaSite: "chave-publica-de-teste", Tenants: svc, Geocoder: gf,
+		Public:   sqlc.New(pool), Captcha: cap, RecaptchaSite: "chave-publica-de-teste", Tenants: svc, Geocoder: gf, APIKey: chaveDaAPITeste,
 	})}
 }
 

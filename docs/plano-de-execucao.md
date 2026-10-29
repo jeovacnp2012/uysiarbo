@@ -68,14 +68,15 @@ Objetivo: múltiplas prefeituras isoladas, com usuários e permissões.
 
 ## Etapa 2 — API com credenciais por cliente
 Objetivo: leitura e gravação por sistemas externos, de forma segura.
-- [ ] 2.1 Cadastro de credenciais de API por cliente (`client_id`, segredo guardado só como hash, status, validade, rotação)
-- [ ] 2.2 Emissão de token (OAuth2 *client credentials*, JWT de vida curta) e escopos `recurso:read` / `recurso:write`
-- [ ] 2.3 Middleware: identifica o cliente pelo token, aplica o schema, confere escopo, limita taxa de uso
-- [ ] 2.4 Log de chamadas (quem, o quê, resultado) e tela de consumo por credencial
-- [ ] 2.5 Contrato OpenAPI, documentação publicada e SDK de exemplo
-- [ ] 2.6 Padrões de gravação: `Idempotency-Key`, IDs gerados no cliente, erros padronizados, paginação por cursor
-- [ ] 2.7 Tela de gestão de credenciais e escopos
-**Entrega:** um cliente de teste lê e grava um recurso simples via API, com credencial própria.
+- [x] 2.1 Cadastro de credenciais de API por cliente (`client_id`, segredo guardado só como hash, status, validade, rotação)
+- [x] 2.2 Emissão de token (OAuth2 *client credentials*, JWT de vida curta) e escopos `recurso:read` / `recurso:write`
+- [x] 2.3 Middleware: identifica o cliente pelo token, aplica o schema, confere escopo, limita taxa de uso
+- [x] 2.4 Log de chamadas (quem, o quê, resultado) e tela de consumo por credencial
+- [x] 2.5 Contrato OpenAPI, documentação publicada e SDK de exemplo
+- [x] 2.6 Padrões de gravação: `Idempotency-Key`, IDs gerados no cliente, erros padronizados, paginação por cursor
+- [x] 2.7 Tela de gestão de credenciais e escopos
+**Decisões da Etapa 2 (2026-10-29):** a API fica em `https://<subdominio-do-cliente>/api/v1/...` (o cliente vem do endereço, como no resto do sistema); token JWT HS256 de 15 min assinado com `API_JWT_SECRET` (obrigatória em produção), com checagem da credencial no banco a cada chamada (desativar ou rotacionar vale na hora); escopos `recurso:read|write`; o recurso simples da entrega é **cidades**; as demais rotas (bairros, quarteirões, locais) entram na 3.9; nova permissão `conf_api` ("API e integrações") no bloco Configuração; limite padrão de 120 chamadas por minuto por credencial; documentação = contrato OpenAPI em `/api/v1/openapi.yaml` + artigo do Guia + exemplos em `docs/api/`.
+**Entrega:** um cliente de teste lê e grava um recurso simples via API, com credencial própria. **✅ Etapa 2 concluída em 2026-10-29 (versão 1.0.014).**
 
 ## Etapa 3 — Território: cidades, bairros, quarteirões e locais
 - [x] 3.1 Cidades (nome, UF, IBGE, ativa), Bairros (todos os campos do sistema atual: situação, categoria, classificação, zona, IBGE, coordenadas, altitude, distância do centro, mutirão, entra na produção) com **responsáveis** (e escopo "apenas atribuídos" funcionando), e Quarteirões em lote (um por linha ou faixa `1-20`, desativar/reativar); telas, filtros, paginação, auditoria com antes/depois; módulo Bairros "disponível" no painel (versão 1.0.005)

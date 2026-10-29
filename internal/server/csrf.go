@@ -29,7 +29,7 @@ func ehHTTPS(r *http.Request) bool {
 // cabeçalho X-CSRF-Token) e vir do mesmo site (cabeçalho Origin).
 func csrf(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if semCliente(r.URL.Path) {
+		if semCliente(r.URL.Path) || ehAPI(r.URL.Path) { // a API usa token Bearer, sem cookie
 			next.ServeHTTP(w, r)
 			return
 		}

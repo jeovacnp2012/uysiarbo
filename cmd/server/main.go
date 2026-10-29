@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -103,6 +104,7 @@ func run() error {
 			MapTileURL:     cfg.MapTileURL,
 			MapAttribution: cfg.MapAttribution,
 			Geocoder:       geocodificador(cfg),
+			APIKey:         chaveDaAPI(cfg, log),
 			Tenants:        &tenant.Service{Pool: pool, URL: cfg.DatabaseURL, Log: log, Auditoria: audit.Plataforma{Q: sqlc.New(pool)}},
 		}),
 		ReadHeaderTimeout: 5 * time.Second,
@@ -155,4 +157,19 @@ func geocodificador(cfg config.Config) geocode.Geocoder {
 		return geocode.Desligado{}
 	}
 	return &geocode.Gratuito{ViaCEPURL: cfg.ViaCEPURL, NominatimURL: cfg.NominatimURL, Contato: cfg.GeocodeContact}
+}
+
+// chaveDaAPI devolve a chave que assina os tokens da API. Sem API_JWT_SECRET (só permitido fora de
+// produção), gera uma ao iniciar: os tokens valem até o servidor reiniciar.
+func chaveDaAPI(cfg config.Config, log *slog.Logger) []byte {
+	if cfg.APIJWTSecret != "" {
+		return []byte(cfg.APIJWTSecret)
+	}
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		log.Error("gerar chave da API", "erro", err)
+		return nil
+	}
+	log.Warn("API_JWT_SECRET não definida: chave gerada para esta execução; os tokens da API deixam de valer ao reiniciar")
+	return b
 }

@@ -47,6 +47,9 @@ type Deps struct {
 	// Localização automática de endereços (CEP e coordenadas). nil = desligada.
 	Geocoder geocode.Geocoder
 
+	// Chave que assina os tokens da API (mínimo 32 bytes). Vazia = a API fica desligada.
+	APIKey []byte
+
 	// Tenants permite ao console criar clientes e masters (nil = telas do console desligadas).
 	Tenants *tenant.Service
 }
@@ -62,6 +65,7 @@ type handlers struct {
 
 	mapaTiles, mapaCredito string
 	geocoder               geocode.Geocoder
+	api                    *apiEstado
 
 	tenants  *tenant.Service
 	resolver *tenant.Resolver
@@ -86,11 +90,21 @@ func New(d Deps) http.Handler {
 		h.mapaTiles, h.mapaCredito = "https://tile.openstreetmap.org/{z}/{x}/{y}.png", "© contribuidores do OpenStreetMap"
 	}
 	h.presenca = &presenca.Registro{}
+	h.api = &apiEstado{chave: d.APIKey, tocadoEm: map[int64]time.Time{}}
 
 	r := chi.NewRouter()
 	r.Use(securityHeaders, requestID, middleware.RealIP, accessLog(d.Log), recoverer(d.Log))
 	r.Use(middleware.Timeout(30 * time.Second))
 	r.Use(tenancy(d.Log, d.Resolver), csrf, h.autenticacao, h.auditoriaGenerica)
+
+	if len(d.APIKey) >= 32 {
+		r.Post("/api/v1/token", h.apiToken)
+		r.Get("/api/v1/openapi.yaml", openAPI)
+		r.Get("/api/v1/cidades", h.apiAuth("cidades:read", h.apiCidadesLista))
+		r.Get("/api/v1/cidades/{id}", h.apiAuth("cidades:read", h.apiCidadeObter))
+		r.Post("/api/v1/cidades", h.apiAuth("cidades:write", h.idempotente(h.apiCidadeCriar)))
+		r.Patch("/api/v1/cidades/{id}", h.apiAuth("cidades:write", h.idempotente(h.apiCidadeAlterar)))
+	}
 
 	r.Get("/healthz", health)
 	r.Get("/readyz", ready(d.Log, d.DB))
@@ -130,6 +144,14 @@ func New(d Deps) http.Handler {
 	r.Get("/mapa/bairros.geojson", h.exigir("bairro_visualizar", h.mapaBairros))
 	r.Get("/mapa/quarteiroes.geojson", h.exigir("bairro_visualizar", h.mapaQuarteiroes))
 	r.Get("/mapa/locais.geojson", h.exigir("local_visualizar", h.mapaLocais))
+
+	r.Get("/parametros/api", h.exigir("conf_api", h.apiListaPagina))
+	r.Get("/parametros/api/nova", h.exigir("conf_api", h.apiNovaForm))
+	r.Post("/parametros/api", h.exigir("conf_api", h.apiCriar))
+	r.Get("/parametros/api/{id}", h.exigir("conf_api", h.apiFicha))
+	r.Post("/parametros/api/{id}", h.exigir("conf_api", h.apiSalvar))
+	r.Post("/parametros/api/{id}/rotacionar", h.exigir("conf_api", h.apiRotacionar))
+	r.Post("/parametros/api/{id}/ativo", h.exigir("conf_api", h.apiAtivo))
 
 	r.Get("/parametros/acesso", h.exigir("acesso_local", h.acessoPagina))
 	r.Get("/parametros/acesso/quarteiroes", h.exigir("acesso_local", h.grupoQuarteiroes))

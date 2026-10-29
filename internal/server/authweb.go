@@ -56,7 +56,7 @@ func (h *handlers) authService(ctx context.Context) (*auth.Service, error) {
 // Sem consulta ao catálogo configurada (testes simples), não exige nada.
 func (h *handlers) autenticacao(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if h.pub == nil || semCliente(r.URL.Path) {
+		if h.pub == nil || semCliente(r.URL.Path) || ehAPI(r.URL.Path) {
 			next.ServeHTTP(w, r)
 			return
 		}

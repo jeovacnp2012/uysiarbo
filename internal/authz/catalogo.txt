@@ -215,3 +215,4 @@ auditoria_sistema|Histórico geral do sistema|
 # Configuração
 conf_usuario|Usuário|
 conf_papel|Papel de usuário|
+conf_api|API e integrações|
