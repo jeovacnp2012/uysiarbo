@@ -73,6 +73,39 @@ type ClienteInfo struct {
 	CriadoEm pgtype.Timestamptz `json:"criado_em"`
 }
 
+type Locai struct {
+	ID                   int64              `json:"id"`
+	Tipo                 string             `json:"tipo"`
+	Cep                  string             `json:"cep"`
+	Endereco             string             `json:"endereco"`
+	Numero               string             `json:"numero"`
+	Referencia           string             `json:"referencia"`
+	BairroID             int64              `json:"bairro_id"`
+	QuarteiraoID         int64              `json:"quarteirao_id"`
+	Lado                 string             `json:"lado"`
+	Sequencia            pgtype.Int4        `json:"sequencia"`
+	Complemento          pgtype.Int4        `json:"complemento"`
+	Latitude             pgtype.Float8      `json:"latitude"`
+	Longitude            pgtype.Float8      `json:"longitude"`
+	Proprietario         string             `json:"proprietario"`
+	ProprietarioTelefone string             `json:"proprietario_telefone"`
+	ProprietarioCpf      string             `json:"proprietario_cpf"`
+	ProprietarioWhatsapp string             `json:"proprietario_whatsapp"`
+	ProprietarioEmail    string             `json:"proprietario_email"`
+	AceitaWhatsapp       bool               `json:"aceita_whatsapp"`
+	AceitaEmail          bool               `json:"aceita_email"`
+	Inquilino            string             `json:"inquilino"`
+	InquilinoTelefone    string             `json:"inquilino_telefone"`
+	Humanos              pgtype.Int4        `json:"humanos"`
+	Cachorros            pgtype.Int4        `json:"cachorros"`
+	Gatos                pgtype.Int4        `json:"gatos"`
+	Roedores             pgtype.Int4        `json:"roedores"`
+	Ativo                bool               `json:"ativo"`
+	CriadoPor            pgtype.Int8        `json:"criado_por"`
+	CriadoEm             pgtype.Timestamptz `json:"criado_em"`
+	AtualizadoEm         pgtype.Timestamptz `json:"atualizado_em"`
+}
+
 type Papei struct {
 	ID           int64              `json:"id"`
 	Nome         string             `json:"nome"`

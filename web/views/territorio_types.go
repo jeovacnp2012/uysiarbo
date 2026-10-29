@@ -29,6 +29,7 @@ func (d CidadeFormData) Novo() bool { return d.ID == 0 }
 // ---- Bairros ----
 
 type CidadeOpcao struct {
+	Valor       string // texto do option, quando não é um número (ex.: tipo de local)
 	ID          int64
 	Rotulo      string
 	Selecionada bool
@@ -113,3 +114,58 @@ type Modulo struct {
 	Nome string
 	Href string
 }
+
+// ---- Locais ----
+
+type LocalLinha struct {
+	ID           int64
+	Endereco     string
+	Tipo         string
+	Bairro       string
+	Quarteirao   string
+	Lado         string
+	Sequencia    string
+	Complemento  string
+	Proprietario string
+	Habitantes   string
+	Ativo        bool
+}
+
+type LocaisFiltro struct{ Busca, Bairro, Tipo, Situacao string }
+
+type LocaisData struct {
+	Filtro     LocaisFiltro
+	Bairros    []CidadeOpcao
+	Tipos      []CidadeOpcao
+	Linhas     []LocalLinha
+	Pag        Pagination
+	Query      url.Values
+	PodeEditar bool
+	Restrito   bool // o papel mostra só os locais atribuídos ou só os pontos estratégicos
+}
+
+// LocalCampos são os valores do formulário (texto, como foram digitados ou vieram do banco).
+type LocalCampos struct {
+	Tipo, CEP, Endereco, Numero, Referencia string
+	BairroID, QuarteiraoID, Lado            string
+	Sequencia, Complemento                  string
+	Latitude, Longitude                     string
+	Proprietario, ProprietarioTelefone      string
+	ProprietarioCPF, Whatsapp, Email        string
+	AceitaWhatsapp, AceitaEmail             bool
+	Inquilino, InquilinoTelefone            string
+	Humanos, Cachorros, Gatos, Roedores     string
+}
+
+type LocalFormData struct {
+	ID          int64 // 0 = local novo
+	Campos      LocalCampos
+	Bairros     []CidadeOpcao
+	Quarteiroes []CidadeOpcao
+	Tipos       []CidadeOpcao
+	PodeEditar  bool
+	Erro        string
+	CSRF        string
+}
+
+func (d LocalFormData) Novo() bool { return d.ID == 0 }

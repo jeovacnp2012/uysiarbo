@@ -92,6 +92,9 @@ func (h *handlers) home(w http.ResponseWriter, r *http.Request) {
 				views.Atalho{Titulo: "Cidades", Descricao: "Os municípios atendidos.", Href: "/cidades"},
 			)
 		}
+		if pr.Pode("local_visualizar") {
+			d.Atalhos = append(d.Atalhos, views.Atalho{Titulo: "Locais", Descricao: "Imóveis e pontos visitados, com moradores e habitantes.", Href: "/locais"})
+		}
 		if pr.Pode("conf_usuario") {
 			d.Atalhos = append(d.Atalhos, views.Atalho{Titulo: "Usuários", Descricao: "Cadastre pessoas, escolha o papel e resete senhas.", Href: "/usuarios"})
 		}
@@ -637,6 +640,7 @@ func (h *handlers) masterResetarSenha(w http.ResponseWriter, r *http.Request) {
 // (o painel inicial mostra "disponível" e leva à tela, em vez de "em construção").
 var modulosProntos = map[string]struct{ href, permissao string }{
 	"Bairros":      {"/bairros", "bairro_visualizar"},
+	"Locais":       {"/locais", "local_visualizar"},
 	"Auditoria":    {"/auditoria", "auditoria_sistema"},
 	"Configuração": {"/usuarios", "conf_usuario"},
 }

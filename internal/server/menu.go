@@ -42,6 +42,7 @@ func (s *handlers) menu(r *http.Request) []views.NavGrupo {
 		pode := pr.Pode("bairro_visualizar")
 		add(pode, "Bairros", "/bairros")
 		add(pode, "Cidades", "/cidades")
+		add(pr.Pode("local_visualizar"), "Locais", "/locais")
 		incluir("Território", "territorio")
 
 		add(pr.Pode("conf_usuario"), "Usuários", "/usuarios")

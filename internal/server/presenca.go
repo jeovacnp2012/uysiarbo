@@ -23,6 +23,7 @@ type recursoPresenca struct {
 
 var recursosPresenca = map[string]recursoPresenca{
 	"bairro":  {ver: "bairro_visualizar", editar: "bairro_adicionar", noCliente: true},
+	"local":   {ver: "local_visualizar", editar: "local_adicionar", noCliente: true},
 	"cidade":  {ver: "bairro_visualizar", editar: "bairro_adicionar", noCliente: true},
 	"usuario": {ver: "conf_usuario", editar: "conf_usuario", noCliente: true},
 	"papel":   {ver: "conf_papel", editar: "conf_papel", noCliente: true},

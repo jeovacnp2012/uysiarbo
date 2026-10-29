@@ -164,6 +164,8 @@ var Rotulos = map[string]string{
 	"bairro.editar":         "Editou um bairro",
 	"quarteirao.criar":      "Cadastrou quarteirões",
 	"quarteirao.status":     "Ativou ou desativou um quarteirão",
+	"local.criar":           "Cadastrou um local",
+	"local.editar":          "Editou um local",
 	"bairro.limite":         "Gravou o limite de um bairro no mapa",
 	"bairro.limite_remover": "Removeu o limite de um bairro do mapa",
 	"quarteirao.limites":    "Importou limites de quarteirões no mapa",
