@@ -36,6 +36,20 @@ func (q *Queries) AtualizarProgressoImportacao(ctx context.Context, arg Atualiza
 	return err
 }
 
+const cancelarImportacao = `-- name: CancelarImportacao :exec
+UPDATE importacoes SET status = 'cancelada', arquivo = NULL, mensagem = $2 WHERE id = $1 AND status IN ('analisada', 'mapeando')
+`
+
+type CancelarImportacaoParams struct {
+	ID       int64  `json:"id"`
+	Mensagem string `json:"mensagem"`
+}
+
+func (q *Queries) CancelarImportacao(ctx context.Context, arg CancelarImportacaoParams) error {
+	_, err := q.db.Exec(ctx, cancelarImportacao, arg.ID, arg.Mensagem)
+	return err
+}
+
 const concluirImportacao = `-- name: ConcluirImportacao :exec
 UPDATE importacoes SET status = $2, concluido_em = now(), mensagem = $3 WHERE id = $1
 `
@@ -95,7 +109,7 @@ const createImportacao = `-- name: CreateImportacao :one
 INSERT INTO importacoes (tipo, arquivo_nome, arquivo_hash, atualizar_existentes, status, total_linhas, prev_criar, prev_atualizar,
                          prev_ignorar, prev_erro, colunas_ignoradas, responsavel_id, responsavel_nome, cabecalho)
 VALUES ($1, $2, $3, $4, 'analisada', $5, $6, $7, $8, $9, $10, $11, $12, $13)
-RETURNING id, tipo, origem, arquivo_nome, arquivo_hash, atualizar_existentes, status, total_linhas, prev_criar, prev_atualizar, prev_ignorar, prev_erro, processadas, criados, atualizados, ignorados, erros, desfeitos, colunas_ignoradas, responsavel_id, responsavel_nome, mensagem, criado_em, iniciado_em, concluido_em, desfeito_em, cabecalho
+RETURNING id, tipo, origem, arquivo_nome, arquivo_hash, atualizar_existentes, status, total_linhas, prev_criar, prev_atualizar, prev_ignorar, prev_erro, processadas, criados, atualizados, ignorados, erros, desfeitos, colunas_ignoradas, responsavel_id, responsavel_nome, mensagem, criado_em, iniciado_em, concluido_em, desfeito_em, cabecalho, conector, arquivo, origem_info
 `
 
 type CreateImportacaoParams struct {
@@ -160,6 +174,117 @@ func (q *Queries) CreateImportacao(ctx context.Context, arg CreateImportacaoPara
 		&i.ConcluidoEm,
 		&i.DesfeitoEm,
 		&i.Cabecalho,
+		&i.Conector,
+		&i.Arquivo,
+		&i.OrigemInfo,
+	)
+	return i, err
+}
+
+const createImportacaoParaMapear = `-- name: CreateImportacaoParaMapear :one
+
+INSERT INTO importacoes (tipo, conector, arquivo_nome, arquivo_hash, atualizar_existentes, status, total_linhas, colunas_ignoradas,
+                         responsavel_id, responsavel_nome, cabecalho, arquivo, origem_info)
+VALUES ($1, $2, $3, $4, $5, 'mapeando', $6, '', $7, $8, $9, $10, $11)
+RETURNING id, tipo, origem, arquivo_nome, arquivo_hash, atualizar_existentes, status, total_linhas, prev_criar, prev_atualizar, prev_ignorar, prev_erro, processadas, criados, atualizados, ignorados, erros, desfeitos, colunas_ignoradas, responsavel_id, responsavel_nome, mensagem, criado_em, iniciado_em, concluido_em, desfeito_em, cabecalho, conector, arquivo, origem_info
+`
+
+type CreateImportacaoParaMapearParams struct {
+	Tipo                string      `json:"tipo"`
+	Conector            string      `json:"conector"`
+	ArquivoNome         string      `json:"arquivo_nome"`
+	ArquivoHash         []byte      `json:"arquivo_hash"`
+	AtualizarExistentes bool        `json:"atualizar_existentes"`
+	TotalLinhas         int32       `json:"total_linhas"`
+	ResponsavelID       pgtype.Int8 `json:"responsavel_id"`
+	ResponsavelNome     string      `json:"responsavel_nome"`
+	Cabecalho           []byte      `json:"cabecalho"`
+	Arquivo             []byte      `json:"arquivo"`
+	OrigemInfo          string      `json:"origem_info"`
+}
+
+// ---------------------------------------------------------------- Conectores e mapeamentos
+func (q *Queries) CreateImportacaoParaMapear(ctx context.Context, arg CreateImportacaoParaMapearParams) (Importaco, error) {
+	row := q.db.QueryRow(ctx, createImportacaoParaMapear,
+		arg.Tipo,
+		arg.Conector,
+		arg.ArquivoNome,
+		arg.ArquivoHash,
+		arg.AtualizarExistentes,
+		arg.TotalLinhas,
+		arg.ResponsavelID,
+		arg.ResponsavelNome,
+		arg.Cabecalho,
+		arg.Arquivo,
+		arg.OrigemInfo,
+	)
+	var i Importaco
+	err := row.Scan(
+		&i.ID,
+		&i.Tipo,
+		&i.Origem,
+		&i.ArquivoNome,
+		&i.ArquivoHash,
+		&i.AtualizarExistentes,
+		&i.Status,
+		&i.TotalLinhas,
+		&i.PrevCriar,
+		&i.PrevAtualizar,
+		&i.PrevIgnorar,
+		&i.PrevErro,
+		&i.Processadas,
+		&i.Criados,
+		&i.Atualizados,
+		&i.Ignorados,
+		&i.Erros,
+		&i.Desfeitos,
+		&i.ColunasIgnoradas,
+		&i.ResponsavelID,
+		&i.ResponsavelNome,
+		&i.Mensagem,
+		&i.CriadoEm,
+		&i.IniciadoEm,
+		&i.ConcluidoEm,
+		&i.DesfeitoEm,
+		&i.Cabecalho,
+		&i.Conector,
+		&i.Arquivo,
+		&i.OrigemInfo,
+	)
+	return i, err
+}
+
+const createMapeamentoDeImportacao = `-- name: CreateMapeamentoDeImportacao :one
+INSERT INTO importacao_mapeamentos (nome, conector, tipo, mapa, criado_por) VALUES ($1, $2, $3, $4, $5) RETURNING id, nome, conector, tipo, mapa, criado_por, criado_em, deleted_at, deleted_by
+`
+
+type CreateMapeamentoDeImportacaoParams struct {
+	Nome      string      `json:"nome"`
+	Conector  string      `json:"conector"`
+	Tipo      string      `json:"tipo"`
+	Mapa      []byte      `json:"mapa"`
+	CriadoPor pgtype.Int8 `json:"criado_por"`
+}
+
+func (q *Queries) CreateMapeamentoDeImportacao(ctx context.Context, arg CreateMapeamentoDeImportacaoParams) (ImportacaoMapeamento, error) {
+	row := q.db.QueryRow(ctx, createMapeamentoDeImportacao,
+		arg.Nome,
+		arg.Conector,
+		arg.Tipo,
+		arg.Mapa,
+		arg.CriadoPor,
+	)
+	var i ImportacaoMapeamento
+	err := row.Scan(
+		&i.ID,
+		&i.Nome,
+		&i.Conector,
+		&i.Tipo,
+		&i.Mapa,
+		&i.CriadoPor,
+		&i.CriadoEm,
+		&i.DeletedAt,
+		&i.DeletedBy,
 	)
 	return i, err
 }
@@ -179,8 +304,83 @@ func (q *Queries) DesfazerImportacaoConcluida(ctx context.Context, arg DesfazerI
 	return err
 }
 
+const finalizarAnaliseDaImportacao = `-- name: FinalizarAnaliseDaImportacao :one
+UPDATE importacoes
+SET status = 'analisada', arquivo = NULL, total_linhas = $2, prev_criar = $3, prev_atualizar = $4, prev_ignorar = $5, prev_erro = $6, colunas_ignoradas = $7
+WHERE id = $1 AND status = 'mapeando'
+RETURNING id, tipo, origem, arquivo_nome, arquivo_hash, atualizar_existentes, status, total_linhas, prev_criar, prev_atualizar, prev_ignorar, prev_erro, processadas, criados, atualizados, ignorados, erros, desfeitos, colunas_ignoradas, responsavel_id, responsavel_nome, mensagem, criado_em, iniciado_em, concluido_em, desfeito_em, cabecalho, conector, arquivo, origem_info
+`
+
+type FinalizarAnaliseDaImportacaoParams struct {
+	ID               int64  `json:"id"`
+	TotalLinhas      int32  `json:"total_linhas"`
+	PrevCriar        int32  `json:"prev_criar"`
+	PrevAtualizar    int32  `json:"prev_atualizar"`
+	PrevIgnorar      int32  `json:"prev_ignorar"`
+	PrevErro         int32  `json:"prev_erro"`
+	ColunasIgnoradas string `json:"colunas_ignoradas"`
+}
+
+func (q *Queries) FinalizarAnaliseDaImportacao(ctx context.Context, arg FinalizarAnaliseDaImportacaoParams) (Importaco, error) {
+	row := q.db.QueryRow(ctx, finalizarAnaliseDaImportacao,
+		arg.ID,
+		arg.TotalLinhas,
+		arg.PrevCriar,
+		arg.PrevAtualizar,
+		arg.PrevIgnorar,
+		arg.PrevErro,
+		arg.ColunasIgnoradas,
+	)
+	var i Importaco
+	err := row.Scan(
+		&i.ID,
+		&i.Tipo,
+		&i.Origem,
+		&i.ArquivoNome,
+		&i.ArquivoHash,
+		&i.AtualizarExistentes,
+		&i.Status,
+		&i.TotalLinhas,
+		&i.PrevCriar,
+		&i.PrevAtualizar,
+		&i.PrevIgnorar,
+		&i.PrevErro,
+		&i.Processadas,
+		&i.Criados,
+		&i.Atualizados,
+		&i.Ignorados,
+		&i.Erros,
+		&i.Desfeitos,
+		&i.ColunasIgnoradas,
+		&i.ResponsavelID,
+		&i.ResponsavelNome,
+		&i.Mensagem,
+		&i.CriadoEm,
+		&i.IniciadoEm,
+		&i.ConcluidoEm,
+		&i.DesfeitoEm,
+		&i.Cabecalho,
+		&i.Conector,
+		&i.Arquivo,
+		&i.OrigemInfo,
+	)
+	return i, err
+}
+
+const forceDeleteMapeamento = `-- name: ForceDeleteMapeamento :execrows
+DELETE FROM importacao_mapeamentos WHERE id = $1 AND deleted_at IS NOT NULL
+`
+
+func (q *Queries) ForceDeleteMapeamento(ctx context.Context, id int64) (int64, error) {
+	result, err := q.db.Exec(ctx, forceDeleteMapeamento, id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const getImportacao = `-- name: GetImportacao :one
-SELECT id, tipo, origem, arquivo_nome, arquivo_hash, atualizar_existentes, status, total_linhas, prev_criar, prev_atualizar, prev_ignorar, prev_erro, processadas, criados, atualizados, ignorados, erros, desfeitos, colunas_ignoradas, responsavel_id, responsavel_nome, mensagem, criado_em, iniciado_em, concluido_em, desfeito_em, cabecalho FROM importacoes WHERE id = $1
+SELECT id, tipo, origem, arquivo_nome, arquivo_hash, atualizar_existentes, status, total_linhas, prev_criar, prev_atualizar, prev_ignorar, prev_erro, processadas, criados, atualizados, ignorados, erros, desfeitos, colunas_ignoradas, responsavel_id, responsavel_nome, mensagem, criado_em, iniciado_em, concluido_em, desfeito_em, cabecalho, conector, arquivo, origem_info FROM importacoes WHERE id = $1
 `
 
 func (q *Queries) GetImportacao(ctx context.Context, id int64) (Importaco, error) {
@@ -214,6 +414,51 @@ func (q *Queries) GetImportacao(ctx context.Context, id int64) (Importaco, error
 		&i.ConcluidoEm,
 		&i.DesfeitoEm,
 		&i.Cabecalho,
+		&i.Conector,
+		&i.Arquivo,
+		&i.OrigemInfo,
+	)
+	return i, err
+}
+
+const getMapeamentoDeImportacao = `-- name: GetMapeamentoDeImportacao :one
+SELECT id, nome, conector, tipo, mapa, criado_por, criado_em, deleted_at, deleted_by FROM importacao_mapeamentos WHERE id = $1 AND deleted_at IS NULL
+`
+
+func (q *Queries) GetMapeamentoDeImportacao(ctx context.Context, id int64) (ImportacaoMapeamento, error) {
+	row := q.db.QueryRow(ctx, getMapeamentoDeImportacao, id)
+	var i ImportacaoMapeamento
+	err := row.Scan(
+		&i.ID,
+		&i.Nome,
+		&i.Conector,
+		&i.Tipo,
+		&i.Mapa,
+		&i.CriadoPor,
+		&i.CriadoEm,
+		&i.DeletedAt,
+		&i.DeletedBy,
+	)
+	return i, err
+}
+
+const getMapeamentoQualquer = `-- name: GetMapeamentoQualquer :one
+SELECT id, nome, conector, tipo, mapa, criado_por, criado_em, deleted_at, deleted_by FROM importacao_mapeamentos WHERE id = $1
+`
+
+func (q *Queries) GetMapeamentoQualquer(ctx context.Context, id int64) (ImportacaoMapeamento, error) {
+	row := q.db.QueryRow(ctx, getMapeamentoQualquer, id)
+	var i ImportacaoMapeamento
+	err := row.Scan(
+		&i.ID,
+		&i.Nome,
+		&i.Conector,
+		&i.Tipo,
+		&i.Mapa,
+		&i.CriadoPor,
+		&i.CriadoEm,
+		&i.DeletedAt,
+		&i.DeletedBy,
 	)
 	return i, err
 }
@@ -387,6 +632,61 @@ func (q *Queries) ListImportacaoLinhas(ctx context.Context, arg ListImportacaoLi
 	return items, nil
 }
 
+const listImportacaoLinhasApi = `-- name: ListImportacaoLinhasApi :many
+SELECT linha, acao, mensagem, resultado, resultado_msg, registro_id FROM importacao_linhas
+WHERE importacao_id = $1::bigint AND linha > $2::int
+  AND ($3::text = '' OR acao = $3::text)
+ORDER BY linha LIMIT $4::int
+`
+
+type ListImportacaoLinhasApiParams struct {
+	ImportacaoID int64  `json:"importacao_id"`
+	Depois       int32  `json:"depois"`
+	Acao         string `json:"acao"`
+	Limite       int32  `json:"limite"`
+}
+
+type ListImportacaoLinhasApiRow struct {
+	Linha        int32       `json:"linha"`
+	Acao         string      `json:"acao"`
+	Mensagem     string      `json:"mensagem"`
+	Resultado    pgtype.Text `json:"resultado"`
+	ResultadoMsg string      `json:"resultado_msg"`
+	RegistroID   pgtype.Int8 `json:"registro_id"`
+}
+
+func (q *Queries) ListImportacaoLinhasApi(ctx context.Context, arg ListImportacaoLinhasApiParams) ([]ListImportacaoLinhasApiRow, error) {
+	rows, err := q.db.Query(ctx, listImportacaoLinhasApi,
+		arg.ImportacaoID,
+		arg.Depois,
+		arg.Acao,
+		arg.Limite,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListImportacaoLinhasApiRow
+	for rows.Next() {
+		var i ListImportacaoLinhasApiRow
+		if err := rows.Scan(
+			&i.Linha,
+			&i.Acao,
+			&i.Mensagem,
+			&i.Resultado,
+			&i.ResultadoMsg,
+			&i.RegistroID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listImportacaoLinhasParaDesfazer = `-- name: ListImportacaoLinhasParaDesfazer :many
 SELECT importacao_id, linha, acao, mensagem, alvo_id, dados, antes, original, resultado, resultado_msg, registro_id FROM importacao_linhas
 WHERE importacao_id = $1 AND resultado IN ('criado', 'atualizado')
@@ -519,7 +819,7 @@ func (q *Queries) ListImportacaoLinhasRelatorio(ctx context.Context, arg ListImp
 }
 
 const listImportacoes = `-- name: ListImportacoes :many
-SELECT id, tipo, origem, arquivo_nome, arquivo_hash, atualizar_existentes, status, total_linhas, prev_criar, prev_atualizar, prev_ignorar, prev_erro, processadas, criados, atualizados, ignorados, erros, desfeitos, colunas_ignoradas, responsavel_id, responsavel_nome, mensagem, criado_em, iniciado_em, concluido_em, desfeito_em, cabecalho FROM importacoes ORDER BY id DESC LIMIT 100
+SELECT id, tipo, origem, arquivo_nome, arquivo_hash, atualizar_existentes, status, total_linhas, prev_criar, prev_atualizar, prev_ignorar, prev_erro, processadas, criados, atualizados, ignorados, erros, desfeitos, colunas_ignoradas, responsavel_id, responsavel_nome, mensagem, criado_em, iniciado_em, concluido_em, desfeito_em, cabecalho, conector, arquivo, origem_info FROM importacoes ORDER BY id DESC LIMIT 100
 `
 
 func (q *Queries) ListImportacoes(ctx context.Context) ([]Importaco, error) {
@@ -559,6 +859,9 @@ func (q *Queries) ListImportacoes(ctx context.Context) ([]Importaco, error) {
 			&i.ConcluidoEm,
 			&i.DesfeitoEm,
 			&i.Cabecalho,
+			&i.Conector,
+			&i.Arquivo,
+			&i.OrigemInfo,
 		); err != nil {
 			return nil, err
 		}
@@ -616,6 +919,85 @@ func (q *Queries) ListLocaisParaImportacao(ctx context.Context) ([]ListLocaisPar
 	return items, nil
 }
 
+const listMapeamentosDeImportacao = `-- name: ListMapeamentosDeImportacao :many
+SELECT id, nome, conector, tipo, mapa, criado_por, criado_em, deleted_at, deleted_by FROM importacao_mapeamentos WHERE conector = $1 AND tipo = $2 AND deleted_at IS NULL ORDER BY lower(nome)
+`
+
+type ListMapeamentosDeImportacaoParams struct {
+	Conector string `json:"conector"`
+	Tipo     string `json:"tipo"`
+}
+
+func (q *Queries) ListMapeamentosDeImportacao(ctx context.Context, arg ListMapeamentosDeImportacaoParams) ([]ImportacaoMapeamento, error) {
+	rows, err := q.db.Query(ctx, listMapeamentosDeImportacao, arg.Conector, arg.Tipo)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ImportacaoMapeamento
+	for rows.Next() {
+		var i ImportacaoMapeamento
+		if err := rows.Scan(
+			&i.ID,
+			&i.Nome,
+			&i.Conector,
+			&i.Tipo,
+			&i.Mapa,
+			&i.CriadoPor,
+			&i.CriadoEm,
+			&i.DeletedAt,
+			&i.DeletedBy,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listMapeamentosExcluidos = `-- name: ListMapeamentosExcluidos :many
+SELECT m.id, m.nome AS rotulo, (m.conector || ' · ' || m.tipo)::text AS contexto, m.deleted_at, COALESCE(u.nome, '')::text AS excluido_por
+FROM importacao_mapeamentos m LEFT JOIN usuarios u ON u.id = m.deleted_by
+WHERE m.deleted_at IS NOT NULL ORDER BY m.deleted_at DESC LIMIT 500
+`
+
+type ListMapeamentosExcluidosRow struct {
+	ID          int64              `json:"id"`
+	Rotulo      string             `json:"rotulo"`
+	Contexto    string             `json:"contexto"`
+	DeletedAt   pgtype.Timestamptz `json:"deleted_at"`
+	ExcluidoPor string             `json:"excluido_por"`
+}
+
+func (q *Queries) ListMapeamentosExcluidos(ctx context.Context) ([]ListMapeamentosExcluidosRow, error) {
+	rows, err := q.db.Query(ctx, listMapeamentosExcluidos)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListMapeamentosExcluidosRow
+	for rows.Next() {
+		var i ListMapeamentosExcluidosRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Rotulo,
+			&i.Contexto,
+			&i.DeletedAt,
+			&i.ExcluidoPor,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listQuarteiroesParaImportacao = `-- name: ListQuarteiroesParaImportacao :many
 SELECT id, bairro_id, nome, ativo, id_externo FROM quarteiroes WHERE deleted_at IS NULL
 `
@@ -654,6 +1036,40 @@ func (q *Queries) ListQuarteiroesParaImportacao(ctx context.Context) ([]ListQuar
 	return items, nil
 }
 
+const listTodosMapeamentosDeImportacao = `-- name: ListTodosMapeamentosDeImportacao :many
+SELECT id, nome, conector, tipo, mapa, criado_por, criado_em, deleted_at, deleted_by FROM importacao_mapeamentos WHERE deleted_at IS NULL ORDER BY conector, tipo, lower(nome)
+`
+
+func (q *Queries) ListTodosMapeamentosDeImportacao(ctx context.Context) ([]ImportacaoMapeamento, error) {
+	rows, err := q.db.Query(ctx, listTodosMapeamentosDeImportacao)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ImportacaoMapeamento
+	for rows.Next() {
+		var i ImportacaoMapeamento
+		if err := rows.Scan(
+			&i.ID,
+			&i.Nome,
+			&i.Conector,
+			&i.Tipo,
+			&i.Mapa,
+			&i.CriadoPor,
+			&i.CriadoEm,
+			&i.DeletedAt,
+			&i.DeletedBy,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const marcarLinhasComErroDaImportacao = `-- name: MarcarLinhasComErroDaImportacao :execrows
 UPDATE importacao_linhas SET resultado = 'erro', resultado_msg = mensagem
 WHERE importacao_id = $1 AND acao = 'erro' AND resultado IS NULL
@@ -661,6 +1077,18 @@ WHERE importacao_id = $1 AND acao = 'erro' AND resultado IS NULL
 
 func (q *Queries) MarcarLinhasComErroDaImportacao(ctx context.Context, importacaoID int64) (int64, error) {
 	result, err := q.db.Exec(ctx, marcarLinhasComErroDaImportacao, importacaoID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const restoreMapeamento = `-- name: RestoreMapeamento :execrows
+UPDATE importacao_mapeamentos SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 AND deleted_at IS NOT NULL
+`
+
+func (q *Queries) RestoreMapeamento(ctx context.Context, id int64) (int64, error) {
+	result, err := q.db.Exec(ctx, restoreMapeamento, id)
 	if err != nil {
 		return 0, err
 	}
@@ -733,4 +1161,21 @@ type SetImportacaoStatusParams struct {
 func (q *Queries) SetImportacaoStatus(ctx context.Context, arg SetImportacaoStatusParams) error {
 	_, err := q.db.Exec(ctx, setImportacaoStatus, arg.ID, arg.Status, arg.Mensagem)
 	return err
+}
+
+const softDeleteMapeamento = `-- name: SoftDeleteMapeamento :execrows
+UPDATE importacao_mapeamentos SET deleted_at = now(), deleted_by = $1::bigint WHERE id = $2::bigint AND deleted_at IS NULL
+`
+
+type SoftDeleteMapeamentoParams struct {
+	Por pgtype.Int8 `json:"por"`
+	ID  int64       `json:"id"`
+}
+
+func (q *Queries) SoftDeleteMapeamento(ctx context.Context, arg SoftDeleteMapeamentoParams) (int64, error) {
+	result, err := q.db.Exec(ctx, softDeleteMapeamento, arg.Por, arg.ID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }

@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: UYSI ARBO — API para sistemas externos
-  version: "1.1.0"
+  version: "1.2.0"
   description: |
     API de leitura e gravação do UYSI ARBO. Cada cliente (prefeitura) tem a sua, no próprio endereço:
     `https://<subdominio-do-cliente>/api/v1/...`.
@@ -395,6 +395,98 @@ paths:
         "404": { $ref: "#/components/responses/Erro" }
         "409": { $ref: "#/components/responses/Erro" }
         "422": { $ref: "#/components/responses/Erro" }
+  /importacoes:
+    post:
+      summary: Envia linhas para importar (análise com prévia, sem gravar)
+      description: |
+        Escopos: `importacoes:write` e o escopo de gravação do tipo (por exemplo, `locais:write`). As linhas passam pela mesma análise
+        das telas de Importação de dados: cada linha vira **criar**, **atualizar**, **ignorar** ou **erro**, e nada é gravado até
+        `POST /importacoes/{id}/executar`. Cada linha é um objeto cujas chaves são os nomes das colunas do modelo de importação
+        (por exemplo, para bairros: `cidade`, `nome`, `zona`, `id_externo`...); bairros, quarteirões e locais na ordem bairros, quarteirões, locais.
+      parameters:
+        - { $ref: "#/components/parameters/IdempotencyKey" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tipo, linhas]
+              additionalProperties: false
+              properties:
+                tipo: { type: string, enum: [bairros, quarteiroes, locais] }
+                atualizar_existentes: { type: boolean, default: false, description: "Se verdadeiro, altera os registros que já existem (só com o que vier preenchido)." }
+                linhas:
+                  type: array
+                  maxItems: 20000
+                  items: { type: object, additionalProperties: true }
+      responses:
+        "201":
+          description: Análise pronta
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Importacao" }
+        "400": { $ref: "#/components/responses/Erro" }
+        "403": { $ref: "#/components/responses/Erro" }
+        "422": { $ref: "#/components/responses/Erro" }
+  /importacoes/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+    get:
+      summary: Situação da importação (prévia e andamento)
+      description: "Escopo: `importacoes:read`."
+      responses:
+        "200":
+          description: A importação
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Importacao" }
+        "404": { $ref: "#/components/responses/Erro" }
+  /importacoes/{id}/linhas:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+    get:
+      summary: Linhas da importação, com a análise e o resultado de cada uma
+      description: "Escopo: `importacoes:read`. Filtre `acao=erro` para ver só o que precisa de correção."
+      parameters:
+        - { name: acao, in: query, schema: { type: string, enum: [criar, atualizar, ignorar, erro] } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 200, default: 50 } }
+        - { name: cursor, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: Página de linhas (`linha`, `acao`, `mensagem`, `resultado`, `resultado_msg`, `registro_id`)
+          content:
+            application/json:
+              schema: { type: object }
+        "404": { $ref: "#/components/responses/Erro" }
+  /importacoes/{id}/executar:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+    post:
+      summary: Confirma e inicia a gravação (em segundo plano)
+      description: "Escopo: `importacoes:write`. Responde 202; acompanhe em `GET /importacoes/{id}`. Só uma importação roda por vez no ambiente (409 com Retry-After)."
+      parameters:
+        - { $ref: "#/components/parameters/IdempotencyKey" }
+      responses:
+        "202":
+          description: Iniciada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Importacao" }
+        "409": { $ref: "#/components/responses/Erro" }
+  /importacoes/{id}/descartar:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+    post:
+      summary: Descarta uma importação que ainda aguarda confirmação
+      description: "Escopo: `importacoes:write`. Nada foi gravado, então nada é desfeito."
+      responses:
+        "200":
+          description: Descartada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Importacao" }
+        "409": { $ref: "#/components/responses/Erro" }
 components:
   securitySchemes:
     bearer:
@@ -423,6 +515,35 @@ components:
                   message: { type: string }
                   request_id: { type: string }
   schemas:
+    Importacao:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        tipo: { type: string }
+        status: { type: string, enum: [analisada, executando, concluida, interrompida, cancelada, desfeita, erro] }
+        origem: { type: string }
+        atualizar_existentes: { type: boolean }
+        total_linhas: { type: integer }
+        previa:
+          type: object
+          properties:
+            criar: { type: integer }
+            atualizar: { type: integer }
+            ignorar: { type: integer }
+            erro: { type: integer }
+        andamento:
+          type: object
+          properties:
+            processadas: { type: integer }
+            criados: { type: integer }
+            atualizados: { type: integer }
+            ignorados: { type: integer }
+            erros: { type: integer }
+            percentual: { type: integer }
+        colunas_ignoradas: { type: array, items: { type: string } }
+        mensagem: { type: string }
+        criado_em: { type: string, format: date-time }
+        concluido_em: { type: string, format: date-time, nullable: true }
     Bairro:
       type: object
       properties:

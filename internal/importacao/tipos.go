@@ -110,7 +110,7 @@ func TipoPorCodigo(codigo string) (Tipo, bool) {
 
 var semAcento = strings.NewReplacer(
 	"á", "a", "à", "a", "â", "a", "ã", "a", "ä", "a", "é", "e", "è", "e", "ê", "e", "ë", "e", "í", "i", "ì", "i", "î", "i", "ï", "i",
-	"ó", "o", "ò", "o", "ô", "o", "õ", "o", "ö", "o", "ú", "u", "ù", "u", "û", "u", "ü", "u", "ç", "c", "ñ", "n",
+	"º", "", "ª", "", "°", "", "ó", "o", "ò", "o", "ô", "o", "õ", "o", "ö", "o", "ú", "u", "ù", "u", "û", "u", "ü", "u", "ç", "c", "ñ", "n",
 )
 
 // Normalizar põe em minúsculas, tira acentos e junta palavras com "_": "Número do Local" vira "numero_do_local".
@@ -176,9 +176,9 @@ func (m Mapeamento) Tem(nome string) bool { _, ok := m.Posicao[nome]; return ok 
 // Booleano lê sim/não, s/n, true/false, 1/0, verdadeiro/falso.
 func Booleano(s string) (valor, ok bool) {
 	switch Normalizar(s) {
-	case "sim", "s", "true", "verdadeiro", "1", "x", "yes", "y":
+	case "sim", "s", "true", "verdadeiro", "1", "x", "yes", "y", "ativo":
 		return true, true
-	case "nao", "n", "false", "falso", "0", "no":
+	case "nao", "n", "false", "falso", "0", "no", "inativo", "desativado":
 		return false, true
 	}
 	return false, false

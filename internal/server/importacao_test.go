@@ -87,7 +87,7 @@ func TestModelosDeImportacao(t *testing.T) {
 	}
 	quer(t, ana.get("/importacoes/modelo/usuarios.csv"), http.StatusNotFound)
 	quer(t, ana.get("/importacoes/modelo/bairros.pdf"), http.StatusNotFound)
-	quer(t, ana.get("/importacoes/nova"), http.StatusOK, "Bairros", "Quarteirões", "Locais", "Analisar planilha", "Colunas de cada modelo")
+	quer(t, ana.get("/importacoes/nova"), http.StatusOK, "Bairros", "Quarteirões", "Locais", "Analisar", "Colunas de cada tipo")
 	quer(t, ana.get("/importacoes"), http.StatusOK, "Nenhuma importação feita")
 	quer(t, ana.get("/"), http.StatusOK, `href="/importacoes"`, `href="/lixeira"`)
 }
@@ -130,10 +130,15 @@ func TestEnvioDePlanilhaRecusado(t *testing.T) {
 	quer(t, enviar("usuarios", "a.csv", "cidade;nome\nA;B"), http.StatusBadRequest, "Escolha o que importar")
 	quer(t, enviar("bairros", "a.csv", ""), http.StatusBadRequest, "Planilha recusada", "vazio")
 	quer(t, enviar("bairros", "a.csv", "cidade;nome\n"), http.StatusBadRequest, "não tem linhas de dados")
-	quer(t, enviar("bairros", "a.csv", "nome;zona\nCentro;Norte"), http.StatusBadRequest, "Faltam colunas obrigatórias", "cidade")
-	quer(t, enviar("locais", "a.csv", "bairro;quarteirao\nCentro;1"), http.StatusBadRequest, "Faltam colunas obrigatórias", "tipo")
-	if cs, _ := m.cliQ.ListImportacoes(t.Context()); len(cs) != 0 {
-		t.Errorf("nenhuma importação deveria ter sido criada: %d", len(cs))
+	// Faltando coluna obrigatória, o sistema leva à tela de ligar as colunas (nada é analisado nem gravado).
+	for _, c := range []struct{ tipo, dados string }{{"bairros", "nome;zona\nCentro;Norte"}, {"locais", "bairro;quarteirao\nCentro;1"}} {
+		rec := enviar(c.tipo, "a.csv", c.dados)
+		if rec.Code != http.StatusSeeOther || !strings.HasSuffix(rec.Header().Get("Location"), "/mapear") {
+			t.Errorf("%s: %d %q", c.tipo, rec.Code, rec.Header().Get("Location"))
+		}
+	}
+	if cs, _ := m.cliQ.ListImportacoes(t.Context()); len(cs) != 2 {
+		t.Errorf("só as duas aguardando mapeamento deveriam existir: %d", len(cs))
 	}
 }
 

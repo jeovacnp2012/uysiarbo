@@ -25,6 +25,8 @@ type Config struct {
 	ViaCEPURL       string // para trocar o endereço do serviço (vazio = o oficial)
 	NominatimURL    string
 
+	ImportPermitirRedePrivada bool // libera a importação por API para endereços da rede interna (só testes e desenvolvimento)
+
 	APIJWTSecret    string // chave que assina os tokens da API (vazia = gerada a cada início, só fora de produção)
 	ShutdownTimeout time.Duration
 }
@@ -35,21 +37,22 @@ func Load(envFile string) (Config, error) {
 		return Config{}, err
 	}
 	cfg := Config{
-		Env:             get("APP_ENV", "local"),
-		Addr:            get("APP_ADDR", ":8090"),
-		DatabaseURL:     os.Getenv("DATABASE_URL"),
-		BaseDomain:      strings.ToLower(get("APP_BASE_DOMAIN", "local")),
-		AdminHost:       strings.ToLower(get("APP_ADMIN_HOST", "uysiarbo.local")),
-		RecaptchaSite:   os.Getenv("RECAPTCHA_SITE_KEY"),
-		RecaptchaSecret: os.Getenv("RECAPTCHA_SECRET_KEY"),
-		MapTileURL:      get("MAP_TILE_URL", "https://tile.openstreetmap.org/{z}/{x}/{y}.png"),
-		GeocodeProvider: strings.ToLower(get("GEOCODE_PROVIDER", "gratuito")),
-		GeocodeContact:  os.Getenv("GEOCODE_CONTACT"),
-		ViaCEPURL:       os.Getenv("GEOCODE_VIACEP_URL"),
-		NominatimURL:    os.Getenv("GEOCODE_NOMINATIM_URL"),
-		APIJWTSecret:    os.Getenv("API_JWT_SECRET"),
-		MapAttribution:  get("MAP_ATTRIBUTION", "© contribuidores do OpenStreetMap"),
-		ShutdownTimeout: 10 * time.Second,
+		Env:                       get("APP_ENV", "local"),
+		Addr:                      get("APP_ADDR", ":8090"),
+		DatabaseURL:               os.Getenv("DATABASE_URL"),
+		BaseDomain:                strings.ToLower(get("APP_BASE_DOMAIN", "local")),
+		AdminHost:                 strings.ToLower(get("APP_ADMIN_HOST", "uysiarbo.local")),
+		RecaptchaSite:             os.Getenv("RECAPTCHA_SITE_KEY"),
+		RecaptchaSecret:           os.Getenv("RECAPTCHA_SECRET_KEY"),
+		MapTileURL:                get("MAP_TILE_URL", "https://tile.openstreetmap.org/{z}/{x}/{y}.png"),
+		GeocodeProvider:           strings.ToLower(get("GEOCODE_PROVIDER", "gratuito")),
+		GeocodeContact:            os.Getenv("GEOCODE_CONTACT"),
+		ViaCEPURL:                 os.Getenv("GEOCODE_VIACEP_URL"),
+		NominatimURL:              os.Getenv("GEOCODE_NOMINATIM_URL"),
+		APIJWTSecret:              os.Getenv("API_JWT_SECRET"),
+		ImportPermitirRedePrivada: os.Getenv("IMPORT_PERMITIR_REDE_PRIVADA") == "1",
+		MapAttribution:            get("MAP_ATTRIBUTION", "© contribuidores do OpenStreetMap"),
+		ShutdownTimeout:           10 * time.Second,
 	}
 	if cfg.IsProduction() && (cfg.RecaptchaSite == "" || cfg.RecaptchaSecret == "") {
 		return Config{}, fmt.Errorf("em produção, RECAPTCHA_SITE_KEY e RECAPTCHA_SECRET_KEY são obrigatórias")

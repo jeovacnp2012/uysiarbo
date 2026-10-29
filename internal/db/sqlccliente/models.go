@@ -141,6 +141,18 @@ type ImportacaoLinha struct {
 	RegistroID   pgtype.Int8 `json:"registro_id"`
 }
 
+type ImportacaoMapeamento struct {
+	ID        int64              `json:"id"`
+	Nome      string             `json:"nome"`
+	Conector  string             `json:"conector"`
+	Tipo      string             `json:"tipo"`
+	Mapa      []byte             `json:"mapa"`
+	CriadoPor pgtype.Int8        `json:"criado_por"`
+	CriadoEm  pgtype.Timestamptz `json:"criado_em"`
+	DeletedAt pgtype.Timestamptz `json:"deleted_at"`
+	DeletedBy pgtype.Int8        `json:"deleted_by"`
+}
+
 type Importaco struct {
 	ID                  int64              `json:"id"`
 	Tipo                string             `json:"tipo"`
@@ -169,6 +181,9 @@ type Importaco struct {
 	ConcluidoEm         pgtype.Timestamptz `json:"concluido_em"`
 	DesfeitoEm          pgtype.Timestamptz `json:"desfeito_em"`
 	Cabecalho           []byte             `json:"cabecalho"`
+	Conector            string             `json:"conector"`
+	Arquivo             []byte             `json:"arquivo"`
+	OrigemInfo          string             `json:"origem_info"`
 }
 
 type Locai struct {

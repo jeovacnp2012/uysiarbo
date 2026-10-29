@@ -36,16 +36,6 @@ type ImportacoesListaData struct {
 	Aviso  string
 }
 
-type ImportacaoNovaData struct {
-	Tipos    []ImportacaoTipoOpcao
-	Atualizar bool
-	Colunas  map[string][]ImportacaoColunaAjuda
-	MaxMB    int
-	MaxLinhas int
-	Erro     string
-	CSRF     string
-}
-
 type ImportacaoLinhaPrevia struct {
 	N         int
 	Acao      string
@@ -60,6 +50,7 @@ type ImportacaoFichaData struct {
 	Tipo          string
 	TipoRotulo    string
 	Arquivo       string
+	Origem        string // de onde vieram os dados (planilha, Geo Controle, API...)
 	Status        string
 	StatusRotulo  string
 	Mensagem      string
@@ -137,17 +128,91 @@ func seloDaImportacao(status string) string {
 	return ""
 }
 
+type ImportacaoConectorOpcao struct {
+	Codigo  string
+	Rotulo  string
+	Descr   string
+	Fonte   string // "arquivo" ou "api"
+	Marcado bool
+}
+
+type ImportacaoMapeamentoOpcao struct {
+	ID     int64
+	Rotulo string
+}
+
+type ImportacaoNovaData struct {
+	Tipos       []ImportacaoTipoOpcao
+	Conectores  []ImportacaoConectorOpcao
+	Mapeamentos []ImportacaoMapeamentoOpcao
+	Conector    string
+	Atualizar   bool
+	Revisar     bool
+	URL         string
+	Caminho     string
+	Colunas     map[string][]ImportacaoColunaAjuda
+	MaxMB       int
+	MaxLinhas   int
+	Erro        string
+	CSRF        string
+}
+
+// Mapeamento de colunas.
+type ImportacaoMapaLinha struct {
+	Nome        string // coluna do sistema
+	Rotulo      string
+	Obrigatoria bool
+	Ajuda       string
+	Escolhido   string // cabeçalho da origem hoje ligado a ela ("" = não importar)
+}
+
+type ImportacaoMapearData struct {
+	ID          int64
+	TipoRotulo  string
+	Conector    string
+	Arquivo     string
+	Cabecalhos  []string
+	Linhas      []ImportacaoMapaLinha
+	Mapeamentos []ImportacaoMapeamentoOpcao
+	SalvarNome  string
+	Erro        string
+	CSRF        string
+	Amostra     [][]string // primeiras linhas da origem, para a pessoa se orientar
+}
+
+type ImportacaoMapeamentoLinha struct {
+	ID       int64
+	Nome     string
+	Conector string
+	Tipo     string
+	Colunas  int
+	Quando   string
+}
+
+type ImportacaoMapeamentosData struct {
+	Linhas []ImportacaoMapeamentoLinha
+	CSRF   string
+}
+
 templ ImportacaoNova(l Layout, d ImportacaoNovaData) {
 	@Base(l) {
-		@PageHeader("Nova importação", "O arquivo é analisado primeiro: nada é gravado até você conferir a prévia e confirmar.") {
+		@PageHeader("Nova importação", "Os dados são analisados primeiro: nada é gravado até você conferir a prévia e confirmar.") {
+			<a class="btn" href="/importacoes/mapeamentos">Mapeamentos salvos</a>
 			<a class="btn" href="/importacoes">Voltar</a>
 		}
-		<form method="post" action="/importacoes" enctype="multipart/form-data" class="cartao form-admin">
+		<form method="post" action="/importacoes" enctype="multipart/form-data" class="cartao form-admin" x-data={ "{ conector: " + strconv.Quote(d.Conector) + " }" }>
 			<input type="hidden" name="csrf" value={ d.CSRF }/>
 			if d.Erro != "" {
 				<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
 			}
-			<h2>1. O que importar</h2>
+			<h2>1. De onde vêm os dados</h2>
+			for _, c := range d.Conectores {
+				<label class="marcar">
+					<input type="radio" name="conector" value={ c.Codigo } x-model="conector" checked?={ c.Marcado }/>
+					<span><strong>{ c.Rotulo }</strong> <span class="subtitulo">{ c.Descr }</span></span>
+				</label>
+			}
+			<h2>2. O que importar</h2>
 			for _, t := range d.Tipos {
 				<label class="marcar">
 					<input type="radio" name="tipo" value={ t.Codigo } checked?={ t.Marcado } required/>
@@ -161,24 +226,66 @@ templ ImportacaoNova(l Layout, d ImportacaoNovaData) {
 					</span>
 				</label>
 			}
-			<h2>2. O arquivo</h2>
-			<div class="campo">
-				<label for="arquivo">Planilha (.xlsx ou .csv, até { strconv.Itoa(d.MaxMB) } MB e { strconv.Itoa(d.MaxLinhas) } linhas)</label>
-				<input id="arquivo" name="arquivo" type="file" accept=".xlsx,.csv,.txt" required/>
+			<h2>3. Os dados</h2>
+			<div x-show="['planilha','geocontrole'].includes(conector)">
+				<div class="campo">
+					<label for="arquivo">Planilha (.xlsx ou .csv, até { strconv.Itoa(d.MaxMB) } MB e { strconv.Itoa(d.MaxLinhas) } linhas)</label>
+					<input id="arquivo" name="arquivo" type="file" accept=".xlsx,.csv,.txt"/>
+				</div>
+				<p class="subtitulo">A primeira linha deve ter os nomes das colunas. Se os nomes não forem os do modelo, a próxima tela deixa você ligar cada coluna.</p>
 			</div>
-			<p class="subtitulo">A primeira linha deve ter os nomes das colunas, como no modelo. Colunas que o sistema não conhece são ignoradas (e a prévia avisa).</p>
-			<h2>3. Se o registro já existir</h2>
+			<div x-show="['geocontrole_api','api_rest'].includes(conector)" x-cloak>
+				<div class="campo">
+					<label for="url">Endereço da API (HTTPS)</label>
+					<input id="url" name="url" type="url" value={ d.URL } placeholder="https://api.exemplo.com/locais" autocomplete="off"/>
+				</div>
+				<div class="grade-form">
+					<div class="campo">
+						<label for="token">Token de acesso (Bearer)</label>
+						<input id="token" name="token" type="password" autocomplete="off"/>
+					</div>
+					<div class="campo">
+						<label for="usuario">Ou usuário (HTTP Basic)</label>
+						<input id="usuario" name="usuario" type="text" autocomplete="off"/>
+					</div>
+					<div class="campo">
+						<label for="senha">Senha</label>
+						<input id="senha" name="senha" type="password" autocomplete="off"/>
+					</div>
+					<div class="campo">
+						<label for="caminho">Onde está a lista no JSON (opcional)</label>
+						<input id="caminho" name="caminho" type="text" value={ d.Caminho } placeholder="data"/>
+					</div>
+				</div>
+				<p class="subtitulo">As credenciais valem só para esta importação: o sistema não as guarda. Só endereços HTTPS da internet pública são acessados.</p>
+			</div>
+			if len(d.Mapeamentos) > 0 {
+				<div class="campo">
+					<label for="mapeamento_id">Usar um mapeamento de colunas salvo (opcional)</label>
+					<select id="mapeamento_id" name="mapeamento_id">
+						<option value="">Reconhecer as colunas automaticamente</option>
+						for _, m := range d.Mapeamentos {
+							<option value={ strconv.FormatInt(m.ID, 10) }>{ m.Rotulo }</option>
+						}
+					</select>
+				</div>
+			}
+			<label class="marcar">
+				<input type="checkbox" name="revisar" value="1" checked?={ d.Revisar }/>
+				Revisar o mapeamento das colunas antes de analisar (obrigatório quando faltar alguma coluna)
+			</label>
+			<h2>4. Se o registro já existir</h2>
 			<label class="marcar">
 				<input type="checkbox" name="atualizar" value="1" checked?={ d.Atualizar }/>
-				Atualizar os registros que já existem (só com o que vier preenchido na planilha). Sem marcar, eles são ignorados.
+				Atualizar os registros que já existem (só com o que vier preenchido). Sem marcar, eles são ignorados.
 			</label>
 			<div class="form-acoes">
-				<button type="submit" class="btn btn-primario">Analisar planilha</button>
+				<button type="submit" class="btn btn-primario">Analisar</button>
 				<a class="btn" href="/importacoes">Cancelar</a>
 			</div>
 		</form>
 		<section class="cartao">
-			<h2>Colunas de cada modelo</h2>
+			<h2>Colunas de cada tipo</h2>
 			for _, t := range d.Tipos {
 				<details>
 					<summary>{ t.Rotulo }</summary>
@@ -210,6 +317,138 @@ templ ImportacaoNova(l Layout, d ImportacaoNovaData) {
 					</div>
 				</details>
 			}
+		</section>
+	}
+}
+
+templ ImportacaoMapear(l Layout, d ImportacaoMapearData) {
+	@Base(l) {
+		@PageHeader("Ligar as colunas", "Importação de "+d.TipoRotulo+": "+d.Arquivo) {
+			<form method="post" action={ templ.SafeURL("/importacoes/" + strconv.FormatInt(d.ID, 10) + "/cancelar") } class="inline">
+				<input type="hidden" name="csrf" value={ d.CSRF }/>
+				<button type="submit" class="btn">Descartar</button>
+			</form>
+		}
+		<section class="cartao">
+			<h2>O que veio da origem</h2>
+			<div class="tabela-wrap">
+				<table class="tabela">
+					<thead>
+						<tr>
+							for _, c := range d.Cabecalhos {
+								<th scope="col">{ c }</th>
+							}
+						</tr>
+					</thead>
+					<tbody>
+						for _, linha := range d.Amostra {
+							<tr>
+								for _, c := range linha {
+									<td>{ c }</td>
+								}
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		</section>
+		<form method="post" action={ templ.SafeURL("/importacoes/" + strconv.FormatInt(d.ID, 10) + "/mapear") } class="cartao form-admin">
+			<input type="hidden" name="csrf" value={ d.CSRF }/>
+			if d.Erro != "" {
+				<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
+			}
+			<h2>Qual coluna da origem vai para cada campo do sistema</h2>
+			if len(d.Mapeamentos) > 0 {
+				<p class="subtitulo">
+					Mapeamentos salvos:
+					for _, m := range d.Mapeamentos {
+						<a href={ templ.SafeURL("/importacoes/" + strconv.FormatInt(d.ID, 10) + "/mapear?mapeamento=" + strconv.FormatInt(m.ID, 10)) }>{ m.Rotulo }</a>
+						{ " " }
+					}
+				</p>
+			}
+			<div class="tabela-wrap">
+				<table class="tabela">
+					<thead>
+						<tr>
+							<th scope="col">Campo do sistema</th>
+							<th scope="col">Coluna da origem</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, c := range d.Linhas {
+							<tr>
+								<td data-rotulo="Campo">
+									<strong>{ c.Rotulo }</strong>
+									if c.Obrigatoria {
+										<span class="selo selo-aviso">obrigatório</span>
+									}
+									if c.Ajuda != "" {
+										<div class="subtitulo">{ c.Ajuda }</div>
+									}
+								</td>
+								<td data-rotulo="Coluna da origem">
+									<select name={ "col_" + c.Nome } aria-label={ "Coluna para " + c.Rotulo }>
+										<option value="">(não importar)</option>
+										for _, h := range d.Cabecalhos {
+											<option value={ h } selected?={ h == c.Escolhido }>{ h }</option>
+										}
+									</select>
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+			<div class="campo">
+				<label for="salvar_nome">Salvar este mapeamento com o nome (opcional, para usar nas próximas importações)</label>
+				<input id="salvar_nome" name="salvar_nome" type="text" value={ d.SalvarNome } maxlength="100"/>
+			</div>
+			<div class="form-acoes">
+				<button type="submit" class="btn btn-primario">Analisar com este mapeamento</button>
+			</div>
+		</form>
+	}
+}
+
+templ ImportacaoMapeamentos(l Layout, d ImportacaoMapeamentosData) {
+	@Base(l) {
+		@PageHeader("Mapeamentos de colunas", "Ligações de colunas salvas, por origem e tipo de dado, para repetir importações sem refazer a escolha.") {
+			<a class="btn" href="/importacoes/nova">Nova importação</a>
+		}
+		<section class="cartao">
+			<div class="tabela-wrap">
+				<table class="tabela">
+					<thead>
+						<tr>
+							<th scope="col">Nome</th>
+							<th scope="col">Origem · dado</th>
+							<th scope="col">Colunas</th>
+							<th scope="col">Criado em</th>
+							<th scope="col"><span class="sr-only">Ações</span></th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, m := range d.Linhas {
+							<tr>
+								<td data-rotulo="Nome"><strong>{ m.Nome }</strong></td>
+								<td data-rotulo="Origem · dado">{ m.Conector } · { m.Tipo }</td>
+								<td data-rotulo="Colunas">{ strconv.Itoa(m.Colunas) }</td>
+								<td data-rotulo="Criado em">{ m.Quando }</td>
+								<td data-rotulo="Ações">
+									<form method="post" action={ templ.SafeURL("/importacoes/mapeamentos/" + strconv.FormatInt(m.ID, 10) + "/excluir") } class="inline" onsubmit="return confirm('Enviar este mapeamento para a lixeira?')">
+										<input type="hidden" name="csrf" value={ d.CSRF }/>
+										<button type="submit" class="btn btn-icone" aria-label={ "Excluir o mapeamento " + m.Nome }>Excluir</button>
+									</form>
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+				if len(d.Linhas) == 0 {
+					<div class="tabela-vazia">Nenhum mapeamento salvo.</div>
+				}
+			</div>
 		</section>
 	}
 }
@@ -246,7 +485,7 @@ templ ImportacaoFicha(l Layout, d ImportacaoFichaData) {
 		<section class="cartao">
 			<p>
 				<span class={ "selo", seloDaImportacao(d.Status) }>{ d.StatusRotulo }</span>
-				Enviada por { d.Quem } em { d.Criada }.
+				Origem: { d.Origem }. Enviada por { d.Quem } em { d.Criada }.
 				if d.Concluida != "" {
 					Terminou em { d.Concluida }.
 				}
@@ -257,7 +496,11 @@ templ ImportacaoFicha(l Layout, d ImportacaoFichaData) {
 			if d.ColunasIgnoradas != "" {
 				<p class="alerta alerta-aviso" role="status">Colunas da planilha que o sistema não conhece e foram ignoradas: { d.ColunasIgnoradas }.</p>
 			}
-			if d.Status == "analisada" {
+			if d.Status == "mapeando" {
+				<h2>Falta ligar as colunas</h2>
+				<p class="subtitulo">Os dados foram recebidos, mas ainda não analisados: escolha qual coluna da origem vai para cada campo do sistema.</p>
+				<a class="btn btn-primario" href={ templ.SafeURL("/importacoes/" + strconv.FormatInt(d.ID, 10) + "/mapear") }>Ligar as colunas</a>
+			} else if d.Status == "analisada" {
 				<h2>Prévia: nada foi gravado ainda</h2>
 				<div class="grade-resumo">
 					<div><strong>{ strconv.Itoa(d.ParaCriar) }</strong><span class="subtitulo">serão criadas</span></div>

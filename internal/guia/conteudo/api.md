@@ -39,6 +39,15 @@ Aplicativos que criam registros **sem internet** (como o do tablet) geram o pró
 - O `id_externo` pode ser definido uma vez e não muda depois. Dá para buscar por ele: `GET /api/v1/locais?id_externo=...`.
 - Para **sincronizar**, peça só o que mudou: `GET /api/v1/locais?updated_since=2026-10-29T12:00:00Z` (data e hora em RFC 3339), percorrendo as páginas pelo `next_cursor`. Guarde o horário do início da última sincronização e use-o na próxima.
 
+## Importar dados por API
+Um sistema externo pode **empurrar** bairros, quarteirões e locais pelo mesmo caminho da tela de Importação de dados, com prévia e confirmação:
+1. `POST /api/v1/importacoes` com `{"tipo": "locais", "atualizar_existentes": false, "linhas": [ {...}, {...} ]}`: cada linha é um objeto com as colunas do modelo de importação (`bairro`, `quarteirao`, `tipo`, `endereco`, `numero`, `lado`, `id_externo`...). **Nada é gravado**: a resposta traz a **prévia** (quantas linhas seriam criadas, atualizadas, ignoradas, com erro).
+2. `GET /api/v1/importacoes/{id}/linhas?acao=erro` mostra o motivo de cada linha com erro; corrija e envie de novo, ou siga com as boas (as linhas com erro não entram).
+3. `POST /api/v1/importacoes/{id}/executar` inicia a gravação em segundo plano (resposta 202); acompanhe em `GET /api/v1/importacoes/{id}` (andamento e resultado). Só uma importação roda por vez; se houver outra, a resposta é 409 com `Retry-After`.
+4. `POST /api/v1/importacoes/{id}/descartar` cancela uma prévia que ainda não foi executada.
+
+A credencial precisa do escopo **`importacoes:write`** (e **`importacoes:read`** para acompanhar) **e** do escopo de gravação do tipo (por exemplo, `locais:write`). Importe na ordem **bairros → quarteirões → locais**. O que a API importa aparece na tela Importação de dados, com o relatório e a opção de desfazer, e na Auditoria com o nome da credencial.
+
 ## Regras que valem para todas as chamadas
 - **Erros** sempre no mesmo formato: `{"error": {"code": "...", "message": "...", "request_id": "..."}}`. Códigos comuns: `invalid_token` (401), `insufficient_scope` (403), `not_found` (404), `conflict` (409), `validation_error` (422), `rate_limited` (429).
 - **Limite de uso**: ao passar do limite por minuto, a API responde `429` com `Retry-After` (segundos); os cabeçalhos `X-RateLimit-Limit` e `X-RateLimit-Remaining` mostram o saldo.

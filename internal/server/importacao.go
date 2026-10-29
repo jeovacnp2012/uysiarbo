@@ -3,12 +3,10 @@ package server
 import (
 	"bytes"
 	"context"
-	"crypto/sha256"
 	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -16,7 +14,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
 
 	"uysiarbo/internal/audit"
 	"uysiarbo/internal/db/sqlccliente"
@@ -26,7 +23,7 @@ import (
 )
 
 var rotulosDeStatusImp = map[string]string{
-	"analisada": "Aguardando confirmação", "executando": "Importando", "concluida": "Concluída", "interrompida": "Interrompida",
+	"mapeando": "Ligando as colunas", "analisada": "Aguardando confirmação", "executando": "Importando", "concluida": "Concluída", "interrompida": "Interrompida",
 	"cancelada": "Descartada", "desfeita": "Desfeita", "erro": "Falhou",
 }
 
@@ -109,32 +106,6 @@ func (h *handlers) importacoesLista(w http.ResponseWriter, r *http.Request) {
 	render(w, r, views.ImportacoesLista(h.layout(r, "Importação de dados", "/importacoes"), views.ImportacoesListaData{Linhas: linhas}))
 }
 
-func (h *handlers) dadosDoFormularioDeImportacao(r *http.Request, tipo string, atualizar bool, erro string) views.ImportacaoNovaData {
-	pr := h.principal(r)
-	d := views.ImportacaoNovaData{
-		Atualizar: atualizar, Colunas: map[string][]views.ImportacaoColunaAjuda{}, MaxMB: importacao.MaxBytes >> 20, MaxLinhas: importacao.MaxLinhas,
-		Erro: erro, CSRF: csrfToken(r.Context()),
-	}
-	for _, t := range importacao.Tipos {
-		if !pr.Pode(permissaoDoTipo(t.Codigo)) {
-			continue
-		}
-		d.Tipos = append(d.Tipos, views.ImportacaoTipoOpcao{Codigo: t.Codigo, Rotulo: t.Rotulo, Descr: t.Descr, Marcado: t.Codigo == tipo})
-		for _, c := range t.Colunas {
-			d.Colunas[t.Codigo] = append(d.Colunas[t.Codigo], views.ImportacaoColunaAjuda{Nome: c.Nome, Rotulo: c.Rotulo, Obrigatoria: c.Obrigatoria, Ajuda: c.Ajuda})
-		}
-	}
-	return d
-}
-
-func (h *handlers) importacaoNova(w http.ResponseWriter, r *http.Request) {
-	if h.papelRestrito(r) {
-		renderStatus(w, r, http.StatusForbidden, views.SemPermissao(h.layout(r, "Sem permissão", "")))
-		return
-	}
-	render(w, r, views.ImportacaoNova(h.layout(r, "Nova importação", "/importacoes"), h.dadosDoFormularioDeImportacao(r, "", false, "")))
-}
-
 // importacaoModelo baixa o arquivo de exemplo (CSV ou Excel) de um tipo.
 func (h *handlers) importacaoModelo(w http.ResponseWriter, r *http.Request) {
 	nome := chi.URLParam(r, "arquivo")
@@ -161,114 +132,6 @@ func (h *handlers) importacaoModelo(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(dados)
 }
 
-// ------------------------------------------------------------------- Enviar e analisar
-
-func (h *handlers) importacaoEnviar(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	if h.papelRestrito(r) {
-		renderStatus(w, r, http.StatusForbidden, views.SemPermissao(h.layout(r, "Sem permissão", "")))
-		return
-	}
-	r.Body = http.MaxBytesReader(w, r.Body, importacao.MaxBytes+(2<<20))
-	if err := r.ParseMultipartForm(8 << 20); err != nil {
-		h.formularioDeImportacaoComErro(w, r, "", false, fmt.Sprintf("Não consegui receber o arquivo (o limite é %d MB).", importacao.MaxBytes>>20))
-		return
-	}
-	tipoCod, atualizar := r.PostFormValue("tipo"), r.PostFormValue("atualizar") == "1"
-	tipo, ok := importacao.TipoPorCodigo(tipoCod)
-	if !ok || !h.principal(r).Pode(permissaoDoTipo(tipoCod)) {
-		h.formularioDeImportacaoComErro(w, r, "", atualizar, "Escolha o que importar.")
-		return
-	}
-	arq, cab, err := r.FormFile("arquivo")
-	if err != nil {
-		h.formularioDeImportacaoComErro(w, r, tipoCod, atualizar, "Escolha o arquivo da planilha.")
-		return
-	}
-	defer arq.Close()
-	dados, err := io.ReadAll(io.LimitReader(arq, importacao.MaxBytes+1))
-	if err != nil {
-		h.formularioDeImportacaoComErro(w, r, tipoCod, atualizar, "Não consegui ler o arquivo.")
-		return
-	}
-	plan, err := importacao.Ler(cab.Filename, dados)
-	if err != nil {
-		h.formularioDeImportacaoComErro(w, r, tipoCod, atualizar, "Planilha recusada: "+err.Error()+".")
-		return
-	}
-	mapa := tipo.Mapear(plan.Cabecalho)
-	if len(mapa.Faltando) > 0 {
-		h.formularioDeImportacaoComErro(w, r, tipoCod, atualizar, "Faltam colunas obrigatórias no cabeçalho: "+strings.Join(mapa.Faltando, ", ")+". Baixe o modelo para conferir os nomes.")
-		return
-	}
-	q, pool, err := h.cliente(r)
-	if err != nil {
-		h.falhaInterna(w, r, "pool do cliente", err)
-		return
-	}
-	var linhas []linhaAnalisada
-	switch tipoCod {
-	case "bairros":
-		linhas, err = h.analisarBairros(ctx, q, plan, mapa, atualizar)
-	case "quarteiroes":
-		linhas, err = h.analisarQuarteiroes(ctx, q, plan, mapa, atualizar)
-	case "locais":
-		linhas, err = h.analisarLocais(ctx, q, plan, mapa, atualizar)
-	}
-	if err != nil {
-		h.falhaInterna(w, r, "analisar planilha", err)
-		return
-	}
-	var criar, atu, ign, erros int32
-	for _, l := range linhas {
-		switch l.Acao {
-		case acaoCriar:
-			criar++
-		case acaoAtualizar:
-			atu++
-		case acaoIgnorar:
-			ign++
-		default:
-			erros++
-		}
-	}
-	soma := sha256.Sum256(dados)
-	a := atorDaSessao(r)
-	tx, err := pool.Begin(ctx)
-	if err != nil {
-		h.falhaInterna(w, r, "iniciar transação", err)
-		return
-	}
-	defer tx.Rollback(ctx)
-	qt := sqlccliente.New(tx)
-	imp, err := qt.CreateImportacao(ctx, sqlccliente.CreateImportacaoParams{
-		Tipo: tipoCod, ArquivoNome: nomeSeguroDoArquivo(cab.Filename), ArquivoHash: soma[:], AtualizarExistentes: atualizar, TotalLinhas: int32(len(linhas)),
-		PrevCriar: criar, PrevAtualizar: atu, PrevIgnorar: ign, PrevErro: erros, ColunasIgnoradas: strings.Join(mapa.Ignoradas, ", "),
-		ResponsavelID: pgtype.Int8{Int64: meuID(r), Valid: meuID(r) != 0}, ResponsavelNome: a.Nome, Cabecalho: emJSON(plan.Cabecalho),
-	})
-	if err != nil {
-		h.falhaInterna(w, r, "criar importação", err)
-		return
-	}
-	for _, l := range linhas {
-		if err := qt.InsertImportacaoLinha(ctx, sqlccliente.InsertImportacaoLinhaParams{
-			ImportacaoID: imp.ID, Linha: int32(l.N), Acao: l.Acao, Mensagem: l.Msg, AlvoID: l.AlvoID, Dados: l.Dados, Antes: l.Antes, Original: emJSON(l.Original),
-		}); err != nil {
-			h.falhaInterna(w, r, "gravar linha da importação", err)
-			return
-		}
-	}
-	h.auditarCom(audit.Cliente{Q: qt}, r, audit.Evento{
-		Acao: "importacao.analisar", Entidade: "importacao", EntidadeID: strconv.FormatInt(imp.ID, 10), Rotulo: imp.ArquivoNome,
-		Detalhes: map[string]any{"tipo": tipoCod, "linhas": len(linhas), "a_criar": criar, "a_atualizar": atu, "a_ignorar": ign, "com_erro": erros, "atualizar_existentes": atualizar},
-	})
-	if err := tx.Commit(ctx); err != nil {
-		h.falhaInterna(w, r, "confirmar análise", err)
-		return
-	}
-	http.Redirect(w, r, fmt.Sprintf("/importacoes/%d", imp.ID), http.StatusSeeOther)
-}
-
 func nomeSeguroDoArquivo(n string) string {
 	n = strings.Map(func(r rune) rune {
 		if r < 32 || r == '/' || r == '\\' {
@@ -285,10 +148,6 @@ func nomeSeguroDoArquivo(n string) string {
 	return n
 }
 
-func (h *handlers) formularioDeImportacaoComErro(w http.ResponseWriter, r *http.Request, tipo string, atualizar bool, msg string) {
-	renderStatus(w, r, http.StatusBadRequest, views.ImportacaoNova(h.layout(r, "Nova importação", "/importacoes"), h.dadosDoFormularioDeImportacao(r, tipo, atualizar, msg)))
-}
-
 // ------------------------------------------------------------------- Ficha, progresso e ações
 
 func (h *handlers) fichaDaImportacao(r *http.Request, q *sqlccliente.Queries, imp sqlccliente.Importaco) (views.ImportacaoFichaData, error) {
@@ -298,7 +157,7 @@ func (h *handlers) fichaDaImportacao(r *http.Request, q *sqlccliente.Queries, im
 		rotulo = t.Rotulo
 	}
 	d := views.ImportacaoFichaData{
-		ID: imp.ID, Tipo: imp.Tipo, TipoRotulo: rotulo, Arquivo: imp.ArquivoNome, Status: imp.Status, StatusRotulo: rotulosDeStatusImp[imp.Status],
+		ID: imp.ID, Tipo: imp.Tipo, TipoRotulo: rotulo, Arquivo: imp.ArquivoNome, Origem: rotuloDoConector(imp.Conector, imp.OrigemInfo), Status: imp.Status, StatusRotulo: rotulosDeStatusImp[imp.Status],
 		Mensagem: imp.Mensagem, Quem: imp.ResponsavelNome, Criada: formatarData(loc, imp.CriadoEm.Time), ModoAtualizar: imp.AtualizarExistentes,
 		ColunasIgnoradas: imp.ColunasIgnoradas, Total: int(imp.TotalLinhas), ParaCriar: int(imp.PrevCriar), ParaAtualizar: int(imp.PrevAtualizar),
 		ParaIgnorar: int(imp.PrevIgnorar), ComErro: int(imp.PrevErro), Processadas: int(imp.Processadas), Criados: int(imp.Criados),
@@ -483,8 +342,8 @@ func (h *handlers) importacaoCancelar(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	if imp.Status == "analisada" {
-		if err := q.SetImportacaoStatus(r.Context(), sqlccliente.SetImportacaoStatusParams{ID: imp.ID, Status: "cancelada", Mensagem: "Descartada antes de gravar: nada foi importado."}); err != nil {
+	if imp.Status == "analisada" || imp.Status == "mapeando" {
+		if err := q.CancelarImportacao(r.Context(), sqlccliente.CancelarImportacaoParams{ID: imp.ID, Mensagem: "Descartada antes de gravar: nada foi importado."}); err != nil {
 			h.falhaInterna(w, r, "descartar importação", err)
 			return
 		}
@@ -591,4 +450,18 @@ func (h *handlers) relatorioDaImportacao(w http.ResponseWriter, r *http.Request,
 	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="importacao-%d-%s.csv"`, imp.ID, nome))
 	w.Header().Set("Cache-Control", "private, no-store")
 	_, _ = w.Write(buf.Bytes())
+}
+
+// rotuloDoConector descreve a origem da importação para a pessoa.
+func rotuloDoConector(codigo, info string) string {
+	rotulo := codigo
+	if c, ok := importacao.ConectorPorCodigo(codigo); ok {
+		rotulo = c.Rotulo
+	} else if codigo == "api_sistema" {
+		rotulo = "API do sistema (outro sistema enviou as linhas)"
+	}
+	if info != "" {
+		rotulo += " (" + info + ")"
+	}
+	return rotulo
 }

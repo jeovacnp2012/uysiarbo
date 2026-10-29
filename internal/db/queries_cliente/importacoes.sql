@@ -91,3 +91,55 @@ ORDER BY linha;
 
 -- name: ContarImportacaoLinhasAFazer :one
 SELECT count(*)::int FROM importacao_linhas WHERE importacao_id = $1 AND resultado IS NULL AND acao IN ('criar', 'atualizar');
+
+-- ---------------------------------------------------------------- Conectores e mapeamentos
+
+-- name: CreateImportacaoParaMapear :one
+INSERT INTO importacoes (tipo, conector, arquivo_nome, arquivo_hash, atualizar_existentes, status, total_linhas, colunas_ignoradas,
+                         responsavel_id, responsavel_nome, cabecalho, arquivo, origem_info)
+VALUES ($1, $2, $3, $4, $5, 'mapeando', $6, '', $7, $8, $9, $10, $11)
+RETURNING *;
+
+-- name: FinalizarAnaliseDaImportacao :one
+UPDATE importacoes
+SET status = 'analisada', arquivo = NULL, total_linhas = $2, prev_criar = $3, prev_atualizar = $4, prev_ignorar = $5, prev_erro = $6, colunas_ignoradas = $7
+WHERE id = $1 AND status = 'mapeando'
+RETURNING *;
+
+-- name: ListMapeamentosDeImportacao :many
+SELECT * FROM importacao_mapeamentos WHERE conector = $1 AND tipo = $2 AND deleted_at IS NULL ORDER BY lower(nome);
+
+-- name: ListTodosMapeamentosDeImportacao :many
+SELECT * FROM importacao_mapeamentos WHERE deleted_at IS NULL ORDER BY conector, tipo, lower(nome);
+
+-- name: GetMapeamentoDeImportacao :one
+SELECT * FROM importacao_mapeamentos WHERE id = $1 AND deleted_at IS NULL;
+
+-- name: CreateMapeamentoDeImportacao :one
+INSERT INTO importacao_mapeamentos (nome, conector, tipo, mapa, criado_por) VALUES ($1, $2, $3, $4, $5) RETURNING *;
+
+-- name: SoftDeleteMapeamento :execrows
+UPDATE importacao_mapeamentos SET deleted_at = now(), deleted_by = sqlc.narg(por)::bigint WHERE id = sqlc.arg(id)::bigint AND deleted_at IS NULL;
+
+-- name: RestoreMapeamento :execrows
+UPDATE importacao_mapeamentos SET deleted_at = NULL, deleted_by = NULL WHERE id = $1 AND deleted_at IS NOT NULL;
+
+-- name: ForceDeleteMapeamento :execrows
+DELETE FROM importacao_mapeamentos WHERE id = $1 AND deleted_at IS NOT NULL;
+
+-- name: GetMapeamentoQualquer :one
+SELECT * FROM importacao_mapeamentos WHERE id = $1;
+
+-- name: ListMapeamentosExcluidos :many
+SELECT m.id, m.nome AS rotulo, (m.conector || ' · ' || m.tipo)::text AS contexto, m.deleted_at, COALESCE(u.nome, '')::text AS excluido_por
+FROM importacao_mapeamentos m LEFT JOIN usuarios u ON u.id = m.deleted_by
+WHERE m.deleted_at IS NOT NULL ORDER BY m.deleted_at DESC LIMIT 500;
+
+-- name: CancelarImportacao :exec
+UPDATE importacoes SET status = 'cancelada', arquivo = NULL, mensagem = $2 WHERE id = $1 AND status IN ('analisada', 'mapeando');
+
+-- name: ListImportacaoLinhasApi :many
+SELECT linha, acao, mensagem, resultado, resultado_msg, registro_id FROM importacao_linhas
+WHERE importacao_id = sqlc.arg(importacao_id)::bigint AND linha > sqlc.arg(depois)::int
+  AND (sqlc.arg(acao)::text = '' OR acao = sqlc.arg(acao)::text)
+ORDER BY linha LIMIT sqlc.arg(limite)::int;

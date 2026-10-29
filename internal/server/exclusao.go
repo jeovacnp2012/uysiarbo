@@ -262,6 +262,33 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 			return out, err
 		},
 	},
+	"mapeamento": {
+		Chave: "mapeamento", Rotulo: "Mapeamento de colunas", Plural: "Mapeamentos de colunas", Genero: "o",
+		soft: func(ctx context.Context, q *sqlccliente.Queries, id int64, por pgtype.Int8) (int64, error) {
+			return q.SoftDeleteMapeamento(ctx, sqlccliente.SoftDeleteMapeamentoParams{ID: id, Por: por})
+		},
+		restore: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			return q.RestoreMapeamento(ctx, id)
+		},
+		force: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			return q.ForceDeleteMapeamento(ctx, id)
+		},
+		rotulo: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, bool, error) {
+			m, err := q.GetMapeamentoQualquer(ctx, id)
+			return m.Nome, m.DeletedAt.Valid, err
+		},
+		filhosAtivos: func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
+		vinculos:     func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
+		paiExcluido:  func(context.Context, *sqlccliente.Queries, int64) (string, error) { return "", nil },
+		lixeira: func(ctx context.Context, q *sqlccliente.Queries) ([]views.LixeiraLinha, error) {
+			rows, err := q.ListMapeamentosExcluidos(ctx)
+			out := make([]views.LixeiraLinha, len(rows))
+			for i, r := range rows {
+				out[i] = views.LixeiraLinha{ID: r.ID, Rotulo: r.Rotulo, Contexto: r.Contexto, Quando: r.DeletedAt.Time, Por: r.ExcluidoPor}
+			}
+			return out, err
+		},
+	},
 	"grupo": {
 		Chave: "grupo", Rotulo: "Grupo de locais", Plural: "Grupos de locais", Genero: "o",
 		soft: func(ctx context.Context, q *sqlccliente.Queries, id int64, por pgtype.Int8) (int64, error) {
@@ -293,7 +320,7 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 }
 
 // ordemDaLixeira é a ordem das abas.
-var ordemDaLixeira = []string{"local", "quarteirao", "bairro", "cidade", "grupo"}
+var ordemDaLixeira = []string{"local", "quarteirao", "bairro", "cidade", "grupo", "mapeamento"}
 
 // excluirLogicamente aplica a regra completa: recusa se há filhos ativos; senão marca deleted_at.
 // Devolve os motivos da recusa (vazio = excluído), o nome do registro e o erro de banco, se houve.

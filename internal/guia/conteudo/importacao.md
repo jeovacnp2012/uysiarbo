@@ -16,6 +16,17 @@ Em **Administração → Importação de dados** você traz bairros, quarteirõe
 5. **Confirmar e importar**: a gravação roda em segundo plano, com **barra de progresso**. Você pode sair da tela e voltar; também pode **Interromper** e **Retomar** depois, que continua de onde parou.
 6. Ao terminar, baixe o **relatório** (CSV) com o resultado de cada linha.
 
+## De onde vêm os dados (origens)
+Na primeira etapa da importação você escolhe a **origem**:
+- **Planilha (Excel ou CSV)**: uma planilha no modelo do sistema, ou qualquer planilha (a próxima tela deixa você ligar as colunas).
+- **Geo Controle (planilha exportada)**: uma planilha exportada do Geo Controle. Os nomes de coluna dele (por exemplo, `Logradouro`, `Nº`, `Quadra`, `Cad_Situacao`, `ID`) já são reconhecidos, e o `ID` dele vira o **ID de origem** do registro.
+- **Geo Controle (API)** e **Outra API (JSON)**: o sistema busca os dados num **endereço HTTPS** (e, se for o caso, o **caminho** onde está a lista no JSON, como `data`), com um **token** (Bearer) ou usuário e senha. As credenciais valem só para essa importação: **não ficam guardadas**. Por segurança, o servidor só acessa endereços da **internet pública** (nunca a rede interna).
+
+Observação: a conexão direta com o Geo Controle depende de ele oferecer uma API; ainda não foi testada contra o sistema real. Enquanto isso, a exportação em planilha funciona.
+
+## Ligar as colunas e salvar o mapeamento
+Quando os nomes das colunas da origem não batem com os do sistema (ou quando você marca **Revisar o mapeamento**), aparece a tela **Ligar as colunas**: ela mostra as primeiras linhas da origem e, para cada campo do sistema, uma lista com as colunas da origem (já sugerida pelo nome). Escolha **(não importar)** para ignorar um campo. Dando um **nome** ao mapeamento, ele fica salvo para essa origem e esse tipo de dado e pode ser escolhido nas próximas importações, sem refazer a ligação. Os mapeamentos salvos ficam em **Mapeamentos salvos** e, se excluídos, vão para a Lixeira.
+
 ## O que cada tipo precisa
 - **Bairros**: a **cidade** já cadastrada (e a UF, se houver cidades com o mesmo nome) e o nome do bairro.
 - **Quarteirões**: o **bairro** já cadastrado e o nome do quarteirão. Se houver bairros com o mesmo nome em cidades diferentes, informe a cidade.

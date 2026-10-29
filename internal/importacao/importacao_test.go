@@ -99,7 +99,7 @@ func TestNormalizarEChave(t *testing.T) {
 	if Chave("  Jardim  São JOSÉ ") != "jardim sao jose" {
 		t.Errorf("Chave = %q", Chave("  Jardim  São JOSÉ "))
 	}
-	for s, v := range map[string]bool{"sim": true, "Sim": true, "S": true, "1": true, "true": true, "não": false, "Nao": false, "n": false, "0": false, "falso": false} {
+	for s, v := range map[string]bool{"Ativo": true, "Desativado": false, "inativo": false, "sim": true, "Sim": true, "S": true, "1": true, "true": true, "não": false, "Nao": false, "n": false, "0": false, "falso": false} {
 		got, ok := Booleano(s)
 		if !ok || got != v {
 			t.Errorf("Booleano(%q) = %v, %v", s, got, ok)

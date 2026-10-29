@@ -47,6 +47,9 @@ type Deps struct {
 	// Localização automática de endereços (CEP e coordenadas). nil = desligada.
 	Geocoder geocode.Geocoder
 
+	// Importação por API de outro sistema: por segurança só acessa a internet pública; true libera a rede interna (testes).
+	ImportPermitirRedePrivada bool
+
 	// Chave que assina os tokens da API (mínimo 32 bytes). Vazia = a API fica desligada.
 	APIKey []byte
 
@@ -63,10 +66,11 @@ type handlers struct {
 	siteKey string
 	prod    bool
 
-	mapaTiles, mapaCredito string
-	geocoder               geocode.Geocoder
-	api                    *apiEstado
-	imp                    *motorImp
+	mapaTiles, mapaCredito    string
+	geocoder                  geocode.Geocoder
+	api                       *apiEstado
+	imp                       *motorImp
+	importPermitirRedePrivada bool
 
 	tenants  *tenant.Service
 	resolver *tenant.Resolver
@@ -92,6 +96,7 @@ func New(d Deps) http.Handler {
 	}
 	h.presenca = &presenca.Registro{}
 	h.imp = &motorImp{}
+	h.importPermitirRedePrivada = d.ImportPermitirRedePrivada
 	h.api = &apiEstado{chave: d.APIKey, tocadoEm: map[int64]time.Time{}}
 
 	r := chi.NewRouter()
@@ -114,6 +119,11 @@ func New(d Deps) http.Handler {
 		r.Get("/api/v1/locais/{id}", h.apiAuth("locais:read", h.apiLocalObter))
 		r.Post("/api/v1/locais", h.apiAuth("locais:write", h.idempotente(h.apiLocalCriar)))
 		r.Patch("/api/v1/locais/{id}", h.apiAuth("locais:write", h.idempotente(h.apiLocalAlterar)))
+		r.Post("/api/v1/importacoes", h.apiAuth("importacoes:write", h.idempotente(h.apiImportacaoCriar)))
+		r.Get("/api/v1/importacoes/{id}", h.apiAuth("importacoes:read", h.apiImportacaoObter))
+		r.Get("/api/v1/importacoes/{id}/linhas", h.apiAuth("importacoes:read", h.apiImportacaoLinhas))
+		r.Post("/api/v1/importacoes/{id}/executar", h.apiAuth("importacoes:write", h.idempotente(h.apiImportacaoExecutar)))
+		r.Post("/api/v1/importacoes/{id}/descartar", h.apiAuth("importacoes:write", h.idempotente(h.apiImportacaoDescartar)))
 		r.Get("/api/v1/cidades", h.apiAuth("cidades:read", h.apiCidadesLista))
 		r.Get("/api/v1/cidades/{id}", h.apiAuth("cidades:read", h.apiCidadeObter))
 		r.Post("/api/v1/cidades", h.apiAuth("cidades:write", h.idempotente(h.apiCidadeCriar)))
@@ -171,7 +181,11 @@ func New(d Deps) http.Handler {
 	r.Get("/importacoes/nova", h.exigir("conf_importacao", h.importacaoNova))
 	r.Get("/importacoes/modelo/{arquivo}", h.exigir("conf_importacao", h.importacaoModelo))
 	r.Post("/importacoes", h.exigir("conf_importacao", h.importacaoEnviar))
+	r.Get("/importacoes/mapeamentos", h.exigir("conf_importacao", h.importacaoMapeamentos))
+	r.Post("/importacoes/mapeamentos/{id}/excluir", h.exigir("conf_importacao", h.importacaoMapeamentoExcluir))
 	r.Get("/importacoes/{id}", h.exigir("conf_importacao", h.importacaoFicha))
+	r.Get("/importacoes/{id}/mapear", h.exigir("conf_importacao", h.importacaoMapearForm))
+	r.Post("/importacoes/{id}/mapear", h.exigir("conf_importacao", h.importacaoMapearSalvar))
 	r.Get("/importacoes/{id}/progresso", h.exigir("conf_importacao", h.importacaoProgresso))
 	r.Get("/importacoes/{id}/relatorio.csv", h.exigir("conf_importacao", h.importacaoRelatorio))
 	r.Get("/importacoes/{id}/erros.csv", h.exigir("conf_importacao", h.importacaoErros))
