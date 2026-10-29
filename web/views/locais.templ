@@ -312,6 +312,72 @@ templ LocalForm(l Layout, d LocalFormData) {
 					</div>
 				</div>
 			</section>
+			if d.PodeGrupos {
+				<section class="cartao form-admin" id="grupos">
+					<h2>Grupos de locais</h2>
+					if len(d.Grupos) == 0 {
+						<p class="subtitulo">Este local não está em nenhum grupo.</p>
+					} else {
+						<ul class="lista-simples">
+							for _, g := range d.Grupos {
+								<li><a href={ templ.SafeURL("/grupos/" + strconv.FormatInt(g.ID, 10)) }>{ g.Nome }</a></li>
+							}
+						</ul>
+					}
+					if d.PodeGerenciarGrupos && len(d.GruposParaEscolha) > 0 {
+						<form method="post" action={ templ.SafeURL("/locais/" + strconv.FormatInt(d.ID, 10) + "/grupo") } class="form-admin">
+							<input type="hidden" name="csrf" value={ d.CSRF }/>
+							<div class="campo">
+								<label for="grupo_id">Acrescentar a um grupo</label>
+								<select id="grupo_id" name="grupo_id" required>
+									<option value="">Escolha o grupo</option>
+									for _, g := range d.GruposParaEscolha {
+										<option value={ strconv.FormatInt(g.ID, 10) }>{ g.Nome }</option>
+									}
+								</select>
+							</div>
+							<div class="form-acoes">
+								<button type="submit" class="btn">Acrescentar</button>
+							</div>
+						</form>
+					}
+				</section>
+			}
+			<section class="cartao" id="ficha">
+				<h2>Ficha do local</h2>
+				<p class="subtitulo">O que acontece neste local aparece aqui conforme cada módulo do sistema for entrando.</p>
+				<div class="grade-secoes">
+					for _, s := range d.Secoes {
+						<div class="secao-ficha">
+							<strong>{ s.Titulo }</strong>
+							<p class="subtitulo">{ s.Descricao }</p>
+							<span class="selo selo-aviso">chega na { s.Etapa }</span>
+						</div>
+					}
+				</div>
+			</section>
+			if d.MostrarHistorico {
+				<section class="cartao" id="historico">
+					<h2>Histórico de alterações</h2>
+					if len(d.Historico) == 0 {
+						<div class="tabela-vazia">Nenhuma alteração registrada.</div>
+					} else {
+						<div class="tabela-wrap">
+							<table class="tabela">
+								<tbody>
+									for _, u := range d.Historico {
+										<tr>
+											<td data-rotulo="Quando">{ u.Quando }</td>
+											<td data-rotulo="Quem">{ u.Ator }</td>
+											<td data-rotulo="O quê">{ u.Acao }</td>
+										</tr>
+									}
+								</tbody>
+							</table>
+						</div>
+					}
+				</section>
+			}
 			if d.PodeDesativar {
 				<section class="cartao form-admin" id="situacao">
 					<h2>Situação</h2>

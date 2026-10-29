@@ -492,6 +492,12 @@ func (h *handlers) localEditarForm(w http.ResponseWriter, r *http.Request) {
 		form.Aviso = "Local reativado."
 	case "chave":
 		form.Aviso = "Nova chave gerada. O QR Code antigo deixou de valer."
+	case "nogrupo":
+		form.Aviso = "Local acrescentado ao grupo."
+	}
+	if err := h.completarFichaDoLocal(ctx, r, q, l, &form); err != nil {
+		h.falhaInterna(w, r, "montar ficha do local", err)
+		return
 	}
 	render(w, r, views.LocalForm(h.layout(r, "Local", "/locais"), form))
 }

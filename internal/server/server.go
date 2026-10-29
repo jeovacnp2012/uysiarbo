@@ -108,6 +108,19 @@ func New(d Deps) http.Handler {
 	r.Get("/cidades/{id}", h.exigir("bairro_visualizar", h.cidadeEditarForm))
 	r.Post("/cidades/{id}", h.exigir("bairro_adicionar", h.cidadeSalvar))
 
+	r.Get("/grupos", h.exigir("local_grupo_visualizar", h.gruposLista))
+	r.Get("/grupos/novo", h.exigir("local_grupo_gerenciar", h.grupoNovoForm))
+	r.Get("/grupos/quarteiroes", h.exigir("local_grupo_gerenciar", h.grupoQuarteiroes))
+	r.Post("/grupos", h.exigir("local_grupo_gerenciar", h.grupoSalvar))
+	r.Get("/grupos/{id}", h.exigir("local_grupo_visualizar", h.grupoFicha))
+	r.Post("/grupos/{id}", h.exigir("local_grupo_gerenciar", h.grupoSalvar))
+	r.Get("/grupos/{id}/exportar.csv", h.exigir("local_grupo_visualizar", h.grupoExportar))
+	r.Post("/grupos/{id}/excluir", h.exigir("local_grupo_gerenciar", h.grupoExcluir))
+	r.Post("/grupos/{id}/clonar", h.exigir("local_grupo_gerenciar", h.grupoClonar))
+	r.Post("/grupos/{id}/limpar", h.exigir("local_grupo_gerenciar", h.grupoLimpar))
+	r.Post("/grupos/{id}/locais", h.exigir("local_grupo_gerenciar", h.grupoAdicionar))
+	r.Post("/grupos/{id}/locais/{lid}/remover", h.exigir("local_grupo_gerenciar", h.grupoRemoverLocal))
+
 	r.Get("/locais", h.exigir("local_visualizar", h.locaisLista))
 	r.Get("/locais/novo", h.exigir("local_adicionar", h.localNovoForm))
 	r.Get("/locais/quarteiroes", h.exigir("local_visualizar", h.localQuarteiroes))
@@ -117,6 +130,7 @@ func New(d Deps) http.Handler {
 	r.Get("/locais/{id}", h.exigir("local_visualizar", h.localEditarForm))
 	r.Get("/locais/{id}/qr.png", h.exigir("local_visualizar", h.localQR))
 	r.Post("/locais/{id}/ativo", h.exigir("local_desativar", h.localAtivo))
+	r.Post("/locais/{id}/grupo", h.exigir("local_grupo_gerenciar", h.localNoGrupo))
 	r.Post("/locais/{id}/chave", h.exigir("local_adicionar", h.localNovaChave))
 	r.Post("/locais/{id}", h.exigir("local_adicionar", h.localSalvar))
 

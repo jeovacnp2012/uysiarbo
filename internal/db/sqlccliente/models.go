@@ -107,6 +107,21 @@ type Locai struct {
 	QrChave              string             `json:"qr_chave"`
 }
 
+type LocalGrupo struct {
+	ID           int64              `json:"id"`
+	Nome         string             `json:"nome"`
+	Descricao    string             `json:"descricao"`
+	CriadoPor    pgtype.Int8        `json:"criado_por"`
+	CriadoEm     pgtype.Timestamptz `json:"criado_em"`
+	AtualizadoEm pgtype.Timestamptz `json:"atualizado_em"`
+}
+
+type LocalGrupoIten struct {
+	GrupoID      int64              `json:"grupo_id"`
+	LocalID      int64              `json:"local_id"`
+	AdicionadoEm pgtype.Timestamptz `json:"adicionado_em"`
+}
+
 type Papei struct {
 	ID           int64              `json:"id"`
 	Nome         string             `json:"nome"`

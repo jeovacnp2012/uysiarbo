@@ -1,0 +1,227 @@
+package views
+
+import "strconv"
+
+// OpcoesDeQuarteiraoTodos reabastece o campo Quarteirão do "acrescentar locais" (vazio = o bairro todo).
+templ OpcoesDeQuarteiraoTodos(itens []CidadeOpcao) {
+	<option value="">Todos os quarteirões do bairro</option>
+	@opcoesDe(itens)
+}
+
+templ Grupos(l Layout, d GruposData) {
+	@Base(l) {
+		@PageHeader("Grupos de locais", "Listas de locais para trabalhar, exportar e mostrar no mapa.") {
+			if d.PodeGerenciar {
+				<a class="btn btn-primario" href="/grupos/novo">Novo grupo</a>
+			}
+		}
+		if d.Aviso != "" {
+			<p class="alerta alerta-ok" role="status">{ d.Aviso }</p>
+		}
+		<form method="get" action="/grupos" class="cartao filtros">
+			<div class="campo">
+				<label for="f-busca">Nome ou descrição</label>
+				<input id="f-busca" name="busca" type="search" value={ d.Busca }/>
+			</div>
+			<div class="form-acoes">
+				<button type="submit" class="btn btn-primario">Filtrar</button>
+				<a class="btn" href="/grupos">Limpar</a>
+			</div>
+		</form>
+		<section class="cartao">
+			<div class="tabela-wrap">
+				<table class="tabela">
+					<thead>
+						<tr>
+							<th scope="col">Grupo</th>
+							<th scope="col">Locais</th>
+							<th scope="col">Criado em</th>
+							<th scope="col"><span class="sr-only">Ações</span></th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, g := range d.Linhas {
+							<tr>
+								<td data-rotulo="Grupo">
+									<strong>{ g.Nome }</strong>
+									if g.Descricao != "" {
+										<div class="subtitulo">{ g.Descricao }</div>
+									}
+								</td>
+								<td data-rotulo="Locais">{ strconv.Itoa(g.Total) }</td>
+								<td data-rotulo="Criado em">{ g.Criado }</td>
+								<td data-rotulo="Ações"><a class="btn" href={ templ.SafeURL("/grupos/" + strconv.FormatInt(g.ID, 10)) }>Abrir</a></td>
+							</tr>
+						}
+					</tbody>
+				</table>
+				if len(d.Linhas) == 0 {
+					<div class="tabela-vazia">Nenhum grupo cadastrado.</div>
+				}
+			</div>
+		</section>
+	}
+}
+
+templ GrupoForm(l Layout, d GrupoFormData) {
+	@Base(l) {
+		if d.Novo() {
+			@PageHeader("Novo grupo", "Dê um nome; depois você acrescenta os locais.") {
+				<a class="btn" href="/grupos">Voltar</a>
+			}
+		} else {
+			@PageHeader("Grupo de locais", d.Nome) {
+				<a class="btn" href="/grupos">Voltar</a>
+				<a class="btn" href={ templ.SafeURL("/grupos/" + strconv.FormatInt(d.ID, 10) + "/exportar.csv") }>Exportar planilha</a>
+			}
+			@Presenca("grupo", strconv.FormatInt(d.ID, 10), modoDaTela(d.PodeGerenciar))
+		}
+		if d.Aviso != "" {
+			<p class="alerta alerta-ok" role="status">{ d.Aviso }</p>
+		}
+		<form
+			method="post"
+			if d.Novo() {
+				action="/grupos"
+			} else {
+				action={ templ.SafeURL("/grupos/" + strconv.FormatInt(d.ID, 10)) }
+			}
+			class="cartao form-admin"
+		>
+			<input type="hidden" name="csrf" value={ d.CSRF }/>
+			if d.Erro != "" {
+				<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
+			}
+			<fieldset class="sem-borda" disabled?={ !d.PodeGerenciar }>
+				<div class="campo">
+					<label for="nome">Nome</label>
+					<input id="nome" name="nome" type="text" value={ d.Nome } maxlength="120" required/>
+				</div>
+				<div class="campo">
+					<label for="descricao">Descrição (opcional)</label>
+					<input id="descricao" name="descricao" type="text" value={ d.Descricao } maxlength="300"/>
+				</div>
+			</fieldset>
+			if d.PodeGerenciar {
+				<div class="form-acoes">
+					<button type="submit" class="btn btn-primario">Salvar grupo</button>
+					<a class="btn" href="/grupos">Cancelar</a>
+				</div>
+			}
+		</form>
+		if !d.Novo() {
+			if d.PodeGerenciar {
+				<section class="cartao form-admin" id="acrescentar">
+					<h2>Acrescentar locais</h2>
+					<p class="subtitulo">Traz para o grupo os locais ativos do bairro (ou de um quarteirão dele). Quem já está no grupo é ignorado.</p>
+					<form method="post" action={ templ.SafeURL("/grupos/" + strconv.FormatInt(d.ID, 10) + "/locais") } class="form-admin">
+						<input type="hidden" name="csrf" value={ d.CSRF }/>
+						<div class="grade-form">
+							<div class="campo">
+								<label for="g-bairro">Bairro</label>
+								<select
+									id="g-bairro"
+									name="bairro_id"
+									required
+									hx-get="/grupos/quarteiroes"
+									hx-target="#g-quarteirao"
+									hx-trigger="change"
+									hx-include="this"
+								>
+									<option value="">Escolha o bairro</option>
+									@opcoesDe(d.Bairros)
+								</select>
+							</div>
+							<div class="campo">
+								<label for="g-quarteirao">Quarteirão</label>
+								<select id="g-quarteirao" name="quarteirao_id">
+									<option value="">Todos os quarteirões do bairro</option>
+								</select>
+							</div>
+							<div class="campo">
+								<label for="g-tipo">Tipo</label>
+								<select id="g-tipo" name="tipo">
+									<option value="">Todos os tipos</option>
+									@opcoesDe(d.Tipos)
+								</select>
+							</div>
+						</div>
+						<div class="form-acoes">
+							<button type="submit" class="btn btn-primario">Acrescentar ao grupo</button>
+						</div>
+					</form>
+				</section>
+			}
+			<section class="cartao" id="locais">
+				<h2>Locais do grupo <span class="selo">{ strconv.Itoa(d.Pag.Total) }</span></h2>
+				<div class="tabela-wrap">
+					<table class="tabela">
+						<thead>
+							<tr>
+								<th scope="col">Endereço</th>
+								<th scope="col">Bairro / quarteirão</th>
+								<th scope="col">Tipo</th>
+								<th scope="col"><span class="sr-only">Ações</span></th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, x := range d.Locais {
+								<tr>
+									<td data-rotulo="Endereço">
+										<a href={ templ.SafeURL("/locais/" + strconv.FormatInt(x.ID, 10)) }><strong>{ x.Endereco }</strong></a>
+										<div class="subtitulo">
+											lado { x.Lado }
+											if !x.Ativo {
+												· <span class="selo selo-aviso">inativo</span>
+											}
+										</div>
+									</td>
+									<td data-rotulo="Bairro">{ x.Bairro } <span class="subtitulo">· quarteirão { x.Quarteirao }</span></td>
+									<td data-rotulo="Tipo">{ x.Tipo }</td>
+									<td data-rotulo="Ações">
+										if d.PodeGerenciar {
+											<form method="post" action={ templ.SafeURL("/grupos/" + strconv.FormatInt(d.ID, 10) + "/locais/" + strconv.FormatInt(x.ID, 10) + "/remover") } class="inline">
+												<input type="hidden" name="csrf" value={ d.CSRF }/>
+												<button type="submit" class="btn btn-icone" aria-label={ "Retirar " + x.Endereco + " do grupo" }>Retirar</button>
+											</form>
+										}
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+					if len(d.Locais) == 0 {
+						<div class="tabela-vazia">Nenhum local neste grupo.</div>
+					}
+				</div>
+				<div class="paginacao">
+					<span>{ d.Pag.Summary() } · página { strconv.Itoa(d.Pag.Page) } de { strconv.Itoa(d.Pag.Pages()) }</span>
+					<div class="paginacao-botoes">
+						<a class="btn" href={ templ.SafeURL(pageURL("/grupos/" + strconv.FormatInt(d.ID, 10), d.Query, d.Pag.Page-1)) } aria-disabled?={ !d.Pag.HasPrev() }>← Anterior</a>
+						<a class="btn" href={ templ.SafeURL(pageURL("/grupos/" + strconv.FormatInt(d.ID, 10), d.Query, d.Pag.Page+1)) } aria-disabled?={ !d.Pag.HasNext() }>Próxima →</a>
+					</div>
+				</div>
+			</section>
+			if d.PodeGerenciar {
+				<section class="cartao form-admin" id="outras-acoes">
+					<h2>Outras ações</h2>
+					<div class="form-acoes">
+						<form method="post" action={ templ.SafeURL("/grupos/" + strconv.FormatInt(d.ID, 10) + "/clonar") } class="inline">
+							<input type="hidden" name="csrf" value={ d.CSRF }/>
+							<button type="submit" class="btn">Clonar grupo</button>
+						</form>
+						<form method="post" action={ templ.SafeURL("/grupos/" + strconv.FormatInt(d.ID, 10) + "/limpar") } class="inline">
+							<input type="hidden" name="csrf" value={ d.CSRF }/>
+							<button type="submit" class="btn">Retirar todos os locais</button>
+						</form>
+						<form method="post" action={ templ.SafeURL("/grupos/" + strconv.FormatInt(d.ID, 10) + "/excluir") } class="inline">
+							<input type="hidden" name="csrf" value={ d.CSRF }/>
+							<button type="submit" class="btn">Excluir grupo</button>
+						</form>
+					</div>
+					<p class="subtitulo">Retirar locais ou excluir o grupo não apaga os locais: eles continuam cadastrados.</p>
+				</section>
+			}
+		}
+	}
+}

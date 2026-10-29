@@ -46,3 +46,6 @@ A lista busca por **endereço, número ou proprietário** e filtra por bairro, t
 - **Visualizar apenas ponto estratégico**: só enxerga e cadastra pontos estratégicos.
 
 Tudo o que é criado ou alterado fica registrado na **Auditoria**, com o antes e o depois. Se outra pessoa estiver com o mesmo local aberto, a ficha avisa quem é.
+
+## Ficha do local
+Abrindo um local, além dos dados, a ficha mostra os **grupos** a que ele pertence, o **histórico de alterações** (para quem tem acesso à Auditoria) e espaços reservados para **visitas, laboratório, casos, infrações, armadilhas, animais e comunicação**: cada um passa a aparecer ali quando o módulo correspondente for lançado.

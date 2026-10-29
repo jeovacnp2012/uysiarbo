@@ -173,6 +173,27 @@ type LocalFormData struct {
 	Ativo         bool
 	PodeDesativar bool
 	Aviso         string
+
+	// Ficha do local
+	Grupos              []GrupoMini // grupos a que o local pertence
+	GruposParaEscolha   []GrupoMini // grupos em que ele ainda pode entrar
+	PodeGrupos          bool        // pode ver os grupos
+	PodeGerenciarGrupos bool
+	MostrarHistorico    bool
+	Historico           []AuditoriaLinha // últimas alterações deste local
+	Secoes              []SecaoFicha     // espaços reservados para os módulos seguintes
+}
+
+type GrupoMini struct {
+	ID   int64
+	Nome string
+}
+
+// SecaoFicha é um espaço da ficha do local que um módulo futuro vai preencher.
+type SecaoFicha struct {
+	Titulo    string
+	Descricao string
+	Etapa     string
 }
 
 func (d LocalFormData) Novo() bool { return d.ID == 0 }

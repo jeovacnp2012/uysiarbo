@@ -1070,3 +1070,8 @@ form.inline {
 /* QR Code do local */
 .qr-bloco { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
 .qr-bloco img { background: #fff; padding: .5rem; border: 1px solid var(--borda, #cbd5e1); border-radius: .5rem; }
+
+/* Ficha do local: espaços reservados e lista simples */
+.grade-secoes { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: .75rem; }
+.secao-ficha { border: 1px dashed var(--borda, #cbd5e1); border-radius: .5rem; padding: .75rem; display: grid; gap: .35rem; }
+.lista-simples { margin: 0 0 1rem; padding-left: 1.25rem; }
