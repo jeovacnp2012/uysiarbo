@@ -28,18 +28,31 @@ type PapelPermisso struct {
 	Permissao string `json:"permissao"`
 }
 
+type Sesso struct {
+	TokenHash []byte             `json:"token_hash"`
+	UsuarioID pgtype.Int8        `json:"usuario_id"`
+	MasterID  pgtype.UUID        `json:"master_id"`
+	ExpiraEm  pgtype.Timestamptz `json:"expira_em"`
+	CriadoEm  pgtype.Timestamptz `json:"criado_em"`
+	UltimoUso pgtype.Timestamptz `json:"ultimo_uso"`
+	Ip        string             `json:"ip"`
+	UserAgent string             `json:"user_agent"`
+}
+
 type Usuario struct {
-	ID              int64              `json:"id"`
-	Nome            string             `json:"nome"`
-	Email           string             `json:"email"`
-	Telefone        string             `json:"telefone"`
-	SenhaHash       string             `json:"senha_hash"`
-	PapelID         int64              `json:"papel_id"`
-	LoginWeb        bool               `json:"login_web"`
-	LoginTablet     bool               `json:"login_tablet"`
-	Ativo           bool               `json:"ativo"`
-	DeveTrocarSenha bool               `json:"deve_trocar_senha"`
-	UltimoAcesso    pgtype.Timestamptz `json:"ultimo_acesso"`
-	CriadoEm        pgtype.Timestamptz `json:"criado_em"`
-	AtualizadoEm    pgtype.Timestamptz `json:"atualizado_em"`
+	ID               int64              `json:"id"`
+	Nome             string             `json:"nome"`
+	Email            string             `json:"email"`
+	Telefone         string             `json:"telefone"`
+	SenhaHash        string             `json:"senha_hash"`
+	PapelID          int64              `json:"papel_id"`
+	LoginWeb         bool               `json:"login_web"`
+	LoginTablet      bool               `json:"login_tablet"`
+	Ativo            bool               `json:"ativo"`
+	DeveTrocarSenha  bool               `json:"deve_trocar_senha"`
+	UltimoAcesso     pgtype.Timestamptz `json:"ultimo_acesso"`
+	CriadoEm         pgtype.Timestamptz `json:"criado_em"`
+	AtualizadoEm     pgtype.Timestamptz `json:"atualizado_em"`
+	TentativasFalhas int32              `json:"tentativas_falhas"`
+	BloqueadoAte     pgtype.Timestamptz `json:"bloqueado_ate"`
 }

@@ -14,7 +14,7 @@ import (
 const createPlataformaUsuario = `-- name: CreatePlataformaUsuario :one
 INSERT INTO plataforma_usuarios (nome, email, senha_hash, master, deve_trocar_senha)
 VALUES ($1, $2, $3, $4, $5)
-RETURNING id, nome, email, senha_hash, master, ativo, deve_trocar_senha, criado_em, atualizado_em
+RETURNING id, nome, email, senha_hash, master, ativo, deve_trocar_senha, criado_em, atualizado_em, tentativas_falhas, bloqueado_ate, ultimo_acesso
 `
 
 type CreatePlataformaUsuarioParams struct {
@@ -44,12 +44,71 @@ func (q *Queries) CreatePlataformaUsuario(ctx context.Context, arg CreatePlatafo
 		&i.DeveTrocarSenha,
 		&i.CriadoEm,
 		&i.AtualizadoEm,
+		&i.TentativasFalhas,
+		&i.BloqueadoAte,
+		&i.UltimoAcesso,
 	)
 	return i, err
 }
 
+const createSessaoPlataforma = `-- name: CreateSessaoPlataforma :exec
+INSERT INTO sessoes_plataforma (token_hash, usuario_id, expira_em, ip, user_agent)
+VALUES ($1, $2, $3, $4, $5)
+`
+
+type CreateSessaoPlataformaParams struct {
+	TokenHash []byte             `json:"token_hash"`
+	UsuarioID pgtype.UUID        `json:"usuario_id"`
+	ExpiraEm  pgtype.Timestamptz `json:"expira_em"`
+	Ip        string             `json:"ip"`
+	UserAgent string             `json:"user_agent"`
+}
+
+func (q *Queries) CreateSessaoPlataforma(ctx context.Context, arg CreateSessaoPlataformaParams) error {
+	_, err := q.db.Exec(ctx, createSessaoPlataforma,
+		arg.TokenHash,
+		arg.UsuarioID,
+		arg.ExpiraEm,
+		arg.Ip,
+		arg.UserAgent,
+	)
+	return err
+}
+
+const deleteSessaoPlataforma = `-- name: DeleteSessaoPlataforma :exec
+DELETE FROM sessoes_plataforma WHERE token_hash = $1
+`
+
+func (q *Queries) DeleteSessaoPlataforma(ctx context.Context, tokenHash []byte) error {
+	_, err := q.db.Exec(ctx, deleteSessaoPlataforma, tokenHash)
+	return err
+}
+
+const deleteSessoesDoUsuarioPlataforma = `-- name: DeleteSessoesDoUsuarioPlataforma :exec
+DELETE FROM sessoes_plataforma WHERE usuario_id = $1 AND token_hash IS DISTINCT FROM $2
+`
+
+type DeleteSessoesDoUsuarioPlataformaParams struct {
+	UsuarioID pgtype.UUID `json:"usuario_id"`
+	TokenHash []byte      `json:"token_hash"`
+}
+
+func (q *Queries) DeleteSessoesDoUsuarioPlataforma(ctx context.Context, arg DeleteSessoesDoUsuarioPlataformaParams) error {
+	_, err := q.db.Exec(ctx, deleteSessoesDoUsuarioPlataforma, arg.UsuarioID, arg.TokenHash)
+	return err
+}
+
+const deleteSessoesPlataformaExpiradas = `-- name: DeleteSessoesPlataformaExpiradas :exec
+DELETE FROM sessoes_plataforma WHERE expira_em < now()
+`
+
+func (q *Queries) DeleteSessoesPlataformaExpiradas(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, deleteSessoesPlataformaExpiradas)
+	return err
+}
+
 const getPlataformaUsuarioByEmail = `-- name: GetPlataformaUsuarioByEmail :one
-SELECT id, nome, email, senha_hash, master, ativo, deve_trocar_senha, criado_em, atualizado_em FROM plataforma_usuarios WHERE lower(email) = lower($1)
+SELECT id, nome, email, senha_hash, master, ativo, deve_trocar_senha, criado_em, atualizado_em, tentativas_falhas, bloqueado_ate, ultimo_acesso FROM plataforma_usuarios WHERE lower(email) = lower($1)
 `
 
 func (q *Queries) GetPlataformaUsuarioByEmail(ctx context.Context, lower string) (PlataformaUsuario, error) {
@@ -65,12 +124,58 @@ func (q *Queries) GetPlataformaUsuarioByEmail(ctx context.Context, lower string)
 		&i.DeveTrocarSenha,
 		&i.CriadoEm,
 		&i.AtualizadoEm,
+		&i.TentativasFalhas,
+		&i.BloqueadoAte,
+		&i.UltimoAcesso,
+	)
+	return i, err
+}
+
+const getPlataformaUsuarioByID = `-- name: GetPlataformaUsuarioByID :one
+SELECT id, nome, email, senha_hash, master, ativo, deve_trocar_senha, criado_em, atualizado_em, tentativas_falhas, bloqueado_ate, ultimo_acesso FROM plataforma_usuarios WHERE id = $1
+`
+
+func (q *Queries) GetPlataformaUsuarioByID(ctx context.Context, id pgtype.UUID) (PlataformaUsuario, error) {
+	row := q.db.QueryRow(ctx, getPlataformaUsuarioByID, id)
+	var i PlataformaUsuario
+	err := row.Scan(
+		&i.ID,
+		&i.Nome,
+		&i.Email,
+		&i.SenhaHash,
+		&i.Master,
+		&i.Ativo,
+		&i.DeveTrocarSenha,
+		&i.CriadoEm,
+		&i.AtualizadoEm,
+		&i.TentativasFalhas,
+		&i.BloqueadoAte,
+		&i.UltimoAcesso,
+	)
+	return i, err
+}
+
+const getSessaoPlataforma = `-- name: GetSessaoPlataforma :one
+SELECT token_hash, usuario_id, expira_em, criado_em, ultimo_uso, ip, user_agent FROM sessoes_plataforma WHERE token_hash = $1
+`
+
+func (q *Queries) GetSessaoPlataforma(ctx context.Context, tokenHash []byte) (SessoesPlataforma, error) {
+	row := q.db.QueryRow(ctx, getSessaoPlataforma, tokenHash)
+	var i SessoesPlataforma
+	err := row.Scan(
+		&i.TokenHash,
+		&i.UsuarioID,
+		&i.ExpiraEm,
+		&i.CriadoEm,
+		&i.UltimoUso,
+		&i.Ip,
+		&i.UserAgent,
 	)
 	return i, err
 }
 
 const listPlataformaUsuarios = `-- name: ListPlataformaUsuarios :many
-SELECT id, nome, email, senha_hash, master, ativo, deve_trocar_senha, criado_em, atualizado_em FROM plataforma_usuarios ORDER BY nome
+SELECT id, nome, email, senha_hash, master, ativo, deve_trocar_senha, criado_em, atualizado_em, tentativas_falhas, bloqueado_ate, ultimo_acesso FROM plataforma_usuarios ORDER BY nome
 `
 
 func (q *Queries) ListPlataformaUsuarios(ctx context.Context) ([]PlataformaUsuario, error) {
@@ -92,6 +197,9 @@ func (q *Queries) ListPlataformaUsuarios(ctx context.Context) ([]PlataformaUsuar
 			&i.DeveTrocarSenha,
 			&i.CriadoEm,
 			&i.AtualizadoEm,
+			&i.TentativasFalhas,
+			&i.BloqueadoAte,
+			&i.UltimoAcesso,
 		); err != nil {
 			return nil, err
 		}
@@ -103,11 +211,42 @@ func (q *Queries) ListPlataformaUsuarios(ctx context.Context) ([]PlataformaUsuar
 	return items, nil
 }
 
+const registrarFalhaPlataforma = `-- name: RegistrarFalhaPlataforma :exec
+UPDATE plataforma_usuarios
+SET tentativas_falhas = tentativas_falhas + 1,
+    bloqueado_ate = CASE WHEN tentativas_falhas + 1 >= $1::int
+                         THEN now() + make_interval(secs => $2::int)
+                         ELSE bloqueado_ate END
+WHERE id = $3
+`
+
+type RegistrarFalhaPlataformaParams struct {
+	Limite           int32       `json:"limite"`
+	BloqueioSegundos int32       `json:"bloqueio_segundos"`
+	ID               pgtype.UUID `json:"id"`
+}
+
+func (q *Queries) RegistrarFalhaPlataforma(ctx context.Context, arg RegistrarFalhaPlataformaParams) error {
+	_, err := q.db.Exec(ctx, registrarFalhaPlataforma, arg.Limite, arg.BloqueioSegundos, arg.ID)
+	return err
+}
+
+const registrarSucessoPlataforma = `-- name: RegistrarSucessoPlataforma :exec
+UPDATE plataforma_usuarios
+SET tentativas_falhas = 0, bloqueado_ate = NULL, ultimo_acesso = now()
+WHERE id = $1
+`
+
+func (q *Queries) RegistrarSucessoPlataforma(ctx context.Context, id pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, registrarSucessoPlataforma, id)
+	return err
+}
+
 const setPlataformaUsuarioSenha = `-- name: SetPlataformaUsuarioSenha :one
 UPDATE plataforma_usuarios
-SET senha_hash = $2, deve_trocar_senha = $3, atualizado_em = now()
+SET senha_hash = $2, deve_trocar_senha = $3, tentativas_falhas = 0, bloqueado_ate = NULL, atualizado_em = now()
 WHERE id = $1
-RETURNING id, nome, email, senha_hash, master, ativo, deve_trocar_senha, criado_em, atualizado_em
+RETURNING id, nome, email, senha_hash, master, ativo, deve_trocar_senha, criado_em, atualizado_em, tentativas_falhas, bloqueado_ate, ultimo_acesso
 `
 
 type SetPlataformaUsuarioSenhaParams struct {
@@ -129,6 +268,23 @@ func (q *Queries) SetPlataformaUsuarioSenha(ctx context.Context, arg SetPlatafor
 		&i.DeveTrocarSenha,
 		&i.CriadoEm,
 		&i.AtualizadoEm,
+		&i.TentativasFalhas,
+		&i.BloqueadoAte,
+		&i.UltimoAcesso,
 	)
 	return i, err
+}
+
+const touchSessaoPlataforma = `-- name: TouchSessaoPlataforma :exec
+UPDATE sessoes_plataforma SET ultimo_uso = now(), expira_em = $2 WHERE token_hash = $1
+`
+
+type TouchSessaoPlataformaParams struct {
+	TokenHash []byte             `json:"token_hash"`
+	ExpiraEm  pgtype.Timestamptz `json:"expira_em"`
+}
+
+func (q *Queries) TouchSessaoPlataforma(ctx context.Context, arg TouchSessaoPlataformaParams) error {
+	_, err := q.db.Exec(ctx, touchSessaoPlataforma, arg.TokenHash, arg.ExpiraEm)
+	return err
 }

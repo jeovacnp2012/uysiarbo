@@ -28,13 +28,26 @@ type Cliente struct {
 }
 
 type PlataformaUsuario struct {
-	ID              pgtype.UUID        `json:"id"`
-	Nome            string             `json:"nome"`
-	Email           string             `json:"email"`
-	SenhaHash       string             `json:"senha_hash"`
-	Master          bool               `json:"master"`
-	Ativo           bool               `json:"ativo"`
-	DeveTrocarSenha bool               `json:"deve_trocar_senha"`
-	CriadoEm        pgtype.Timestamptz `json:"criado_em"`
-	AtualizadoEm    pgtype.Timestamptz `json:"atualizado_em"`
+	ID               pgtype.UUID        `json:"id"`
+	Nome             string             `json:"nome"`
+	Email            string             `json:"email"`
+	SenhaHash        string             `json:"senha_hash"`
+	Master           bool               `json:"master"`
+	Ativo            bool               `json:"ativo"`
+	DeveTrocarSenha  bool               `json:"deve_trocar_senha"`
+	CriadoEm         pgtype.Timestamptz `json:"criado_em"`
+	AtualizadoEm     pgtype.Timestamptz `json:"atualizado_em"`
+	TentativasFalhas int32              `json:"tentativas_falhas"`
+	BloqueadoAte     pgtype.Timestamptz `json:"bloqueado_ate"`
+	UltimoAcesso     pgtype.Timestamptz `json:"ultimo_acesso"`
+}
+
+type SessoesPlataforma struct {
+	TokenHash []byte             `json:"token_hash"`
+	UsuarioID pgtype.UUID        `json:"usuario_id"`
+	ExpiraEm  pgtype.Timestamptz `json:"expira_em"`
+	CriadoEm  pgtype.Timestamptz `json:"criado_em"`
+	UltimoUso pgtype.Timestamptz `json:"ultimo_uso"`
+	Ip        string             `json:"ip"`
+	UserAgent string             `json:"user_agent"`
 }

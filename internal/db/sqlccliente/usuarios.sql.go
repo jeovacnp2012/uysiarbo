@@ -7,12 +7,60 @@ package sqlccliente
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+const createSessaoMaster = `-- name: CreateSessaoMaster :exec
+INSERT INTO sessoes (token_hash, master_id, expira_em, ip, user_agent) VALUES ($1, $2, $3, $4, $5)
+`
+
+type CreateSessaoMasterParams struct {
+	TokenHash []byte             `json:"token_hash"`
+	MasterID  pgtype.UUID        `json:"master_id"`
+	ExpiraEm  pgtype.Timestamptz `json:"expira_em"`
+	Ip        string             `json:"ip"`
+	UserAgent string             `json:"user_agent"`
+}
+
+func (q *Queries) CreateSessaoMaster(ctx context.Context, arg CreateSessaoMasterParams) error {
+	_, err := q.db.Exec(ctx, createSessaoMaster,
+		arg.TokenHash,
+		arg.MasterID,
+		arg.ExpiraEm,
+		arg.Ip,
+		arg.UserAgent,
+	)
+	return err
+}
+
+const createSessaoUsuario = `-- name: CreateSessaoUsuario :exec
+INSERT INTO sessoes (token_hash, usuario_id, expira_em, ip, user_agent) VALUES ($1, $2, $3, $4, $5)
+`
+
+type CreateSessaoUsuarioParams struct {
+	TokenHash []byte             `json:"token_hash"`
+	UsuarioID pgtype.Int8        `json:"usuario_id"`
+	ExpiraEm  pgtype.Timestamptz `json:"expira_em"`
+	Ip        string             `json:"ip"`
+	UserAgent string             `json:"user_agent"`
+}
+
+func (q *Queries) CreateSessaoUsuario(ctx context.Context, arg CreateSessaoUsuarioParams) error {
+	_, err := q.db.Exec(ctx, createSessaoUsuario,
+		arg.TokenHash,
+		arg.UsuarioID,
+		arg.ExpiraEm,
+		arg.Ip,
+		arg.UserAgent,
+	)
+	return err
+}
 
 const createUsuario = `-- name: CreateUsuario :one
 INSERT INTO usuarios (nome, email, telefone, senha_hash, papel_id, login_web, login_tablet, deve_trocar_senha)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-RETURNING id, nome, email, telefone, senha_hash, papel_id, login_web, login_tablet, ativo, deve_trocar_senha, ultimo_acesso, criado_em, atualizado_em
+RETURNING id, nome, email, telefone, senha_hash, papel_id, login_web, login_tablet, ativo, deve_trocar_senha, ultimo_acesso, criado_em, atualizado_em, tentativas_falhas, bloqueado_ate
 `
 
 type CreateUsuarioParams struct {
@@ -52,12 +100,80 @@ func (q *Queries) CreateUsuario(ctx context.Context, arg CreateUsuarioParams) (U
 		&i.UltimoAcesso,
 		&i.CriadoEm,
 		&i.AtualizadoEm,
+		&i.TentativasFalhas,
+		&i.BloqueadoAte,
+	)
+	return i, err
+}
+
+const deleteSessao = `-- name: DeleteSessao :exec
+DELETE FROM sessoes WHERE token_hash = $1
+`
+
+func (q *Queries) DeleteSessao(ctx context.Context, tokenHash []byte) error {
+	_, err := q.db.Exec(ctx, deleteSessao, tokenHash)
+	return err
+}
+
+const deleteSessoesDoMaster = `-- name: DeleteSessoesDoMaster :exec
+DELETE FROM sessoes WHERE master_id = $1 AND token_hash IS DISTINCT FROM $2
+`
+
+type DeleteSessoesDoMasterParams struct {
+	MasterID  pgtype.UUID `json:"master_id"`
+	TokenHash []byte      `json:"token_hash"`
+}
+
+func (q *Queries) DeleteSessoesDoMaster(ctx context.Context, arg DeleteSessoesDoMasterParams) error {
+	_, err := q.db.Exec(ctx, deleteSessoesDoMaster, arg.MasterID, arg.TokenHash)
+	return err
+}
+
+const deleteSessoesDoUsuario = `-- name: DeleteSessoesDoUsuario :exec
+DELETE FROM sessoes WHERE usuario_id = $1 AND token_hash IS DISTINCT FROM $2
+`
+
+type DeleteSessoesDoUsuarioParams struct {
+	UsuarioID pgtype.Int8 `json:"usuario_id"`
+	TokenHash []byte      `json:"token_hash"`
+}
+
+func (q *Queries) DeleteSessoesDoUsuario(ctx context.Context, arg DeleteSessoesDoUsuarioParams) error {
+	_, err := q.db.Exec(ctx, deleteSessoesDoUsuario, arg.UsuarioID, arg.TokenHash)
+	return err
+}
+
+const deleteSessoesExpiradas = `-- name: DeleteSessoesExpiradas :exec
+DELETE FROM sessoes WHERE expira_em < now()
+`
+
+func (q *Queries) DeleteSessoesExpiradas(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, deleteSessoesExpiradas)
+	return err
+}
+
+const getSessao = `-- name: GetSessao :one
+SELECT token_hash, usuario_id, master_id, expira_em, criado_em, ultimo_uso, ip, user_agent FROM sessoes WHERE token_hash = $1
+`
+
+func (q *Queries) GetSessao(ctx context.Context, tokenHash []byte) (Sesso, error) {
+	row := q.db.QueryRow(ctx, getSessao, tokenHash)
+	var i Sesso
+	err := row.Scan(
+		&i.TokenHash,
+		&i.UsuarioID,
+		&i.MasterID,
+		&i.ExpiraEm,
+		&i.CriadoEm,
+		&i.UltimoUso,
+		&i.Ip,
+		&i.UserAgent,
 	)
 	return i, err
 }
 
 const getUsuarioByEmail = `-- name: GetUsuarioByEmail :one
-SELECT id, nome, email, telefone, senha_hash, papel_id, login_web, login_tablet, ativo, deve_trocar_senha, ultimo_acesso, criado_em, atualizado_em FROM usuarios WHERE lower(email) = lower($1)
+SELECT id, nome, email, telefone, senha_hash, papel_id, login_web, login_tablet, ativo, deve_trocar_senha, ultimo_acesso, criado_em, atualizado_em, tentativas_falhas, bloqueado_ate FROM usuarios WHERE lower(email) = lower($1)
 `
 
 func (q *Queries) GetUsuarioByEmail(ctx context.Context, lower string) (Usuario, error) {
@@ -77,12 +193,41 @@ func (q *Queries) GetUsuarioByEmail(ctx context.Context, lower string) (Usuario,
 		&i.UltimoAcesso,
 		&i.CriadoEm,
 		&i.AtualizadoEm,
+		&i.TentativasFalhas,
+		&i.BloqueadoAte,
+	)
+	return i, err
+}
+
+const getUsuarioByID = `-- name: GetUsuarioByID :one
+SELECT id, nome, email, telefone, senha_hash, papel_id, login_web, login_tablet, ativo, deve_trocar_senha, ultimo_acesso, criado_em, atualizado_em, tentativas_falhas, bloqueado_ate FROM usuarios WHERE id = $1
+`
+
+func (q *Queries) GetUsuarioByID(ctx context.Context, id int64) (Usuario, error) {
+	row := q.db.QueryRow(ctx, getUsuarioByID, id)
+	var i Usuario
+	err := row.Scan(
+		&i.ID,
+		&i.Nome,
+		&i.Email,
+		&i.Telefone,
+		&i.SenhaHash,
+		&i.PapelID,
+		&i.LoginWeb,
+		&i.LoginTablet,
+		&i.Ativo,
+		&i.DeveTrocarSenha,
+		&i.UltimoAcesso,
+		&i.CriadoEm,
+		&i.AtualizadoEm,
+		&i.TentativasFalhas,
+		&i.BloqueadoAte,
 	)
 	return i, err
 }
 
 const listUsuarios = `-- name: ListUsuarios :many
-SELECT id, nome, email, telefone, senha_hash, papel_id, login_web, login_tablet, ativo, deve_trocar_senha, ultimo_acesso, criado_em, atualizado_em FROM usuarios ORDER BY nome
+SELECT id, nome, email, telefone, senha_hash, papel_id, login_web, login_tablet, ativo, deve_trocar_senha, ultimo_acesso, criado_em, atualizado_em, tentativas_falhas, bloqueado_ate FROM usuarios ORDER BY nome
 `
 
 func (q *Queries) ListUsuarios(ctx context.Context) ([]Usuario, error) {
@@ -108,6 +253,8 @@ func (q *Queries) ListUsuarios(ctx context.Context) ([]Usuario, error) {
 			&i.UltimoAcesso,
 			&i.CriadoEm,
 			&i.AtualizadoEm,
+			&i.TentativasFalhas,
+			&i.BloqueadoAte,
 		); err != nil {
 			return nil, err
 		}
@@ -117,4 +264,66 @@ func (q *Queries) ListUsuarios(ctx context.Context) ([]Usuario, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const registrarFalhaUsuario = `-- name: RegistrarFalhaUsuario :exec
+UPDATE usuarios
+SET tentativas_falhas = tentativas_falhas + 1,
+    bloqueado_ate = CASE WHEN tentativas_falhas + 1 >= $1::int
+                         THEN now() + make_interval(secs => $2::int)
+                         ELSE bloqueado_ate END
+WHERE id = $3
+`
+
+type RegistrarFalhaUsuarioParams struct {
+	Limite           int32 `json:"limite"`
+	BloqueioSegundos int32 `json:"bloqueio_segundos"`
+	ID               int64 `json:"id"`
+}
+
+func (q *Queries) RegistrarFalhaUsuario(ctx context.Context, arg RegistrarFalhaUsuarioParams) error {
+	_, err := q.db.Exec(ctx, registrarFalhaUsuario, arg.Limite, arg.BloqueioSegundos, arg.ID)
+	return err
+}
+
+const registrarSucessoUsuario = `-- name: RegistrarSucessoUsuario :exec
+UPDATE usuarios
+SET tentativas_falhas = 0, bloqueado_ate = NULL, ultimo_acesso = now()
+WHERE id = $1
+`
+
+func (q *Queries) RegistrarSucessoUsuario(ctx context.Context, id int64) error {
+	_, err := q.db.Exec(ctx, registrarSucessoUsuario, id)
+	return err
+}
+
+const setUsuarioSenha = `-- name: SetUsuarioSenha :exec
+UPDATE usuarios
+SET senha_hash = $2, deve_trocar_senha = $3, tentativas_falhas = 0, bloqueado_ate = NULL, atualizado_em = now()
+WHERE id = $1
+`
+
+type SetUsuarioSenhaParams struct {
+	ID              int64  `json:"id"`
+	SenhaHash       string `json:"senha_hash"`
+	DeveTrocarSenha bool   `json:"deve_trocar_senha"`
+}
+
+func (q *Queries) SetUsuarioSenha(ctx context.Context, arg SetUsuarioSenhaParams) error {
+	_, err := q.db.Exec(ctx, setUsuarioSenha, arg.ID, arg.SenhaHash, arg.DeveTrocarSenha)
+	return err
+}
+
+const touchSessao = `-- name: TouchSessao :exec
+UPDATE sessoes SET ultimo_uso = now(), expira_em = $2 WHERE token_hash = $1
+`
+
+type TouchSessaoParams struct {
+	TokenHash []byte             `json:"token_hash"`
+	ExpiraEm  pgtype.Timestamptz `json:"expira_em"`
+}
+
+func (q *Queries) TouchSessao(ctx context.Context, arg TouchSessaoParams) error {
+	_, err := q.db.Exec(ctx, touchSessao, arg.TokenHash, arg.ExpiraEm)
+	return err
 }
