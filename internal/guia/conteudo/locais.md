@@ -26,12 +26,22 @@ Proprietário (nome, **CPF**, telefone, WhatsApp, e-mail), inquilino e telefone 
 ### Habitantes
 Quantidade de pessoas, cachorros, gatos e roedores. Pode ficar em branco quando não se sabe.
 
+## Cadastro em lote
+Para uma rua inteira, use **Cadastro em lote** (na lista de locais). Informe o tipo, a rua, o bairro e o quarteirão, o **lado**, o **primeiro e o último número** e o intervalo (**de 1 em 1**, ou **de 2 em 2** para só pares ou só ímpares). Se preencher a **sequência inicial**, ela sobe de um em um a cada local. Cada lote cria no máximo 500 locais, e os que já existem são pulados (a tela avisa quantos foram criados e quantos já existiam). Depois, complete moradores e habitantes abrindo cada local.
+
+## Chave e QR Code
+A ficha de um local já salvo mostra o **QR Code** e a **chave** dele: imprima e cole no imóvel, e o aplicativo do tablet encontra o local ao ler o código. Se o adesivo se perder ou vazar, **Gerar nova chave** invalida o QR Code antigo.
+
+## Desativar e reativar
+Quem tem a permissão **Desativar** vê, na ficha, o botão **Desativar local**. Nada é apagado: o local sai das listas de quem não tem **Ver desativados** e pode ser **reativado** a qualquer momento.
+
 ## Lista e filtros
 A lista busca por **endereço, número ou proprietário** e filtra por bairro, tipo e situação.
 
 ## Permissões
 - **Visualizar**: ver a lista e as fichas.
 - **Adicionar/Editar**: cadastrar e alterar locais.
+- **Desativar** e **Ver desativados**: desativar/reativar locais e enxergar os desativados.
 - **Visualizar apenas atribuídos**: só os locais dos bairros em que a pessoa é responsável (e só pode cadastrar nesses bairros).
 - **Visualizar apenas ponto estratégico**: só enxerga e cadastra pontos estratégicos.
 

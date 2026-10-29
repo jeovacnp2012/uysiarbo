@@ -104,6 +104,7 @@ type Locai struct {
 	CriadoPor            pgtype.Int8        `json:"criado_por"`
 	CriadoEm             pgtype.Timestamptz `json:"criado_em"`
 	AtualizadoEm         pgtype.Timestamptz `json:"atualizado_em"`
+	QrChave              string             `json:"qr_chave"`
 }
 
 type Papei struct {

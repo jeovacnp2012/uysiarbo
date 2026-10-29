@@ -13,6 +13,7 @@ WHERE (sqlc.arg(busca)::text = '' OR position(lower(sqlc.arg(busca)::text) in lo
   AND (sqlc.narg(somente_usuario)::bigint IS NULL OR EXISTS (
         SELECT 1 FROM bairro_responsaveis r WHERE r.bairro_id = l.bairro_id AND r.usuario_id = sqlc.narg(somente_usuario)::bigint))
   AND (NOT sqlc.arg(somente_pe)::boolean OR l.tipo = 'ponto_estrategico')
+  AND (sqlc.arg(ver_desativados)::boolean OR l.ativo)
 ORDER BY lower(b.nome), lower(l.endereco), l.numero, l.id
 LIMIT sqlc.arg(limite)::int OFFSET sqlc.arg(deslocamento)::int;
 
@@ -25,7 +26,8 @@ WHERE (sqlc.arg(busca)::text = '' OR position(lower(sqlc.arg(busca)::text) in lo
   AND (sqlc.arg(situacao)::text = '' OR l.ativo = (sqlc.arg(situacao)::text = 'ativo'))
   AND (sqlc.narg(somente_usuario)::bigint IS NULL OR EXISTS (
         SELECT 1 FROM bairro_responsaveis r WHERE r.bairro_id = l.bairro_id AND r.usuario_id = sqlc.narg(somente_usuario)::bigint))
-  AND (NOT sqlc.arg(somente_pe)::boolean OR l.tipo = 'ponto_estrategico');
+  AND (NOT sqlc.arg(somente_pe)::boolean OR l.tipo = 'ponto_estrategico')
+  AND (sqlc.arg(ver_desativados)::boolean OR l.ativo);
 
 -- name: GetLocal :one
 SELECT * FROM locais WHERE id = $1;
@@ -59,3 +61,19 @@ WHERE b.status = 'ativo'
   AND (sqlc.narg(somente_usuario)::bigint IS NULL OR EXISTS (
         SELECT 1 FROM bairro_responsaveis r WHERE r.bairro_id = b.id AND r.usuario_id = sqlc.narg(somente_usuario)::bigint))
 ORDER BY lower(b.nome);
+
+-- name: SetLocalAtivo :execrows
+UPDATE locais SET ativo = $2, atualizado_em = now() WHERE id = $1;
+
+-- name: CreateLocalLote :execrows
+INSERT INTO locais (tipo, endereco, numero, bairro_id, quarteirao_id, lado, sequencia, criado_por)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+ON CONFLICT DO NOTHING;
+
+-- name: NovaChaveDoLocal :one
+UPDATE locais SET qr_chave = substr(replace(gen_random_uuid()::text, '-', ''), 1, 20), atualizado_em = now()
+WHERE id = $1
+RETURNING qr_chave;
+
+-- name: GetLocalPorChave :one
+SELECT * FROM locais WHERE qr_chave = $1;

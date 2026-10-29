@@ -1066,3 +1066,7 @@ form.inline {
     font-size: 0.7rem;
     line-height: 1.7;
 }
+
+/* QR Code do local */
+.qr-bloco { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+.qr-bloco img { background: #fff; padding: .5rem; border: 1px solid var(--borda, #cbd5e1); border-radius: .5rem; }

@@ -52,6 +52,9 @@ func (h *handlers) escopoLocais(r *http.Request) (somente pgtype.Int8, soPE bool
 // localVisivel diz se o local está ao alcance de quem pede.
 func (h *handlers) localVisivel(ctx context.Context, r *http.Request, q *sqlccliente.Queries, l sqlccliente.Locai) (bool, error) {
 	somente, soPE := h.escopoLocais(r)
+	if !l.Ativo && !h.principal(r).Pode("local_ver_desativados") {
+		return false, nil
+	}
 	if soPE && l.Tipo != "ponto_estrategico" {
 		return false, nil
 	}
@@ -87,12 +90,13 @@ func (h *handlers) locaisLista(w http.ResponseWriter, r *http.Request) {
 		bairroID = pgtype.Int8{Int64: n, Valid: true}
 	}
 	somente, soPE := h.escopoLocais(r)
+	verDesativados := h.principal(r).Pode("local_ver_desativados")
 
 	pag := views.Pagination{Page: 1, PerPage: 20}
 	if n, err := strconv.Atoi(qs.Get("pagina")); err == nil && n > 1 {
 		pag.Page = n
 	}
-	total, err := q.CountLocais(ctx, sqlccliente.CountLocaisParams{Busca: f.Busca, BairroID: bairroID, Tipo: f.Tipo, Situacao: f.Situacao, SomenteUsuario: somente, SomentePe: soPE})
+	total, err := q.CountLocais(ctx, sqlccliente.CountLocaisParams{Busca: f.Busca, BairroID: bairroID, Tipo: f.Tipo, Situacao: f.Situacao, SomenteUsuario: somente, SomentePe: soPE, VerDesativados: verDesativados})
 	if err != nil {
 		h.falhaInterna(w, r, "contar locais", err)
 		return
@@ -102,7 +106,7 @@ func (h *handlers) locaisLista(w http.ResponseWriter, r *http.Request) {
 		pag.Page = pag.Pages()
 	}
 	rows, err := q.ListLocais(ctx, sqlccliente.ListLocaisParams{
-		Busca: f.Busca, BairroID: bairroID, Tipo: f.Tipo, Situacao: f.Situacao, SomenteUsuario: somente, SomentePe: soPE,
+		Busca: f.Busca, BairroID: bairroID, Tipo: f.Tipo, Situacao: f.Situacao, SomenteUsuario: somente, SomentePe: soPE, VerDesativados: verDesativados,
 		Limite: int32(pag.PerPage), Deslocamento: int32((pag.Page - 1) * pag.PerPage),
 	})
 	if err != nil {
@@ -134,8 +138,22 @@ func (h *handlers) locaisLista(w http.ResponseWriter, r *http.Request) {
 	}
 	render(w, r, views.Locais(h.layout(r, "Locais", "/locais"), views.LocaisData{
 		Filtro: f, Bairros: opcoes, Tipos: opcoesTipo(f.Tipo), Linhas: linhas, Pag: pag, Query: query,
-		PodeEditar: h.principal(r).Pode("local_adicionar"), Restrito: somente.Valid || soPE,
+		PodeEditar: h.principal(r).Pode("local_adicionar"), Restrito: somente.Valid || soPE, VerDesativados: verDesativados,
+		Aviso: avisoDoLote(qs),
 	}))
+}
+
+// avisoDoLote traduz o resultado do cadastro em lote (?lote=criados-existiam) numa frase.
+func avisoDoLote(qs url.Values) string {
+	var c, e int
+	if _, err := fmt.Sscanf(qs.Get("lote"), "%d-%d", &c, &e); err != nil {
+		return ""
+	}
+	aviso := fmt.Sprintf("%d local(is) criado(s)", c)
+	if e > 0 {
+		aviso += fmt.Sprintf(" e %d já existia(m)", e)
+	}
+	return aviso + "."
 }
 
 func enderecoCompleto(endereco, numero string) string { return endereco + ", " + numero }
@@ -394,7 +412,7 @@ func (h *handlers) montarFormLocal(ctx context.Context, r *http.Request, q *sqlc
 	}
 	form := views.LocalFormData{
 		ID: id, Campos: c, Bairros: opcoes, Tipos: opcoesTipo(c.Tipo), PodeEditar: h.principal(r).Pode("local_adicionar"),
-		Erro: erro, CSRF: csrfToken(ctx),
+		PodeDesativar: h.principal(r).Pode("local_desativar"), Ativo: true, Erro: erro, CSRF: csrfToken(ctx),
 	}
 	if escolhido != 0 {
 		qs, err := q.ListQuarteiroesAtivosDoBairro(ctx, escolhido)
@@ -465,6 +483,15 @@ func (h *handlers) localEditarForm(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.falhaInterna(w, r, "montar formulário", err)
 		return
+	}
+	form.Chave, form.Ativo = l.QrChave, l.Ativo
+	switch r.URL.Query().Get("ok") {
+	case "desativado":
+		form.Aviso = "Local desativado."
+	case "reativado":
+		form.Aviso = "Local reativado."
+	case "chave":
+		form.Aviso = "Nova chave gerada. O QR Code antigo deixou de valer."
 	}
 	render(w, r, views.LocalForm(h.layout(r, "Local", "/locais"), form))
 }
@@ -559,6 +586,7 @@ func (h *handlers) localSalvar(w http.ResponseWriter, r *http.Request) {
 			h.falhaInterna(w, r, "montar formulário", e)
 			return
 		}
+		form.Chave, form.Ativo = atual.QrChave, atual.Ativo || id == 0
 		renderStatus(w, r, http.StatusBadRequest, views.LocalForm(h.layout(r, "Local", "/locais"), form))
 	}
 	p, msg, err := validarLocal(ctx, q, c, atual.BairroID, atual.QuarteiraoID)

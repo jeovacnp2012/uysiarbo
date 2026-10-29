@@ -112,7 +112,12 @@ func New(d Deps) http.Handler {
 	r.Get("/locais/novo", h.exigir("local_adicionar", h.localNovoForm))
 	r.Get("/locais/quarteiroes", h.exigir("local_visualizar", h.localQuarteiroes))
 	r.Post("/locais", h.exigir("local_adicionar", h.localSalvar))
+	r.Get("/locais/lote", h.exigir("local_adicionar", h.loteForm))
+	r.Post("/locais/lote", h.exigir("local_adicionar", h.loteSalvar))
 	r.Get("/locais/{id}", h.exigir("local_visualizar", h.localEditarForm))
+	r.Get("/locais/{id}/qr.png", h.exigir("local_visualizar", h.localQR))
+	r.Post("/locais/{id}/ativo", h.exigir("local_desativar", h.localAtivo))
+	r.Post("/locais/{id}/chave", h.exigir("local_adicionar", h.localNovaChave))
 	r.Post("/locais/{id}", h.exigir("local_adicionar", h.localSalvar))
 
 	r.Get("/bairros", h.exigir("bairro_visualizar", h.bairrosLista))

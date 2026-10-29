@@ -23,8 +23,12 @@ templ Locais(l Layout, d LocaisData) {
 	@Base(l) {
 		@PageHeader("Locais", "Imóveis, comércios, terrenos e pontos estratégicos.") {
 			if d.PodeEditar {
+				<a class="btn" href="/locais/lote">Cadastro em lote</a>
 				<a class="btn btn-primario" href="/locais/novo">Novo local</a>
 			}
+		}
+		if d.Aviso != "" {
+			<p class="alerta alerta-ok" role="status">{ d.Aviso }</p>
 		}
 		if d.Restrito {
 			<p class="alerta alerta-aviso" role="status">O seu papel mostra apenas parte dos locais (os dos seus bairros ou só pontos estratégicos).</p>
@@ -136,6 +140,12 @@ templ LocalForm(l Layout, d LocalFormData) {
 				<a class="btn" href="/locais">Voltar</a>
 			}
 			@Presenca("local", strconv.FormatInt(d.ID, 10), modoDaTela(d.PodeEditar))
+			if d.Aviso != "" {
+				<p class="alerta alerta-ok" role="status">{ d.Aviso }</p>
+			}
+			if !d.Ativo {
+				<p class="alerta alerta-aviso" role="status">Este local está desativado.</p>
+			}
 		}
 		<form
 			method="post"
@@ -284,6 +294,114 @@ templ LocalForm(l Layout, d LocalFormData) {
 					<a class="btn" href="/locais">Cancelar</a>
 				</div>
 			}
+		</form>
+		if !d.Novo() {
+			<section class="cartao form-admin" id="qr">
+				<h2>Chave e QR Code</h2>
+				<p class="subtitulo">A chave identifica este local no aplicativo do tablet. Imprima o QR Code e cole no imóvel.</p>
+				<div class="qr-bloco">
+					<img src={ "/locais/" + strconv.FormatInt(d.ID, 10) + "/qr.png" } alt={ "QR Code do local " + d.Campos.Endereco + ", " + d.Campos.Numero } width="160" height="160"/>
+					<div>
+						<p>Chave: <code>{ d.Chave }</code></p>
+						if d.PodeEditar {
+							<form method="post" action={ templ.SafeURL("/locais/" + strconv.FormatInt(d.ID, 10) + "/chave") } class="inline">
+								<input type="hidden" name="csrf" value={ d.CSRF }/>
+								<button type="submit" class="btn">Gerar nova chave</button>
+							</form>
+						}
+					</div>
+				</div>
+			</section>
+			if d.PodeDesativar {
+				<section class="cartao form-admin" id="situacao">
+					<h2>Situação</h2>
+					<form method="post" action={ templ.SafeURL("/locais/" + strconv.FormatInt(d.ID, 10) + "/ativo") } class="inline">
+						<input type="hidden" name="csrf" value={ d.CSRF }/>
+						if d.Ativo {
+							<p class="subtitulo">Desativar tira o local das listas de trabalho. Nada é apagado e dá para reativar depois.</p>
+							<input type="hidden" name="ativo" value="0"/>
+							<button type="submit" class="btn">Desativar local</button>
+						} else {
+							<input type="hidden" name="ativo" value="1"/>
+							<button type="submit" class="btn btn-primario">Reativar local</button>
+						}
+					</form>
+				</section>
+			}
+		}
+	}
+}
+
+templ LoteForm(l Layout, d LoteFormData) {
+	@Base(l) {
+		@PageHeader("Cadastro em lote", "Crie vários locais de uma rua de uma vez, numerando o trecho.") {
+			<a class="btn" href="/locais">Voltar</a>
+		}
+		<form method="post" action="/locais/lote" class="cartao form-admin">
+			<input type="hidden" name="csrf" value={ d.CSRF }/>
+			if d.Erro != "" {
+				<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
+			}
+			<div class="grade-form">
+				<div class="campo">
+					<label for="tipo">Tipo</label>
+					<select id="tipo" name="tipo" required>
+						@opcoesDe(d.Tipos)
+					</select>
+				</div>
+				<div class="campo">
+					<label for="endereco">Rua ou avenida</label>
+					<input id="endereco" name="endereco" type="text" value={ d.Campos.Endereco } maxlength="200" required/>
+				</div>
+				<div class="campo">
+					<label for="bairro_id">Bairro</label>
+					<select
+						id="bairro_id"
+						name="bairro_id"
+						required
+						hx-get="/locais/quarteiroes"
+						hx-target="#quarteirao_id"
+						hx-trigger="change"
+						hx-include="this"
+					>
+						<option value="">Escolha o bairro</option>
+						@opcoesDe(d.Bairros)
+					</select>
+				</div>
+				<div class="campo">
+					<label for="quarteirao_id">Quarteirão</label>
+					<select id="quarteirao_id" name="quarteirao_id" required>
+						@OpcoesDeQuarteirao(d.Quarteiroes)
+					</select>
+				</div>
+				<div class="campo">
+					<label for="lado">Lado</label>
+					<input id="lado" name="lado" type="text" value={ d.Campos.Lado } maxlength="5" required placeholder="Par"/>
+				</div>
+				<div class="campo">
+					<label for="numero_de">Primeiro número</label>
+					<input id="numero_de" name="numero_de" type="text" value={ d.Campos.De } inputmode="numeric" required/>
+				</div>
+				<div class="campo">
+					<label for="numero_ate">Último número</label>
+					<input id="numero_ate" name="numero_ate" type="text" value={ d.Campos.Ate } inputmode="numeric" required/>
+				</div>
+				<div class="campo">
+					<label for="passo">Intervalo</label>
+					<select id="passo" name="passo">
+						@opcoesSimples(d.Campos.Passo, [][2]string{{"1", "De 1 em 1"}, {"2", "De 2 em 2 (só pares ou só ímpares)"}})
+					</select>
+				</div>
+				<div class="campo">
+					<label for="sequencia_inicial">Sequência inicial (opcional)</label>
+					<input id="sequencia_inicial" name="sequencia_inicial" type="text" value={ d.Campos.SequenciaInicial } inputmode="numeric"/>
+				</div>
+			</div>
+			<p class="subtitulo">Cada número do trecho vira um local (até 500 por lote). Se a sequência inicial for informada, ela sobe de um em um. Locais que já existem são pulados.</p>
+			<div class="form-acoes">
+				<button type="submit" class="btn btn-primario">Criar locais</button>
+				<a class="btn" href="/locais">Cancelar</a>
+			</div>
 		</form>
 	}
 }

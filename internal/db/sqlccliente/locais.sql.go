@@ -21,6 +21,7 @@ WHERE ($1::text = '' OR position(lower($1::text) in lower(l.endereco || ' ' || l
   AND ($5::bigint IS NULL OR EXISTS (
         SELECT 1 FROM bairro_responsaveis r WHERE r.bairro_id = l.bairro_id AND r.usuario_id = $5::bigint))
   AND (NOT $6::boolean OR l.tipo = 'ponto_estrategico')
+  AND ($7::boolean OR l.ativo)
 `
 
 type CountLocaisParams struct {
@@ -30,6 +31,7 @@ type CountLocaisParams struct {
 	Situacao       string      `json:"situacao"`
 	SomenteUsuario pgtype.Int8 `json:"somente_usuario"`
 	SomentePe      bool        `json:"somente_pe"`
+	VerDesativados bool        `json:"ver_desativados"`
 }
 
 func (q *Queries) CountLocais(ctx context.Context, arg CountLocaisParams) (int32, error) {
@@ -40,6 +42,7 @@ func (q *Queries) CountLocais(ctx context.Context, arg CountLocaisParams) (int32
 		arg.Situacao,
 		arg.SomenteUsuario,
 		arg.SomentePe,
+		arg.VerDesativados,
 	)
 	var column_1 int32
 	err := row.Scan(&column_1)
@@ -52,7 +55,7 @@ INSERT INTO locais (tipo, cep, endereco, numero, referencia, bairro_id, quarteir
                     proprietario_email, aceita_whatsapp, aceita_email, inquilino, inquilino_telefone,
                     humanos, cachorros, gatos, roedores, criado_por)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26)
-RETURNING id, tipo, cep, endereco, numero, referencia, bairro_id, quarteirao_id, lado, sequencia, complemento, latitude, longitude, proprietario, proprietario_telefone, proprietario_cpf, proprietario_whatsapp, proprietario_email, aceita_whatsapp, aceita_email, inquilino, inquilino_telefone, humanos, cachorros, gatos, roedores, ativo, criado_por, criado_em, atualizado_em
+RETURNING id, tipo, cep, endereco, numero, referencia, bairro_id, quarteirao_id, lado, sequencia, complemento, latitude, longitude, proprietario, proprietario_telefone, proprietario_cpf, proprietario_whatsapp, proprietario_email, aceita_whatsapp, aceita_email, inquilino, inquilino_telefone, humanos, cachorros, gatos, roedores, ativo, criado_por, criado_em, atualizado_em, qr_chave
 `
 
 type CreateLocalParams struct {
@@ -145,12 +148,47 @@ func (q *Queries) CreateLocal(ctx context.Context, arg CreateLocalParams) (Locai
 		&i.CriadoPor,
 		&i.CriadoEm,
 		&i.AtualizadoEm,
+		&i.QrChave,
 	)
 	return i, err
 }
 
+const createLocalLote = `-- name: CreateLocalLote :execrows
+INSERT INTO locais (tipo, endereco, numero, bairro_id, quarteirao_id, lado, sequencia, criado_por)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+ON CONFLICT DO NOTHING
+`
+
+type CreateLocalLoteParams struct {
+	Tipo         string      `json:"tipo"`
+	Endereco     string      `json:"endereco"`
+	Numero       string      `json:"numero"`
+	BairroID     int64       `json:"bairro_id"`
+	QuarteiraoID int64       `json:"quarteirao_id"`
+	Lado         string      `json:"lado"`
+	Sequencia    pgtype.Int4 `json:"sequencia"`
+	CriadoPor    pgtype.Int8 `json:"criado_por"`
+}
+
+func (q *Queries) CreateLocalLote(ctx context.Context, arg CreateLocalLoteParams) (int64, error) {
+	result, err := q.db.Exec(ctx, createLocalLote,
+		arg.Tipo,
+		arg.Endereco,
+		arg.Numero,
+		arg.BairroID,
+		arg.QuarteiraoID,
+		arg.Lado,
+		arg.Sequencia,
+		arg.CriadoPor,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const getLocal = `-- name: GetLocal :one
-SELECT id, tipo, cep, endereco, numero, referencia, bairro_id, quarteirao_id, lado, sequencia, complemento, latitude, longitude, proprietario, proprietario_telefone, proprietario_cpf, proprietario_whatsapp, proprietario_email, aceita_whatsapp, aceita_email, inquilino, inquilino_telefone, humanos, cachorros, gatos, roedores, ativo, criado_por, criado_em, atualizado_em FROM locais WHERE id = $1
+SELECT id, tipo, cep, endereco, numero, referencia, bairro_id, quarteirao_id, lado, sequencia, complemento, latitude, longitude, proprietario, proprietario_telefone, proprietario_cpf, proprietario_whatsapp, proprietario_email, aceita_whatsapp, aceita_email, inquilino, inquilino_telefone, humanos, cachorros, gatos, roedores, ativo, criado_por, criado_em, atualizado_em, qr_chave FROM locais WHERE id = $1
 `
 
 func (q *Queries) GetLocal(ctx context.Context, id int64) (Locai, error) {
@@ -187,6 +225,50 @@ func (q *Queries) GetLocal(ctx context.Context, id int64) (Locai, error) {
 		&i.CriadoPor,
 		&i.CriadoEm,
 		&i.AtualizadoEm,
+		&i.QrChave,
+	)
+	return i, err
+}
+
+const getLocalPorChave = `-- name: GetLocalPorChave :one
+SELECT id, tipo, cep, endereco, numero, referencia, bairro_id, quarteirao_id, lado, sequencia, complemento, latitude, longitude, proprietario, proprietario_telefone, proprietario_cpf, proprietario_whatsapp, proprietario_email, aceita_whatsapp, aceita_email, inquilino, inquilino_telefone, humanos, cachorros, gatos, roedores, ativo, criado_por, criado_em, atualizado_em, qr_chave FROM locais WHERE qr_chave = $1
+`
+
+func (q *Queries) GetLocalPorChave(ctx context.Context, qrChave string) (Locai, error) {
+	row := q.db.QueryRow(ctx, getLocalPorChave, qrChave)
+	var i Locai
+	err := row.Scan(
+		&i.ID,
+		&i.Tipo,
+		&i.Cep,
+		&i.Endereco,
+		&i.Numero,
+		&i.Referencia,
+		&i.BairroID,
+		&i.QuarteiraoID,
+		&i.Lado,
+		&i.Sequencia,
+		&i.Complemento,
+		&i.Latitude,
+		&i.Longitude,
+		&i.Proprietario,
+		&i.ProprietarioTelefone,
+		&i.ProprietarioCpf,
+		&i.ProprietarioWhatsapp,
+		&i.ProprietarioEmail,
+		&i.AceitaWhatsapp,
+		&i.AceitaEmail,
+		&i.Inquilino,
+		&i.InquilinoTelefone,
+		&i.Humanos,
+		&i.Cachorros,
+		&i.Gatos,
+		&i.Roedores,
+		&i.Ativo,
+		&i.CriadoPor,
+		&i.CriadoEm,
+		&i.AtualizadoEm,
+		&i.QrChave,
 	)
 	return i, err
 }
@@ -246,8 +328,9 @@ WHERE ($1::text = '' OR position(lower($1::text) in lower(l.endereco || ' ' || l
   AND ($5::bigint IS NULL OR EXISTS (
         SELECT 1 FROM bairro_responsaveis r WHERE r.bairro_id = l.bairro_id AND r.usuario_id = $5::bigint))
   AND (NOT $6::boolean OR l.tipo = 'ponto_estrategico')
+  AND ($7::boolean OR l.ativo)
 ORDER BY lower(b.nome), lower(l.endereco), l.numero, l.id
-LIMIT $8::int OFFSET $7::int
+LIMIT $9::int OFFSET $8::int
 `
 
 type ListLocaisParams struct {
@@ -257,6 +340,7 @@ type ListLocaisParams struct {
 	Situacao       string      `json:"situacao"`
 	SomenteUsuario pgtype.Int8 `json:"somente_usuario"`
 	SomentePe      bool        `json:"somente_pe"`
+	VerDesativados bool        `json:"ver_desativados"`
 	Deslocamento   int32       `json:"deslocamento"`
 	Limite         int32       `json:"limite"`
 }
@@ -285,6 +369,7 @@ func (q *Queries) ListLocais(ctx context.Context, arg ListLocaisParams) ([]ListL
 		arg.Situacao,
 		arg.SomenteUsuario,
 		arg.SomentePe,
+		arg.VerDesativados,
 		arg.Deslocamento,
 		arg.Limite,
 	)
@@ -349,6 +434,36 @@ func (q *Queries) ListQuarteiroesAtivosDoBairro(ctx context.Context, bairroID in
 	return items, nil
 }
 
+const novaChaveDoLocal = `-- name: NovaChaveDoLocal :one
+UPDATE locais SET qr_chave = substr(replace(gen_random_uuid()::text, '-', ''), 1, 20), atualizado_em = now()
+WHERE id = $1
+RETURNING qr_chave
+`
+
+func (q *Queries) NovaChaveDoLocal(ctx context.Context, id int64) (string, error) {
+	row := q.db.QueryRow(ctx, novaChaveDoLocal, id)
+	var qr_chave string
+	err := row.Scan(&qr_chave)
+	return qr_chave, err
+}
+
+const setLocalAtivo = `-- name: SetLocalAtivo :execrows
+UPDATE locais SET ativo = $2, atualizado_em = now() WHERE id = $1
+`
+
+type SetLocalAtivoParams struct {
+	ID    int64 `json:"id"`
+	Ativo bool  `json:"ativo"`
+}
+
+func (q *Queries) SetLocalAtivo(ctx context.Context, arg SetLocalAtivoParams) (int64, error) {
+	result, err := q.db.Exec(ctx, setLocalAtivo, arg.ID, arg.Ativo)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const updateLocal = `-- name: UpdateLocal :one
 UPDATE locais
 SET tipo = $2, cep = $3, endereco = $4, numero = $5, referencia = $6, bairro_id = $7, quarteirao_id = $8, lado = $9,
@@ -357,7 +472,7 @@ SET tipo = $2, cep = $3, endereco = $4, numero = $5, referencia = $6, bairro_id 
     aceita_email = $20, inquilino = $21, inquilino_telefone = $22, humanos = $23, cachorros = $24, gatos = $25,
     roedores = $26, atualizado_em = now()
 WHERE id = $1
-RETURNING id, tipo, cep, endereco, numero, referencia, bairro_id, quarteirao_id, lado, sequencia, complemento, latitude, longitude, proprietario, proprietario_telefone, proprietario_cpf, proprietario_whatsapp, proprietario_email, aceita_whatsapp, aceita_email, inquilino, inquilino_telefone, humanos, cachorros, gatos, roedores, ativo, criado_por, criado_em, atualizado_em
+RETURNING id, tipo, cep, endereco, numero, referencia, bairro_id, quarteirao_id, lado, sequencia, complemento, latitude, longitude, proprietario, proprietario_telefone, proprietario_cpf, proprietario_whatsapp, proprietario_email, aceita_whatsapp, aceita_email, inquilino, inquilino_telefone, humanos, cachorros, gatos, roedores, ativo, criado_por, criado_em, atualizado_em, qr_chave
 `
 
 type UpdateLocalParams struct {
@@ -450,6 +565,7 @@ func (q *Queries) UpdateLocal(ctx context.Context, arg UpdateLocalParams) (Locai
 		&i.CriadoPor,
 		&i.CriadoEm,
 		&i.AtualizadoEm,
+		&i.QrChave,
 	)
 	return i, err
 }

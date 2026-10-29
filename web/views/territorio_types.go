@@ -134,14 +134,16 @@ type LocalLinha struct {
 type LocaisFiltro struct{ Busca, Bairro, Tipo, Situacao string }
 
 type LocaisData struct {
-	Filtro     LocaisFiltro
-	Bairros    []CidadeOpcao
-	Tipos      []CidadeOpcao
-	Linhas     []LocalLinha
-	Pag        Pagination
-	Query      url.Values
-	PodeEditar bool
-	Restrito   bool // o papel mostra só os locais atribuídos ou só os pontos estratégicos
+	Filtro         LocaisFiltro
+	Bairros        []CidadeOpcao
+	Tipos          []CidadeOpcao
+	Linhas         []LocalLinha
+	Pag            Pagination
+	Query          url.Values
+	PodeEditar     bool
+	Restrito       bool // o papel mostra só os locais atribuídos ou só os pontos estratégicos
+	Aviso          string
+	VerDesativados bool
 }
 
 // LocalCampos são os valores do formulário (texto, como foram digitados ou vieram do banco).
@@ -166,6 +168,26 @@ type LocalFormData struct {
 	PodeEditar  bool
 	Erro        string
 	CSRF        string
+
+	Chave         string // chave do QR Code (ficha de local já gravado)
+	Ativo         bool
+	PodeDesativar bool
+	Aviso         string
 }
 
 func (d LocalFormData) Novo() bool { return d.ID == 0 }
+
+// LoteCampos são os valores do cadastro em lote.
+type LoteCampos struct {
+	Tipo, BairroID, QuarteiraoID, Endereco, Lado string
+	De, Ate, Passo, SequenciaInicial             string
+}
+
+type LoteFormData struct {
+	Campos      LoteCampos
+	Bairros     []CidadeOpcao
+	Quarteiroes []CidadeOpcao
+	Tipos       []CidadeOpcao
+	Erro        string
+	CSRF        string
+}

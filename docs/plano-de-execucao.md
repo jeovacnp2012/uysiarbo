@@ -81,7 +81,7 @@ Objetivo: leitura e gravação por sistemas externos, de forma segura.
 - [x] 3.1 Cidades (nome, UF, IBGE, ativa), Bairros (todos os campos do sistema atual: situação, categoria, classificação, zona, IBGE, coordenadas, altitude, distância do centro, mutirão, entra na produção) com **responsáveis** (e escopo "apenas atribuídos" funcionando), e Quarteirões em lote (um por linha ou faixa `1-20`, desativar/reativar); telas, filtros, paginação, auditoria com antes/depois; módulo Bairros "disponível" no painel (versão 1.0.005)
 - [x] 3.2 Geometrias PostGIS: polígonos de bairro e quarteirão (GeoJSON colado/importado, validado e consertado pelo PostGIS; versão 1.0.007). **O ponto do local entra na 3.3**, junto com a tabela de locais.
 - [x] 3.3 Local (cadastro completo: moradores, habitantes, tipo, endereço, referência, lado, sequência, complemento; escopo "apenas atribuídos" e "apenas ponto estratégico"; ponto no PostGIS por índice sobre latitude/longitude; versão 1.0.008). Ficaram para a 3.4: desativar/reativar (permissões `local_desativar` e `local_ver_desativados`), lote e QR/chave. CPF ainda em texto: criptografia na 13.3.
-- [ ] 3.4 Cadastro em lote por sequência/complemento, desativação lógica, QR/chave do local
+- [x] 3.4 Cadastro em lote por trecho de números e sequência (até 500, pula existentes), desativação lógica (`local_desativar`, `local_ver_desativados`), chave e QR Code do local, nova chave (versão 1.0.009)
 - [ ] 3.5 Ficha do local (seções vazias que os módulos seguintes vão preencher) e Grupos de Locais (clonar, exportar)
 - [ ] 3.6 Mapa base (MapLibre): ver locais, bairros, quarteirões
 - [ ] 3.7 Geocodificação por endereço/CEP (provedor a decidir)
