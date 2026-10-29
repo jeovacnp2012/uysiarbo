@@ -15,6 +15,8 @@ type Config struct {
 	DatabaseURL     string
 	BaseDomain      string // cada cliente é "<subdominio>.<BaseDomain>"
 	AdminHost       string // endereço do console da plataforma (sem cliente)
+	RecaptchaSite   string // chave pública do reCAPTCHA v2 (vai para a página)
+	RecaptchaSecret string // chave secreta: só no servidor, nunca na página
 	ShutdownTimeout time.Duration
 }
 
@@ -29,7 +31,12 @@ func Load(envFile string) (Config, error) {
 		DatabaseURL:     os.Getenv("DATABASE_URL"),
 		BaseDomain:      strings.ToLower(get("APP_BASE_DOMAIN", "local")),
 		AdminHost:       strings.ToLower(get("APP_ADMIN_HOST", "uysiarbo.local")),
+		RecaptchaSite:   os.Getenv("RECAPTCHA_SITE_KEY"),
+		RecaptchaSecret: os.Getenv("RECAPTCHA_SECRET_KEY"),
 		ShutdownTimeout: 10 * time.Second,
+	}
+	if cfg.IsProduction() && (cfg.RecaptchaSite == "" || cfg.RecaptchaSecret == "") {
+		return Config{}, fmt.Errorf("em produção, RECAPTCHA_SITE_KEY e RECAPTCHA_SECRET_KEY são obrigatórias")
 	}
 	return cfg, nil
 }

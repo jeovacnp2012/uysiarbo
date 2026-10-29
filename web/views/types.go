@@ -16,6 +16,8 @@ type Layout struct {
 	Active  string // Href do item de menu ativo
 	Nav     []NavItem
 	Cliente string // nome do cliente (prefeitura), quando o endereço é de um cliente
+	Usuario string // nome de quem está logado
+	CSRF    string // token CSRF, enviado nos formulários e nas chamadas HTMX
 }
 
 // HomeData são os dados da página inicial: do cliente (prefeitura) ou do console da plataforma.

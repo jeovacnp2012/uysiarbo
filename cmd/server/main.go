@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	_ "time/tzdata" // fusos horários embutidos (o servidor da VPS pode não ter)
 
 	"uysiarbo/internal/config"
 	"uysiarbo/internal/db"
@@ -74,6 +75,13 @@ func run() error {
 	}
 	defer pool.Close()
 
+	var captcha server.Captcha = server.SemCaptcha{}
+	if cfg.RecaptchaSite != "" && cfg.RecaptchaSecret != "" {
+		captcha = server.GoogleCaptcha{Secret: cfg.RecaptchaSecret}
+	} else {
+		log.Warn("reCAPTCHA não configurado: o login funciona sem o desafio (só aceitável fora de produção)")
+	}
+
 	pools := &tenant.Pools{URL: cfg.DatabaseURL}
 	defer pools.Close()
 
@@ -85,6 +93,11 @@ func run() error {
 			Catalog:  sqlc.New(pool),
 			Resolver: &tenant.Resolver{Pool: pool, BaseDomain: cfg.BaseDomain, AdminHost: cfg.AdminHost},
 			Pools:    pools,
+
+			Public:        sqlc.New(pool),
+			Captcha:       captcha,
+			RecaptchaSite: cfg.RecaptchaSite,
+			Producao:      cfg.IsProduction(),
 		}),
 		ReadHeaderTimeout: 5 * time.Second,
 		IdleTimeout:       60 * time.Second,

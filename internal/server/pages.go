@@ -26,9 +26,12 @@ var nav = []views.NavItem{
 
 // layout monta o layout da página; no endereço de um cliente, mostra o nome dele no menu.
 func (s *handlers) layout(r *http.Request, title, active string) views.Layout {
-	l := views.Layout{Title: title, Active: active, Nav: nav}
+	l := views.Layout{Title: title, Active: active, Nav: nav, CSRF: csrfToken(r.Context())}
 	if c, ok := tenant.FromContext(r.Context()); ok {
 		l.Cliente = c.Nome
+	}
+	if a, ok := authFrom(r.Context()); ok && a.sess != nil {
+		l.Usuario = a.sess.Conta.Nome
 	}
 	return l
 }

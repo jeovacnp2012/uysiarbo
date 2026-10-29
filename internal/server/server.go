@@ -11,6 +11,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
+	"uysiarbo/internal/db/sqlc"
 	"uysiarbo/internal/httpx"
 	"uysiarbo/internal/tenant"
 	"uysiarbo/web"
@@ -28,26 +29,45 @@ type Deps struct {
 	Catalog  Catalog          // catálogo (schema public)
 	Resolver *tenant.Resolver // nil = sem clientes: tudo é console (usado em testes simples)
 	Pools    *tenant.Pools    // conexões por schema de cliente
+
+	// Login. Sem Public, as páginas não exigem login (usado só em testes simples).
+	Public        *sqlc.Queries
+	Captcha       Captcha // nil = sem captcha
+	RecaptchaSite string  // chave pública do reCAPTCHA (vai para a tela de entrar)
+	Producao      bool    // cookies sempre Secure
 }
 
 type handlers struct {
-	log   *slog.Logger
-	cat   Catalog
-	pools *tenant.Pools
+	log     *slog.Logger
+	cat     Catalog
+	pools   *tenant.Pools
+	pub     *sqlc.Queries
+	captcha Captcha
+	siteKey string
+	prod    bool
 }
 
 func New(d Deps) http.Handler {
-	h := &handlers{log: d.Log, cat: d.Catalog, pools: d.Pools}
+	h := &handlers{log: d.Log, cat: d.Catalog, pools: d.Pools, pub: d.Public, captcha: d.Captcha, siteKey: d.RecaptchaSite, prod: d.Producao}
+	if h.captcha == nil {
+		h.captcha = SemCaptcha{}
+	}
 
 	r := chi.NewRouter()
-	r.Use(requestID, middleware.RealIP, accessLog(d.Log), recoverer(d.Log))
+	r.Use(securityHeaders, requestID, middleware.RealIP, accessLog(d.Log), recoverer(d.Log))
 	r.Use(middleware.Timeout(30 * time.Second))
-	r.Use(tenancy(d.Log, d.Resolver))
+	r.Use(tenancy(d.Log, d.Resolver), csrf, h.autenticacao)
 
 	r.Get("/healthz", health)
 	r.Get("/readyz", ready(d.Log, d.DB))
 
 	r.Handle("/static/*", http.StripPrefix("/static/", staticHandler()))
+
+	r.Get("/entrar", h.entrarForm)
+	r.Post("/entrar", h.entrarPost)
+	r.Post("/sair", h.sair)
+	r.Get("/trocar-senha", h.trocarSenhaForm)
+	r.Post("/trocar-senha", h.trocarSenhaPost)
 
 	r.Get("/", h.home)
 	r.Get("/componentes", h.components)
@@ -70,9 +90,15 @@ func staticHandler() http.Handler {
 	})
 }
 
-// render escreve um componente templ como HTML.
+// render escreve um componente templ como HTML (status 200).
 func render(w http.ResponseWriter, r *http.Request, c templ.Component) {
+	renderStatus(w, r, http.StatusOK, c)
+}
+
+// renderStatus escreve um componente templ como HTML com o status dado.
+func renderStatus(w http.ResponseWriter, r *http.Request, status int, c templ.Component) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(status)
 	if err := c.Render(r.Context(), w); err != nil {
 		slog.Error("renderizar página", "erro", err, "request_id", r.Header.Get("X-Request-Id"))
 	}

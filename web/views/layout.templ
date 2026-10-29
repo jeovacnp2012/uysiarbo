@@ -24,7 +24,7 @@ templ Base(l Layout) {
 			<script defer src="/static/vendor/alpine.min.js"></script>
 			<script defer src="/static/vendor/htmx.min.js"></script>
 		</head>
-		<body x-data="{ menu: false }" x-on:keydown.escape.window="menu = false">
+		<body x-data="{ menu: false }" x-on:keydown.escape.window="menu = false" hx-headers={ templ.JSONString(map[string]string{"X-CSRF-Token": l.CSRF}) }>
 			<div class="app">
 				<div class="menu-fundo" x-show="menu" x-cloak x-on:click="menu = false"></div>
 				<aside class="menu" x-bind:class="{ aberto: menu }" aria-label="Menu principal">
@@ -46,6 +46,9 @@ templ Base(l Layout) {
 					<header class="barra">
 						<button type="button" class="btn btn-icone btn-menu" aria-label="Abrir menu" x-on:click="menu = true">☰</button>
 						<div class="barra-titulo">{ l.Title }</div>
+						if l.Usuario != "" {
+							<span class="barra-usuario">{ l.Usuario }</span>
+						}
 						<button
 							type="button"
 							class="btn btn-icone"
@@ -55,6 +58,12 @@ templ Base(l Layout) {
 						>
 							<span x-text="$store.tema.escuro ? '☀ Claro' : '☾ Escuro'">☾ Escuro</span>
 						</button>
+						if l.Usuario != "" {
+							<form method="post" action="/sair">
+								<input type="hidden" name="csrf" value={ l.CSRF }/>
+								<button type="submit" class="btn btn-icone">Sair</button>
+							</form>
+						}
 					</header>
 					<main class="pagina">
 						{ children... }
