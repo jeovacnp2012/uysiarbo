@@ -76,9 +76,8 @@ func (s *Service) Provision(ctx context.Context, in Input) (sqlc.Cliente, error)
 	if err := db.MigrateCliente(ctx, s.URL, schema, "up"); err != nil {
 		return cliente, fmt.Errorf("migrar schema %s (o cliente fica em \"provisionando\"; repita o comando): %w", schema, err)
 	}
-	// Grava o nome do cliente dentro do próprio schema (usado nas telas e como prova do isolamento).
-	if _, err := s.Pool.Exec(ctx, "INSERT INTO "+pgx.Identifier{schema, "cliente_info"}.Sanitize()+" (chave, valor) VALUES ('nome', $1) ON CONFLICT (chave) DO UPDATE SET valor = EXCLUDED.valor", cliente.Nome); err != nil {
-		return cliente, fmt.Errorf("gravar nome no schema: %w", err)
+	if err := s.semear(ctx, schema, cliente); err != nil {
+		return cliente, fmt.Errorf("dados iniciais do schema %s: %w", schema, err)
 	}
 	cliente, err = q.UpdateClienteStatus(ctx, sqlc.UpdateClienteStatusParams{ID: cliente.ID, Status: "ativo"})
 	if err != nil {

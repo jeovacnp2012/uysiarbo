@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"strings"
 	"testing"
+	"uysiarbo/internal/auth"
 
 	"uysiarbo/internal/db"
 	"uysiarbo/internal/db/sqlc"
@@ -218,5 +219,118 @@ func TestResolverNormalizaEConsulta(t *testing.T) {
 	}
 	if got := tenant.NormalizeHost("exemplo.com."); got != "exemplo.com" {
 		t.Errorf("NormalizeHost com ponto final = %q", got)
+	}
+}
+
+func TestProvisionCriaPapelAdministrador(t *testing.T) {
+	s, _ := novoServico(t)
+	ctx := context.Background()
+	if _, err := s.Provision(ctx, tenant.Input{Nome: "Alfa", Slug: "alfa"}); err != nil {
+		t.Fatal(err)
+	}
+	var nome string
+	var total, restritivas int
+	err := s.Pool.QueryRow(ctx, `SELECT p.nome, count(pp.permissao) FROM c_alfa.papeis p
+		JOIN c_alfa.papel_permissoes pp ON pp.papel_id = p.id GROUP BY p.nome`).Scan(&nome, &total)
+	if err != nil || nome != tenant.NomePapelAdministrador || total != 158 {
+		t.Fatalf("papel=%q permissões=%d err=%v (quer Administrador e 158)", nome, total, err)
+	}
+	// O Administrador não recebe as permissões restritivas (apenas as minhas, apenas atribuídos).
+	if err := s.Pool.QueryRow(ctx, `SELECT count(*) FROM c_alfa.papel_permissoes
+		WHERE permissao IN ('visita_visualizar_minha', 'local_meubairro', 'bairro_meubairro')`).Scan(&restritivas); err != nil || restritivas != 0 {
+		t.Errorf("restritivas no Administrador = %d, quer 0 (err=%v)", restritivas, err)
+	}
+	// Repetir o provisionamento do seed não duplica nada.
+	if err := s.MigrateAll(ctx, "up"); err != nil {
+		t.Fatal(err)
+	}
+	var papeis int
+	_ = s.Pool.QueryRow(ctx, `SELECT count(*) FROM c_alfa.papeis`).Scan(&papeis)
+	if papeis != 1 {
+		t.Errorf("papéis = %d, quer 1", papeis)
+	}
+}
+
+func TestMasterCriarResetarEProtecao(t *testing.T) {
+	s, _ := novoServico(t)
+	ctx := context.Background()
+
+	u, senha, err := s.CriarMaster(ctx, "Pessoa Teste", "Master@Teste.com")
+	if err != nil {
+		t.Fatalf("criar: %v", err)
+	}
+	if !u.Master || !u.Ativo || !u.DeveTrocarSenha || len(senha) != 16 {
+		t.Errorf("master inesperado: %+v (senha %d caracteres)", u, len(senha))
+	}
+	if u.SenhaHash == senha || strings.Contains(u.SenhaHash, senha) {
+		t.Fatal("a senha em texto puro não pode ir para o banco")
+	}
+	if ok, err := auth.Confere(senha, u.SenhaHash); err != nil || !ok {
+		t.Errorf("a senha mostrada deveria conferir com o hash: ok=%v err=%v", ok, err)
+	}
+
+	// E-mail repetido, ignorando maiúsculas.
+	if _, _, err := s.CriarMaster(ctx, "Outro", "master@teste.COM"); !errors.Is(err, tenant.ErrMasterJaExiste) {
+		t.Errorf("e-mail repetido: err = %v", err)
+	}
+	if _, _, err := s.CriarMaster(ctx, "", "sem-arroba"); err == nil {
+		t.Error("dados inválidos deveriam ser recusados")
+	}
+
+	// Reset: gera outra senha, a antiga deixa de valer e a troca volta a ser obrigatória.
+	if _, err := s.Pool.Exec(ctx, `UPDATE plataforma_usuarios SET deve_trocar_senha = false`); err != nil {
+		t.Fatal(err)
+	}
+	u2, nova, err := s.ResetarSenhaPlataforma(ctx, "master@teste.com")
+	if err != nil {
+		t.Fatalf("resetar: %v", err)
+	}
+	if nova == senha || !u2.DeveTrocarSenha {
+		t.Errorf("reset: nova=%q trocar=%v", nova, u2.DeveTrocarSenha)
+	}
+	if ok, _ := auth.Confere(senha, u2.SenhaHash); ok {
+		t.Error("a senha antiga não deveria mais valer")
+	}
+	if ok, _ := auth.Confere(nova, u2.SenhaHash); !ok {
+		t.Error("a nova senha deveria valer")
+	}
+	if _, _, err := s.ResetarSenhaPlataforma(ctx, "ninguem@x.com"); err == nil {
+		t.Error("reset de usuário inexistente deveria falhar")
+	}
+
+	// O banco protege o master contra exclusão, rebaixamento e desativação.
+	for nome, sql := range map[string]string{
+		"excluir":   `DELETE FROM plataforma_usuarios WHERE master`,
+		"rebaixar":  `UPDATE plataforma_usuarios SET master = false`,
+		"desativar": `UPDATE plataforma_usuarios SET ativo = false`,
+	} {
+		if _, err := s.Pool.Exec(ctx, sql); err == nil {
+			t.Errorf("%s: o banco deveria recusar", nome)
+		}
+	}
+	var n int
+	_ = s.Pool.QueryRow(ctx, `SELECT count(*) FROM plataforma_usuarios WHERE master AND ativo`).Scan(&n)
+	if n != 1 {
+		t.Errorf("o master deveria continuar intacto, mas há %d", n)
+	}
+}
+
+func TestSincronizarTodosAcrescentaPermissoesQueFaltam(t *testing.T) {
+	s, _ := novoServico(t)
+	ctx := context.Background()
+	if _, err := s.Provision(ctx, tenant.Input{Nome: "Alfa", Slug: "alfa"}); err != nil {
+		t.Fatal(err)
+	}
+	// Simula um catálogo que cresceu: o Administrador perdeu duas permissões.
+	if _, err := s.Pool.Exec(ctx, `DELETE FROM c_alfa.papel_permissoes WHERE permissao IN ('visita_adicionar', 'banner_excluir')`); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.SincronizarTodos(ctx); err != nil {
+		t.Fatal(err)
+	}
+	var n int
+	_ = s.Pool.QueryRow(ctx, `SELECT count(*) FROM c_alfa.papel_permissoes`).Scan(&n)
+	if n != 158 {
+		t.Errorf("permissões = %d, quer 158 (sincronizar deveria repor as que faltavam)", n)
 	}
 }

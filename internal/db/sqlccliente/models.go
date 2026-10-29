@@ -13,3 +13,33 @@ type ClienteInfo struct {
 	Valor    string             `json:"valor"`
 	CriadoEm pgtype.Timestamptz `json:"criado_em"`
 }
+
+type Papei struct {
+	ID           int64              `json:"id"`
+	Nome         string             `json:"nome"`
+	Descricao    string             `json:"descricao"`
+	Ativo        bool               `json:"ativo"`
+	CriadoEm     pgtype.Timestamptz `json:"criado_em"`
+	AtualizadoEm pgtype.Timestamptz `json:"atualizado_em"`
+}
+
+type PapelPermisso struct {
+	PapelID   int64  `json:"papel_id"`
+	Permissao string `json:"permissao"`
+}
+
+type Usuario struct {
+	ID              int64              `json:"id"`
+	Nome            string             `json:"nome"`
+	Email           string             `json:"email"`
+	Telefone        string             `json:"telefone"`
+	SenhaHash       string             `json:"senha_hash"`
+	PapelID         int64              `json:"papel_id"`
+	LoginWeb        bool               `json:"login_web"`
+	LoginTablet     bool               `json:"login_tablet"`
+	Ativo           bool               `json:"ativo"`
+	DeveTrocarSenha bool               `json:"deve_trocar_senha"`
+	UltimoAcesso    pgtype.Timestamptz `json:"ultimo_acesso"`
+	CriadoEm        pgtype.Timestamptz `json:"criado_em"`
+	AtualizadoEm    pgtype.Timestamptz `json:"atualizado_em"`
+}

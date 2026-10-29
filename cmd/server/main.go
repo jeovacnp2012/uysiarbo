@@ -30,6 +30,9 @@ func main() {
 		case "migrate-all":
 			exitOnError(migrateAll(context.Background()))
 			return
+		case "master":
+			exitOnError(masterCmd(context.Background(), os.Args[2:]))
+			return
 		case "cliente":
 			exitOnError(clienteCmd(context.Background(), os.Args[2:]))
 			return

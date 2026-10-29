@@ -26,3 +26,15 @@ type Cliente struct {
 	CriadoEm     pgtype.Timestamptz `json:"criado_em"`
 	AtualizadoEm pgtype.Timestamptz `json:"atualizado_em"`
 }
+
+type PlataformaUsuario struct {
+	ID              pgtype.UUID        `json:"id"`
+	Nome            string             `json:"nome"`
+	Email           string             `json:"email"`
+	SenhaHash       string             `json:"senha_hash"`
+	Master          bool               `json:"master"`
+	Ativo           bool               `json:"ativo"`
+	DeveTrocarSenha bool               `json:"deve_trocar_senha"`
+	CriadoEm        pgtype.Timestamptz `json:"criado_em"`
+	AtualizadoEm    pgtype.Timestamptz `json:"atualizado_em"`
+}

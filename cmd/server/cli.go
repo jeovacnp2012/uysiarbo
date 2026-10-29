@@ -20,7 +20,11 @@ const ajuda = `uso:
   uysiarbo migrate [up|down|status|reset]   migrações do catálogo (schema public)
   uysiarbo migrate-all              catálogo + todos os schemas de clientes, para a versão mais nova
   uysiarbo cliente criar -nome "Prefeitura de X" -slug x [-subdominio x] [-dominio d] [-plano p]
-  uysiarbo cliente listar`
+  uysiarbo cliente listar
+  uysiarbo cliente sincronizar      reaplica o papel Administrador e as permissões do catálogo em todos os clientes
+  uysiarbo master criar -nome "Nome Completo" -email e@mail   cria um master com senha forte gerada (mostrada uma vez)
+  uysiarbo master resetar -email e@mail                       gera nova senha forte (mostrada uma vez)
+  uysiarbo master listar`
 
 // tenantService abre o banco e monta o serviço de clientes. close deve ser chamado ao fim.
 func tenantService(ctx context.Context) (svc *tenant.Service, close func(), err error) {
@@ -78,6 +82,8 @@ func clienteCmd(ctx context.Context, args []string) error {
 			return err
 		}
 		fmt.Printf("Cliente %q criado: schema %s, subdomínio %s, status %s\n", c.Nome, c.SchemaNome, c.Subdominio, c.Status)
+	case "sincronizar":
+		return svc.SincronizarTodos(ctx)
 	case "listar":
 		clientes, err := sqlc.New(svc.Pool).ListClientes(ctx)
 		if err != nil {
@@ -93,4 +99,59 @@ func clienteCmd(ctx context.Context, args []string) error {
 		return errors.New(ajuda)
 	}
 	return nil
+}
+
+// masterCmd administra os usuários master da plataforma. A senha gerada é mostrada UMA vez, aqui.
+func masterCmd(ctx context.Context, args []string) error {
+	if len(args) == 0 {
+		return errors.New(ajuda)
+	}
+	svc, closeFn, err := tenantService(ctx)
+	if err != nil {
+		return err
+	}
+	defer closeFn()
+
+	switch args[0] {
+	case "criar":
+		fs := flag.NewFlagSet("master criar", flag.ContinueOnError)
+		nome := fs.String("nome", "", "nome completo (obrigatório)")
+		email := fs.String("email", "", "e-mail de acesso (obrigatório)")
+		if err := fs.Parse(args[1:]); err != nil {
+			return err
+		}
+		u, senha, err := svc.CriarMaster(ctx, *nome, *email)
+		if err != nil {
+			return err
+		}
+		mostrarSenha(u.Nome, u.Email, senha)
+	case "resetar":
+		fs := flag.NewFlagSet("master resetar", flag.ContinueOnError)
+		email := fs.String("email", "", "e-mail do usuário (obrigatório)")
+		if err := fs.Parse(args[1:]); err != nil {
+			return err
+		}
+		u, senha, err := svc.ResetarSenhaPlataforma(ctx, *email)
+		if err != nil {
+			return err
+		}
+		mostrarSenha(u.Nome, u.Email, senha)
+	case "listar":
+		usuarios, err := sqlc.New(svc.Pool).ListPlataformaUsuarios(ctx)
+		if err != nil {
+			return err
+		}
+		for _, u := range usuarios {
+			fmt.Printf("%-32s %-8s ativo=%v trocar_senha=%v  %s\n", u.Email, map[bool]string{true: "master", false: "comum"}[u.Master], u.Ativo, u.DeveTrocarSenha, u.Nome)
+		}
+	default:
+		return errors.New(ajuda)
+	}
+	return nil
+}
+
+func mostrarSenha(nome, email, senha string) {
+	fmt.Printf("\nUsuário: %s <%s>\nSenha temporária: %s\n\n", nome, email, senha)
+	fmt.Println("Anote agora: ela NÃO será mostrada de novo e não fica guardada em lugar nenhum.")
+	fmt.Println("No primeiro login, o sistema pedirá que a pessoa escolha a própria senha.")
 }
