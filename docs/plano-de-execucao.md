@@ -39,7 +39,7 @@ for concluindo. Base de referência: `engenharia-reversa-geocontrole.md`, `engen
 Objetivo: base técnica pronta para receber qualquer módulo.
 - [x] 0.1 Repositório Git, módulo Go (`go.mod`), estrutura de pastas (`cmd/`, `internal/`, `web/`, `migrations/`, `docs/`)
 - [x] 0.2 Ambiente local: Postgres 18 + PostGIS 3.6.2 do Laragon (sem Docker); `.env.example`; `scripts/criar-banco.ps1` (comando único)
-- [ ] 0.3 Servidor HTTP (`chi`), configuração, logs estruturados, tratamento de erros, health check
+- [x] 0.3 Servidor HTTP (`chi`), configuração (`.env`), logs estruturados (`slog`), erros padronizados em JSON, health check `/healthz`, encerramento gracioso
 - [ ] 0.4 Migrações (`goose`) e acesso a dados (`sqlc` + `pgx`); primeira migração de teste
 - [ ] 0.5 Front base: layout com menu lateral, tema, `templ` + HTMX + Alpine, componentes de tabela paginada, filtros, modal, toasts
 - [ ] 0.6 CI (testes e lint) e script de build para um único binário
