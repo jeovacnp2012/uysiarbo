@@ -19,6 +19,11 @@ type Config struct {
 	RecaptchaSecret string // chave secreta: só no servidor, nunca na página
 	MapTileURL      string // modelo de endereço dos blocos do mapa base, com {z}/{x}/{y}
 	MapAttribution  string // crédito do mapa base, mostrado no canto do mapa
+
+	GeocodeProvider string // "gratuito" (ViaCEP + Nominatim) ou "desligado"
+	GeocodeContact  string // e-mail ou site de quem opera o sistema (o Nominatim exige identificação)
+	ViaCEPURL       string // para trocar o endereço do serviço (vazio = o oficial)
+	NominatimURL    string
 	ShutdownTimeout time.Duration
 }
 
@@ -36,6 +41,10 @@ func Load(envFile string) (Config, error) {
 		RecaptchaSite:   os.Getenv("RECAPTCHA_SITE_KEY"),
 		RecaptchaSecret: os.Getenv("RECAPTCHA_SECRET_KEY"),
 		MapTileURL:      get("MAP_TILE_URL", "https://tile.openstreetmap.org/{z}/{x}/{y}.png"),
+		GeocodeProvider: strings.ToLower(get("GEOCODE_PROVIDER", "gratuito")),
+		GeocodeContact:  os.Getenv("GEOCODE_CONTACT"),
+		ViaCEPURL:       os.Getenv("GEOCODE_VIACEP_URL"),
+		NominatimURL:    os.Getenv("GEOCODE_NOMINATIM_URL"),
 		MapAttribution:  get("MAP_ATTRIBUTION", "© contribuidores do OpenStreetMap"),
 		ShutdownTimeout: 10 * time.Second,
 	}

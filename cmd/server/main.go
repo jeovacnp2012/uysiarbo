@@ -16,6 +16,7 @@ import (
 	"uysiarbo/internal/config"
 	"uysiarbo/internal/db"
 	"uysiarbo/internal/db/sqlc"
+	"uysiarbo/internal/geocode"
 	"uysiarbo/internal/server"
 	"uysiarbo/internal/tenant"
 )
@@ -101,6 +102,7 @@ func run() error {
 			Producao:       cfg.IsProduction(),
 			MapTileURL:     cfg.MapTileURL,
 			MapAttribution: cfg.MapAttribution,
+			Geocoder:       geocodificador(cfg),
 			Tenants:        &tenant.Service{Pool: pool, URL: cfg.DatabaseURL, Log: log, Auditoria: audit.Plataforma{Q: sqlc.New(pool)}},
 		}),
 		ReadHeaderTimeout: 5 * time.Second,
@@ -145,4 +147,12 @@ func exitOnError(err error) {
 		fmt.Fprintln(os.Stderr, "erro:", err)
 		os.Exit(1)
 	}
+}
+
+// geocodificador escolhe a localização automática de endereços pela configuração.
+func geocodificador(cfg config.Config) geocode.Geocoder {
+	if cfg.GeocodeProvider == "desligado" {
+		return geocode.Desligado{}
+	}
+	return &geocode.Gratuito{ViaCEPURL: cfg.ViaCEPURL, NominatimURL: cfg.NominatimURL, Contato: cfg.GeocodeContact}
 }

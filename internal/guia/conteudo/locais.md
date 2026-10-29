@@ -49,3 +49,11 @@ Tudo o que é criado ou alterado fica registrado na **Auditoria**, com o antes e
 
 ## Ficha do local
 Abrindo um local, além dos dados, a ficha mostra os **grupos** a que ele pertence, o **histórico de alterações** (para quem tem acesso à Auditoria) e espaços reservados para **visitas, laboratório, casos, infrações, armadilhas, animais e comunicação**: cada um passa a aparecer ali quando o módulo correspondente for lançado.
+
+## Buscar pelo CEP e localizar no mapa
+No cadastro de um local há dois atalhos, que usam serviços gratuitos:
+
+- **Buscar pelo CEP**: digite o CEP e clique. O sistema preenche a **rua** (se estiver vazia) e escolhe o **bairro** cadastrado que combina com o do CEP; depois confira o quarteirão.
+- **Localizar no mapa**: com rua, número e bairro preenchidos, descobre a **latitude e a longitude**. Se o número não for achado, a posição vem **aproximada (só a rua)** e a tela avisa. Se o bairro tem limite gravado e o ponto cai fora dele, a tela também avisa. **Confira no Mapa antes de salvar** e corrija à mão se precisar.
+
+Só o **endereço** (rua, número, bairro, cidade) é enviado a esses serviços; nunca nome, CPF ou telefone de moradores. São serviços de uso moderado: o sistema faz no máximo uma consulta por segundo e guarda as respostas por um dia. Se o serviço estiver fora do ar, a tela avisa e você preenche à mão.

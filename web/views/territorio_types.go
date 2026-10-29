@@ -173,6 +173,7 @@ type LocalFormData struct {
 	Ativo         bool
 	PodeDesativar bool
 	Aviso         string
+	Localizacao   bool // botões "Buscar pelo CEP" e "Localizar no mapa" ligados
 
 	// Ficha do local
 	Grupos              []GrupoMini // grupos a que o local pertence

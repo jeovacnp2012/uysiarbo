@@ -412,7 +412,7 @@ func (h *handlers) montarFormLocal(ctx context.Context, r *http.Request, q *sqlc
 	}
 	form := views.LocalFormData{
 		ID: id, Campos: c, Bairros: opcoes, Tipos: opcoesTipo(c.Tipo), PodeEditar: h.principal(r).Pode("local_adicionar"),
-		PodeDesativar: h.principal(r).Pode("local_desativar"), Ativo: true, Erro: erro, CSRF: csrfToken(ctx),
+		PodeDesativar: h.principal(r).Pode("local_desativar"), Ativo: true, Localizacao: h.localizacaoLigada(), Erro: erro, CSRF: csrfToken(ctx),
 	}
 	if escolhido != 0 {
 		qs, err := q.ListQuarteiroesAtivosDoBairro(ctx, escolhido)

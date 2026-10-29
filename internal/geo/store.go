@@ -101,3 +101,13 @@ JOIN quarteiroes q ON q.id = g.quarteirao_id WHERE q.bairro_id = $1`, bairroID)
 	}
 	return out, rows.Err()
 }
+
+// PontoNoBairro diz se o ponto cai dentro do limite gravado do bairro; tem=false se o bairro não tem limite.
+func PontoNoBairro(ctx context.Context, db DBTX, bairroID int64, lon, lat float64) (dentro, tem bool, err error) {
+	err = db.QueryRow(ctx, `SELECT ST_Contains(geom, ST_SetSRID(ST_MakePoint($2, $3), 4326)) FROM bairro_geometrias WHERE bairro_id = $1`,
+		bairroID, lon, lat).Scan(&dentro)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, false, nil
+	}
+	return dentro, err == nil, err
+}

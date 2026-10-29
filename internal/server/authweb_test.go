@@ -47,6 +47,7 @@ type mundo struct {
 	cliQ     *sqlccliente.Queries // consultas no schema de Nova Mutum, para montar cenários
 	pool     *pgxpool.Pool        // conexão geral (schema public), para consultas diretas
 	pubQ     *sqlc.Queries
+	geo      *geocodeFalso // localização automática de endereços (sem internet)
 }
 
 // novoMundo sobe o servidor completo (com login) sobre um banco temporário, com dois clientes, dois
@@ -97,10 +98,11 @@ func novoMundo(t *testing.T) *mundo {
 	}
 
 	cap := &captchaFalso{ok: true}
-	return &mundo{captcha: cap, masterPw: masterPw, cliQ: q, pool: pool, pubQ: sqlc.New(pool), h: New(Deps{
+	gf := &geocodeFalso{}
+	return &mundo{captcha: cap, masterPw: masterPw, cliQ: q, pool: pool, pubQ: sqlc.New(pool), geo: gf, h: New(Deps{
 		Log: log, DB: pool, Catalog: sqlc.New(pool), Pools: pools,
 		Resolver: &tenant.Resolver{Pool: pool, BaseDomain: "inovarsistemas.biz", AdminHost: hostConsole},
-		Public:   sqlc.New(pool), Captcha: cap, RecaptchaSite: "chave-publica-de-teste", Tenants: svc,
+		Public:   sqlc.New(pool), Captcha: cap, RecaptchaSite: "chave-publica-de-teste", Tenants: svc, Geocoder: gf,
 	})}
 }
 

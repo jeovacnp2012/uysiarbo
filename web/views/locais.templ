@@ -173,6 +173,9 @@ templ LocalForm(l Layout, d LocalFormData) {
 					<div class="campo">
 						<label for="cep">CEP</label>
 						<input id="cep" name="cep" type="text" value={ d.Campos.CEP } maxlength="9" inputmode="numeric" placeholder="78450-000"/>
+						if d.Localizacao && d.PodeEditar {
+							<button type="button" class="btn" id="btn-cep">Buscar pelo CEP</button>
+						}
 					</div>
 					<div class="campo">
 						<label for="endereco">Rua ou avenida</label>
@@ -224,6 +227,12 @@ templ LocalForm(l Layout, d LocalFormData) {
 						<input id="longitude" name="longitude" type="text" value={ d.Campos.Longitude } inputmode="decimal" placeholder="-56.0813"/>
 					</div>
 				</div>
+				if d.Localizacao && d.PodeEditar {
+					<div class="form-acoes">
+						<button type="button" class="btn" id="btn-localizar">Localizar no mapa</button>
+						<span class="subtitulo" id="geo-status" role="status" aria-live="polite"></span>
+					</div>
+				}
 				<div class="campo">
 					<label for="referencia">Ponto de referência</label>
 					<input id="referencia" name="referencia" type="text" value={ d.Campos.Referencia } maxlength="200"/>
@@ -296,6 +305,9 @@ templ LocalForm(l Layout, d LocalFormData) {
 				</div>
 			}
 		</form>
+		if d.Localizacao && d.PodeEditar {
+			<script src={ asset("/static/js/localizacao.js") } defer></script>
+		}
 		if !d.Novo() {
 			<section class="cartao form-admin" id="qr">
 				<h2>Chave e QR Code</h2>

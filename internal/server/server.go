@@ -13,6 +13,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 
 	"uysiarbo/internal/db/sqlc"
+	"uysiarbo/internal/geocode"
 	"uysiarbo/internal/httpx"
 	"uysiarbo/internal/presenca"
 	"uysiarbo/internal/tenant"
@@ -43,6 +44,9 @@ type Deps struct {
 	MapTileURL     string
 	MapAttribution string
 
+	// Localização automática de endereços (CEP e coordenadas). nil = desligada.
+	Geocoder geocode.Geocoder
+
 	// Tenants permite ao console criar clientes e masters (nil = telas do console desligadas).
 	Tenants *tenant.Service
 }
@@ -57,6 +61,7 @@ type handlers struct {
 	prod    bool
 
 	mapaTiles, mapaCredito string
+	geocoder               geocode.Geocoder
 
 	tenants  *tenant.Service
 	resolver *tenant.Resolver
@@ -74,6 +79,9 @@ func New(d Deps) http.Handler {
 		h.captcha = SemCaptcha{}
 	}
 	h.mapaTiles, h.mapaCredito = d.MapTileURL, d.MapAttribution
+	if h.geocoder = d.Geocoder; h.geocoder == nil {
+		h.geocoder = geocode.Desligado{}
+	}
 	if h.mapaTiles == "" {
 		h.mapaTiles, h.mapaCredito = "https://tile.openstreetmap.org/{z}/{x}/{y}.png", "© contribuidores do OpenStreetMap"
 	}
@@ -140,6 +148,8 @@ func New(d Deps) http.Handler {
 	r.Get("/locais/novo", h.exigir("local_adicionar", h.localNovoForm))
 	r.Get("/locais/quarteiroes", h.exigir("local_visualizar", h.localQuarteiroes))
 	r.Post("/locais", h.exigir("local_adicionar", h.localSalvar))
+	r.Get("/locais/cep", h.exigir("local_adicionar", h.localCEP))
+	r.Get("/locais/geocodificar", h.exigir("local_adicionar", h.localGeocodificar))
 	r.Get("/locais/lote", h.exigir("local_adicionar", h.loteForm))
 	r.Post("/locais/lote", h.exigir("local_adicionar", h.loteSalvar))
 	r.Get("/locais/{id}", h.exigir("local_visualizar", h.localEditarForm))
