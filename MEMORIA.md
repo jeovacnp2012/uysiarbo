@@ -85,7 +85,7 @@ Detalhes e credenciais ficam em `C:\laragon\www\VPS_STATUS.md` (fora do Git; **n
 - Remoto: https://github.com/jeovacnp2012/uysiarbo.git (branch `main`). Em outro PC: `git clone` dessa URL, instalar Go e Postgres+PostGIS, copiar `.env.example` para `.env`.
 
 ## Bugs conhecidos para corrigir depois (visuais, apontados pelo usuário)
-- **2026-10-29: botões "colados" no último campo** em `/cidades/nova` (visto em `https://uysiarbonm.local/cidades/nova`, tema escuro): **Salvar** e **Cancelar** ficam encostados no campo "Código IBGE", sem o espaçamento do resto do formulário. Provável causa: os campos ficam dentro de `<fieldset class="sem-borda">` (usado em Cidades e Bairros para desabilitar tudo quando a pessoa só consulta) e os botões `.form-acoes` ficam FORA dele, no `form.form-admin` (grid com `gap: 1rem`); um `fieldset` com `display: grid` costuma ignorar o `gap` ou o espaçamento entre ele e o irmão seguinte. Verificar também `/bairros/novo` e `/bairros/{id}`, que usam o mesmo padrão. Onde mexer: `web/views/territorio.templ` (CidadeForm, BairroForm) e `.sem-borda`/`.form-acoes` em `web/static/css/app.css`. Correção sugerida: dar `margin-top: 1rem` a `.form-acoes` dentro de `.form-admin`, ou trocar o `fieldset` por um `div` com `inert`/`disabled` nos campos.
+- (nenhum aberto) 2026-10-29: botões colados em `/cidades/nova` corrigidos com a regra `.form-acoes` (flex, espaçamento) em `app.css`; o usuário confere no navegador.
 
 ## Pendências de decisão do usuário
 Chaves do reCAPTCHA; domínio; provedor de geocodificação (etapa 3); WhatsApp/e-mail (12); formato SINAN/e-SUS (12); conectores de outros sistemas (4); fórmulas IIP/Breteau (7–8); modelo comercial (1 ou 14).
