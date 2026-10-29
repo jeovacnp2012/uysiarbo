@@ -69,6 +69,19 @@ func New(d Deps) http.Handler {
 	r.Get("/trocar-senha", h.trocarSenhaForm)
 	r.Post("/trocar-senha", h.trocarSenhaPost)
 
+	r.Get("/papeis", h.exigir("conf_papel", h.papeisLista))
+	r.Get("/papeis/novo", h.exigir("conf_papel", h.papelNovoForm))
+	r.Post("/papeis", h.exigir("conf_papel", h.papelSalvar))
+	r.Get("/papeis/{id}", h.exigir("conf_papel", h.papelEditarForm))
+	r.Post("/papeis/{id}", h.exigir("conf_papel", h.papelSalvar))
+
+	r.Get("/usuarios", h.exigir("conf_usuario", h.usuariosLista))
+	r.Get("/usuarios/novo", h.exigir("conf_usuario", h.usuarioNovoForm))
+	r.Post("/usuarios", h.exigir("conf_usuario", h.usuarioCriar))
+	r.Get("/usuarios/{id}", h.exigir("conf_usuario", h.usuarioEditarForm))
+	r.Post("/usuarios/{id}", h.exigir("conf_usuario", h.usuarioSalvar))
+	r.Post("/usuarios/{id}/resetar-senha", h.exigir("conf_usuario", h.usuarioResetarSenha))
+
 	r.Get("/", h.home)
 	r.Get("/componentes", h.components)
 	r.Get("/componentes/tabela", h.componentsTable)

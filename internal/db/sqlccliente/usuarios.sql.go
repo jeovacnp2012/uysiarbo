@@ -266,6 +266,60 @@ func (q *Queries) ListUsuarios(ctx context.Context) ([]Usuario, error) {
 	return items, nil
 }
 
+const listUsuariosResumo = `-- name: ListUsuariosResumo :many
+SELECT u.id, u.nome, u.email, u.telefone, u.ativo, u.login_web, u.login_tablet, u.deve_trocar_senha,
+       u.ultimo_acesso, u.papel_id, p.nome AS papel_nome
+FROM usuarios u
+JOIN papeis p ON p.id = u.papel_id
+ORDER BY lower(u.nome)
+`
+
+type ListUsuariosResumoRow struct {
+	ID              int64              `json:"id"`
+	Nome            string             `json:"nome"`
+	Email           string             `json:"email"`
+	Telefone        string             `json:"telefone"`
+	Ativo           bool               `json:"ativo"`
+	LoginWeb        bool               `json:"login_web"`
+	LoginTablet     bool               `json:"login_tablet"`
+	DeveTrocarSenha bool               `json:"deve_trocar_senha"`
+	UltimoAcesso    pgtype.Timestamptz `json:"ultimo_acesso"`
+	PapelID         int64              `json:"papel_id"`
+	PapelNome       string             `json:"papel_nome"`
+}
+
+func (q *Queries) ListUsuariosResumo(ctx context.Context) ([]ListUsuariosResumoRow, error) {
+	rows, err := q.db.Query(ctx, listUsuariosResumo)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListUsuariosResumoRow
+	for rows.Next() {
+		var i ListUsuariosResumoRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Nome,
+			&i.Email,
+			&i.Telefone,
+			&i.Ativo,
+			&i.LoginWeb,
+			&i.LoginTablet,
+			&i.DeveTrocarSenha,
+			&i.UltimoAcesso,
+			&i.PapelID,
+			&i.PapelNome,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const registrarFalhaUsuario = `-- name: RegistrarFalhaUsuario :exec
 UPDATE usuarios
 SET tentativas_falhas = tentativas_falhas + 1,
@@ -326,4 +380,52 @@ type TouchSessaoParams struct {
 func (q *Queries) TouchSessao(ctx context.Context, arg TouchSessaoParams) error {
 	_, err := q.db.Exec(ctx, touchSessao, arg.TokenHash, arg.ExpiraEm)
 	return err
+}
+
+const updateUsuario = `-- name: UpdateUsuario :one
+UPDATE usuarios
+SET nome = $2, telefone = $3, papel_id = $4, login_web = $5, login_tablet = $6, ativo = $7, atualizado_em = now()
+WHERE id = $1
+RETURNING id, nome, email, telefone, senha_hash, papel_id, login_web, login_tablet, ativo, deve_trocar_senha, ultimo_acesso, criado_em, atualizado_em, tentativas_falhas, bloqueado_ate
+`
+
+type UpdateUsuarioParams struct {
+	ID          int64  `json:"id"`
+	Nome        string `json:"nome"`
+	Telefone    string `json:"telefone"`
+	PapelID     int64  `json:"papel_id"`
+	LoginWeb    bool   `json:"login_web"`
+	LoginTablet bool   `json:"login_tablet"`
+	Ativo       bool   `json:"ativo"`
+}
+
+func (q *Queries) UpdateUsuario(ctx context.Context, arg UpdateUsuarioParams) (Usuario, error) {
+	row := q.db.QueryRow(ctx, updateUsuario,
+		arg.ID,
+		arg.Nome,
+		arg.Telefone,
+		arg.PapelID,
+		arg.LoginWeb,
+		arg.LoginTablet,
+		arg.Ativo,
+	)
+	var i Usuario
+	err := row.Scan(
+		&i.ID,
+		&i.Nome,
+		&i.Email,
+		&i.Telefone,
+		&i.SenhaHash,
+		&i.PapelID,
+		&i.LoginWeb,
+		&i.LoginTablet,
+		&i.Ativo,
+		&i.DeveTrocarSenha,
+		&i.UltimoAcesso,
+		&i.CriadoEm,
+		&i.AtualizadoEm,
+		&i.TentativasFalhas,
+		&i.BloqueadoAte,
+	)
+	return i, err
 }

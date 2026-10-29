@@ -53,3 +53,16 @@ DELETE FROM sessoes WHERE master_id = $1 AND token_hash IS DISTINCT FROM $2;
 
 -- name: DeleteSessoesExpiradas :exec
 DELETE FROM sessoes WHERE expira_em < now();
+
+-- name: ListUsuariosResumo :many
+SELECT u.id, u.nome, u.email, u.telefone, u.ativo, u.login_web, u.login_tablet, u.deve_trocar_senha,
+       u.ultimo_acesso, u.papel_id, p.nome AS papel_nome
+FROM usuarios u
+JOIN papeis p ON p.id = u.papel_id
+ORDER BY lower(u.nome);
+
+-- name: UpdateUsuario :one
+UPDATE usuarios
+SET nome = $2, telefone = $3, papel_id = $4, login_web = $5, login_tablet = $6, ativo = $7, atualizado_em = now()
+WHERE id = $1
+RETURNING *;

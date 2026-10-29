@@ -41,6 +41,7 @@ type mundo struct {
 	h        http.Handler
 	captcha  *captchaFalso
 	masterPw string
+	cliQ     *sqlccliente.Queries // consultas no schema de Nova Mutum, para montar cenários
 }
 
 // novoMundo sobe o servidor completo (com login) sobre um banco temporário, com dois clientes, dois
@@ -91,7 +92,7 @@ func novoMundo(t *testing.T) *mundo {
 	}
 
 	cap := &captchaFalso{ok: true}
-	return &mundo{captcha: cap, masterPw: masterPw, h: New(Deps{
+	return &mundo{captcha: cap, masterPw: masterPw, cliQ: q, h: New(Deps{
 		Log: log, DB: pool, Catalog: sqlc.New(pool), Pools: pools,
 		Resolver: &tenant.Resolver{Pool: pool, BaseDomain: "inovarsistemas.biz", AdminHost: hostConsole},
 		Public:   sqlc.New(pool), Captcha: cap, RecaptchaSite: "chave-publica-de-teste",

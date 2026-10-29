@@ -57,6 +57,24 @@ func (q *Queries) CreatePapel(ctx context.Context, arg CreatePapelParams) (Papei
 	return i, err
 }
 
+const getPapel = `-- name: GetPapel :one
+SELECT id, nome, descricao, ativo, criado_em, atualizado_em FROM papeis WHERE id = $1
+`
+
+func (q *Queries) GetPapel(ctx context.Context, id int64) (Papei, error) {
+	row := q.db.QueryRow(ctx, getPapel, id)
+	var i Papei
+	err := row.Scan(
+		&i.ID,
+		&i.Nome,
+		&i.Descricao,
+		&i.Ativo,
+		&i.CriadoEm,
+		&i.AtualizadoEm,
+	)
+	return i, err
+}
+
 const getPapelByNome = `-- name: GetPapelByNome :one
 SELECT id, nome, descricao, ativo, criado_em, atualizado_em FROM papeis WHERE lower(nome) = lower($1)
 `
@@ -106,6 +124,50 @@ func (q *Queries) ListPapeis(ctx context.Context) ([]Papei, error) {
 	return items, nil
 }
 
+const listPapeisResumo = `-- name: ListPapeisResumo :many
+SELECT p.id, p.nome, p.descricao, p.ativo,
+       (SELECT count(*) FROM papel_permissoes pp WHERE pp.papel_id = p.id)::int AS total_permissoes,
+       (SELECT count(*) FROM usuarios u WHERE u.papel_id = p.id)::int AS total_usuarios
+FROM papeis p
+ORDER BY lower(p.nome)
+`
+
+type ListPapeisResumoRow struct {
+	ID              int64  `json:"id"`
+	Nome            string `json:"nome"`
+	Descricao       string `json:"descricao"`
+	Ativo           bool   `json:"ativo"`
+	TotalPermissoes int32  `json:"total_permissoes"`
+	TotalUsuarios   int32  `json:"total_usuarios"`
+}
+
+func (q *Queries) ListPapeisResumo(ctx context.Context) ([]ListPapeisResumoRow, error) {
+	rows, err := q.db.Query(ctx, listPapeisResumo)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListPapeisResumoRow
+	for rows.Next() {
+		var i ListPapeisResumoRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Nome,
+			&i.Descricao,
+			&i.Ativo,
+			&i.TotalPermissoes,
+			&i.TotalUsuarios,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listPermissoesDoPapel = `-- name: ListPermissoesDoPapel :many
 SELECT permissao FROM papel_permissoes WHERE papel_id = $1 ORDER BY permissao
 `
@@ -128,4 +190,50 @@ func (q *Queries) ListPermissoesDoPapel(ctx context.Context, papelID int64) ([]s
 		return nil, err
 	}
 	return items, nil
+}
+
+const removePermissoesDoPapel = `-- name: RemovePermissoesDoPapel :exec
+DELETE FROM papel_permissoes WHERE papel_id = $1 AND permissao = ANY($2::text[])
+`
+
+type RemovePermissoesDoPapelParams struct {
+	PapelID    int64    `json:"papel_id"`
+	Permissoes []string `json:"permissoes"`
+}
+
+func (q *Queries) RemovePermissoesDoPapel(ctx context.Context, arg RemovePermissoesDoPapelParams) error {
+	_, err := q.db.Exec(ctx, removePermissoesDoPapel, arg.PapelID, arg.Permissoes)
+	return err
+}
+
+const updatePapel = `-- name: UpdatePapel :one
+UPDATE papeis SET nome = $2, descricao = $3, ativo = $4, atualizado_em = now()
+WHERE id = $1
+RETURNING id, nome, descricao, ativo, criado_em, atualizado_em
+`
+
+type UpdatePapelParams struct {
+	ID        int64  `json:"id"`
+	Nome      string `json:"nome"`
+	Descricao string `json:"descricao"`
+	Ativo     bool   `json:"ativo"`
+}
+
+func (q *Queries) UpdatePapel(ctx context.Context, arg UpdatePapelParams) (Papei, error) {
+	row := q.db.QueryRow(ctx, updatePapel,
+		arg.ID,
+		arg.Nome,
+		arg.Descricao,
+		arg.Ativo,
+	)
+	var i Papei
+	err := row.Scan(
+		&i.ID,
+		&i.Nome,
+		&i.Descricao,
+		&i.Ativo,
+		&i.CriadoEm,
+		&i.AtualizadoEm,
+	)
+	return i, err
 }

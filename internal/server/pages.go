@@ -19,14 +19,9 @@ type Catalog interface {
 	ListClientes(ctx context.Context) ([]sqlc.Cliente, error)
 }
 
-var nav = []views.NavItem{
-	{Label: "Início", Href: "/"},
-	{Label: "Componentes", Href: "/componentes"},
-}
-
 // layout monta o layout da página; no endereço de um cliente, mostra o nome dele no menu.
 func (s *handlers) layout(r *http.Request, title, active string) views.Layout {
-	l := views.Layout{Title: title, Active: active, Nav: nav, CSRF: csrfToken(r.Context())}
+	l := views.Layout{Title: title, Active: active, Nav: s.menu(r), CSRF: csrfToken(r.Context())}
 	if c, ok := tenant.FromContext(r.Context()); ok {
 		l.Cliente = c.Nome
 	}
@@ -106,4 +101,20 @@ func demoPage(r *http.Request) (views.DemoFilter, [][]string, views.Pagination) 
 	start := (p.Page - 1) * p.PerPage
 	end := min(start+p.PerPage, len(all))
 	return f, all[start:end], p
+}
+
+// menu monta o menu lateral: Usuários e Papéis aparecem só no endereço de um cliente e só para
+// quem tem a permissão correspondente (o master vê tudo).
+func (s *handlers) menu(r *http.Request) []views.NavItem {
+	itens := []views.NavItem{{Label: "Início", Href: "/"}}
+	a, _ := authFrom(r.Context())
+	if _, cliente := tenant.FromContext(r.Context()); cliente && a.sess != nil {
+		if a.sess.Principal.Pode("conf_usuario") {
+			itens = append(itens, views.NavItem{Label: "Usuários", Href: "/usuarios"})
+		}
+		if a.sess.Principal.Pode("conf_papel") {
+			itens = append(itens, views.NavItem{Label: "Papéis", Href: "/papeis"})
+		}
+	}
+	return append(itens, views.NavItem{Label: "Componentes", Href: "/componentes"})
 }

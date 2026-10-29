@@ -1,0 +1,330 @@
+package views
+
+import "strconv"
+
+// SemPermissao é a página de acesso negado.
+templ SemPermissao(l Layout) {
+	@Base(l) {
+		@PageHeader("Sem permissão", "Seu papel não permite abrir esta página. Fale com quem administra o sistema.") {
+			<a class="btn" href="/">Voltar ao início</a>
+		}
+	}
+}
+
+// ---- Papéis ----
+
+templ PapeisLista(l Layout, linhas []PapelLinha) {
+	@Base(l) {
+		@PageHeader("Papéis", "Conjuntos de permissões que você atribui às pessoas.") {
+			<a class="btn btn-primario" href="/papeis/novo">Novo papel</a>
+		}
+		<section class="cartao">
+			<div class="tabela-wrap">
+				<table class="tabela">
+					<thead>
+						<tr>
+							<th scope="col">Papel</th>
+							<th scope="col">Permissões</th>
+							<th scope="col">Usuários</th>
+							<th scope="col">Situação</th>
+							<th scope="col"><span class="sr-only">Ações</span></th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, p := range linhas {
+							<tr>
+								<td data-rotulo="Papel">
+									<strong>{ p.Nome }</strong>
+									if p.Descricao != "" {
+										<div class="subtitulo">{ p.Descricao }</div>
+									}
+								</td>
+								<td data-rotulo="Permissões">{ strconv.Itoa(p.Permissoes) }</td>
+								<td data-rotulo="Usuários">{ strconv.Itoa(p.Usuarios) }</td>
+								<td data-rotulo="Situação">
+									if p.Ativo {
+										<span class="selo selo-ok">Ativo</span>
+									} else {
+										<span class="selo selo-aviso">Inativo</span>
+									}
+								</td>
+								<td data-rotulo="Ações"><a class="btn" href={ templ.SafeURL("/papeis/" + strconv.FormatInt(p.ID, 10)) }>Editar</a></td>
+							</tr>
+						}
+					</tbody>
+				</table>
+				if len(linhas) == 0 {
+					<div class="tabela-vazia">Nenhum papel cadastrado.</div>
+				}
+			</div>
+		</section>
+	}
+}
+
+templ PapelForm(l Layout, d PapelFormData) {
+	@Base(l) {
+		if d.Novo() {
+			@PageHeader("Novo papel", "Escolha o nome e as permissões, organizadas por bloco.") {
+				<a class="btn" href="/papeis">Voltar</a>
+			}
+		} else {
+			@PageHeader("Editar papel", d.Nome) {
+				<a class="btn" href="/papeis">Voltar</a>
+			}
+		}
+		<form
+			method="post"
+			if d.Novo() {
+				action="/papeis"
+			} else {
+				action={ templ.SafeURL("/papeis/" + strconv.FormatInt(d.ID, 10)) }
+			}
+			class="cartao form-admin"
+			x-data="editorPermissoes"
+		>
+			<input type="hidden" name="csrf" value={ d.CSRF }/>
+			if d.Erro != "" {
+				<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
+			}
+			<div class="campo">
+				<label for="nome">Nome do papel</label>
+				<input id="nome" name="nome" type="text" value={ d.Nome } maxlength="80" required/>
+			</div>
+			<div class="campo">
+				<label for="descricao">Descrição (opcional)</label>
+				<input id="descricao" name="descricao" type="text" value={ d.Descricao } maxlength="300"/>
+			</div>
+			<label class="marcar">
+				<input type="checkbox" name="ativo" value="1" checked?={ d.Ativo }/>
+				Papel ativo (pode ser escolhido para novos usuários)
+			</label>
+
+			<h2>Permissões</h2>
+			<div class="editor-barra">
+				<div class="campo">
+					<label for="busca-perm">Buscar permissão</label>
+					<input id="busca-perm" type="search" x-model="busca" placeholder="Ex.: visita, estoque, relatório"/>
+				</div>
+				<div class="editor-acoes">
+					<button type="button" class="btn" x-on:click="marcar($root, true)">Marcar todas</button>
+					<button type="button" class="btn" x-on:click="marcar($root, false)">Desmarcar todas</button>
+				</div>
+			</div>
+			<p class="subtitulo">
+				As permissões marcadas com <span class="selo selo-aviso">restringe</span> não liberam nada: elas limitam o que a pessoa vê (por exemplo, "apenas as minhas").
+			</p>
+			for _, b := range d.Blocos {
+				<details class="bloco" x-bind:open="busca.trim() !== ''" x-show="temResultado($el)">
+					<summary>
+						<span>{ b.Nome }</span>
+						<span class="selo">{ strconv.Itoa(b.Marcadas) }/{ strconv.Itoa(b.Total) }</span>
+					</summary>
+					<div class="bloco-acoes">
+						<button type="button" class="btn" x-on:click="marcar($el.closest('details'), true)">Marcar bloco</button>
+						<button type="button" class="btn" x-on:click="marcar($el.closest('details'), false)">Desmarcar bloco</button>
+					</div>
+					for _, g := range b.Grupos {
+						<fieldset class="grupo" x-show="temResultado($el)">
+							<legend>{ g.Nome }</legend>
+							for _, it := range g.Itens {
+								<label class="perm" data-busca={ it.Busca } x-show="mostra($el)">
+									<input type="checkbox" name="perm" value={ it.Codigo } checked?={ it.Marcada } disabled?={ it.Bloqueada }/>
+									<span>{ it.Rotulo }</span>
+									if it.Restritiva {
+										<span class="selo selo-aviso">restringe</span>
+									}
+								</label>
+							}
+						</fieldset>
+					}
+				</details>
+			}
+			<div class="form-acoes">
+				<button type="submit" class="btn btn-primario">Salvar papel</button>
+				<a class="btn" href="/papeis">Cancelar</a>
+			</div>
+		</form>
+	}
+}
+
+// ---- Usuários ----
+
+templ UsuariosLista(l Layout, linhas []UsuarioLinha, pode bool) {
+	@Base(l) {
+		@PageHeader("Usuários", "Pessoas com acesso a este cliente.") {
+			<a class="btn btn-primario" href="/usuarios/novo">Novo usuário</a>
+		}
+		<section class="cartao">
+			<div class="tabela-wrap">
+				<table class="tabela">
+					<thead>
+						<tr>
+							<th scope="col">Nome</th>
+							<th scope="col">Papel</th>
+							<th scope="col">Acesso</th>
+							<th scope="col">Último acesso</th>
+							<th scope="col">Situação</th>
+							<th scope="col"><span class="sr-only">Ações</span></th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, u := range linhas {
+							<tr>
+								<td data-rotulo="Nome">
+									<strong>{ u.Nome }</strong>
+									if u.Eu {
+										<span class="selo">você</span>
+									}
+									<div class="subtitulo">{ u.Email }</div>
+								</td>
+								<td data-rotulo="Papel">{ u.Papel }</td>
+								<td data-rotulo="Acesso">
+									if u.LoginWeb {
+										<span class="selo">web</span>
+									}
+									if u.LoginTablet {
+										<span class="selo">tablet</span>
+									}
+								</td>
+								<td data-rotulo="Último acesso">{ u.UltimoAcesso }</td>
+								<td data-rotulo="Situação">
+									if !u.Ativo {
+										<span class="selo selo-aviso">Inativo</span>
+									} else if u.DeveTrocar {
+										<span class="selo selo-aviso">Troca de senha pendente</span>
+									} else {
+										<span class="selo selo-ok">Ativo</span>
+									}
+								</td>
+								<td data-rotulo="Ações"><a class="btn" href={ templ.SafeURL("/usuarios/" + strconv.FormatInt(u.ID, 10)) }>Editar</a></td>
+							</tr>
+						}
+					</tbody>
+				</table>
+				if len(linhas) == 0 {
+					<div class="tabela-vazia">Nenhum usuário cadastrado.</div>
+				}
+			</div>
+		</section>
+	}
+}
+
+templ UsuarioForm(l Layout, d UsuarioFormData) {
+	@Base(l) {
+		if d.Novo() {
+			@PageHeader("Novo usuário", "O sistema gera uma senha temporária forte e mostra uma única vez.") {
+				<a class="btn" href="/usuarios">Voltar</a>
+			}
+		} else {
+			@PageHeader("Editar usuário", d.Email) {
+				<a class="btn" href="/usuarios">Voltar</a>
+			}
+		}
+		<form
+			method="post"
+			if d.Novo() {
+				action="/usuarios"
+			} else {
+				action={ templ.SafeURL("/usuarios/" + strconv.FormatInt(d.ID, 10)) }
+			}
+			class="cartao form-admin"
+		>
+			<input type="hidden" name="csrf" value={ d.CSRF }/>
+			if d.Erro != "" {
+				<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
+			}
+			<div class="campo">
+				<label for="nome">Nome completo</label>
+				<input id="nome" name="nome" type="text" value={ d.Nome } maxlength="120" required/>
+			</div>
+			<div class="campo">
+				<label for="email">E-mail de acesso</label>
+				if d.Novo() {
+					<input id="email" name="email" type="email" value={ d.Email } maxlength="160" required/>
+				} else {
+					<input id="email" type="email" value={ d.Email } disabled/>
+				}
+			</div>
+			<div class="campo">
+				<label for="telefone">Telefone (opcional)</label>
+				<input id="telefone" name="telefone" type="tel" value={ d.Telefone } maxlength="30"/>
+			</div>
+			<div class="campo">
+				<label for="papel">Papel</label>
+				<select id="papel" name="papel_id" required>
+					for _, p := range d.Papeis {
+						<option value={ strconv.FormatInt(p.ID, 10) } selected?={ p.Selecionado }>{ p.Nome }</option>
+					}
+				</select>
+			</div>
+			<label class="marcar">
+				<input type="checkbox" name="login_web" value="1" checked?={ d.LoginWeb }/>
+				Pode entrar pelo sistema web
+			</label>
+			<label class="marcar">
+				<input type="checkbox" name="login_tablet" value="1" checked?={ d.LoginTablet }/>
+				Pode entrar pelo aplicativo do tablet
+			</label>
+			if !d.Novo() {
+				<label class="marcar">
+					<input type="checkbox" name="ativo" value="1" checked?={ d.Ativo }/>
+					Usuário ativo
+				</label>
+				if d.Eu {
+					<p class="subtitulo">Você não pode desativar a si mesmo nem trocar o seu próprio papel. Para trocar a sua senha, use a opção "Trocar senha".</p>
+				}
+			}
+			<div class="form-acoes">
+				<button type="submit" class="btn btn-primario">
+					if d.Novo() {
+						Criar usuário
+					} else {
+						Salvar
+					}
+				</button>
+				<a class="btn" href="/usuarios">Cancelar</a>
+			</div>
+		</form>
+		if !d.Novo() && !d.Eu {
+			<form method="post" action={ templ.SafeURL("/usuarios/" + strconv.FormatInt(d.ID, 10) + "/resetar-senha") } class="cartao form-admin">
+				<input type="hidden" name="csrf" value={ d.CSRF }/>
+				<h2>Resetar senha</h2>
+				<p class="subtitulo">
+					Gera uma nova senha forte e a mostra uma única vez. A senha atual deixa de valer, as sessões abertas são encerradas
+					e a pessoa será obrigada a escolher a própria senha no próximo acesso.
+				</p>
+				<div class="form-acoes">
+					<button type="submit" class="btn btn-perigo">Resetar senha de { d.Nome }</button>
+				</div>
+			</form>
+		}
+	}
+}
+
+// SenhaGerada mostra a senha temporária uma única vez.
+templ SenhaGerada(l Layout, d SenhaGeradaData) {
+	@Base(l) {
+		if d.Novo {
+			@PageHeader("Usuário criado", d.Nome+" · "+d.Email) {
+				<a class="btn" href="/usuarios">Ir para a lista</a>
+			}
+		} else {
+			@PageHeader("Senha resetada", d.Nome+" · "+d.Email) {
+				<a class="btn" href="/usuarios">Ir para a lista</a>
+			}
+		}
+		<section class="cartao" x-data="{ copiado: false, copiar() { navigator.clipboard.writeText($refs.senha.textContent.trim()).then(() => { this.copiado = true }) } }">
+			<h2>Senha temporária</h2>
+			<p class="senha-gerada" x-ref="senha">{ d.Senha }</p>
+			<div class="form-acoes">
+				<button type="button" class="btn btn-primario" x-on:click="copiar()" x-text="copiado ? 'Copiada' : 'Copiar senha'">Copiar senha</button>
+			</div>
+			<p class="alerta alerta-erro" role="alert">
+				Anote ou copie agora: esta senha <strong>não será mostrada de novo</strong> e não fica guardada em lugar nenhum.
+			</p>
+			<p class="subtitulo">
+				No primeiro acesso, o sistema pedirá que { d.Nome } escolha a própria senha. Combine um canal seguro para repassar esta senha.
+			</p>
+		</section>
+	}
+}

@@ -31,6 +31,24 @@ document.addEventListener('alpine:init', () => {
         },
     }));
 
+    // Editor de permissões de um papel: busca por texto e marcar/desmarcar em bloco.
+    Alpine.data('editorPermissoes', () => ({
+        busca: '',
+        mostra(el) {
+            const q = this.busca.trim().toLowerCase();
+            return q === '' || el.dataset.busca.includes(q);
+        },
+        temResultado(el) {
+            const q = this.busca.trim().toLowerCase();
+            return q === '' || [...el.querySelectorAll('.perm')].some((p) => p.dataset.busca.includes(q));
+        },
+        marcar(raiz, valor) {
+            raiz.querySelectorAll('input[name=perm]:not(:disabled)').forEach((i) => {
+                i.checked = valor;
+            });
+        },
+    }));
+
     // Campo de senha com revelar/ocultar (exigido em todo campo de senha do sistema).
     Alpine.data('campoSenha', () => ({
         visivel: false,
