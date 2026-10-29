@@ -93,6 +93,28 @@ func (q *Queries) GetClienteByID(ctx context.Context, id pgtype.UUID) (Cliente, 
 	return i, err
 }
 
+const getClienteBySlug = `-- name: GetClienteBySlug :one
+SELECT id, nome, slug, schema_nome, subdominio, dominio, plano, status, criado_em, atualizado_em FROM clientes WHERE slug = $1
+`
+
+func (q *Queries) GetClienteBySlug(ctx context.Context, slug string) (Cliente, error) {
+	row := q.db.QueryRow(ctx, getClienteBySlug, slug)
+	var i Cliente
+	err := row.Scan(
+		&i.ID,
+		&i.Nome,
+		&i.Slug,
+		&i.SchemaNome,
+		&i.Subdominio,
+		&i.Dominio,
+		&i.Plano,
+		&i.Status,
+		&i.CriadoEm,
+		&i.AtualizadoEm,
+	)
+	return i, err
+}
+
 const getClienteBySubdominio = `-- name: GetClienteBySubdominio :one
 SELECT id, nome, slug, schema_nome, subdominio, dominio, plano, status, criado_em, atualizado_em FROM clientes WHERE subdominio = $1
 `

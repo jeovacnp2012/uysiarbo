@@ -4,5 +4,5 @@ package migrations
 
 import "embed"
 
-//go:embed public/*.sql
+//go:embed public/*.sql cliente/*.sql
 var FS embed.FS

@@ -2,24 +2,16 @@ package db_test
 
 import (
 	"context"
-	"os"
 	"testing"
+	"uysiarbo/internal/testutil"
 
 	"uysiarbo/internal/db"
 	"uysiarbo/internal/db/sqlc"
 )
 
-// testURL aponta para o banco de testes (criado por scripts/criar-banco.ps1).
-func testURL() string {
-	if v := os.Getenv("TEST_DATABASE_URL"); v != "" {
-		return v
-	}
-	return "postgres://postgres:@localhost:5432/uysiarbo_test?sslmode=disable"
-}
-
 func TestMigracoesEQueries(t *testing.T) {
 	ctx := context.Background()
-	url := testURL()
+	url := testutil.NewDatabase(t)
 
 	// Aplica, desfaz tudo e aplica de novo (exercita Up e Down; o reset exige a tabela de controle já criada).
 	if err := db.Migrate(ctx, url, "up"); err != nil {

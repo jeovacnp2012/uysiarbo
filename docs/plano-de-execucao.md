@@ -48,7 +48,7 @@ Objetivo: base técnica pronta para receber qualquer módulo.
 ## Etapa 1 — Clientes (schemas), acesso e administração
 Objetivo: múltiplas prefeituras isoladas, com usuários e permissões.
 - [x] 1.1 Schema `public` (catálogo): tabela `clientes` (nome, slug, schema `c_<slug>`, subdomínio, domínio próprio opcional, plano, status), restrições no banco e queries; migrações separadas em `migrations/public` (catálogo) e, na 1.2, `migrations/cliente`
-- [ ] 1.2 Provisionamento: criar schema novo + rodar todas as migrações nele; comando para migrar **todos** os schemas
+- [x] 1.2 Provisionamento: `uysiarbo cliente criar` (registra, cria o schema `c_<slug>`, roda `migrations/cliente`, ativa; repetível se parar no meio), `uysiarbo cliente listar` e `uysiarbo migrate-all` (catálogo + todos os clientes)
 - [ ] 1.3 Resolução do cliente por requisição (subdomínio ou domínio) e `search_path` seguro por conexão
 - [ ] 1.4 Usuários, papéis e permissões (modelo inspirado nas ~190 permissões e 24 categorias do sistema atual): permissões **granulares organizadas por blocos** e **perfis diversos** (papéis). **Usuário master: JEOVA OLIVEIRA, e-mail de acesso `jeovacnp2012@gmail.com`**: nenhuma regra de permissão, restrição de bloco, "apenas atribuídos" ou escopo de cliente se aplica a ele; vê e faz tudo, em todos os clientes. O master é protegido (não pode ser excluído, rebaixado ou ter o acesso reduzido por outro usuário); a senha dele nunca é registrada em arquivo, plano ou código.
 - [ ] 1.5 Login com Google reCAPTCHA v2 (verificação do token no servidor), sessão em cookie seguro, bloqueio por tentativas, recuperação de senha

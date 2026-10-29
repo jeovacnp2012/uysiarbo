@@ -3,6 +3,7 @@ package db_test
 import (
 	"context"
 	"testing"
+	"uysiarbo/internal/testutil"
 
 	"github.com/jackc/pgx/v5/pgtype"
 
@@ -13,7 +14,7 @@ import (
 func novoQueries(t *testing.T) (context.Context, *sqlc.Queries) {
 	t.Helper()
 	ctx := context.Background()
-	url := testURL()
+	url := testutil.NewDatabase(t)
 	if err := db.Migrate(ctx, url, "up"); err != nil {
 		t.Fatalf("up: %v", err)
 	}

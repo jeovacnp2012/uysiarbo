@@ -26,6 +26,15 @@ func main() {
 		case "version", "--version":
 			fmt.Println("uysiarbo", version)
 			return
+		case "migrate-all":
+			exitOnError(migrateAll(context.Background()))
+			return
+		case "cliente":
+			exitOnError(clienteCmd(context.Background(), os.Args[2:]))
+			return
+		case "help", "--help", "-h":
+			fmt.Println(ajuda)
+			return
 		case "migrate":
 			if err := migrate(os.Args[2:]); err != nil {
 				fmt.Fprintln(os.Stderr, "erro:", err)
@@ -99,4 +108,11 @@ func migrate(args []string) error {
 		return err
 	}
 	return db.Migrate(context.Background(), cfg.DatabaseURL, command)
+}
+
+func exitOnError(err error) {
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "erro:", err)
+		os.Exit(1)
+	}
 }

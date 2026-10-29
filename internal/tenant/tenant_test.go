@@ -1,0 +1,169 @@
+package tenant_test
+
+import (
+	"context"
+	"errors"
+	"io"
+	"log/slog"
+	"strings"
+	"testing"
+
+	"uysiarbo/internal/db"
+	"uysiarbo/internal/db/sqlc"
+	"uysiarbo/internal/tenant"
+	"uysiarbo/internal/testutil"
+)
+
+func novoServico(t *testing.T) (*tenant.Service, string) {
+	t.Helper()
+	url := testutil.NewDatabase(t)
+	pool, err := db.Connect(context.Background(), url)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(pool.Close)
+	return &tenant.Service{Pool: pool, URL: url, Log: slog.New(slog.NewTextHandler(io.Discard, nil))}, url
+}
+
+// existe diz se a tabela existe no schema indicado.
+func existe(t *testing.T, s *tenant.Service, schema, tabela string) bool {
+	t.Helper()
+	var ok bool
+	err := s.Pool.QueryRow(context.Background(),
+		`SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = $1 AND table_name = $2)`,
+		schema, tabela).Scan(&ok)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return ok
+}
+
+func TestProvisionCriaSchemaMigraEAtiva(t *testing.T) {
+	s, url := novoServico(t)
+	ctx := context.Background()
+
+	c, err := s.Provision(ctx, tenant.Input{Nome: "Prefeitura de Nova Mutum", Slug: "NovaMutum"})
+	if err != nil {
+		t.Fatalf("provision: %v", err)
+	}
+	if c.Slug != "novamutum" || c.SchemaNome != "c_novamutum" || c.Subdominio != "novamutum" || c.Status != "ativo" {
+		t.Errorf("cliente inesperado: %+v", c)
+	}
+	if !existe(t, s, "c_novamutum", "cliente_info") {
+		t.Error("tabela cliente_info não foi criada no schema do cliente")
+	}
+	if !existe(t, s, "c_novamutum", "goose_cliente_version") {
+		t.Error("a tabela de controle do goose deveria ficar no schema do cliente")
+	}
+	if existe(t, s, "public", "cliente_info") {
+		t.Error("a tabela do cliente vazou para o schema public")
+	}
+
+	// As funções do PostGIS (schema public) precisam funcionar a partir do schema do cliente.
+	conn, err := db.OpenSchema(url, "c_novamutum")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+	var wkt string
+	if err := conn.QueryRowContext(ctx, "SELECT ST_AsText(ST_MakePoint(1, 2))").Scan(&wkt); err != nil || wkt != "POINT(1 2)" {
+		t.Errorf("PostGIS a partir do schema do cliente: %q, %v", wkt, err)
+	}
+}
+
+func TestProvisionIsolaClientes(t *testing.T) {
+	s, url := novoServico(t)
+	ctx := context.Background()
+	for _, slug := range []string{"alfa", "beta"} {
+		if _, err := s.Provision(ctx, tenant.Input{Nome: slug, Slug: slug}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	grava := func(schema, valor string) {
+		conn, err := db.OpenSchema(url, schema)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer conn.Close()
+		if _, err := conn.ExecContext(ctx, "INSERT INTO cliente_info (chave, valor) VALUES ('nome', $1)", valor); err != nil {
+			t.Fatal(err)
+		}
+	}
+	grava("c_alfa", "A")
+	grava("c_beta", "B")
+
+	for schema, quer := range map[string]string{"c_alfa": "A", "c_beta": "B"} {
+		var n int
+		var valor string
+		err := s.Pool.QueryRow(ctx, `SELECT count(*), max(valor) FROM `+schema+`.cliente_info`).Scan(&n, &valor)
+		if err != nil || n != 1 || valor != quer {
+			t.Errorf("%s: n=%d valor=%q err=%v (quer 1 e %q)", schema, n, valor, err, quer)
+		}
+	}
+}
+
+func TestProvisionRecusaRepetidoEInvalido(t *testing.T) {
+	s, _ := novoServico(t)
+	ctx := context.Background()
+	if _, err := s.Provision(ctx, tenant.Input{Nome: "Alfa", Slug: "alfa"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.Provision(ctx, tenant.Input{Nome: "Alfa 2", Slug: "alfa"}); !errors.Is(err, tenant.ErrJaExiste) {
+		t.Errorf("repetido: err = %v, quer ErrJaExiste", err)
+	}
+	for _, slug := range []string{"", "ab", "1abc", "a-b-c", "x; DROP SCHEMA public", strings.Repeat("a", 31)} {
+		if _, err := s.Provision(ctx, tenant.Input{Nome: "X", Slug: slug}); err == nil {
+			t.Errorf("slug %q deveria ser recusado", slug)
+		}
+	}
+	// Nada além do cliente válido foi criado.
+	lista, _ := sqlc.New(s.Pool).ListClientes(ctx)
+	if len(lista) != 1 {
+		t.Errorf("clientes = %d, quer 1", len(lista))
+	}
+}
+
+func TestProvisionRetomaDeOndeParou(t *testing.T) {
+	s, _ := novoServico(t)
+	ctx := context.Background()
+
+	// Simula uma tentativa interrompida: cliente registrado, schema criado, sem migrar e sem ativar.
+	c, err := sqlc.New(s.Pool).CreateCliente(ctx, sqlc.CreateClienteParams{Nome: "Gama", Slug: "gama", Subdominio: "gama", Plano: "padrao"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.Pool.Exec(ctx, `CREATE SCHEMA c_gama`); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := s.Provision(ctx, tenant.Input{Nome: "Gama", Slug: "gama"})
+	if err != nil {
+		t.Fatalf("retomar: %v", err)
+	}
+	if got.ID != c.ID || got.Status != "ativo" || !existe(t, s, "c_gama", "cliente_info") {
+		t.Errorf("não retomou corretamente: %+v", got)
+	}
+}
+
+func TestMigrateAllAplicaEmTodosOsClientes(t *testing.T) {
+	s, _ := novoServico(t)
+	ctx := context.Background()
+	for _, slug := range []string{"alfa", "beta"} {
+		if _, err := s.Provision(ctx, tenant.Input{Nome: slug, Slug: slug}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// Desfaz a migração de um cliente e confere que o "up" geral a refaz, sem erro nos demais.
+	if err := db.MigrateCliente(ctx, s.URL, "c_beta", "reset"); err != nil {
+		t.Fatal(err)
+	}
+	if existe(t, s, "c_beta", "cliente_info") {
+		t.Fatal("o reset não desfez a migração")
+	}
+	if err := s.MigrateAll(ctx, "up"); err != nil {
+		t.Fatalf("MigrateAll: %v", err)
+	}
+	if !existe(t, s, "c_beta", "cliente_info") || !existe(t, s, "c_alfa", "cliente_info") {
+		t.Error("MigrateAll não deixou todos os clientes em dia")
+	}
+}

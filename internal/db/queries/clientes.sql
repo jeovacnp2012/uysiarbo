@@ -18,3 +18,6 @@ SELECT * FROM clientes ORDER BY nome;
 -- name: UpdateClienteStatus :one
 UPDATE clientes SET status = $2, atualizado_em = now() WHERE id = $1
 RETURNING *;
+
+-- name: GetClienteBySlug :one
+SELECT * FROM clientes WHERE slug = $1;
