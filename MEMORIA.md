@@ -29,6 +29,9 @@ Nova versão do Geo Controle (controle de endemias/dengue para prefeituras) em G
 - Depois: copiar `.env.example` para `.env` e rodar `powershell -File scripts\criar-banco.ps1` (cria o banco `uysiarbo` e habilita o PostGIS).
 - Em outro PC: instalar Go, clonar o repositório, ler este arquivo e o plano.
 
+## Repositório
+- Remoto: https://github.com/jeovacnp2012/uysiarbo.git (branch `main`). Em outro PC: `git clone` dessa URL, instalar Go e Postgres+PostGIS, copiar `.env.example` para `.env`.
+
 ## Pendências de decisão do usuário
 Chaves do reCAPTCHA; domínio; provedor de geocodificação (etapa 3); WhatsApp/e-mail (12); formato SINAN/e-SUS (12); conectores de outros sistemas (4); fórmulas IIP/Breteau (7–8); modelo comercial (1 ou 14).
 
