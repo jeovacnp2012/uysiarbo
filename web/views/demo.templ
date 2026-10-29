@@ -1,0 +1,77 @@
+package views
+
+import "net/url"
+
+// Home é a página inicial da fundação ("olá mundo" com layout, banco e testes).
+templ Home(l Layout, sistema string) {
+	@Base(l) {
+		@PageHeader("Olá, mundo", "Fundação do projeto pronta: layout, banco e testes rodando.") {
+			<a class="btn btn-primario" href="/componentes">Ver componentes</a>
+		}
+		<section class="cartao">
+			<h2>Sistema</h2>
+			<p class="subtitulo">Informação lida do banco de dados: <span class="selo selo-ok">{ sistema }</span></p>
+		</section>
+	}
+}
+
+// Components é a página de demonstração dos componentes base (some quando as telas reais existirem).
+templ Components(l Layout, f DemoFilter, rows [][]string, p Pagination) {
+	@Base(l) {
+		@PageHeader("Componentes", "Tabela paginada, filtros, modal, toasts e campo de senha.") {
+			<button type="button" class="btn" x-on:click="$dispatch('modal-open', 'exemplo')">Abrir modal</button>
+			<button
+				type="button"
+				class="btn btn-primario"
+				x-on:click="$dispatch('toast', { kind: 'sucesso', message: 'Operação concluída.' })"
+			>Mostrar toast</button>
+		}
+		<section class="cartao">
+			@DemoResults(f, rows, p)
+		</section>
+		<section class="cartao" style="max-width:24rem">
+			<h2>Campo de senha</h2>
+			<p class="subtitulo">Todo campo de senha do sistema tem a opção de revelar.</p>
+			@PasswordField("senha-demo", "senha", "Senha", "new-password")
+		</section>
+		@Modal("exemplo", "Exemplo de modal") {
+			<div class="modal-corpo">Conteúdo do modal. Feche com Esc, clicando fora ou no botão.</div>
+			<div class="modal-pe">
+				<button type="button" class="btn" x-on:click="$dispatch('toast', { kind: 'info', message: 'Fechado.' }); open = false">Fechar</button>
+			</div>
+		}
+	}
+}
+
+// DemoResults é o trecho que o HTMX troca ao filtrar ou paginar.
+templ DemoResults(f DemoFilter, rows [][]string, p Pagination) {
+	<div id="resultados">
+		<form
+			class="filtros"
+			hx-get="/componentes/tabela"
+			hx-target="#resultados"
+			hx-swap="outerHTML"
+			hx-trigger="input changed delay:300ms from:find input, change from:find select"
+		>
+			<div class="campo">
+				<label for="f-q">Buscar</label>
+				<input id="f-q" name="q" type="search" value={ f.Q } placeholder="Nome do bairro"/>
+			</div>
+			<div class="campo">
+				<label for="f-status">Situação</label>
+				<select id="f-status" name="status">
+					<option value="" selected?={ f.Status == "" }>Todas</option>
+					<option value="ativo" selected?={ f.Status == "ativo" }>Ativo</option>
+					<option value="inativo" selected?={ f.Status == "inativo" }>Inativo</option>
+				</select>
+			</div>
+		</form>
+		@Table([]Column{{"Bairro"}, {"Quarteirões"}, {"Situação"}}, rows)
+		@Pager(p, "/componentes/tabela", url.Values{"q": {f.Q}, "status": {f.Status}}, "#resultados")
+	</div>
+}
+
+type DemoFilter struct {
+	Q      string
+	Status string
+}

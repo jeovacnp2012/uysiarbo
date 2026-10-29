@@ -22,7 +22,8 @@ Nova versão do Geo Controle (controle de endemias/dengue para prefeituras) em G
 - **0.3 concluída**: `internal/config` (.env + ambiente), `internal/httpx` (JSON e erro padrão `{error:{code,message,request_id}}`), `internal/server` (chi, request-id, log de acesso, recoverer, `/healthz`), `cmd/server` com shutdown gracioso. Testes: `go test ./...`. Rodar: `go run ./cmd/server` (porta `APP_ADDR`, padrão `:8080`). `/readyz` com ping no banco entra na 0.4.
 - **0.4 concluída**: `migrations/` (goose, embutido via `embed`), `internal/db` (pool pgx, `Migrate`), `internal/db/queries` + `sqlc.yaml` → `internal/db/sqlc` (gerado; regenerar com `go tool sqlc generate`), `cmd/migrate`, `/readyz`. O servidor não sobe sem banco. Testes de integração usam o banco `uysiarbo_test` (`TEST_DATABASE_URL` para mudar). Rodar scripts .ps1 com `powershell -ExecutionPolicy Bypass -File ...` (a política padrão bloqueia).
 - **Decisão (2026-10-29): o app Flutter do tablet é a ÚLTIMA etapa do projeto (agora Etapa 14, depois de Produção/Etapa 13).** A API de sincronização em lote (6.4) continua no backend, antes.
-- Próximas: 0.5 front base (templ + HTMX + Alpine; layout, tema, componentes) → 0.6 CI/build.
+- **0.5 concluída**: `web/` (embed, CSS UYSI claro/escuro, `app.js` com tema, toasts e campo de senha), `web/static/vendor` (htmx 2.0.4, alpine 3.14.9, baixados do jsDelivr), `web/views` (templ: layout com menu lateral, PageHeader, Table, Pager por HTMX, Modal, Toasts, PasswordField), rotas `/`, `/componentes`, `/componentes/tabela`, `/static/*`. Gerar telas: `go tool templ generate` (os `*_templ.go` vão para o Git). Conferido no navegador (desktop e celular). Ainda sem CSRF (entra com o login, etapa 1.5). Páginas `/componentes` são só demonstração e saem quando houver telas reais.
+- Próximas: 0.6 CI/build.
 
 ## Ambiente (PC principal do dono)
 - Windows 11, Laragon em `C:\laragon\www\uysiarbo`, Go 1.27.3.

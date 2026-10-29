@@ -1,0 +1,65 @@
+package views
+
+// Base é o layout das páginas internas: menu lateral, barra superior, tema e área de toasts.
+templ Base(l Layout) {
+	<!DOCTYPE html>
+	<html lang="pt-BR">
+		<head>
+			<meta charset="utf-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1"/>
+			<title>{ l.Title } · UYSI ARBO</title>
+			<script>
+				(function () {
+					try {
+						var t = localStorage.getItem('uysi-tema');
+						if (t === 'escuro' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+							document.documentElement.dataset.tema = 'escuro';
+						}
+					} catch (e) {}
+				})();
+			</script>
+			<link rel="icon" href="/static/brand/uysi-symbol.png"/>
+			<link rel="stylesheet" href="/static/css/app.css"/>
+			<script defer src="/static/js/app.js"></script>
+			<script defer src="/static/vendor/alpine.min.js"></script>
+			<script defer src="/static/vendor/htmx.min.js"></script>
+		</head>
+		<body x-data="{ menu: false }" x-on:keydown.escape.window="menu = false">
+			<div class="app">
+				<div class="menu-fundo" x-show="menu" x-cloak x-on:click="menu = false"></div>
+				<aside class="menu" x-bind:class="{ aberto: menu }" aria-label="Menu principal">
+					<a class="menu-marca" href="/">
+						<img src="/static/brand/uysi-symbol.png" alt=""/>
+						<span>UYSI ARBO</span>
+					</a>
+					<nav class="menu-lista">
+						for _, item := range l.Nav {
+							<a class="menu-item" href={ templ.SafeURL(item.Href) } aria-current?={ item.Href == l.Active }>{ item.Label }</a>
+						}
+					</nav>
+					<div class="menu-rodape">Versão { Version }</div>
+				</aside>
+				<div class="conteudo">
+					<header class="barra">
+						<button type="button" class="btn btn-icone btn-menu" aria-label="Abrir menu" x-on:click="menu = true">☰</button>
+						<div class="barra-titulo">{ l.Title }</div>
+						<button
+							type="button"
+							class="btn btn-icone"
+							x-on:click="$store.tema.alternar()"
+							x-bind:aria-pressed="$store.tema.escuro"
+							aria-label="Alternar tema claro e escuro"
+						>
+							<span x-text="$store.tema.escuro ? '☀ Claro' : '☾ Escuro'">☾ Escuro</span>
+						</button>
+					</header>
+					<main class="pagina">
+						{ children... }
+					</main>
+				</div>
+			</div>
+			@Toasts()
+			<noscript><p style="padding:1rem">Esta aplicação precisa de JavaScript ativado.</p></noscript>
+		</body>
+	</html>
+}

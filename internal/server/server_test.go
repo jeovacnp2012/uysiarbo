@@ -8,7 +8,9 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
+	"uysiarbo/internal/db/sqlc"
 
 	"github.com/go-chi/chi/v5"
 
@@ -19,7 +21,7 @@ func newTestLogger() *slog.Logger { return slog.New(slog.NewTextHandler(io.Disca
 
 func TestHealth(t *testing.T) {
 	rec := httptest.NewRecorder()
-	New(newTestLogger(), fakeDB{}).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/healthz", nil))
+	newTestServer(fakeDB{}).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/healthz", nil))
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d, quer 200", rec.Code)
@@ -35,7 +37,7 @@ func TestHealth(t *testing.T) {
 
 func TestNotFoundPadronizado(t *testing.T) {
 	rec := httptest.NewRecorder()
-	New(newTestLogger(), fakeDB{}).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/nao-existe", nil))
+	newTestServer(fakeDB{}).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/nao-existe", nil))
 
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("status = %d, quer 404", rec.Code)
@@ -51,7 +53,7 @@ func TestNotFoundPadronizado(t *testing.T) {
 
 func TestMetodoNaoPermitido(t *testing.T) {
 	rec := httptest.NewRecorder()
-	New(newTestLogger(), fakeDB{}).ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/healthz", nil))
+	newTestServer(fakeDB{}).ServeHTTP(rec, httptest.NewRequest(http.MethodPost, "/healthz", nil))
 	if rec.Code != http.StatusMethodNotAllowed {
 		t.Fatalf("status = %d, quer 405", rec.Code)
 	}
@@ -90,10 +92,74 @@ func TestReadyz(t *testing.T) {
 	for _, c := range casos {
 		t.Run(c.nome, func(t *testing.T) {
 			rec := httptest.NewRecorder()
-			New(newTestLogger(), fakeDB{err: c.err}).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/readyz", nil))
+			newTestServer(fakeDB{err: c.err}).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/readyz", nil))
 			if rec.Code != c.status {
 				t.Fatalf("status = %d, quer %d", rec.Code, c.status)
 			}
 		})
+	}
+}
+
+type fakeInfo struct{}
+
+func (fakeInfo) GetAppInfo(context.Context, string) (sqlc.AppInfo, error) {
+	return sqlc.AppInfo{Chave: "sistema", Valor: "UYSI ARBO"}, nil
+}
+
+func newTestServer(db Pinger) http.Handler {
+	return New(Deps{Log: newTestLogger(), DB: db, Info: fakeInfo{}})
+}
+
+func get(t *testing.T, target string) *httptest.ResponseRecorder {
+	t.Helper()
+	rec := httptest.NewRecorder()
+	newTestServer(fakeDB{}).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, target, nil))
+	return rec
+}
+
+func TestHomeRenderizaLayout(t *testing.T) {
+	rec := get(t, "/")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, quer 200", rec.Code)
+	}
+	body := rec.Body.String()
+	for _, quer := range []string{"<!doctype html>", "UYSI ARBO", "menu-item", "Olá, mundo", `aria-current`} {
+		if !strings.Contains(strings.ToLower(body), strings.ToLower(quer)) {
+			t.Errorf("página sem %q", quer)
+		}
+	}
+}
+
+func TestComponentesTabelaFiltraEPagina(t *testing.T) {
+	rec := get(t, "/componentes/tabela?q=exemplo+12")
+	body := rec.Body.String()
+	if !strings.Contains(body, "Bairro Exemplo 12") || strings.Contains(body, "Bairro Exemplo 13") {
+		t.Errorf("filtro por nome não funcionou")
+	}
+	if strings.Contains(body, "<!doctype") {
+		t.Error("o trecho HTMX não deve trazer a página inteira")
+	}
+
+	p2 := get(t, "/componentes/tabela?pagina=2").Body.String()
+	if !strings.Contains(p2, "Bairro Exemplo 09") || strings.Contains(p2, "Bairro Exemplo 01<") {
+		t.Errorf("paginação não funcionou")
+	}
+	if !strings.Contains(get(t, "/componentes/tabela?pagina=999").Body.String(), "página 6 de 6") {
+		t.Errorf("página fora do limite deveria cair na última")
+	}
+}
+
+func TestPaginaComponentesTemCampoDeSenhaComRevelar(t *testing.T) {
+	body := get(t, "/componentes").Body.String()
+	if !strings.Contains(body, "Revelar") || !strings.Contains(body, `type="password"`) {
+		t.Error("campo de senha sem a opção de revelar")
+	}
+}
+
+func TestEstaticos(t *testing.T) {
+	for _, path := range []string{"/static/css/app.css", "/static/js/app.js", "/static/brand/uysi-symbol.png"} {
+		if rec := get(t, path); rec.Code != http.StatusOK {
+			t.Errorf("%s: status %d", path, rec.Code)
+		}
 	}
 }

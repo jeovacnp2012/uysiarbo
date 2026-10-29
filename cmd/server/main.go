@@ -12,6 +12,7 @@ import (
 
 	"uysiarbo/internal/config"
 	"uysiarbo/internal/db"
+	"uysiarbo/internal/db/sqlc"
 	"uysiarbo/internal/server"
 )
 
@@ -45,7 +46,7 @@ func run() error {
 
 	srv := &http.Server{
 		Addr:              cfg.Addr,
-		Handler:           server.New(log, pool),
+		Handler:           server.New(server.Deps{Log: log, DB: pool, Info: sqlc.New(pool)}),
 		ReadHeaderTimeout: 5 * time.Second,
 		IdleTimeout:       60 * time.Second,
 	}

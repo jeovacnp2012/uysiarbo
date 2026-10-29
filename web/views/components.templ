@@ -1,0 +1,144 @@
+package views
+
+import (
+	"fmt"
+	"net/url"
+	"strconv"
+)
+
+// PageHeader é o título de uma página, com área opcional de ações à direita.
+templ PageHeader(title, subtitle string) {
+	<div style="display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:1rem">
+		<div>
+			<h1 class="titulo">{ title }</h1>
+			if subtitle != "" {
+				<p class="subtitulo">{ subtitle }</p>
+			}
+		</div>
+		<div style="display:flex;gap:0.5rem">
+			{ children... }
+		</div>
+	</div>
+}
+
+// Toasts é a área de mensagens rápidas (uma por página, no layout).
+templ Toasts() {
+	<div
+		class="toasts"
+		role="status"
+		aria-live="polite"
+		x-data="toasts"
+		x-on:toast.window="adicionar($event.detail)"
+	>
+		<template x-for="t in itens" x-bind:key="t.id">
+			<div class="toast" x-bind:class="'toast-' + t.kind" x-on:click="remover(t.id)" x-text="t.message"></div>
+		</template>
+	</div>
+}
+
+// Modal abre com: $dispatch('modal-open', 'id-do-modal').
+templ Modal(id, title string) {
+	<div
+		data-modal-id={ id }
+		x-data="{ open: false }"
+		x-on:modal-open.window="if ($event.detail === $el.dataset.modalId) open = true"
+		x-on:keydown.escape.window="open = false"
+	>
+		<div class="modal-fundo" x-show="open" x-cloak x-on:click.self="open = false">
+			<div class="modal" role="dialog" aria-modal="true" aria-label={ title }>
+				<div class="modal-topo">
+					<strong>{ title }</strong>
+					<button type="button" class="btn btn-icone" aria-label="Fechar" x-on:click="open = false">✕</button>
+				</div>
+				{ children... }
+			</div>
+		</div>
+	</div>
+}
+
+// PasswordField é o campo de senha padrão do sistema, sempre com a opção de revelar.
+templ PasswordField(id, name, label, autocomplete string) {
+	<div class="campo" x-data="campoSenha">
+		<label for={ id }>{ label }</label>
+		<div class="campo-senha">
+			<input
+				id={ id }
+				name={ name }
+				x-bind:type="visivel ? 'text' : 'password'"
+				type="password"
+				autocomplete={ autocomplete }
+			/>
+			<button
+				type="button"
+				x-on:click="alternar()"
+				x-bind:aria-pressed="visivel"
+				x-text="visivel ? 'Ocultar' : 'Revelar'"
+				aria-label="Mostrar ou ocultar a senha"
+			>Revelar</button>
+		</div>
+	</div>
+}
+
+// Table desenha uma tabela simples; no celular cada linha vira um cartão.
+templ Table(cols []Column, rows [][]string) {
+	<div class="tabela-wrap">
+		<table class="tabela">
+			<thead>
+				<tr>
+					for _, c := range cols {
+						<th scope="col">{ c.Title }</th>
+					}
+				</tr>
+			</thead>
+			<tbody>
+				for _, row := range rows {
+					<tr>
+						for i, cell := range row {
+							<td data-rotulo={ cols[i].Title }>{ cell }</td>
+						}
+					</tr>
+				}
+			</tbody>
+		</table>
+		if len(rows) == 0 {
+			<div class="tabela-vazia">Nenhum registro encontrado.</div>
+		}
+	</div>
+}
+
+// Pager é a paginação por HTMX: troca o conteúdo de target com a página pedida, mantendo os filtros.
+templ Pager(p Pagination, basePath string, query url.Values, target string) {
+	<div class="paginacao">
+		<span>{ p.Summary() } · página { strconv.Itoa(p.Page) } de { strconv.Itoa(p.Pages()) }</span>
+		<div class="paginacao-botoes">
+			<a
+				class="btn"
+				href={ templ.SafeURL(pageURL(basePath, query, p.Page-1)) }
+				hx-get={ pageURL(basePath, query, p.Page-1) }
+				hx-target={ target }
+				hx-swap="outerHTML"
+				aria-disabled?={ !p.HasPrev() }
+			>← Anterior</a>
+			<a
+				class="btn"
+				href={ templ.SafeURL(pageURL(basePath, query, p.Page+1)) }
+				hx-get={ pageURL(basePath, query, p.Page+1) }
+				hx-target={ target }
+				hx-swap="outerHTML"
+				aria-disabled?={ !p.HasNext() }
+			>Próxima →</a>
+		</div>
+	</div>
+}
+
+func pageURL(basePath string, query url.Values, page int) string {
+	q := url.Values{}
+	for k, v := range query {
+		q[k] = v
+	}
+	if page < 1 {
+		page = 1
+	}
+	q.Set("pagina", fmt.Sprint(page))
+	return basePath + "?" + q.Encode()
+}
