@@ -591,7 +591,7 @@ func ApiForm(l Layout, d ApiFormData) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "</tbody></table></div><p class=\"subtitulo\">Hoje a API expõe o recurso <strong>Cidades</strong>; os demais entram nas próximas versões.</p><div class=\"grade-form\"><div class=\"campo\"><label for=\"valida_ate\">Válida até (opcional)</label> <input id=\"valida_ate\" name=\"valida_ate\" type=\"date\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "</tbody></table></div><p class=\"subtitulo\">A API expõe <strong>Cidades</strong>, <strong>Bairros</strong>, <strong>Quarteirões</strong> e <strong>Locais</strong>.</p><div class=\"grade-form\"><div class=\"campo\"><label for=\"valida_ate\">Válida até (opcional)</label> <input id=\"valida_ate\" name=\"valida_ate\" type=\"date\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

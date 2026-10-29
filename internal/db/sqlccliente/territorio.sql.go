@@ -71,7 +71,7 @@ const createBairro = `-- name: CreateBairro :one
 INSERT INTO bairros (cidade_id, nome, mutirao, status, ibge, classificacao, zona, categoria,
                      latitude, longitude, altitude, distancia_centro, producao)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-RETURNING id, cidade_id, nome, mutirao, status, ibge, classificacao, zona, categoria, latitude, longitude, altitude, distancia_centro, producao, criado_em, atualizado_em
+RETURNING id, cidade_id, nome, mutirao, status, ibge, classificacao, zona, categoria, latitude, longitude, altitude, distancia_centro, producao, criado_em, atualizado_em, id_externo
 `
 
 type CreateBairroParams struct {
@@ -124,6 +124,7 @@ func (q *Queries) CreateBairro(ctx context.Context, arg CreateBairroParams) (Bai
 		&i.Producao,
 		&i.CriadoEm,
 		&i.AtualizadoEm,
+		&i.IDExterno,
 	)
 	return i, err
 }
@@ -172,7 +173,7 @@ func (q *Queries) CreateQuarteirao(ctx context.Context, arg CreateQuarteiraoPara
 }
 
 const getBairro = `-- name: GetBairro :one
-SELECT id, cidade_id, nome, mutirao, status, ibge, classificacao, zona, categoria, latitude, longitude, altitude, distancia_centro, producao, criado_em, atualizado_em FROM bairros WHERE id = $1
+SELECT id, cidade_id, nome, mutirao, status, ibge, classificacao, zona, categoria, latitude, longitude, altitude, distancia_centro, producao, criado_em, atualizado_em, id_externo FROM bairros WHERE id = $1
 `
 
 func (q *Queries) GetBairro(ctx context.Context, id int64) (Bairro, error) {
@@ -195,6 +196,7 @@ func (q *Queries) GetBairro(ctx context.Context, id int64) (Bairro, error) {
 		&i.Producao,
 		&i.CriadoEm,
 		&i.AtualizadoEm,
+		&i.IDExterno,
 	)
 	return i, err
 }
@@ -219,7 +221,7 @@ func (q *Queries) GetCidade(ctx context.Context, id int64) (Cidade, error) {
 }
 
 const getQuarteirao = `-- name: GetQuarteirao :one
-SELECT id, bairro_id, nome, ativo, criado_em FROM quarteiroes WHERE id = $1
+SELECT id, bairro_id, nome, ativo, criado_em, id_externo, atualizado_em FROM quarteiroes WHERE id = $1
 `
 
 func (q *Queries) GetQuarteirao(ctx context.Context, id int64) (Quarteiro, error) {
@@ -231,6 +233,8 @@ func (q *Queries) GetQuarteirao(ctx context.Context, id int64) (Quarteiro, error
 		&i.Nome,
 		&i.Ativo,
 		&i.CriadoEm,
+		&i.IDExterno,
+		&i.AtualizadoEm,
 	)
 	return i, err
 }
@@ -401,7 +405,7 @@ func (q *Queries) ListCidadesAtivas(ctx context.Context) ([]Cidade, error) {
 
 const listQuarteiroesDoBairro = `-- name: ListQuarteiroesDoBairro :many
 
-SELECT id, bairro_id, nome, ativo, criado_em FROM quarteiroes WHERE bairro_id = $1
+SELECT id, bairro_id, nome, ativo, criado_em, id_externo, atualizado_em FROM quarteiroes WHERE bairro_id = $1
 ORDER BY NULLIF(regexp_replace(nome, '\D', '', 'g'), '')::bigint NULLS LAST, lower(nome)
 `
 
@@ -421,6 +425,8 @@ func (q *Queries) ListQuarteiroesDoBairro(ctx context.Context, bairroID int64) (
 			&i.Nome,
 			&i.Ativo,
 			&i.CriadoEm,
+			&i.IDExterno,
+			&i.AtualizadoEm,
 		); err != nil {
 			return nil, err
 		}
@@ -433,7 +439,7 @@ func (q *Queries) ListQuarteiroesDoBairro(ctx context.Context, bairroID int64) (
 }
 
 const listQuarteiroesVisiveisDoBairro = `-- name: ListQuarteiroesVisiveisDoBairro :many
-SELECT q.id, q.bairro_id, q.nome, q.ativo, q.criado_em FROM quarteiroes q
+SELECT q.id, q.bairro_id, q.nome, q.ativo, q.criado_em, q.id_externo, q.atualizado_em FROM quarteiroes q
 WHERE q.bairro_id = $1::bigint
   AND ($2::bigint IS NULL OR usuario_ve_quarteirao($2::bigint, q.id, q.bairro_id))
 ORDER BY NULLIF(regexp_replace(q.nome, '\D', '', 'g'), '')::bigint NULLS LAST, lower(q.nome)
@@ -459,6 +465,8 @@ func (q *Queries) ListQuarteiroesVisiveisDoBairro(ctx context.Context, arg ListQ
 			&i.Nome,
 			&i.Ativo,
 			&i.CriadoEm,
+			&i.IDExterno,
+			&i.AtualizadoEm,
 		); err != nil {
 			return nil, err
 		}
@@ -525,7 +533,7 @@ func (q *Queries) ListUsuariosAtivosParaResponsavel(ctx context.Context) ([]List
 }
 
 const setQuarteiraoAtivo = `-- name: SetQuarteiraoAtivo :execrows
-UPDATE quarteiroes SET ativo = $3 WHERE id = $1 AND bairro_id = $2
+UPDATE quarteiroes SET ativo = $3, atualizado_em = now() WHERE id = $1 AND bairro_id = $2
 `
 
 type SetQuarteiraoAtivoParams struct {
@@ -548,7 +556,7 @@ SET cidade_id = $2, nome = $3, mutirao = $4, status = $5, ibge = $6, classificac
     categoria = $9, latitude = $10, longitude = $11, altitude = $12, distancia_centro = $13,
     producao = $14, atualizado_em = now()
 WHERE id = $1
-RETURNING id, cidade_id, nome, mutirao, status, ibge, classificacao, zona, categoria, latitude, longitude, altitude, distancia_centro, producao, criado_em, atualizado_em
+RETURNING id, cidade_id, nome, mutirao, status, ibge, classificacao, zona, categoria, latitude, longitude, altitude, distancia_centro, producao, criado_em, atualizado_em, id_externo
 `
 
 type UpdateBairroParams struct {
@@ -603,6 +611,7 @@ func (q *Queries) UpdateBairro(ctx context.Context, arg UpdateBairroParams) (Bai
 		&i.Producao,
 		&i.CriadoEm,
 		&i.AtualizadoEm,
+		&i.IDExterno,
 	)
 	return i, err
 }

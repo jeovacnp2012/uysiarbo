@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: UYSI ARBO — API para sistemas externos
-  version: "1.0.0"
+  version: "1.1.0"
   description: |
     API de leitura e gravação do UYSI ARBO. Cada cliente (prefeitura) tem a sua, no próprio endereço:
     `https://<subdominio-do-cliente>/api/v1/...`.
@@ -19,6 +19,11 @@ info:
     chave com o mesmo pedido devolve a resposta guardada (cabeçalho `Idempotent-Replayed: true`) por 24 horas.
 
     **Listas:** paginação por cursor (`limit` até 200 e `cursor` = `next_cursor` da resposta anterior).
+
+    **IDs gerados no aplicativo:** nas criações de bairros, quarteirões e locais envie o seu próprio identificador em
+    `id_externo` (até 64 caracteres, único por tipo de registro). Reenviar o mesmo `id_externo` devolve o registro que já
+    existe (`200`) em vez de duplicar. Para sincronizar, peça só o que mudou com `updated_since`; desativados continuam na lista
+    (`ativo: false`), nada é apagado.
 
     **Limite de uso:** 120 chamadas por minuto por credencial (ajustável). Ao exceder: `429` e `Retry-After`.
 servers:
@@ -138,6 +143,258 @@ paths:
         "404": { $ref: "#/components/responses/Erro" }
         "409": { $ref: "#/components/responses/Erro" }
         "422": { $ref: "#/components/responses/Erro" }
+  /bairros:
+    get:
+      summary: Lista os bairros
+      description: |
+        Escopo: `bairros:read`. Filtros: `updated_since` (RFC 3339, só o que mudou desde então, para sincronizar), `id_externo`, `cidade_id`, `status` (ativo ou extinto) e `q` (parte do nome).
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 200, default: 50 } }
+        - { name: cursor, in: query, schema: { type: string } }
+        - { name: updated_since, in: query, schema: { type: string, format: date-time } }
+        - { name: id_externo, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: Página
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Bairro" }
+                  next_cursor:
+                    type: string
+                    nullable: true
+        "400": { $ref: "#/components/responses/Erro" }
+        "403": { $ref: "#/components/responses/Erro" }
+    post:
+      summary: Cria (ou devolve, se o `id_externo` já existir)
+      description: |
+        Escopo: `bairros:write`. Se o `id_externo` já estiver cadastrado, responde `200` com o registro que existe, sem criar nada:
+        o aplicativo pode reenviar com segurança. Campos: `cidade_id`, `nome`, `categoria` (bairro|povoado), `classificacao` (urbano|rural), `status` (ativo|extinto), `ibge`, `zona`, `mutirao`, `producao`, `latitude`, `longitude`, `altitude`, `distancia_centro`, `id_externo`.
+      parameters:
+        - { $ref: "#/components/parameters/IdempotencyKey" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        "200":
+          description: Já existia (mesmo `id_externo`)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Bairro" }
+        "201":
+          description: Criado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Bairro" }
+        "400": { $ref: "#/components/responses/Erro" }
+        "409": { $ref: "#/components/responses/Erro" }
+        "422": { $ref: "#/components/responses/Erro" }
+  /bairros/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+    get:
+      summary: Busca por id
+      description: "Escopo: `bairros:read`."
+      responses:
+        "200":
+          description: O registro
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Bairro" }
+        "404": { $ref: "#/components/responses/Erro" }
+    patch:
+      summary: Altera só os campos enviados
+      description: "Escopo: `bairros:write`. `null` limpa um campo opcional. O `id_externo` pode ser definido uma vez e não muda depois."
+      parameters:
+        - { $ref: "#/components/parameters/IdempotencyKey" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        "200":
+          description: O registro alterado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Bairro" }
+        "404": { $ref: "#/components/responses/Erro" }
+        "409": { $ref: "#/components/responses/Erro" }
+        "422": { $ref: "#/components/responses/Erro" }
+  /quarteiroes:
+    get:
+      summary: Lista os quarteirões
+      description: |
+        Escopo: `quarteiroes:read`. Filtros: `updated_since` (RFC 3339, só o que mudou desde então, para sincronizar), `id_externo`, `bairro_id` e `ativo`.
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 200, default: 50 } }
+        - { name: cursor, in: query, schema: { type: string } }
+        - { name: updated_since, in: query, schema: { type: string, format: date-time } }
+        - { name: id_externo, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: Página
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Quarteirao" }
+                  next_cursor:
+                    type: string
+                    nullable: true
+        "400": { $ref: "#/components/responses/Erro" }
+        "403": { $ref: "#/components/responses/Erro" }
+    post:
+      summary: Cria (ou devolve, se o `id_externo` já existir)
+      description: |
+        Escopo: `quarteiroes:write`. Se o `id_externo` já estiver cadastrado, responde `200` com o registro que existe, sem criar nada:
+        o aplicativo pode reenviar com segurança. Campos: `bairro_id` (só na criação), `nome`, `ativo`, `id_externo`.
+      parameters:
+        - { $ref: "#/components/parameters/IdempotencyKey" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        "200":
+          description: Já existia (mesmo `id_externo`)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Quarteirao" }
+        "201":
+          description: Criado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Quarteirao" }
+        "400": { $ref: "#/components/responses/Erro" }
+        "409": { $ref: "#/components/responses/Erro" }
+        "422": { $ref: "#/components/responses/Erro" }
+  /quarteiroes/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+    get:
+      summary: Busca por id
+      description: "Escopo: `quarteiroes:read`."
+      responses:
+        "200":
+          description: O registro
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Quarteirao" }
+        "404": { $ref: "#/components/responses/Erro" }
+    patch:
+      summary: Altera só os campos enviados
+      description: "Escopo: `quarteiroes:write`. `null` limpa um campo opcional. O `id_externo` pode ser definido uma vez e não muda depois."
+      parameters:
+        - { $ref: "#/components/parameters/IdempotencyKey" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        "200":
+          description: O registro alterado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Quarteirao" }
+        "404": { $ref: "#/components/responses/Erro" }
+        "409": { $ref: "#/components/responses/Erro" }
+        "422": { $ref: "#/components/responses/Erro" }
+  /locais:
+    get:
+      summary: Lista os locais
+      description: |
+        Escopo: `locais:read`. Filtros: `updated_since` (RFC 3339, só o que mudou desde então, para sincronizar), `id_externo`, `bairro_id`, `quarteirao_id`, `tipo`, `ativo` e `q` (endereço ou número).
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 200, default: 50 } }
+        - { name: cursor, in: query, schema: { type: string } }
+        - { name: updated_since, in: query, schema: { type: string, format: date-time } }
+        - { name: id_externo, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: Página
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Local" }
+                  next_cursor:
+                    type: string
+                    nullable: true
+        "400": { $ref: "#/components/responses/Erro" }
+        "403": { $ref: "#/components/responses/Erro" }
+    post:
+      summary: Cria (ou devolve, se o `id_externo` já existir)
+      description: |
+        Escopo: `locais:write`. Se o `id_externo` já estiver cadastrado, responde `200` com o registro que existe, sem criar nada:
+        o aplicativo pode reenviar com segurança. Campos: `tipo` (residencial|comercio|terreno_baldio|ponto_estrategico|outro), `cep`, `endereco`, `numero`, `referencia`, `bairro_id`, `quarteirao_id`, `lado`, `sequencia`, `complemento`, `latitude`, `longitude`, `proprietario`, `proprietario_telefone`, `proprietario_whatsapp`, `proprietario_email`, `aceita_whatsapp`, `aceita_email`, `inquilino`, `inquilino_telefone`, `humanos`, `cachorros`, `gatos`, `roedores`, `ativo`, `id_externo`. O CPF do proprietário não passa pela API.
+      parameters:
+        - { $ref: "#/components/parameters/IdempotencyKey" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        "200":
+          description: Já existia (mesmo `id_externo`)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Local" }
+        "201":
+          description: Criado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Local" }
+        "400": { $ref: "#/components/responses/Erro" }
+        "409": { $ref: "#/components/responses/Erro" }
+        "422": { $ref: "#/components/responses/Erro" }
+  /locais/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer, format: int64 } }
+    get:
+      summary: Busca por id
+      description: "Escopo: `locais:read`."
+      responses:
+        "200":
+          description: O registro
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Local" }
+        "404": { $ref: "#/components/responses/Erro" }
+    patch:
+      summary: Altera só os campos enviados
+      description: "Escopo: `locais:write`. `null` limpa um campo opcional. O `id_externo` pode ser definido uma vez e não muda depois."
+      parameters:
+        - { $ref: "#/components/parameters/IdempotencyKey" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        "200":
+          description: O registro alterado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Local" }
+        "404": { $ref: "#/components/responses/Erro" }
+        "409": { $ref: "#/components/responses/Erro" }
+        "422": { $ref: "#/components/responses/Erro" }
 components:
   securitySchemes:
     bearer:
@@ -166,6 +423,69 @@ components:
                   message: { type: string }
                   request_id: { type: string }
   schemas:
+    Bairro:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        cidade_id: { type: integer, format: int64 }
+        nome: { type: string }
+        categoria: { type: string, enum: [bairro, povoado] }
+        classificacao: { type: string, enum: [urbano, rural] }
+        status: { type: string, enum: [ativo, extinto] }
+        ibge: { type: string }
+        zona: { type: string }
+        mutirao: { type: boolean }
+        producao: { type: boolean }
+        latitude: { type: number, nullable: true }
+        longitude: { type: number, nullable: true }
+        altitude: { type: number, nullable: true }
+        distancia_centro: { type: number, nullable: true }
+        id_externo: { type: string, nullable: true }
+        criado_em: { type: string, format: date-time }
+        atualizado_em: { type: string, format: date-time }
+    Quarteirao:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        bairro_id: { type: integer, format: int64 }
+        nome: { type: string }
+        ativo: { type: boolean }
+        id_externo: { type: string, nullable: true }
+        criado_em: { type: string, format: date-time }
+        atualizado_em: { type: string, format: date-time }
+    Local:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        tipo: { type: string, enum: [residencial, comercio, terreno_baldio, ponto_estrategico, outro] }
+        cep: { type: string }
+        endereco: { type: string }
+        numero: { type: string }
+        referencia: { type: string }
+        bairro_id: { type: integer, format: int64 }
+        quarteirao_id: { type: integer, format: int64 }
+        lado: { type: string }
+        sequencia: { type: integer, nullable: true }
+        complemento: { type: integer, nullable: true }
+        latitude: { type: number, nullable: true }
+        longitude: { type: number, nullable: true }
+        ativo: { type: boolean }
+        chave_qr: { type: string, description: "Chave lida do QR Code do imóvel." }
+        proprietario: { type: string }
+        proprietario_telefone: { type: string }
+        proprietario_whatsapp: { type: string }
+        proprietario_email: { type: string }
+        aceita_whatsapp: { type: boolean }
+        aceita_email: { type: boolean }
+        inquilino: { type: string }
+        inquilino_telefone: { type: string }
+        humanos: { type: integer, nullable: true }
+        cachorros: { type: integer, nullable: true }
+        gatos: { type: integer, nullable: true }
+        roedores: { type: integer, nullable: true }
+        id_externo: { type: string, nullable: true }
+        criado_em: { type: string, format: date-time }
+        atualizado_em: { type: string, format: date-time }
     Cidade:
       type: object
       properties:

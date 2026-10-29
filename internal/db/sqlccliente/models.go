@@ -93,6 +93,7 @@ type Bairro struct {
 	Producao        bool               `json:"producao"`
 	CriadoEm        pgtype.Timestamptz `json:"criado_em"`
 	AtualizadoEm    pgtype.Timestamptz `json:"atualizado_em"`
+	IDExterno       pgtype.Text        `json:"id_externo"`
 }
 
 type BairroGeometria struct {
@@ -154,6 +155,7 @@ type Locai struct {
 	CriadoEm             pgtype.Timestamptz `json:"criado_em"`
 	AtualizadoEm         pgtype.Timestamptz `json:"atualizado_em"`
 	QrChave              string             `json:"qr_chave"`
+	IDExterno            pgtype.Text        `json:"id_externo"`
 }
 
 type LocalGrupo struct {
@@ -192,11 +194,13 @@ type QuarteiraoGeometria struct {
 }
 
 type Quarteiro struct {
-	ID       int64              `json:"id"`
-	BairroID int64              `json:"bairro_id"`
-	Nome     string             `json:"nome"`
-	Ativo    bool               `json:"ativo"`
-	CriadoEm pgtype.Timestamptz `json:"criado_em"`
+	ID           int64              `json:"id"`
+	BairroID     int64              `json:"bairro_id"`
+	Nome         string             `json:"nome"`
+	Ativo        bool               `json:"ativo"`
+	CriadoEm     pgtype.Timestamptz `json:"criado_em"`
+	IDExterno    pgtype.Text        `json:"id_externo"`
+	AtualizadoEm pgtype.Timestamptz `json:"atualizado_em"`
 }
 
 type Sesso struct {

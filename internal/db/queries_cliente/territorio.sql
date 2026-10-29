@@ -92,7 +92,7 @@ ON CONFLICT (bairro_id, lower(nome)) DO NOTHING;
 SELECT * FROM quarteiroes WHERE id = $1;
 
 -- name: SetQuarteiraoAtivo :execrows
-UPDATE quarteiroes SET ativo = $3 WHERE id = $1 AND bairro_id = $2;
+UPDATE quarteiroes SET ativo = $3, atualizado_em = now() WHERE id = $1 AND bairro_id = $2;
 
 -- name: ListQuarteiroesVisiveisDoBairro :many
 SELECT q.* FROM quarteiroes q

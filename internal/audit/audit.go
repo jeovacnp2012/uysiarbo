@@ -164,6 +164,7 @@ var Rotulos = map[string]string{
 	"bairro.criar":              "Cadastrou um bairro",
 	"bairro.editar":             "Editou um bairro",
 	"quarteirao.criar":          "Cadastrou quarteirões",
+	"quarteirao.editar":         "Editou um quarteirão",
 	"quarteirao.status":         "Ativou ou desativou um quarteirão",
 	"api.credencial_criar":      "Criou uma credencial de API",
 	"api.credencial_editar":     "Editou uma credencial de API",

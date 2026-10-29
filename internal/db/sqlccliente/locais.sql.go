@@ -54,7 +54,7 @@ INSERT INTO locais (tipo, cep, endereco, numero, referencia, bairro_id, quarteir
                     proprietario_email, aceita_whatsapp, aceita_email, inquilino, inquilino_telefone,
                     humanos, cachorros, gatos, roedores, criado_por)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26)
-RETURNING id, tipo, cep, endereco, numero, referencia, bairro_id, quarteirao_id, lado, sequencia, complemento, latitude, longitude, proprietario, proprietario_telefone, proprietario_cpf, proprietario_whatsapp, proprietario_email, aceita_whatsapp, aceita_email, inquilino, inquilino_telefone, humanos, cachorros, gatos, roedores, ativo, criado_por, criado_em, atualizado_em, qr_chave
+RETURNING id, tipo, cep, endereco, numero, referencia, bairro_id, quarteirao_id, lado, sequencia, complemento, latitude, longitude, proprietario, proprietario_telefone, proprietario_cpf, proprietario_whatsapp, proprietario_email, aceita_whatsapp, aceita_email, inquilino, inquilino_telefone, humanos, cachorros, gatos, roedores, ativo, criado_por, criado_em, atualizado_em, qr_chave, id_externo
 `
 
 type CreateLocalParams struct {
@@ -148,6 +148,7 @@ func (q *Queries) CreateLocal(ctx context.Context, arg CreateLocalParams) (Locai
 		&i.CriadoEm,
 		&i.AtualizadoEm,
 		&i.QrChave,
+		&i.IDExterno,
 	)
 	return i, err
 }
@@ -187,7 +188,7 @@ func (q *Queries) CreateLocalLote(ctx context.Context, arg CreateLocalLoteParams
 }
 
 const getLocal = `-- name: GetLocal :one
-SELECT id, tipo, cep, endereco, numero, referencia, bairro_id, quarteirao_id, lado, sequencia, complemento, latitude, longitude, proprietario, proprietario_telefone, proprietario_cpf, proprietario_whatsapp, proprietario_email, aceita_whatsapp, aceita_email, inquilino, inquilino_telefone, humanos, cachorros, gatos, roedores, ativo, criado_por, criado_em, atualizado_em, qr_chave FROM locais WHERE id = $1
+SELECT id, tipo, cep, endereco, numero, referencia, bairro_id, quarteirao_id, lado, sequencia, complemento, latitude, longitude, proprietario, proprietario_telefone, proprietario_cpf, proprietario_whatsapp, proprietario_email, aceita_whatsapp, aceita_email, inquilino, inquilino_telefone, humanos, cachorros, gatos, roedores, ativo, criado_por, criado_em, atualizado_em, qr_chave, id_externo FROM locais WHERE id = $1
 `
 
 func (q *Queries) GetLocal(ctx context.Context, id int64) (Locai, error) {
@@ -225,12 +226,13 @@ func (q *Queries) GetLocal(ctx context.Context, id int64) (Locai, error) {
 		&i.CriadoEm,
 		&i.AtualizadoEm,
 		&i.QrChave,
+		&i.IDExterno,
 	)
 	return i, err
 }
 
 const getLocalPorChave = `-- name: GetLocalPorChave :one
-SELECT id, tipo, cep, endereco, numero, referencia, bairro_id, quarteirao_id, lado, sequencia, complemento, latitude, longitude, proprietario, proprietario_telefone, proprietario_cpf, proprietario_whatsapp, proprietario_email, aceita_whatsapp, aceita_email, inquilino, inquilino_telefone, humanos, cachorros, gatos, roedores, ativo, criado_por, criado_em, atualizado_em, qr_chave FROM locais WHERE qr_chave = $1
+SELECT id, tipo, cep, endereco, numero, referencia, bairro_id, quarteirao_id, lado, sequencia, complemento, latitude, longitude, proprietario, proprietario_telefone, proprietario_cpf, proprietario_whatsapp, proprietario_email, aceita_whatsapp, aceita_email, inquilino, inquilino_telefone, humanos, cachorros, gatos, roedores, ativo, criado_por, criado_em, atualizado_em, qr_chave, id_externo FROM locais WHERE qr_chave = $1
 `
 
 func (q *Queries) GetLocalPorChave(ctx context.Context, qrChave string) (Locai, error) {
@@ -268,6 +270,7 @@ func (q *Queries) GetLocalPorChave(ctx context.Context, qrChave string) (Locai, 
 		&i.CriadoEm,
 		&i.AtualizadoEm,
 		&i.QrChave,
+		&i.IDExterno,
 	)
 	return i, err
 }
@@ -475,7 +478,7 @@ SET tipo = $2, cep = $3, endereco = $4, numero = $5, referencia = $6, bairro_id 
     aceita_email = $20, inquilino = $21, inquilino_telefone = $22, humanos = $23, cachorros = $24, gatos = $25,
     roedores = $26, atualizado_em = now()
 WHERE id = $1
-RETURNING id, tipo, cep, endereco, numero, referencia, bairro_id, quarteirao_id, lado, sequencia, complemento, latitude, longitude, proprietario, proprietario_telefone, proprietario_cpf, proprietario_whatsapp, proprietario_email, aceita_whatsapp, aceita_email, inquilino, inquilino_telefone, humanos, cachorros, gatos, roedores, ativo, criado_por, criado_em, atualizado_em, qr_chave
+RETURNING id, tipo, cep, endereco, numero, referencia, bairro_id, quarteirao_id, lado, sequencia, complemento, latitude, longitude, proprietario, proprietario_telefone, proprietario_cpf, proprietario_whatsapp, proprietario_email, aceita_whatsapp, aceita_email, inquilino, inquilino_telefone, humanos, cachorros, gatos, roedores, ativo, criado_por, criado_em, atualizado_em, qr_chave, id_externo
 `
 
 type UpdateLocalParams struct {
@@ -569,6 +572,7 @@ func (q *Queries) UpdateLocal(ctx context.Context, arg UpdateLocalParams) (Locai
 		&i.CriadoEm,
 		&i.AtualizadoEm,
 		&i.QrChave,
+		&i.IDExterno,
 	)
 	return i, err
 }

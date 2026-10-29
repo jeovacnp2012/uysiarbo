@@ -22,7 +22,22 @@ curl -s https://<endereço>/api/v1/cidades -H "Authorization: Bearer <token>"
 O token vale **15 minutos**; peça outro quando vencer. Também dá para enviar `client_id` e `client_secret` por HTTP Basic, e pedir só alguns escopos com `scope=cidades:read`.
 
 ## Escopos
-Têm a forma `recurso:read` e `recurso:write`; **gravar não dá direito de ler**. Hoje a API expõe o recurso **Cidades** (`cidades:read`, `cidades:write`); bairros, quarteirões e locais chegam nas próximas versões.
+Têm a forma `recurso:read` e `recurso:write`; **gravar não dá direito de ler**. A API expõe **Cidades**, **Bairros**, **Quarteirões** e **Locais**, cada um com os escopos `...:read` e `...:write` (por exemplo, `locais:read`).
+
+## Território: bairros, quarteirões e locais
+Cada recurso tem listar (`GET /api/v1/locais`), buscar (`GET /api/v1/locais/{id}`), criar (`POST`) e alterar (`PATCH`, só os campos enviados; `null` limpa um campo opcional). Os campos estão no contrato OpenAPI. Algumas regras:
+
+- **A API não apaga nada.** Para tirar um local ou quarteirão de uso, grave `"ativo": false`; ele continua nas listas, marcado como inativo.
+- **As mesmas regras das telas valem na API**: endereço sem repetição no quarteirão, quarteirão do bairro escolhido, latitude e longitude juntas, etc. Quem erra recebe `422 validation_error` com a explicação, ou `409 conflict` para repetição.
+- **O CPF do proprietário não passa pela API**: nem sai nas leituras, nem entra nas gravações; o que já está cadastrado é preservado quando o local é alterado.
+- **O que a API altera aparece na Auditoria**, com o nome da credencial.
+
+### Identificador do aplicativo (`id_externo`) e sincronização
+Aplicativos que criam registros **sem internet** (como o do tablet) geram o próprio identificador e o enviam em **`id_externo`** (até 64 caracteres, único por tipo de registro):
+
+- Se a criação for **reenviada** (a resposta se perdeu, o sinal caiu), a API responde `200` com o registro que **já existe**, em vez de duplicar.
+- O `id_externo` pode ser definido uma vez e não muda depois. Dá para buscar por ele: `GET /api/v1/locais?id_externo=...`.
+- Para **sincronizar**, peça só o que mudou: `GET /api/v1/locais?updated_since=2026-10-29T12:00:00Z` (data e hora em RFC 3339), percorrendo as páginas pelo `next_cursor`. Guarde o horário do início da última sincronização e use-o na próxima.
 
 ## Regras que valem para todas as chamadas
 - **Erros** sempre no mesmo formato: `{"error": {"code": "...", "message": "...", "request_id": "..."}}`. Códigos comuns: `invalid_token` (401), `insufficient_scope` (403), `not_found` (404), `conflict` (409), `validation_error` (422), `rate_limited` (429).
