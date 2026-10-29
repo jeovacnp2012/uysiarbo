@@ -47,7 +47,7 @@ Objetivo: base técnica pronta para receber qualquer módulo.
 
 ## Etapa 1 — Clientes (schemas), acesso e administração
 Objetivo: múltiplas prefeituras isoladas, com usuários e permissões.
-- [ ] 1.1 Schema `public` (catálogo): tabela de clientes, domínio/subdomínio, plano, status
+- [x] 1.1 Schema `public` (catálogo): tabela `clientes` (nome, slug, schema `c_<slug>`, subdomínio, domínio próprio opcional, plano, status), restrições no banco e queries; migrações separadas em `migrations/public` (catálogo) e, na 1.2, `migrations/cliente`
 - [ ] 1.2 Provisionamento: criar schema novo + rodar todas as migrações nele; comando para migrar **todos** os schemas
 - [ ] 1.3 Resolução do cliente por requisição (subdomínio ou domínio) e `search_path` seguro por conexão
 - [ ] 1.4 Usuários, papéis e permissões (modelo inspirado nas ~190 permissões e 24 categorias do sistema atual): permissões **granulares organizadas por blocos** e **perfis diversos** (papéis). **Usuário master: JEOVA OLIVEIRA, e-mail de acesso `jeovacnp2012@gmail.com`**: nenhuma regra de permissão, restrição de bloco, "apenas atribuídos" ou escopo de cliente se aplica a ele; vê e faz tudo, em todos os clientes. O master é protegido (não pode ser excluído, rebaixado ou ter o acesso reduzido por outro usuário); a senha dele nunca é registrada em arquivo, plano ou código.
@@ -165,7 +165,7 @@ Objetivo: migrar dados de outros sistemas e de planilhas, com segurança.
 | # | Pergunta | Quando decidir |
 |---|---|---|
 | 1 | ~~Captcha~~ **Decidido: Google reCAPTCHA v2.** Falta só criar as chaves (site key e secret key) no painel do reCAPTCHA, cadastrando os domínios de desenvolvimento e produção. A secret key fica só no servidor (`.env`), nunca no front. | Etapa 1 |
-| 2 | ~~Nome, logotipo e cores~~ **Decidido: UYSI ARBO, identidade do uysilicitaproc.** Falta só o domínio (ex.: `app.seudominio.com.br` + subdomínio por cliente) | Etapa 1 |
+| 2 | ~~Nome, logotipo e cores~~ **Decidido: UYSI ARBO, identidade do uysilicitaproc.** ~~Domínio~~ **Decidido (2026-10-29): produção em `https://uysiarbo.inovarsistemas.biz`.** Falta decidir como o cliente (prefeitura) é identificado: subdomínio por cliente (ex.: `novamutum.uysiarbo.inovarsistemas.biz`, exige certificado curinga de 2º nível, que o `*.inovarsistemas.biz` atual NÃO cobre) ou escolha do cliente no login/caminho (ex.: `/c/novamutum`) | Etapa 1.3 |
 | 3 | Provedor de geocodificação (ViaCEP + Nominatim/OpenStreetMap gratuitos, ou Google/Mapbox pagos, com melhor precisão) | Etapa 3 |
 | 4 | Provedor de WhatsApp (API oficial da Meta, ou serviços como Z-API/Evolution) e de e-mail (SMTP) | Etapa 12 |
 | 5 | Formato oficial de integração com SINAN/e-SUS (varia por município/estado) | Etapa 12 |

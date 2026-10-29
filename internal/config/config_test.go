@@ -33,7 +33,7 @@ func TestLoadSemArquivoUsaPadroes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Addr != ":8080" || cfg.Env != "local" {
+	if cfg.Addr != ":8090" || cfg.Env != "local" {
 		t.Errorf("padrões inesperados: %+v", cfg)
 	}
 }

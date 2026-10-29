@@ -13,3 +13,16 @@ type AppInfo struct {
 	Valor    string             `json:"valor"`
 	CriadoEm pgtype.Timestamptz `json:"criado_em"`
 }
+
+type Cliente struct {
+	ID           pgtype.UUID        `json:"id"`
+	Nome         string             `json:"nome"`
+	Slug         string             `json:"slug"`
+	SchemaNome   string             `json:"schema_nome"`
+	Subdominio   string             `json:"subdominio"`
+	Dominio      pgtype.Text        `json:"dominio"`
+	Plano        string             `json:"plano"`
+	Status       string             `json:"status"`
+	CriadoEm     pgtype.Timestamptz `json:"criado_em"`
+	AtualizadoEm pgtype.Timestamptz `json:"atualizado_em"`
+}

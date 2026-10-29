@@ -40,7 +40,7 @@ func Migrate(ctx context.Context, url, command string) error {
 	if err := goose.SetDialect("postgres"); err != nil {
 		return err
 	}
-	return goose.RunContext(ctx, command, conn, ".")
+	return goose.RunContext(ctx, command, conn, "public")
 }
 
 var _ = stdlib.GetDefaultDriver // registra o driver "pgx" para database/sql

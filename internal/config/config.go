@@ -23,7 +23,7 @@ func Load(envFile string) (Config, error) {
 	}
 	cfg := Config{
 		Env:             get("APP_ENV", "local"),
-		Addr:            get("APP_ADDR", ":8080"),
+		Addr:            get("APP_ADDR", ":8090"),
 		DatabaseURL:     os.Getenv("DATABASE_URL"),
 		ShutdownTimeout: 10 * time.Second,
 	}
