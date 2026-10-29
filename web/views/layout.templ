@@ -34,10 +34,33 @@ templ Base(l Layout) {
 					</a>
 					if l.Cliente != "" {
 						<div class="menu-cliente">{ l.Cliente }</div>
+					} else if l.Console {
+						<div class="menu-cliente">Console da plataforma</div>
 					}
 					<nav class="menu-lista">
-						for _, item := range l.Nav {
-							<a class="menu-item" href={ templ.SafeURL(item.Href) } aria-current?={ item.Href == l.Active }>{ item.Label }</a>
+						for _, g := range l.Nav {
+							if g.Href != "" {
+								<a class="menu-item" href={ templ.SafeURL(g.Href) } aria-current?={ g.Href == l.Active }>
+									@icone(g.Icone)
+									<span class="menu-texto">{ g.Label }</span>
+									if g.Href == "/novidades" && l.NovidadeNova {
+										<span class="selo selo-aviso">nova</span>
+									}
+								</a>
+							} else {
+								<details class="menu-grupo" open?={ g.Contem(l.Active) }>
+									<summary class="menu-item menu-grupo-titulo">
+										@icone(g.Icone)
+										<span class="menu-texto">{ g.Label }</span>
+										@icone("chevron")
+									</summary>
+									<div class="menu-sub">
+										for _, item := range g.Itens {
+											<a class="menu-subitem" href={ templ.SafeURL(item.Href) } aria-current?={ item.Href == l.Active }>{ item.Label }</a>
+										}
+									</div>
+								</details>
+							}
 						}
 					</nav>
 					<div class="menu-rodape">Versão { versaoTexto(l) }</div>
@@ -77,4 +100,32 @@ templ Base(l Layout) {
 			<noscript><p style="padding:1rem">Esta aplicação precisa de JavaScript ativado.</p></noscript>
 		</body>
 	</html>
+}
+
+// icone desenha um ícone de linha (24x24) do menu pelo nome. Nome desconhecido não desenha nada.
+templ icone(nome string) {
+	<svg class={ "ico", templ.KV("ico-chevron", nome == "chevron") } viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+		switch nome {
+			case "inicio":
+				<path d="M3 10.5 12 3l9 7.5"></path>
+				<path d="M5 9.5V21h5v-6h4v6h5V9.5"></path>
+			case "territorio":
+				<path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z"></path>
+				<circle cx="12" cy="10" r="2.5"></circle>
+			case "administracao":
+				<path d="M12 3 4 6v6c0 4.5 3.2 8 8 9 4.8-1 8-4.5 8-9V6l-8-3z"></path>
+				<path d="m9 12 2 2 4-4"></path>
+			case "plataforma":
+				<rect x="4" y="3" width="16" height="18" rx="1"></rect>
+				<path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2"></path>
+			case "guia":
+				<path d="M2 5h6a4 4 0 0 1 4 4v11a3 3 0 0 0-3-3H2z"></path>
+				<path d="M22 5h-6a4 4 0 0 0-4 4v11a3 3 0 0 1 3-3h7z"></path>
+			case "novidades":
+				<path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8"></path>
+				<path d="M10 20a2 2 0 0 0 4 0"></path>
+			case "chevron":
+				<path d="m9 6 6 6-6 6"></path>
+		}
+	</svg>
 }

@@ -14,6 +14,7 @@ import (
 
 	"uysiarbo/internal/db/sqlc"
 	"uysiarbo/internal/httpx"
+	"uysiarbo/internal/presenca"
 	"uysiarbo/internal/tenant"
 	"uysiarbo/web"
 	"uysiarbo/web/views"
@@ -56,6 +57,8 @@ type handlers struct {
 
 	vmu    sync.Mutex
 	vatual versaoAtual
+
+	presenca *presenca.Registro
 }
 
 func New(d Deps) http.Handler {
@@ -64,6 +67,7 @@ func New(d Deps) http.Handler {
 	if h.captcha == nil {
 		h.captcha = SemCaptcha{}
 	}
+	h.presenca = &presenca.Registro{}
 
 	r := chi.NewRouter()
 	r.Use(securityHeaders, requestID, middleware.RealIP, accessLog(d.Log), recoverer(d.Log))
@@ -95,6 +99,8 @@ func New(d Deps) http.Handler {
 	r.Post("/usuarios/{id}/resetar-senha", h.exigir("conf_usuario", h.usuarioResetarSenha))
 
 	r.Get("/auditoria", h.auditoriaPagina)
+	r.Get("/presenca", h.presencaSinal)
+	r.Post("/presenca/sair", h.presencaSair)
 
 	r.Get("/cidades", h.exigir("bairro_visualizar", h.cidadesLista))
 	r.Get("/cidades/nova", h.exigir("bairro_adicionar", h.cidadeNovaForm))
@@ -120,6 +126,8 @@ func New(d Deps) http.Handler {
 	r.Get("/clientes/novo", h.somenteMaster(h.clienteNovoForm))
 	r.Post("/clientes", h.somenteMaster(h.clienteCriar))
 	r.Post("/clientes/{slug}/status", h.somenteMaster(h.clienteStatus))
+	r.Get("/clientes/{slug}/editar", h.somenteMaster(h.clienteEditarForm))
+	r.Post("/clientes/{slug}/editar", h.somenteMaster(h.clienteEditarSalvar))
 	r.Get("/plataforma/usuarios", h.somenteMaster(h.mastersLista))
 	r.Get("/plataforma/usuarios/novo", h.somenteMaster(h.masterNovoForm))
 	r.Post("/plataforma/usuarios", h.somenteMaster(h.masterCriar))

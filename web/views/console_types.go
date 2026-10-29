@@ -46,6 +46,8 @@ type AuditoriaData struct {
 
 type ClienteLinha struct {
 	Nome     string
+	Cidade   string // "Nova Mutum/MT"
+	Fuso     string // nome do fuso horário
 	Slug     string
 	Endereco string // host de acesso, ex.: uysiarbonm.inovarsistemas.biz
 	URL      string // endereço completo para abrir
@@ -65,6 +67,12 @@ type ClienteFormData struct {
 	Subdominio  string
 	Dominio     string
 	Plano       string
+	Cidade      string
+	UF          string
+	Fuso        string // vazio = automático, pelo estado
+	UFs         []string
+	Fusos       []FusoOpcao
+	Editando    bool   // editar um cliente existente (identificador e subdomínio não mudam)
 	BaseDominio string // para mostrar o endereço que o cliente terá
 	Erro        string
 	CSRF        string
@@ -122,3 +130,6 @@ func jsString(s string) string {
 	b, _ := json.Marshal(s)
 	return string(b)
 }
+
+// FusoOpcao é um fuso horário do seletor.
+type FusoOpcao struct{ Nome, Descricao string }

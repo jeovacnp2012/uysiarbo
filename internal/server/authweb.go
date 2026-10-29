@@ -142,13 +142,6 @@ func nomeDoCliente(r *http.Request) string {
 	return ""
 }
 
-var fusoLocal = func() *time.Location {
-	if l, err := time.LoadLocation("America/Cuiaba"); err == nil {
-		return l
-	}
-	return time.Local
-}()
-
 func (h *handlers) entrarForm(w http.ResponseWriter, r *http.Request) {
 	if a, _ := authFrom(r.Context()); a.sess != nil {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
@@ -192,7 +185,7 @@ func (h *handlers) entrarPost(w http.ResponseWriter, r *http.Request) {
 	var bloq auth.ErrBloqueada
 	switch {
 	case errors.As(err, &bloq):
-		falha(http.StatusTooManyRequests, "Muitas tentativas erradas. Tente de novo depois das "+bloq.Ate.In(fusoLocal).Format("15:04")+".")
+		falha(http.StatusTooManyRequests, "Muitas tentativas erradas. Tente de novo depois das "+bloq.Ate.In(h.fuso(r)).Format("15:04")+".")
 		return
 	case errors.Is(err, auth.ErrCredenciais):
 		// Só registra quando o e-mail existe (assim o histórico não enche de tentativas aleatórias).

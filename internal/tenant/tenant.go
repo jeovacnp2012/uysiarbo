@@ -22,12 +22,21 @@ var ErrJaExiste = errors.New("já existe um cliente com esse identificador")
 // ErrSubdominioReservado: o subdomínio já tem outro uso no servidor.
 var ErrSubdominioReservado = errors.New("subdomínio reservado")
 
+// ErrUFInvalida e ErrFusoInvalido: a sigla do estado ou o fuso horário informado não existe.
+var (
+	ErrUFInvalida   = errors.New("estado inválido")
+	ErrFusoInvalido = errors.New("fuso horário inválido")
+)
+
 type Input struct {
 	Nome       string
 	Slug       string
 	Subdominio string // padrão: o slug
 	Dominio    string // opcional
 	Plano      string // padrão: "padrao"
+	Cidade     string // cidade da empresa (opcional)
+	UF         string // estado da empresa (opcional; define o fuso horário padrão)
+	Fuso       string // fuso horário (padrão: o do estado)
 }
 
 type Service struct {
@@ -49,6 +58,19 @@ func (s *Service) Provision(ctx context.Context, in Input) (sqlc.Cliente, error)
 		in.Plano = "padrao"
 	}
 	in.Subdominio = strings.ToLower(strings.TrimSpace(in.Subdominio))
+	in.Cidade = strings.TrimSpace(in.Cidade)
+	in.UF = strings.ToUpper(strings.TrimSpace(in.UF))
+	if in.UF != "" && !UFValida(in.UF) {
+		return sqlc.Cliente{}, fmt.Errorf("%w: %q", ErrUFInvalida, in.UF)
+	}
+	if len([]rune(in.Cidade)) > 100 {
+		return sqlc.Cliente{}, fmt.Errorf("a cidade pode ter no máximo 100 caracteres")
+	}
+	if in.Fuso == "" {
+		in.Fuso = FusoDaUF(in.UF)
+	} else if !FusoValido(in.Fuso) {
+		return sqlc.Cliente{}, fmt.Errorf("%w: %q", ErrFusoInvalido, in.Fuso)
+	}
 	if Reservados[in.Subdominio] || strings.HasPrefix(in.Subdominio, "chamados") {
 		return sqlc.Cliente{}, fmt.Errorf("%w: %q", ErrSubdominioReservado, in.Subdominio)
 	}
@@ -92,7 +114,7 @@ func (s *Service) Provision(ctx context.Context, in Input) (sqlc.Cliente, error)
 	if novo {
 		s.auditar(ctx, audit.Evento{
 			Acao: "cliente.criar", Entidade: "cliente", EntidadeID: cliente.Slug, Rotulo: cliente.Nome,
-			Depois: map[string]any{"nome": cliente.Nome, "slug": cliente.Slug, "subdominio": cliente.Subdominio, "dominio": cliente.Dominio.String, "plano": cliente.Plano, "schema": cliente.SchemaNome},
+			Depois: map[string]any{"nome": cliente.Nome, "slug": cliente.Slug, "subdominio": cliente.Subdominio, "dominio": cliente.Dominio.String, "plano": cliente.Plano, "schema": cliente.SchemaNome, "cidade": cliente.Cidade, "uf": cliente.Uf, "fuso": cliente.Fuso},
 		})
 	}
 	return cliente, nil
@@ -112,6 +134,9 @@ func (s *Service) registrar(ctx context.Context, in Input, schema string) (sqlc.
 		Subdominio: in.Subdominio,
 		Dominio:    pgtype.Text{String: in.Dominio, Valid: in.Dominio != ""},
 		Plano:      in.Plano,
+		Cidade:     in.Cidade,
+		Uf:         in.UF,
+		Fuso:       in.Fuso,
 	})
 	if err != nil {
 		return cliente, fmt.Errorf("registrar cliente: %w", err)

@@ -44,6 +44,9 @@ type Cliente struct {
 	Status       string             `json:"status"`
 	CriadoEm     pgtype.Timestamptz `json:"criado_em"`
 	AtualizadoEm pgtype.Timestamptz `json:"atualizado_em"`
+	Cidade       string             `json:"cidade"`
+	Uf           string             `json:"uf"`
+	Fuso         string             `json:"fuso"`
 }
 
 type PlataformaUsuario struct {

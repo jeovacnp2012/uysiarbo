@@ -303,7 +303,7 @@ func TestConsoleCriaClienteComSubdominioEscolhido(t *testing.T) {
 	quer(t, console.get("/clientes/novo"), http.StatusOK, "Subdomínio de acesso", "inovarsistemas.biz")
 
 	form := func(nome, slug, sub string) url.Values {
-		return url.Values{"nome": {nome}, "slug": {slug}, "subdominio": {sub}, "plano": {"padrao"}}
+		return url.Values{"nome": {nome}, "slug": {slug}, "subdominio": {sub}, "plano": {"padrao"}, "cidade": {"Cidade Teste"}, "uf": {"MT"}}
 	}
 	quer(t, console.post("/clientes", form("Prefeitura de Teste", "teste", "uysiarbotst")), http.StatusSeeOther)
 	novo, err := m.pubQ.GetClienteBySlug(t.Context(), "teste")

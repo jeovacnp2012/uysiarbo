@@ -61,6 +61,7 @@ templ CidadeForm(l Layout, d CidadeFormData) {
 			@PageHeader("Cidade", d.Nome) {
 				<a class="btn" href="/cidades">Voltar</a>
 			}
+			@Presenca("cidade", strconv.FormatInt(d.ID, 10), modoDaTela(d.PodeEditar))
 		}
 		<form
 			method="post"
@@ -230,6 +231,7 @@ templ BairroForm(l Layout, d BairroFormData) {
 			@PageHeader("Bairro", d.Nome) {
 				<a class="btn" href="/bairros">Voltar</a>
 			}
+			@Presenca("bairro", strconv.FormatInt(d.ID, 10), modoDaTela(d.PodeEditar))
 		}
 		if d.Aviso != "" {
 			<p class="alerta alerta-ok" role="status">{ d.Aviso }</p>

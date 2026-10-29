@@ -64,8 +64,8 @@ func novoMundo(t *testing.T) *mundo {
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 	svc := &tenant.Service{Pool: pool, URL: url, Log: log, Auditoria: audit.Plataforma{Q: sqlc.New(pool)}}
 	for _, in := range []tenant.Input{
-		{Nome: "Prefeitura de Nova Mutum", Slug: "novamutum", Subdominio: "uysiarbonm"},
-		{Nome: "Prefeitura de Sinop", Slug: "sinop", Subdominio: "uysiarbosn"},
+		{Nome: "Prefeitura de Nova Mutum", Slug: "novamutum", Subdominio: "uysiarbonm", Cidade: "Nova Mutum", UF: "MT"},
+		{Nome: "Prefeitura de Sinop", Slug: "sinop", Subdominio: "uysiarbosn", Cidade: "Sinop", UF: "SP"}, // SP de propósito: fuso diferente do de MT
 	} {
 		if _, err := svc.Provision(ctx, in); err != nil {
 			t.Fatal(err)

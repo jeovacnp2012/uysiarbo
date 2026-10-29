@@ -937,3 +937,132 @@ form.inline {
 .btn {
     white-space: nowrap;
 }
+
+/* ---------- Menu lateral por categoria (grupos recolhíveis) ---------- */
+.menu-cliente {
+    padding: 0.9rem 1.25rem 0.25rem;
+    border-bottom: 0;
+    background: transparent;
+    color: var(--suave);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.menu-lista {
+    gap: 0.15rem;
+}
+
+.menu-item,
+.menu-grupo-titulo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0.75rem;
+    border-radius: var(--radius);
+    color: var(--slate-600);
+    font-size: 0.95rem;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    list-style: none;
+}
+
+.menu-grupo-titulo::-webkit-details-marker {
+    display: none;
+}
+
+.menu-item:hover,
+.menu-grupo-titulo:hover {
+    background: var(--marca-fraca);
+    color: var(--texto);
+}
+
+.menu-item[aria-current='page'] {
+    background: var(--marca-fraca);
+    color: var(--marca);
+    font-weight: 600;
+}
+
+.menu-texto {
+    flex: 1;
+    min-width: 0;
+}
+
+.ico {
+    flex: none;
+    width: 1.35rem;
+    height: 1.35rem;
+}
+
+.ico-chevron {
+    width: 1rem;
+    height: 1rem;
+    color: var(--suave);
+    transition: transform 0.15s ease;
+}
+
+.menu-grupo[open] > .menu-grupo-titulo .ico-chevron {
+    transform: rotate(90deg);
+}
+
+.menu-grupo[open] > .menu-grupo-titulo {
+    color: var(--texto);
+}
+
+.menu-sub {
+    display: grid;
+    gap: 0.1rem;
+    margin: 0.1rem 0 0.35rem 1.1rem;
+    padding-left: 1.2rem;
+    border-left: 1px solid var(--borda);
+}
+
+.menu-subitem {
+    padding: 0.45rem 0.7rem;
+    border-radius: var(--radius);
+    color: var(--slate-600);
+    font-size: 0.9rem;
+    text-decoration: none;
+}
+
+.menu-subitem:hover {
+    background: var(--marca-fraca);
+    color: var(--texto);
+}
+
+.menu-subitem[aria-current='page'] {
+    background: var(--marca-fraca);
+    color: var(--marca);
+    font-weight: 600;
+}
+
+/* ---------- Presença: quem mais está com o registro aberto ---------- */
+.presenca {
+    display: none;
+}
+
+.presenca-visivel {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    padding: 0.7rem 0.95rem;
+    border: 1px solid var(--borda);
+    border-radius: var(--radius);
+    background: var(--marca-fraca);
+    color: var(--texto);
+    font-size: 0.9rem;
+}
+
+.presenca-alerta {
+    border-color: var(--aviso);
+    background: var(--aviso-fundo);
+    color: var(--aviso);
+}
+
+.presenca-icone {
+    flex: none;
+    font-size: 0.7rem;
+    line-height: 1.7;
+}

@@ -71,6 +71,7 @@ templ PapelForm(l Layout, d PapelFormData) {
 			@PageHeader("Editar papel", d.Nome) {
 				<a class="btn" href="/papeis">Voltar</a>
 			}
+			@Presenca("papel", strconv.FormatInt(d.ID, 10), "editar")
 		}
 		<form
 			method="post"
@@ -219,6 +220,7 @@ templ UsuarioForm(l Layout, d UsuarioFormData) {
 			@PageHeader("Editar usuário", d.Email) {
 				<a class="btn" href="/usuarios">Voltar</a>
 			}
+			@Presenca("usuario", strconv.FormatInt(d.ID, 10), "editar")
 		}
 		<form
 			method="post"

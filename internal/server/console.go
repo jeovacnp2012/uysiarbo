@@ -83,7 +83,7 @@ func (h *handlers) home(w http.ResponseWriter, r *http.Request) {
 				h.log.Error("ler cliente_info", "cliente", c.Slug, "erro", err)
 			}
 			if pr.Pode("auditoria_sistema") {
-				d.Ultimos = h.ultimosEventos(ctx, q, nil)
+				d.Ultimos = h.ultimosEventos(ctx, h.fuso(r), q, nil)
 			}
 		}
 		if pr.Pode("bairro_visualizar") {
@@ -128,7 +128,7 @@ func (h *handlers) home(w http.ResponseWriter, r *http.Request) {
 				views.Atalho{Titulo: "Auditoria", Descricao: "Histórico das ações da plataforma e dos clientes.", Href: "/auditoria"},
 			)
 			if h.pub != nil {
-				d.Ultimos = h.ultimosEventos(ctx, nil, h.pub)
+				d.Ultimos = h.ultimosEventos(ctx, h.fuso(r), nil, h.pub)
 			}
 		}
 	}
@@ -137,7 +137,7 @@ func (h *handlers) home(w http.ResponseWriter, r *http.Request) {
 }
 
 // ultimosEventos devolve as 5 ações mais recentes do histórico (do cliente ou da plataforma).
-func (h *handlers) ultimosEventos(ctx context.Context, cq *sqlccliente.Queries, pq *sqlc.Queries) []views.AuditoriaLinha {
+func (h *handlers) ultimosEventos(ctx context.Context, loc *time.Location, cq *sqlccliente.Queries, pq *sqlc.Queries) []views.AuditoriaLinha {
 	regs, _, err := buscarAuditoria(ctx, cq, pq, filtroAuditoria{}, 5, 0)
 	if err != nil {
 		h.log.Error("últimos eventos", "erro", err)
@@ -145,7 +145,7 @@ func (h *handlers) ultimosEventos(ctx context.Context, cq *sqlccliente.Queries, 
 	}
 	out := make([]views.AuditoriaLinha, len(regs))
 	for i, g := range regs {
-		out[i] = linhaAuditoria(g)
+		out[i] = linhaAuditoria(g, loc)
 	}
 	return out
 }
@@ -276,9 +276,9 @@ func mapaJSON(b []byte) map[string]any {
 	return m
 }
 
-func linhaAuditoria(g registroAuditoria) views.AuditoriaLinha {
+func linhaAuditoria(g registroAuditoria, loc *time.Location) views.AuditoriaLinha {
 	l := views.AuditoriaLinha{
-		ID: g.ID, Quando: formatarData(g.Quando), Ator: g.AtorNome, AtorTipo: g.AtorTipo, Acao: audit.Rotulo(g.Acao), Codigo: g.Acao,
+		ID: g.ID, Quando: formatarData(loc, g.Quando), Ator: g.AtorNome, AtorTipo: g.AtorTipo, Acao: audit.Rotulo(g.Acao), Codigo: g.Acao,
 		Registro: g.Rotulo, IP: g.IP, Navegador: g.UserAgent,
 	}
 	if l.Ator == "" {
@@ -348,10 +348,10 @@ func (h *handlers) auditoriaPagina(w http.ResponseWriter, r *http.Request) {
 	qs := r.URL.Query()
 	filtro := views.AuditoriaFiltro{De: qs.Get("de"), Ate: qs.Get("ate"), Ator: strings.TrimSpace(qs.Get("ator")), Acao: qs.Get("acao"), Busca: strings.TrimSpace(qs.Get("busca"))}
 	f := filtroAuditoria{ator: filtro.Ator, acao: filtro.Acao, busca: filtro.Busca}
-	if t, err := time.ParseInLocation("2006-01-02", filtro.De, fusoLocal); err == nil {
+	if t, err := time.ParseInLocation("2006-01-02", filtro.De, h.fuso(r)); err == nil {
 		f.de = t
 	}
-	if t, err := time.ParseInLocation("2006-01-02", filtro.Ate, fusoLocal); err == nil {
+	if t, err := time.ParseInLocation("2006-01-02", filtro.Ate, h.fuso(r)); err == nil {
 		f.ate = t.AddDate(0, 0, 1) // o dia inteiro
 	}
 
@@ -404,7 +404,7 @@ func (h *handlers) auditoriaPagina(w http.ResponseWriter, r *http.Request) {
 
 	linhas := make([]views.AuditoriaLinha, len(regs))
 	for i, g := range regs {
-		linhas[i] = linhaAuditoria(g)
+		linhas[i] = linhaAuditoria(g, h.fuso(r))
 	}
 	query := url.Values{}
 	for k, v := range map[string]string{"de": filtro.De, "ate": filtro.Ate, "ator": filtro.Ator, "acao": filtro.Acao, "busca": filtro.Busca} {
@@ -445,13 +445,16 @@ func (h *handlers) clientesLista(w http.ResponseWriter, r *http.Request) {
 	linhas := make([]views.ClienteLinha, len(lista))
 	for i, c := range lista {
 		host, link := h.enderecoDoCliente(r, c)
-		linhas[i] = views.ClienteLinha{Nome: c.Nome, Slug: c.Slug, Endereco: host, URL: link, Status: c.Status, Schema: c.SchemaNome, Criado: formatarData(c.CriadoEm.Time)}
+		linhas[i] = views.ClienteLinha{
+			Nome: c.Nome, Slug: c.Slug, Endereco: host, URL: link, Status: c.Status, Schema: c.SchemaNome,
+			Cidade: cidadeUF(c.Cidade, c.Uf), Fuso: c.Fuso, Criado: formatarData(h.fuso(r), c.CriadoEm.Time),
+		}
 	}
 	render(w, r, views.Clientes(h.layout(r, "Clientes", "/clientes"), views.ClientesData{Linhas: linhas, CSRF: csrfToken(r.Context())}))
 }
 
 func (h *handlers) clienteNovoForm(w http.ResponseWriter, r *http.Request) {
-	render(w, r, views.ClienteForm(h.layout(r, "Novo cliente", "/clientes"), views.ClienteFormData{BaseDominio: h.resolver.BaseDomain, Plano: "padrao", CSRF: csrfToken(r.Context())}))
+	render(w, r, views.ClienteForm(h.layout(r, "Novo cliente", "/clientes"), h.formCliente(r, views.ClienteFormData{Plano: "padrao"})))
 }
 
 func (h *handlers) clienteCriar(w http.ResponseWriter, r *http.Request) {
@@ -464,15 +467,20 @@ func (h *handlers) clienteCriar(w http.ResponseWriter, r *http.Request) {
 		Subdominio: strings.ToLower(strings.TrimSpace(r.PostFormValue("subdominio"))),
 		Dominio:    strings.ToLower(strings.TrimSpace(r.PostFormValue("dominio"))), Plano: strings.TrimSpace(r.PostFormValue("plano")),
 	}
+	var msgLocal string
+	in.Cidade, in.UF, in.Fuso, msgLocal = lerLocalizacao(r)
 	falha := func(msg string) {
-		renderStatus(w, r, http.StatusBadRequest, views.ClienteForm(h.layout(r, "Novo cliente", "/clientes"), views.ClienteFormData{
+		renderStatus(w, r, http.StatusBadRequest, views.ClienteForm(h.layout(r, "Novo cliente", "/clientes"), h.formCliente(r, views.ClienteFormData{
 			Nome: in.Nome, Slug: in.Slug, Subdominio: in.Subdominio, Dominio: in.Dominio, Plano: in.Plano,
-			BaseDominio: h.resolver.BaseDomain, Erro: msg, CSRF: csrfToken(r.Context()),
-		}))
+			Cidade: in.Cidade, UF: in.UF, Fuso: strings.TrimSpace(r.PostFormValue("fuso")), Erro: msg,
+		})))
 	}
 	switch {
 	case in.Nome == "" || len([]rune(in.Nome)) > 120:
 		falha("Informe o nome do cliente (até 120 caracteres).")
+		return
+	case msgLocal != "":
+		falha(msgLocal)
 		return
 	case in.Subdominio == "":
 		falha("Escolha o subdomínio de acesso.")
@@ -557,7 +565,7 @@ func (h *handlers) mastersLista(w http.ResponseWriter, r *http.Request) {
 		id := idTexto(u.ID)
 		linhas[i] = views.MasterLinha{
 			ID: id, Nome: u.Nome, Email: u.Email, Master: u.Master, Ativo: u.Ativo, DeveTrocar: u.DeveTrocarSenha,
-			UltimoAcesso: formatarData(u.UltimoAcesso.Time), Eu: id == a.sess.Conta.ID,
+			UltimoAcesso: formatarData(h.fuso(r), u.UltimoAcesso.Time), Eu: id == a.sess.Conta.ID,
 		}
 	}
 	render(w, r, views.Masters(h.layout(r, "Usuários da plataforma", "/plataforma/usuarios"), views.MastersData{Linhas: linhas, CSRF: csrfToken(r.Context())}))

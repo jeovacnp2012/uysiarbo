@@ -162,7 +162,7 @@ func proximaVersao(atual string) string {
 func (h *handlers) versaoNovaForm(w http.ResponseWriter, r *http.Request) {
 	_, atual := h.ultimaVersao(r.Context())
 	render(w, r, views.VersaoForm(h.layout(r, "Registrar versão", "/novidades"), views.VersaoFormData{
-		Versao: proximaVersao(atual), Data: time.Now().In(fusoLocal).Format("2006-01-02"), CSRF: csrfToken(r.Context()),
+		Versao: proximaVersao(atual), Data: time.Now().In(h.fuso(r)).Format("2006-01-02"), CSRF: csrfToken(r.Context()),
 	}))
 }
 

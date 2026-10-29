@@ -76,7 +76,7 @@ func TestRotulosCobremAsAcoesConhecidas(t *testing.T) {
 	for _, acao := range []string{
 		"login.sucesso", "login.falha", "login.bloqueio", "logout", "senha.trocar",
 		"usuario.criar", "usuario.editar", "usuario.resetar_senha", "papel.criar", "papel.editar",
-		"cliente.criar", "cliente.sincronizar", "cliente.status", "master.criar", "master.resetar_senha",
+		"cliente.criar", "cliente.sincronizar", "cliente.status", "cliente.editar", "master.criar", "master.resetar_senha",
 		"versao.criar", "requisicao.escrita", "cidade.criar", "cidade.editar", "bairro.criar", "bairro.editar",
 		"quarteirao.criar", "quarteirao.status",
 	} {

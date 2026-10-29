@@ -57,3 +57,22 @@ document.addEventListener('alpine:init', () => {
         },
     }));
 });
+
+// Presença: cada janela tem um identificador próprio (a mesma pessoa pode ter várias abertas) e,
+// ao fechar a tela, avisa o servidor para o aviso sumir logo para os outros.
+window.uysiAba = (window.crypto && crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random()).replace(/-/g, '').replace(/\./g, '');
+window.addEventListener('pagehide', () => {
+    const csrf = document.body && document.body.getAttribute('hx-headers');
+    let token = '';
+    try {
+        token = JSON.parse(csrf || '{}')['X-CSRF-Token'] || '';
+    } catch (e) {}
+    document.querySelectorAll('.presenca[data-recurso]').forEach((el) => {
+        const dados = new FormData();
+        dados.set('recurso', el.dataset.recurso);
+        dados.set('id', el.dataset.id);
+        dados.set('aba', window.uysiAba);
+        dados.set('csrf', token);
+        navigator.sendBeacon('/presenca/sair', dados);
+    });
+});

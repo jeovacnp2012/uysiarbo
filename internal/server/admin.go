@@ -315,11 +315,11 @@ func meuID(r *http.Request) int64 {
 	return n
 }
 
-func formatarData(t time.Time) string {
+func formatarData(loc *time.Location, t time.Time) string {
 	if t.IsZero() {
 		return "nunca"
 	}
-	return t.In(fusoLocal).Format("02/01/2006 15:04")
+	return t.In(loc).Format("02/01/2006 15:04")
 }
 
 func (h *handlers) usuariosLista(w http.ResponseWriter, r *http.Request) {
@@ -338,7 +338,7 @@ func (h *handlers) usuariosLista(w http.ResponseWriter, r *http.Request) {
 	for i, u := range rows {
 		linhas[i] = views.UsuarioLinha{
 			ID: u.ID, Nome: u.Nome, Email: u.Email, Papel: u.PapelNome, Ativo: u.Ativo, LoginWeb: u.LoginWeb,
-			LoginTablet: u.LoginTablet, DeveTrocar: u.DeveTrocarSenha, UltimoAcesso: formatarData(u.UltimoAcesso.Time), Eu: u.ID == eu,
+			LoginTablet: u.LoginTablet, DeveTrocar: u.DeveTrocarSenha, UltimoAcesso: formatarData(h.fuso(r), u.UltimoAcesso.Time), Eu: u.ID == eu,
 		}
 	}
 	render(w, r, views.UsuariosLista(h.layout(r, "Usuários", "/usuarios"), linhas, true))

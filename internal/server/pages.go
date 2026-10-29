@@ -29,6 +29,8 @@ func (s *handlers) layout(r *http.Request, title, active string) views.Layout {
 	}
 	if c, ok := tenant.FromContext(r.Context()); ok {
 		l.Cliente = c.Nome
+	} else {
+		l.Console = true
 	}
 	if a, ok := authFrom(r.Context()); ok && a.sess != nil {
 		l.Usuario = a.sess.Conta.Nome
@@ -79,38 +81,4 @@ func demoPage(r *http.Request) (views.DemoFilter, [][]string, views.Pagination) 
 	start := (p.Page - 1) * p.PerPage
 	end := min(start+p.PerPage, len(all))
 	return f, all[start:end], p
-}
-
-// menu monta o menu lateral conforme onde a pessoa está e o que ela pode: o master vê todas as telas
-// (no console, a gestão da plataforma; num cliente, usuários, papéis e auditoria).
-func (s *handlers) menu(r *http.Request) []views.NavItem {
-	itens := []views.NavItem{{Label: "Início", Href: "/"}}
-	a, _ := authFrom(r.Context())
-	if a.sess != nil {
-		pr := a.sess.Principal
-		if _, cliente := tenant.FromContext(r.Context()); cliente {
-			if pr.Pode("bairro_visualizar") {
-				itens = append(itens, views.NavItem{Label: "Bairros", Href: "/bairros"}, views.NavItem{Label: "Cidades", Href: "/cidades"})
-			}
-			if pr.Pode("conf_usuario") {
-				itens = append(itens, views.NavItem{Label: "Usuários", Href: "/usuarios"})
-			}
-			if pr.Pode("conf_papel") {
-				itens = append(itens, views.NavItem{Label: "Papéis", Href: "/papeis"})
-			}
-			if pr.Pode("auditoria_sistema") {
-				itens = append(itens, views.NavItem{Label: "Auditoria", Href: "/auditoria"})
-			}
-		} else if pr.Master {
-			itens = append(itens,
-				views.NavItem{Label: "Clientes", Href: "/clientes"},
-				views.NavItem{Label: "Usuários da plataforma", Href: "/plataforma/usuarios"},
-				views.NavItem{Label: "Auditoria", Href: "/auditoria"},
-			)
-		}
-	}
-	if a.sess != nil {
-		itens = append(itens, views.NavItem{Label: "Guia", Href: "/guia"}, views.NavItem{Label: "Novidades", Href: "/novidades"})
-	}
-	return append(itens, views.NavItem{Label: "Componentes", Href: "/componentes"})
 }

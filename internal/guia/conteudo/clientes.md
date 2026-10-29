@@ -22,3 +22,8 @@ O sistema cria o ambiente, o banco separado do cliente e o papel **Administrador
 
 ## Abrir o ambiente
 **Abrir ambiente** leva ao endereço do cliente. Lá, o master entra com o mesmo e-mail e senha e vê todas as telas.
+
+## Cidade, estado e fuso horário
+Cada cliente tem **cidade** e **estado (UF)**, e o estado define o **fuso horário**: Mato Grosso usa o horário de Cuiabá, o Acre o de Rio Branco, São Paulo o de Brasília, e assim por diante. **Todos os horários e datas** que o cliente vê (auditoria, avisos, listas, "desde que horas") seguem esse fuso, e não o do servidor.
+
+Se uma cidade fugir do padrão do estado (o extremo oeste do Amazonas, por exemplo), escolha o fuso à mão no campo **Fuso horário**. Para corrigir depois, use **Editar** na lista de clientes: a mudança vale na hora.

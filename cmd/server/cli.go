@@ -20,7 +20,7 @@ const ajuda = `uso:
   uysiarbo version                  mostra a versão
   uysiarbo migrate [up|down|status|reset]   migrações do catálogo (schema public)
   uysiarbo migrate-all              catálogo + todos os schemas de clientes, para a versão mais nova
-  uysiarbo cliente criar -nome "Prefeitura de X" -slug x [-subdominio x] [-dominio d] [-plano p]
+  uysiarbo cliente criar -nome "Prefeitura de X" -slug x -uf MT [-cidade X] [-fuso America/Cuiaba] [-subdominio x] [-dominio d] [-plano p]
   uysiarbo cliente listar
   uysiarbo cliente sincronizar      reaplica o papel Administrador e as permissões do catálogo em todos os clientes
   uysiarbo master criar -nome "Nome Completo" -email e@mail   cria um master com senha forte gerada (mostrada uma vez)
@@ -72,6 +72,9 @@ func clienteCmd(ctx context.Context, args []string) error {
 		fs.StringVar(&in.Subdominio, "subdominio", "", "padrão: o slug")
 		fs.StringVar(&in.Dominio, "dominio", "", "domínio próprio, opcional")
 		fs.StringVar(&in.Plano, "plano", "", "padrão: padrao")
+		fs.StringVar(&in.Cidade, "cidade", "", "cidade da empresa")
+		fs.StringVar(&in.UF, "uf", "", "estado da empresa, como MT (define o fuso horário)")
+		fs.StringVar(&in.Fuso, "fuso", "", "fuso horário, como America/Cuiaba (padrão: o do estado)")
 		if err := fs.Parse(args[1:]); err != nil {
 			return err
 		}

@@ -12,9 +12,11 @@ import (
 )
 
 const createCliente = `-- name: CreateCliente :one
-INSERT INTO clientes (nome, slug, schema_nome, subdominio, dominio, plano)
-VALUES ($1, $2, 'c_' || $2, $3, $4, $5)
-RETURNING id, nome, slug, schema_nome, subdominio, dominio, plano, status, criado_em, atualizado_em
+INSERT INTO clientes (nome, slug, schema_nome, subdominio, dominio, plano, cidade, uf, fuso)
+VALUES ($1::text, $2::text, 'c_' || $2::text, $3::text,
+        $4::text, $5::text, $6::text, $7::text,
+        COALESCE(NULLIF($8::text, ''), 'America/Sao_Paulo'))
+RETURNING id, nome, slug, schema_nome, subdominio, dominio, plano, status, criado_em, atualizado_em, cidade, uf, fuso
 `
 
 type CreateClienteParams struct {
@@ -23,6 +25,9 @@ type CreateClienteParams struct {
 	Subdominio string      `json:"subdominio"`
 	Dominio    pgtype.Text `json:"dominio"`
 	Plano      string      `json:"plano"`
+	Cidade     string      `json:"cidade"`
+	Uf         string      `json:"uf"`
+	Fuso       string      `json:"fuso"`
 }
 
 func (q *Queries) CreateCliente(ctx context.Context, arg CreateClienteParams) (Cliente, error) {
@@ -32,6 +37,9 @@ func (q *Queries) CreateCliente(ctx context.Context, arg CreateClienteParams) (C
 		arg.Subdominio,
 		arg.Dominio,
 		arg.Plano,
+		arg.Cidade,
+		arg.Uf,
+		arg.Fuso,
 	)
 	var i Cliente
 	err := row.Scan(
@@ -45,12 +53,15 @@ func (q *Queries) CreateCliente(ctx context.Context, arg CreateClienteParams) (C
 		&i.Status,
 		&i.CriadoEm,
 		&i.AtualizadoEm,
+		&i.Cidade,
+		&i.Uf,
+		&i.Fuso,
 	)
 	return i, err
 }
 
 const getClienteByDominio = `-- name: GetClienteByDominio :one
-SELECT id, nome, slug, schema_nome, subdominio, dominio, plano, status, criado_em, atualizado_em FROM clientes WHERE dominio = $1
+SELECT id, nome, slug, schema_nome, subdominio, dominio, plano, status, criado_em, atualizado_em, cidade, uf, fuso FROM clientes WHERE dominio = $1
 `
 
 func (q *Queries) GetClienteByDominio(ctx context.Context, dominio pgtype.Text) (Cliente, error) {
@@ -67,12 +78,15 @@ func (q *Queries) GetClienteByDominio(ctx context.Context, dominio pgtype.Text) 
 		&i.Status,
 		&i.CriadoEm,
 		&i.AtualizadoEm,
+		&i.Cidade,
+		&i.Uf,
+		&i.Fuso,
 	)
 	return i, err
 }
 
 const getClienteByID = `-- name: GetClienteByID :one
-SELECT id, nome, slug, schema_nome, subdominio, dominio, plano, status, criado_em, atualizado_em FROM clientes WHERE id = $1
+SELECT id, nome, slug, schema_nome, subdominio, dominio, plano, status, criado_em, atualizado_em, cidade, uf, fuso FROM clientes WHERE id = $1
 `
 
 func (q *Queries) GetClienteByID(ctx context.Context, id pgtype.UUID) (Cliente, error) {
@@ -89,12 +103,15 @@ func (q *Queries) GetClienteByID(ctx context.Context, id pgtype.UUID) (Cliente, 
 		&i.Status,
 		&i.CriadoEm,
 		&i.AtualizadoEm,
+		&i.Cidade,
+		&i.Uf,
+		&i.Fuso,
 	)
 	return i, err
 }
 
 const getClienteBySlug = `-- name: GetClienteBySlug :one
-SELECT id, nome, slug, schema_nome, subdominio, dominio, plano, status, criado_em, atualizado_em FROM clientes WHERE slug = $1
+SELECT id, nome, slug, schema_nome, subdominio, dominio, plano, status, criado_em, atualizado_em, cidade, uf, fuso FROM clientes WHERE slug = $1
 `
 
 func (q *Queries) GetClienteBySlug(ctx context.Context, slug string) (Cliente, error) {
@@ -111,12 +128,15 @@ func (q *Queries) GetClienteBySlug(ctx context.Context, slug string) (Cliente, e
 		&i.Status,
 		&i.CriadoEm,
 		&i.AtualizadoEm,
+		&i.Cidade,
+		&i.Uf,
+		&i.Fuso,
 	)
 	return i, err
 }
 
 const getClienteBySubdominio = `-- name: GetClienteBySubdominio :one
-SELECT id, nome, slug, schema_nome, subdominio, dominio, plano, status, criado_em, atualizado_em FROM clientes WHERE subdominio = $1
+SELECT id, nome, slug, schema_nome, subdominio, dominio, plano, status, criado_em, atualizado_em, cidade, uf, fuso FROM clientes WHERE subdominio = $1
 `
 
 func (q *Queries) GetClienteBySubdominio(ctx context.Context, subdominio string) (Cliente, error) {
@@ -133,12 +153,15 @@ func (q *Queries) GetClienteBySubdominio(ctx context.Context, subdominio string)
 		&i.Status,
 		&i.CriadoEm,
 		&i.AtualizadoEm,
+		&i.Cidade,
+		&i.Uf,
+		&i.Fuso,
 	)
 	return i, err
 }
 
 const listClientes = `-- name: ListClientes :many
-SELECT id, nome, slug, schema_nome, subdominio, dominio, plano, status, criado_em, atualizado_em FROM clientes ORDER BY nome
+SELECT id, nome, slug, schema_nome, subdominio, dominio, plano, status, criado_em, atualizado_em, cidade, uf, fuso FROM clientes ORDER BY nome
 `
 
 func (q *Queries) ListClientes(ctx context.Context) ([]Cliente, error) {
@@ -161,6 +184,9 @@ func (q *Queries) ListClientes(ctx context.Context) ([]Cliente, error) {
 			&i.Status,
 			&i.CriadoEm,
 			&i.AtualizadoEm,
+			&i.Cidade,
+			&i.Uf,
+			&i.Fuso,
 		); err != nil {
 			return nil, err
 		}
@@ -172,9 +198,52 @@ func (q *Queries) ListClientes(ctx context.Context) ([]Cliente, error) {
 	return items, nil
 }
 
+const updateClienteDados = `-- name: UpdateClienteDados :one
+UPDATE clientes SET nome = $2, cidade = $3, uf = $4, fuso = $5, plano = $6, atualizado_em = now()
+WHERE id = $1
+RETURNING id, nome, slug, schema_nome, subdominio, dominio, plano, status, criado_em, atualizado_em, cidade, uf, fuso
+`
+
+type UpdateClienteDadosParams struct {
+	ID     pgtype.UUID `json:"id"`
+	Nome   string      `json:"nome"`
+	Cidade string      `json:"cidade"`
+	Uf     string      `json:"uf"`
+	Fuso   string      `json:"fuso"`
+	Plano  string      `json:"plano"`
+}
+
+func (q *Queries) UpdateClienteDados(ctx context.Context, arg UpdateClienteDadosParams) (Cliente, error) {
+	row := q.db.QueryRow(ctx, updateClienteDados,
+		arg.ID,
+		arg.Nome,
+		arg.Cidade,
+		arg.Uf,
+		arg.Fuso,
+		arg.Plano,
+	)
+	var i Cliente
+	err := row.Scan(
+		&i.ID,
+		&i.Nome,
+		&i.Slug,
+		&i.SchemaNome,
+		&i.Subdominio,
+		&i.Dominio,
+		&i.Plano,
+		&i.Status,
+		&i.CriadoEm,
+		&i.AtualizadoEm,
+		&i.Cidade,
+		&i.Uf,
+		&i.Fuso,
+	)
+	return i, err
+}
+
 const updateClienteStatus = `-- name: UpdateClienteStatus :one
 UPDATE clientes SET status = $2, atualizado_em = now() WHERE id = $1
-RETURNING id, nome, slug, schema_nome, subdominio, dominio, plano, status, criado_em, atualizado_em
+RETURNING id, nome, slug, schema_nome, subdominio, dominio, plano, status, criado_em, atualizado_em, cidade, uf, fuso
 `
 
 type UpdateClienteStatusParams struct {
@@ -196,6 +265,9 @@ func (q *Queries) UpdateClienteStatus(ctx context.Context, arg UpdateClienteStat
 		&i.Status,
 		&i.CriadoEm,
 		&i.AtualizadoEm,
+		&i.Cidade,
+		&i.Uf,
+		&i.Fuso,
 	)
 	return i, err
 }

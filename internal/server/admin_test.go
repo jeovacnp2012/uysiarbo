@@ -129,7 +129,7 @@ func TestEditorDePermissoesMostraBlocosEBusca(t *testing.T) {
 	ana := m.comAna(t)
 	rec := ana.get("/papeis/novo")
 	quer(t, rec, http.StatusOK, `value="visita_adicionar"`, "restringe", "Marcar todas", "Buscar permissão", "Marcar bloco", `x-data="editorPermissoes"`)
-	if n := strings.Count(rec.Body.String(), "<details"); n != 23 {
+	if n := strings.Count(rec.Body.String(), `<details class="bloco"`); n != 23 {
 		t.Errorf("blocos = %d, quer 23", n)
 	}
 	if n := strings.Count(rec.Body.String(), `name="perm"`); n != 170 {

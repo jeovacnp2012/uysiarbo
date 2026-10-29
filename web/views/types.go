@@ -10,15 +10,39 @@ import (
 // Version é a versão exibida no rodapé do menu. Será ligada a Novidades/Versões na etapa 1.8.
 const Version = "0.5.0"
 
+// NavItem é um link do menu.
 type NavItem struct {
 	Label string
 	Href  string
 }
 
+// NavGrupo é uma categoria do menu lateral. Com Href, é um item simples (sem sub-itens); sem Href,
+// é um grupo recolhível com Itens. O grupo da página atual abre sozinho; os demais começam recolhidos.
+type NavGrupo struct {
+	Label string
+	Icone string // nome do ícone (ver icone em layout.templ)
+	Href  string
+	Itens []NavItem
+}
+
+// Contem diz se o grupo é (ou tem dentro dele) a página ativa.
+func (g NavGrupo) Contem(ativa string) bool {
+	if g.Href != "" {
+		return g.Href == ativa
+	}
+	for _, it := range g.Itens {
+		if it.Href == ativa {
+			return true
+		}
+	}
+	return false
+}
+
 type Layout struct {
 	Title   string
 	Active  string // Href do item de menu ativo
-	Nav     []NavItem
+	Nav     []NavGrupo
+	Console bool   // endereço do console da plataforma (sem cliente)
 	Cliente string // nome do cliente (prefeitura), quando o endereço é de um cliente
 	Usuario string // nome de quem está logado
 	CSRF    string // token CSRF, enviado nos formulários e nas chamadas HTMX
