@@ -32,6 +32,7 @@ type Conta struct {
 	Ativo           bool
 	DeveTrocarSenha bool
 	BloqueadoAte    time.Time // zero se não está bloqueada
+	Tentativas      int       // falhas seguidas de senha
 	PapelID         int64     // só para usuário de cliente
 	Master          bool      // só para conta da plataforma: nenhuma regra de permissão se aplica
 }
@@ -43,8 +44,22 @@ var (
 	ErrSenhaAtual     = errors.New("a senha atual não confere")
 )
 
+// ErroCredenciais é o ErrCredenciais com informação para a auditoria: Conta é preenchida quando o
+// e-mail existe (nunca mostre isso a quem tentou entrar) e Bloqueou diz que esta falha acionou o
+// bloqueio. errors.Is(err, ErrCredenciais) continua valendo.
+type ErroCredenciais struct {
+	Conta    *Conta
+	Bloqueou bool
+}
+
+func (ErroCredenciais) Error() string      { return ErrCredenciais.Error() }
+func (ErroCredenciais) Is(alvo error) bool { return alvo == ErrCredenciais }
+
 // ErrBloqueada indica excesso de tentativas erradas.
-type ErrBloqueada struct{ Ate time.Time }
+type ErrBloqueada struct {
+	Ate   time.Time
+	Conta Conta
+}
 
 func (e ErrBloqueada) Error() string {
 	return fmt.Sprintf("acesso bloqueado por excesso de tentativas até %s", e.Ate.Format("15:04"))
@@ -158,24 +173,26 @@ func (s *Service) Entrar(ctx context.Context, email, senha, ip, userAgent string
 	}
 	if loja == nil {
 		_, _ = Confere(senha, hashFalso)
-		return "", nil, ErrCredenciais
+		return "", nil, ErroCredenciais{}
 	}
 
 	agora := s.agora()
 	if conta.BloqueadoAte.After(agora) {
-		return "", nil, ErrBloqueada{Ate: conta.BloqueadoAte}
+		return "", nil, ErrBloqueada{Ate: conta.BloqueadoAte, Conta: conta}
 	}
 	ok, err := Confere(senha, conta.SenhaHash)
 	if err != nil {
 		return "", nil, err
 	}
 	if !ok || !conta.Ativo {
+		bloqueou := false
 		if conta.Ativo {
 			if err := loja.RegistrarFalha(ctx, conta.ID, s.limite(), s.bloqueio()); err != nil {
 				return "", nil, err
 			}
+			bloqueou = conta.Tentativas+1 >= s.limite()
 		}
-		return "", nil, ErrCredenciais
+		return "", nil, ErroCredenciais{Conta: &conta, Bloqueou: bloqueou}
 	}
 	if err := loja.RegistrarSucesso(ctx, conta.ID); err != nil {
 		return "", nil, err

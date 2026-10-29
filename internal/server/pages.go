@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"uysiarbo/internal/db/sqlc"
-	"uysiarbo/internal/db/sqlccliente"
 	"uysiarbo/internal/tenant"
 	"uysiarbo/web/views"
 )
@@ -29,33 +28,6 @@ func (s *handlers) layout(r *http.Request, title, active string) views.Layout {
 		l.Usuario = a.sess.Conta.Nome
 	}
 	return l
-}
-
-func (s *handlers) home(w http.ResponseWriter, r *http.Request) {
-	data := views.HomeData{Sistema: "indisponível"}
-	if info, err := s.cat.GetAppInfo(r.Context(), "sistema"); err == nil {
-		data.Sistema = info.Valor
-	} else {
-		s.log.Warn("ler app_info", "erro", err)
-	}
-
-	if c, ok := tenant.FromContext(r.Context()); ok {
-		// Lê de dentro do schema do cliente: a conexão só enxerga o schema dele.
-		data.Cliente, data.Schema = "indisponível", c.SchemaNome
-		if pool, err := s.pools.Get(r.Context(), c.SchemaNome); err != nil {
-			s.log.Error("pool do cliente", "cliente", c.Slug, "erro", err)
-		} else if info, err := sqlccliente.New(pool).GetClienteInfo(r.Context(), "nome"); err == nil {
-			data.Cliente = info.Valor
-		} else {
-			s.log.Error("ler cliente_info", "cliente", c.Slug, "erro", err)
-		}
-	} else {
-		data.Console = true
-		if lista, err := s.cat.ListClientes(r.Context()); err == nil {
-			data.Clientes = len(lista)
-		}
-	}
-	render(w, r, views.Home(s.layout(r, "Início", "/"), data))
 }
 
 func (s *handlers) components(w http.ResponseWriter, r *http.Request) {
@@ -103,17 +75,29 @@ func demoPage(r *http.Request) (views.DemoFilter, [][]string, views.Pagination) 
 	return f, all[start:end], p
 }
 
-// menu monta o menu lateral: Usuários e Papéis aparecem só no endereço de um cliente e só para
-// quem tem a permissão correspondente (o master vê tudo).
+// menu monta o menu lateral conforme onde a pessoa está e o que ela pode: o master vê todas as telas
+// (no console, a gestão da plataforma; num cliente, usuários, papéis e auditoria).
 func (s *handlers) menu(r *http.Request) []views.NavItem {
 	itens := []views.NavItem{{Label: "Início", Href: "/"}}
 	a, _ := authFrom(r.Context())
-	if _, cliente := tenant.FromContext(r.Context()); cliente && a.sess != nil {
-		if a.sess.Principal.Pode("conf_usuario") {
-			itens = append(itens, views.NavItem{Label: "Usuários", Href: "/usuarios"})
-		}
-		if a.sess.Principal.Pode("conf_papel") {
-			itens = append(itens, views.NavItem{Label: "Papéis", Href: "/papeis"})
+	if a.sess != nil {
+		pr := a.sess.Principal
+		if _, cliente := tenant.FromContext(r.Context()); cliente {
+			if pr.Pode("conf_usuario") {
+				itens = append(itens, views.NavItem{Label: "Usuários", Href: "/usuarios"})
+			}
+			if pr.Pode("conf_papel") {
+				itens = append(itens, views.NavItem{Label: "Papéis", Href: "/papeis"})
+			}
+			if pr.Pode("auditoria_sistema") {
+				itens = append(itens, views.NavItem{Label: "Auditoria", Href: "/auditoria"})
+			}
+		} else if pr.Master {
+			itens = append(itens,
+				views.NavItem{Label: "Clientes", Href: "/clientes"},
+				views.NavItem{Label: "Usuários da plataforma", Href: "/plataforma/usuarios"},
+				views.NavItem{Label: "Auditoria", Href: "/auditoria"},
+			)
 		}
 	}
 	return append(itens, views.NavItem{Label: "Componentes", Href: "/componentes"})

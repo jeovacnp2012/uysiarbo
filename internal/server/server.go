@@ -15,6 +15,7 @@ import (
 	"uysiarbo/internal/httpx"
 	"uysiarbo/internal/tenant"
 	"uysiarbo/web"
+	"uysiarbo/web/views"
 )
 
 // Pinger verifica se uma dependência (o banco) está respondendo.
@@ -35,6 +36,9 @@ type Deps struct {
 	Captcha       Captcha // nil = sem captcha
 	RecaptchaSite string  // chave pública do reCAPTCHA (vai para a tela de entrar)
 	Producao      bool    // cookies sempre Secure
+
+	// Tenants permite ao console criar clientes e masters (nil = telas do console desligadas).
+	Tenants *tenant.Service
 }
 
 type handlers struct {
@@ -45,10 +49,14 @@ type handlers struct {
 	captcha Captcha
 	siteKey string
 	prod    bool
+
+	tenants  *tenant.Service
+	resolver *tenant.Resolver
 }
 
 func New(d Deps) http.Handler {
-	h := &handlers{log: d.Log, cat: d.Catalog, pools: d.Pools, pub: d.Public, captcha: d.Captcha, siteKey: d.RecaptchaSite, prod: d.Producao}
+	views.AssetVersion = web.Version()
+	h := &handlers{log: d.Log, cat: d.Catalog, pools: d.Pools, pub: d.Public, captcha: d.Captcha, siteKey: d.RecaptchaSite, prod: d.Producao, tenants: d.Tenants, resolver: d.Resolver}
 	if h.captcha == nil {
 		h.captcha = SemCaptcha{}
 	}
@@ -56,7 +64,7 @@ func New(d Deps) http.Handler {
 	r := chi.NewRouter()
 	r.Use(securityHeaders, requestID, middleware.RealIP, accessLog(d.Log), recoverer(d.Log))
 	r.Use(middleware.Timeout(30 * time.Second))
-	r.Use(tenancy(d.Log, d.Resolver), csrf, h.autenticacao)
+	r.Use(tenancy(d.Log, d.Resolver), csrf, h.autenticacao, h.auditoriaGenerica)
 
 	r.Get("/healthz", health)
 	r.Get("/readyz", ready(d.Log, d.DB))
@@ -81,6 +89,17 @@ func New(d Deps) http.Handler {
 	r.Get("/usuarios/{id}", h.exigir("conf_usuario", h.usuarioEditarForm))
 	r.Post("/usuarios/{id}", h.exigir("conf_usuario", h.usuarioSalvar))
 	r.Post("/usuarios/{id}/resetar-senha", h.exigir("conf_usuario", h.usuarioResetarSenha))
+
+	r.Get("/auditoria", h.auditoriaPagina)
+
+	r.Get("/clientes", h.somenteMaster(h.clientesLista))
+	r.Get("/clientes/novo", h.somenteMaster(h.clienteNovoForm))
+	r.Post("/clientes", h.somenteMaster(h.clienteCriar))
+	r.Post("/clientes/{slug}/status", h.somenteMaster(h.clienteStatus))
+	r.Get("/plataforma/usuarios", h.somenteMaster(h.mastersLista))
+	r.Get("/plataforma/usuarios/novo", h.somenteMaster(h.masterNovoForm))
+	r.Post("/plataforma/usuarios", h.somenteMaster(h.masterCriar))
+	r.Post("/plataforma/usuarios/{id}/resetar-senha", h.somenteMaster(h.masterResetarSenha))
 
 	r.Get("/", h.home)
 	r.Get("/componentes", h.components)

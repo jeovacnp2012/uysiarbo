@@ -1,6 +1,7 @@
 package server
 
 import (
+	"html"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -66,7 +67,8 @@ func senhaDaPagina(t *testing.T, corpo string) string {
 	if m == nil {
 		t.Fatalf("a página não mostra a senha gerada: %.300s", corpo)
 	}
-	return strings.TrimSpace(m[1])
+	// A página escapa o HTML (o "&" da senha vira "&amp;"); o usuário vê o caractere original.
+	return html.UnescapeString(strings.TrimSpace(m[1]))
 }
 
 func (m *mundo) idUsuario(t *testing.T, email string) string {
@@ -91,7 +93,7 @@ func TestListasDePapeisEUsuarios(t *testing.T) {
 	m := novoMundo(t)
 	ana := m.comAna(t)
 
-	quer(t, ana.get("/papeis"), http.StatusOK, "Administrador", "158", "Novo papel")
+	quer(t, ana.get("/papeis"), http.StatusOK, "Administrador", "159", "Novo papel")
 	quer(t, ana.get("/usuarios"), http.StatusOK, "Ana Souza", "você", "Bruno Lima", "Troca de senha pendente", "Novo usuário")
 	// O menu mostra as duas opções.
 	corpo := ana.get("/").Body.String()
@@ -130,8 +132,8 @@ func TestEditorDePermissoesMostraBlocosEBusca(t *testing.T) {
 	if n := strings.Count(rec.Body.String(), "<details"); n != 23 {
 		t.Errorf("blocos = %d, quer 23", n)
 	}
-	if n := strings.Count(rec.Body.String(), `name="perm"`); n != 169 {
-		t.Errorf("caixas de permissão = %d, quer 169", n)
+	if n := strings.Count(rec.Body.String(), `name="perm"`); n != 170 {
+		t.Errorf("caixas de permissão = %d, quer 170", n)
 	}
 	// Ana não tem as restritivas, então não pode concedê-las: aparecem desabilitadas.
 	if !regexp.MustCompile(`value="visita_visualizar_minha"[^>]*disabled`).MatchString(rec.Body.String()) {

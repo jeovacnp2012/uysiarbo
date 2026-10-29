@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"os"
 
+	"uysiarbo/internal/audit"
 	"uysiarbo/internal/config"
 	"uysiarbo/internal/db"
 	"uysiarbo/internal/db/sqlc"
@@ -36,7 +37,7 @@ func tenantService(ctx context.Context) (svc *tenant.Service, close func(), err 
 	if err != nil {
 		return nil, nil, err
 	}
-	return &tenant.Service{Pool: pool, URL: cfg.DatabaseURL, Log: slog.New(slog.NewTextHandler(os.Stdout, nil))}, pool.Close, nil
+	return &tenant.Service{Pool: pool, URL: cfg.DatabaseURL, Log: slog.New(slog.NewTextHandler(os.Stdout, nil)), Auditoria: audit.Plataforma{Q: sqlc.New(pool)}}, pool.Close, nil
 }
 
 // migrateAll aplica o catálogo e depois todos os clientes; use após cada atualização do sistema.

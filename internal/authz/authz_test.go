@@ -7,8 +7,8 @@ import (
 
 func TestCatalogoPadraoEstaCoerente(t *testing.T) {
 	c := Padrao
-	if n := len(c.Codigos(true)); n != 169 {
-		t.Errorf("permissões = %d, quer 169", n)
+	if n := len(c.Codigos(true)); n != 170 {
+		t.Errorf("permissões = %d, quer 170", n)
 	}
 	if n := len(c.Blocos); n != 23 {
 		t.Errorf("blocos = %d, quer 23", n)

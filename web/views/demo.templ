@@ -1,39 +1,6 @@
 package views
 
-import (
-	"net/url"
-	"strconv"
-)
-
-// Home é a página inicial da fundação ("olá mundo" com layout, banco e testes).
-templ Home(l Layout, d HomeData) {
-	@Base(l) {
-		if d.Console {
-			@PageHeader("Console da plataforma", "Endereço da administração, sem cliente. Cada prefeitura entra pelo seu próprio endereço.") {
-				<a class="btn btn-primario" href="/componentes">Ver componentes</a>
-			}
-			<section class="cartao">
-				<h2>Plataforma</h2>
-				<p class="subtitulo">
-					Sistema <span class="selo selo-ok">{ d.Sistema }</span>
-					· Clientes cadastrados: <strong>{ strconv.Itoa(d.Clientes) }</strong>
-				</p>
-			</section>
-		} else {
-			@PageHeader("Olá, "+d.Cliente, "Você está no ambiente deste cliente.") {
-				<a class="btn btn-primario" href="/componentes">Ver componentes</a>
-			}
-			<section class="cartao">
-				<h2>Cliente</h2>
-				<p class="subtitulo">
-					Nome lido do banco do cliente: <span class="selo selo-ok">{ d.Cliente }</span>
-					· Schema: <code>{ d.Schema }</code>
-					· Sistema <span class="selo">{ d.Sistema }</span>
-				</p>
-			</section>
-		}
-	}
-}
+import "net/url"
 
 // Components é a página de demonstração dos componentes base (some quando as telas reais existirem).
 templ Components(l Layout, f DemoFilter, rows [][]string, p Pagination) {

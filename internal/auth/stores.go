@@ -57,7 +57,7 @@ func (p PlataformaContas) conta(u sqlc.PlataformaUsuario) (Conta, error) {
 	}
 	return Conta{
 		ID: uuidString(u.ID), Tipo: TipoPlataforma, Nome: u.Nome, Email: u.Email, SenhaHash: u.SenhaHash,
-		Ativo: u.Ativo, DeveTrocarSenha: u.DeveTrocarSenha, BloqueadoAte: tempo(u.BloqueadoAte), Master: u.Master,
+		Ativo: u.Ativo, DeveTrocarSenha: u.DeveTrocarSenha, BloqueadoAte: tempo(u.BloqueadoAte), Master: u.Master, Tentativas: int(u.TentativasFalhas),
 	}, nil
 }
 
@@ -156,7 +156,7 @@ func (ClienteContas) Tipo() Tipo { return TipoUsuario }
 func conta(u sqlccliente.Usuario) Conta {
 	return Conta{
 		ID: strconv.FormatInt(u.ID, 10), Tipo: TipoUsuario, Nome: u.Nome, Email: u.Email, SenhaHash: u.SenhaHash,
-		Ativo: u.Ativo, DeveTrocarSenha: u.DeveTrocarSenha, BloqueadoAte: tempo(u.BloqueadoAte), PapelID: u.PapelID,
+		Ativo: u.Ativo, DeveTrocarSenha: u.DeveTrocarSenha, BloqueadoAte: tempo(u.BloqueadoAte), PapelID: u.PapelID, Tentativas: int(u.TentativasFalhas),
 	}
 }
 

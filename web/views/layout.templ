@@ -18,18 +18,18 @@ templ Base(l Layout) {
 					} catch (e) {}
 				})();
 			</script>
-			<link rel="icon" href="/static/brand/uysi-symbol.png"/>
-			<link rel="stylesheet" href="/static/css/app.css"/>
-			<script defer src="/static/js/app.js"></script>
-			<script defer src="/static/vendor/alpine.min.js"></script>
-			<script defer src="/static/vendor/htmx.min.js"></script>
+			<link rel="icon" href={ asset("/static/brand/uysi-symbol.png") }/>
+			<link rel="stylesheet" href={ asset("/static/css/app.css") }/>
+			<script defer src={ asset("/static/js/app.js") }></script>
+			<script defer src={ asset("/static/vendor/alpine.min.js") }></script>
+			<script defer src={ asset("/static/vendor/htmx.min.js") }></script>
 		</head>
 		<body x-data="{ menu: false }" x-on:keydown.escape.window="menu = false" hx-headers={ templ.JSONString(map[string]string{"X-CSRF-Token": l.CSRF}) }>
 			<div class="app">
 				<div class="menu-fundo" x-show="menu" x-cloak x-on:click="menu = false"></div>
 				<aside class="menu" x-bind:class="{ aberto: menu }" aria-label="Menu principal">
 					<a class="menu-marca" href="/">
-						<img src="/static/brand/uysi-symbol.png" alt=""/>
+						<img src={ asset("/static/brand/uysi-symbol.png") } alt=""/>
 						<span>UYSI ARBO</span>
 					</a>
 					if l.Cliente != "" {

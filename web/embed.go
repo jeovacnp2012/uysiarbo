@@ -2,7 +2,9 @@
 package web
 
 import (
+	"crypto/sha256"
 	"embed"
+	"encoding/hex"
 	"io/fs"
 )
 
@@ -16,4 +18,23 @@ func Static() fs.FS {
 		panic(err)
 	}
 	return sub
+}
+
+// Version devolve um identificador curto do conteúdo dos arquivos estáticos. Ele vai na URL
+// (?v=...), então o navegador baixa de novo quando algum arquivo muda e guarda em cache enquanto não muda.
+func Version() string {
+	h := sha256.New()
+	_ = fs.WalkDir(staticFS, "static", func(path string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return err
+		}
+		b, err := staticFS.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		h.Write([]byte(path))
+		h.Write(b)
+		return nil
+	})
+	return hex.EncodeToString(h.Sum(nil))[:10]
 }

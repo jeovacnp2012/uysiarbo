@@ -12,6 +12,7 @@ import (
 	"time"
 	_ "time/tzdata" // fusos horários embutidos (o servidor da VPS pode não ter)
 
+	"uysiarbo/internal/audit"
 	"uysiarbo/internal/config"
 	"uysiarbo/internal/db"
 	"uysiarbo/internal/db/sqlc"
@@ -98,6 +99,7 @@ func run() error {
 			Captcha:       captcha,
 			RecaptchaSite: cfg.RecaptchaSite,
 			Producao:      cfg.IsProduction(),
+			Tenants:       &tenant.Service{Pool: pool, URL: cfg.DatabaseURL, Log: log, Auditoria: audit.Plataforma{Q: sqlc.New(pool)}},
 		}),
 		ReadHeaderTimeout: 5 * time.Second,
 		IdleTimeout:       60 * time.Second,

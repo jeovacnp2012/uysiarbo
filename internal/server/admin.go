@@ -15,6 +15,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"uysiarbo/internal/audit"
 	"uysiarbo/internal/auth"
 	"uysiarbo/internal/authz"
 	"uysiarbo/internal/db/sqlccliente"
@@ -205,8 +206,10 @@ func (h *handlers) papelSalvar(w http.ResponseWriter, r *http.Request) {
 	enviadas := r.PostForm["perm"]
 
 	var existentes []string
+	var papelAntes sqlccliente.Papei
 	if id != 0 {
-		if _, err := q.GetPapel(r.Context(), id); errors.Is(err, pgx.ErrNoRows) {
+		var err error
+		if papelAntes, err = q.GetPapel(r.Context(), id); errors.Is(err, pgx.ErrNoRows) {
 			http.NotFound(w, r)
 			return
 		} else if err != nil {
@@ -253,6 +256,7 @@ func (h *handlers) papelSalvar(w http.ResponseWriter, r *http.Request) {
 	}
 
 	final := permissoesFinais(existentes, enviadas, a.sess.Principal)
+	criando := id == 0
 	tx, err := pool.Begin(r.Context())
 	if err != nil {
 		h.falhaInterna(w, r, "iniciar transação", err)
@@ -283,6 +287,7 @@ func (h *handlers) papelSalvar(w http.ResponseWriter, r *http.Request) {
 		h.falhaInterna(w, r, "gravar permissões", err)
 		return
 	}
+	h.auditarPapel(r, qt, id, criando, papelAntes, nome, descricao, ativo, existentes, final)
 	if err := tx.Commit(r.Context()); err != nil {
 		h.falhaInterna(w, r, "confirmar transação", err)
 		return
@@ -492,6 +497,10 @@ func (h *handlers) usuarioCriar(w http.ResponseWriter, r *http.Request) {
 		h.falhaInterna(w, r, "criar usuário", err)
 		return
 	}
+	h.auditar(r, audit.Evento{
+		Acao: "usuario.criar", Entidade: "usuario", EntidadeID: strconv.FormatInt(u.ID, 10), Rotulo: u.Nome,
+		Depois: dadosParaAuditoria(u.Nome, u.Email, u.Telefone, papel.Nome, u.LoginWeb, u.LoginTablet, u.Ativo),
+	})
 	h.mostrarSenha(w, r, true, u.Nome, u.Email, senha)
 }
 
@@ -551,6 +560,7 @@ func (h *handlers) usuarioSalvar(w http.ResponseWriter, r *http.Request) {
 		h.falhaInterna(w, r, "salvar usuário", err)
 		return
 	}
+	h.auditarEdicaoUsuario(r, q, atual, d)
 	// Desativar ou trocar o papel encerra as sessões abertas: a pessoa volta a entrar já com o novo acesso.
 	if !d.ativo || d.papelID != atual.PapelID {
 		a, _ := authFrom(r.Context())
@@ -592,6 +602,10 @@ func (h *handlers) usuarioResetarSenha(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.log.Info("senha resetada", "usuario_id", id, "por", a.sess.Conta.Email, "request_id", r.Header.Get("X-Request-Id"))
+	h.auditar(r, audit.Evento{
+		Acao: "usuario.resetar_senha", Entidade: "usuario", EntidadeID: strconv.FormatInt(id, 10), Rotulo: u.Nome,
+		Detalhes: map[string]any{"email": u.Email, "sessoes_encerradas": true, "troca_obrigatoria": true},
+	})
 	h.mostrarSenha(w, r, false, u.Nome, u.Email, senha)
 }
 
@@ -603,4 +617,53 @@ func (h *handlers) mostrarSenha(w http.ResponseWriter, r *http.Request, novo boo
 		titulo = "Usuário criado"
 	}
 	render(w, r, views.SenhaGerada(h.layout(r, titulo, "/usuarios"), views.SenhaGeradaData{Novo: novo, Nome: nome, Email: email, Senha: senha}))
+}
+
+// auditarPapel registra a criação ou edição de um papel dentro da mesma transação que a gravou.
+func (h *handlers) auditarPapel(r *http.Request, qt *sqlccliente.Queries, id int64, criando bool, antes sqlccliente.Papei,
+	nome, descricao string, ativo bool, permAntes, permDepois []string) {
+	depois := map[string]any{"nome": nome, "descricao": descricao, "ativo": ativo}
+	entrou, saiu := audit.DiferencaLista(permAntes, permDepois)
+	det := map[string]any{"permissoes_adicionadas": entrou, "permissoes_removidas": saiu, "total_permissoes": len(permDepois)}
+	ev := audit.Evento{Entidade: "papel", EntidadeID: strconv.FormatInt(id, 10), Rotulo: nome, Depois: depois, Detalhes: det}
+	if criando {
+		ev.Acao = "papel.criar"
+	} else {
+		a, d := audit.Diferenca(map[string]any{"nome": antes.Nome, "descricao": antes.Descricao, "ativo": antes.Ativo}, depois)
+		if len(a)+len(d)+len(entrou)+len(saiu) == 0 {
+			naoAuditar(r) // nada mudou
+			return
+		}
+		ev.Acao, ev.Antes, ev.Depois = "papel.editar", a, d
+	}
+	h.auditarCom(audit.Cliente{Q: qt}, r, ev)
+}
+
+func dadosParaAuditoria(nome, email, telefone, papel string, web, tablet, ativo bool) map[string]any {
+	return map[string]any{
+		"nome": nome, "email": email, "telefone": telefone, "papel": papel,
+		"login_web": web, "login_tablet": tablet, "ativo": ativo,
+	}
+}
+
+// auditarEdicaoUsuario registra o que mudou na edição de um usuário (só os campos alterados).
+func (h *handlers) auditarEdicaoUsuario(r *http.Request, q *sqlccliente.Queries, antes sqlccliente.Usuario, d dadosUsuario) {
+	nomePapel := func(id int64) string {
+		if p, err := q.GetPapel(r.Context(), id); err == nil {
+			return p.Nome
+		}
+		return strconv.FormatInt(id, 10)
+	}
+	a, dep := audit.Diferenca(
+		dadosParaAuditoria(antes.Nome, antes.Email, antes.Telefone, nomePapel(antes.PapelID), antes.LoginWeb, antes.LoginTablet, antes.Ativo),
+		dadosParaAuditoria(d.nome, antes.Email, d.telefone, nomePapel(d.papelID), d.loginWeb, d.loginTablet, d.ativo),
+	)
+	if len(a)+len(dep) == 0 {
+		naoAuditar(r)
+		return
+	}
+	h.auditar(r, audit.Evento{
+		Acao: "usuario.editar", Entidade: "usuario", EntidadeID: strconv.FormatInt(antes.ID, 10), Rotulo: d.nome,
+		Antes: a, Depois: dep,
+	})
 }

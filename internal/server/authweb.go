@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"uysiarbo/internal/audit"
 	"uysiarbo/internal/auth"
 	"uysiarbo/internal/db/sqlccliente"
 	"uysiarbo/internal/tenant"
@@ -175,10 +176,7 @@ func (h *handlers) entrarPost(w http.ResponseWriter, r *http.Request) {
 		renderStatus(w, r, status, views.Login(h.loginData(r, email, msg, proximo)))
 	}
 
-	ip := r.RemoteAddr
-	if i := strings.LastIndex(ip, ":"); i > 0 && !strings.Contains(ip, "]") {
-		ip = ip[:i]
-	}
+	ip := ipDe(r)
 	ok, err := h.captcha.Verificar(r.Context(), r.PostFormValue("g-recaptcha-response"), ip)
 	if err != nil {
 		h.log.Error("verificar captcha", "erro", err, "request_id", r.Header.Get("X-Request-Id"))
@@ -197,6 +195,16 @@ func (h *handlers) entrarPost(w http.ResponseWriter, r *http.Request) {
 		falha(http.StatusTooManyRequests, "Muitas tentativas erradas. Tente de novo depois das "+bloq.Ate.In(fusoLocal).Format("15:04")+".")
 		return
 	case errors.Is(err, auth.ErrCredenciais):
+		// Só registra quando o e-mail existe (assim o histórico não enche de tentativas aleatórias).
+		var cred auth.ErroCredenciais
+		if errors.As(err, &cred) && cred.Conta != nil && cred.Conta.Ativo {
+			ator := atorDaConta(*cred.Conta)
+			det := map[string]any{"tentativa": cred.Conta.Tentativas + 1}
+			h.auditar(r, audit.Evento{Ator: ator, Acao: "login.falha", Entidade: "conta", EntidadeID: cred.Conta.ID, Rotulo: cred.Conta.Nome, Detalhes: det})
+			if cred.Bloqueou {
+				h.auditar(r, audit.Evento{Ator: ator, Acao: "login.bloqueio", Entidade: "conta", EntidadeID: cred.Conta.ID, Rotulo: cred.Conta.Nome, Detalhes: det})
+			}
+		}
 		falha(http.StatusUnauthorized, "E-mail ou senha incorretos.")
 		return
 	case err != nil:
@@ -205,6 +213,10 @@ func (h *handlers) entrarPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.auditar(r, audit.Evento{
+		Ator: atorDaConta(sess.Conta), Acao: "login.sucesso", Entidade: "conta", EntidadeID: sess.Conta.ID, Rotulo: sess.Conta.Nome,
+		Detalhes: map[string]any{"troca_pendente": sess.Conta.DeveTrocarSenha},
+	})
 	h.gravarSessao(w, r, token)
 	destino := destinoSeguro(proximo)
 	if sess.Conta.DeveTrocarSenha {
@@ -217,6 +229,9 @@ func (h *handlers) sair(w http.ResponseWriter, r *http.Request) {
 	if a, ok := authFrom(r.Context()); ok {
 		if c, err := r.Cookie(sessaoCookie); err == nil {
 			_ = a.svc.Sair(r.Context(), c.Value)
+		}
+		if a.sess != nil {
+			h.auditar(r, audit.Evento{Acao: "logout", Entidade: "conta", EntidadeID: a.sess.Conta.ID, Rotulo: a.sess.Conta.Nome})
 		}
 	}
 	h.limparSessao(w, r)
@@ -249,6 +264,7 @@ func (h *handlers) trocarSenhaPost(w http.ResponseWriter, r *http.Request) {
 		falha("A confirmação não confere com a nova senha.")
 		return
 	}
+	obrigatoria := a.sess.Conta.DeveTrocarSenha
 	err := a.svc.TrocarSenha(r.Context(), a.sess, r.PostFormValue("atual"), nova)
 	var fraca auth.SenhaFracaError
 	switch {
@@ -263,5 +279,9 @@ func (h *handlers) trocarSenhaPost(w http.ResponseWriter, r *http.Request) {
 		renderStatus(w, r, http.StatusInternalServerError, views.TrocarSenha(h.trocarData(r, "Não foi possível trocar a senha agora. Tente de novo.")))
 		return
 	}
+	h.auditar(r, audit.Evento{
+		Acao: "senha.trocar", Entidade: "conta", EntidadeID: a.sess.Conta.ID, Rotulo: a.sess.Conta.Nome,
+		Detalhes: map[string]any{"troca_obrigatoria": obrigatoria},
+	})
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }

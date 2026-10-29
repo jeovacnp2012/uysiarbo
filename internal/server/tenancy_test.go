@@ -72,15 +72,15 @@ func TestEnderecoSelecionaOCliente(t *testing.T) {
 		naoContem        []string
 	}{
 		{"subdomínio do cliente", "uysiarbonm.inovarsistemas.biz", "/", 200,
-			[]string{"Prefeitura de Nova Mutum", "c_novamutum"}, []string{"Sinop"}},
+			[]string{"Prefeitura de Nova Mutum", "Módulos do sistema"}, []string{"Sinop"}},
 		{"com porta e maiúsculas", "UYSIARBONM.inovarsistemas.biz:8443", "/", 200,
 			[]string{"Prefeitura de Nova Mutum"}, nil},
 		{"outro cliente, outro schema", "uysiarbosn.inovarsistemas.biz", "/", 200,
-			[]string{"Prefeitura de Sinop", "c_sinop"}, []string{"Nova Mutum"}},
+			[]string{"Prefeitura de Sinop", "Módulos do sistema"}, []string{"Nova Mutum"}},
 		{"domínio próprio", "arbo.sinop.mt.gov.br", "/", 200,
 			[]string{"Prefeitura de Sinop"}, nil},
 		{"console da plataforma", "uysiarbo.inovarsistemas.biz", "/", 200,
-			[]string{"Console da plataforma", "Clientes cadastrados"}, []string{"c_novamutum"}},
+			[]string{"Console da plataforma", "clientes ativos"}, []string{"Módulos do sistema"}},
 		{"cliente suspenso", "suspenso.inovarsistemas.biz", "/", 403,
 			[]string{"tenant_suspended"}, nil},
 		{"cliente inexistente", "naoexiste.inovarsistemas.biz", "/", 404, []string{"not_found"}, nil},

@@ -8,6 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
+	"uysiarbo/internal/audit"
 	"uysiarbo/internal/auth"
 	"uysiarbo/internal/db/sqlc"
 )
@@ -39,6 +40,10 @@ func (s *Service) CriarMaster(ctx context.Context, nome, email string) (sqlc.Pla
 	if err != nil {
 		return sqlc.PlataformaUsuario{}, "", fmt.Errorf("criar master: %w", err)
 	}
+	s.auditar(ctx, audit.Evento{
+		Acao: "master.criar", Entidade: "master", EntidadeID: u.Email, Rotulo: u.Nome,
+		Depois: map[string]any{"nome": u.Nome, "email": u.Email, "master": true, "troca_obrigatoria": true},
+	})
 	return u, senha, nil
 }
 
@@ -58,6 +63,15 @@ func (s *Service) ResetarSenhaPlataforma(ctx context.Context, email string) (sql
 		return sqlc.PlataformaUsuario{}, "", err
 	}
 	u, err = q.SetPlataformaUsuarioSenha(ctx, sqlc.SetPlataformaUsuarioSenhaParams{ID: u.ID, SenhaHash: hash, DeveTrocarSenha: true})
+	if err == nil {
+		err = s.EncerrarSessoes(ctx, uuidTexto(u.ID.Bytes))
+	}
+	if err == nil {
+		s.auditar(ctx, audit.Evento{
+			Acao: "master.resetar_senha", Entidade: "master", EntidadeID: u.Email, Rotulo: u.Nome,
+			Detalhes: map[string]any{"troca_obrigatoria": true},
+		})
+	}
 	return u, senha, err
 }
 
@@ -69,4 +83,30 @@ func novaSenha() (senha, hash string, err error) {
 		return "", "", err
 	}
 	return senha, hash, nil
+}
+
+// EncerrarSessoes derruba todas as sessões abertas de uma conta da plataforma: a do console e as que
+// ela abriu dentro de cada cliente. Use depois de resetar a senha.
+func (s *Service) EncerrarSessoes(ctx context.Context, contaID string) error {
+	if _, err := s.Pool.Exec(ctx, `DELETE FROM sessoes_plataforma WHERE usuario_id = $1::uuid`, contaID); err != nil {
+		return err
+	}
+	clientes, err := sqlc.New(s.Pool).ListClientes(ctx)
+	if err != nil {
+		return err
+	}
+	for _, c := range clientes {
+		if c.Status == "provisionando" || c.Status == "cancelado" {
+			continue
+		}
+		sql := "DELETE FROM " + pgx.Identifier{c.SchemaNome, "sessoes"}.Sanitize() + " WHERE master_id = $1::uuid"
+		if _, err := s.Pool.Exec(ctx, sql, contaID); err != nil {
+			return fmt.Errorf("encerrar sessões em %s: %w", c.Slug, err)
+		}
+	}
+	return nil
+}
+
+func uuidTexto(b [16]byte) string {
+	return fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:16])
 }

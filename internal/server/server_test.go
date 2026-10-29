@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"strings"
 	"testing"
 	"uysiarbo/internal/db/sqlc"
@@ -165,3 +166,21 @@ func TestEstaticos(t *testing.T) {
 }
 
 func (fakeInfo) ListClientes(context.Context) ([]sqlc.Cliente, error) { return nil, nil }
+
+func TestArquivosEstaticosTemVersaoNaURL(t *testing.T) {
+	body := get(t, "/").Body.String()
+	re := regexp.MustCompile(`/static/css/app\.css\?v=([0-9a-f]{10})"`)
+	m := re.FindStringSubmatch(body)
+	if m == nil {
+		t.Fatalf("o CSS deveria levar a versão na URL: %.400s", body)
+	}
+	for _, quer := range []string{`/static/js/app.js?v=` + m[1], `/static/vendor/alpine.min.js?v=` + m[1], `/static/vendor/htmx.min.js?v=` + m[1]} {
+		if !strings.Contains(body, quer) {
+			t.Errorf("faltou %q", quer)
+		}
+	}
+	// A URL com a versão continua servindo o arquivo.
+	if rec := get(t, "/static/css/app.css?v="+m[1]); rec.Code != http.StatusOK {
+		t.Errorf("status = %d", rec.Code)
+	}
+}

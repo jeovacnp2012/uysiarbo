@@ -1,7 +1,11 @@
 // Package views contém as telas e componentes em templ.
 package views
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/a-h/templ"
+)
 
 // Version é a versão exibida no rodapé do menu. Será ligada a Novidades/Versões na etapa 1.8.
 const Version = "0.5.0"
@@ -18,15 +22,6 @@ type Layout struct {
 	Cliente string // nome do cliente (prefeitura), quando o endereço é de um cliente
 	Usuario string // nome de quem está logado
 	CSRF    string // token CSRF, enviado nos formulários e nas chamadas HTMX
-}
-
-// HomeData são os dados da página inicial: do cliente (prefeitura) ou do console da plataforma.
-type HomeData struct {
-	Sistema  string
-	Console  bool   // true no endereço do console, sem cliente
-	Cliente  string // nome lido de dentro do schema do cliente
-	Schema   string
-	Clientes int // total de clientes (só no console)
 }
 
 // Pagination descreve a paginação de uma listagem.
@@ -74,4 +69,16 @@ type Column struct {
 type Toast struct {
 	Kind    string `json:"kind"` // sucesso, erro, aviso, info
 	Message string `json:"message"`
+}
+
+// AssetVersion é a versão dos arquivos estáticos (definida na inicialização do servidor).
+var AssetVersion string
+
+// asset devolve o endereço de um arquivo estático com a versão, para o cache do navegador não
+// segurar uma versão antiga depois de uma atualização.
+func asset(caminho string) templ.SafeURL {
+	if AssetVersion == "" {
+		return templ.SafeURL(caminho)
+	}
+	return templ.SafeURL(caminho + "?v=" + AssetVersion)
 }

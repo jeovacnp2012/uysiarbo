@@ -35,10 +35,10 @@ templ authShell(titulo, cliente string, recaptcha bool) {
 					} catch (e) {}
 				})();
 			</script>
-			<link rel="icon" href="/static/brand/uysi-symbol.png"/>
-			<link rel="stylesheet" href="/static/css/app.css"/>
-			<script defer src="/static/js/app.js"></script>
-			<script defer src="/static/vendor/alpine.min.js"></script>
+			<link rel="icon" href={ asset("/static/brand/uysi-symbol.png") }/>
+			<link rel="stylesheet" href={ asset("/static/css/app.css") }/>
+			<script defer src={ asset("/static/js/app.js") }></script>
+			<script defer src={ asset("/static/vendor/alpine.min.js") }></script>
 			if recaptcha {
 				<script src="https://www.google.com/recaptcha/api.js" async defer></script>
 			}
@@ -46,7 +46,7 @@ templ authShell(titulo, cliente string, recaptcha bool) {
 		<body class="entrar" x-data>
 			<main class="entrar-cartao">
 				<div class="entrar-marca">
-					<img src="/static/brand/uysi-symbol.png" alt=""/>
+					<img src={ asset("/static/brand/uysi-symbol.png") } alt=""/>
 					<div>
 						<strong>UYSI ARBO</strong>
 						if cliente != "" {

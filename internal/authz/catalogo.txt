@@ -211,6 +211,7 @@ param_doenca|Doenças e entrevistas|
 # Auditoria
 auditoria_visita|Visita|
 auditoria_local|Local|
+auditoria_sistema|Histórico geral do sistema|
 # Configuração
 conf_usuario|Usuário|
 conf_papel|Papel de usuário|

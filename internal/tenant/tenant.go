@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"uysiarbo/internal/audit"
 	"uysiarbo/internal/db"
 	"uysiarbo/internal/db/sqlc"
 )
@@ -33,6 +34,8 @@ type Service struct {
 	Pool *pgxpool.Pool
 	URL  string
 	Log  *slog.Logger
+	// Auditoria, se configurada, recebe o histórico das ações da linha de comando (nil = não registra).
+	Auditoria audit.Registrador
 }
 
 // Provision cria o cliente: registra no catálogo, cria o schema, aplica as migrações e ativa.
@@ -55,6 +58,7 @@ func (s *Service) Provision(ctx context.Context, in Input) (sqlc.Cliente, error)
 	}
 
 	q := sqlc.New(s.Pool)
+	novo := false
 	cliente, err := q.GetClienteBySlug(ctx, in.Slug)
 	switch {
 	case err == nil:
@@ -69,6 +73,7 @@ func (s *Service) Provision(ctx context.Context, in Input) (sqlc.Cliente, error)
 		if cliente, err = s.registrar(ctx, in, schema); err != nil {
 			return cliente, err
 		}
+		novo = true
 	default:
 		return cliente, err
 	}
@@ -84,6 +89,12 @@ func (s *Service) Provision(ctx context.Context, in Input) (sqlc.Cliente, error)
 		return cliente, err
 	}
 	s.Log.Info("cliente provisionado", "cliente", cliente.Slug, "schema", schema)
+	if novo {
+		s.auditar(ctx, audit.Evento{
+			Acao: "cliente.criar", Entidade: "cliente", EntidadeID: cliente.Slug, Rotulo: cliente.Nome,
+			Depois: map[string]any{"nome": cliente.Nome, "slug": cliente.Slug, "subdominio": cliente.Subdominio, "dominio": cliente.Dominio.String, "plano": cliente.Plano, "schema": cliente.SchemaNome},
+		})
+	}
 	return cliente, nil
 }
 

@@ -122,3 +122,11 @@ func FromContext(ctx context.Context) (sqlc.Cliente, bool) {
 	c, ok := ctx.Value(ctxKey{}).(sqlc.Cliente)
 	return c, ok
 }
+
+// Limpar esquece o que o resolvedor guardou. Use depois de mudar o status de um cliente, para a
+// mudança valer na hora neste processo.
+func (r *Resolver) Limpar() {
+	r.mu.Lock()
+	r.cache = nil
+	r.mu.Unlock()
+}

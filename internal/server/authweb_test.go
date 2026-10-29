@@ -11,6 +11,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"uysiarbo/internal/audit"
 	"uysiarbo/internal/auth"
 	"uysiarbo/internal/db"
 	"uysiarbo/internal/db/sqlc"
@@ -42,6 +45,8 @@ type mundo struct {
 	captcha  *captchaFalso
 	masterPw string
 	cliQ     *sqlccliente.Queries // consultas no schema de Nova Mutum, para montar cenários
+	pool     *pgxpool.Pool        // conexão geral (schema public), para consultas diretas
+	pubQ     *sqlc.Queries
 }
 
 // novoMundo sobe o servidor completo (com login) sobre um banco temporário, com dois clientes, dois
@@ -57,7 +62,7 @@ func novoMundo(t *testing.T) *mundo {
 	t.Cleanup(pool.Close)
 
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
-	svc := &tenant.Service{Pool: pool, URL: url, Log: log}
+	svc := &tenant.Service{Pool: pool, URL: url, Log: log, Auditoria: audit.Plataforma{Q: sqlc.New(pool)}}
 	for _, in := range []tenant.Input{
 		{Nome: "Prefeitura de Nova Mutum", Slug: "novamutum", Subdominio: "uysiarbonm"},
 		{Nome: "Prefeitura de Sinop", Slug: "sinop", Subdominio: "uysiarbosn"},
@@ -92,10 +97,10 @@ func novoMundo(t *testing.T) *mundo {
 	}
 
 	cap := &captchaFalso{ok: true}
-	return &mundo{captcha: cap, masterPw: masterPw, cliQ: q, h: New(Deps{
+	return &mundo{captcha: cap, masterPw: masterPw, cliQ: q, pool: pool, pubQ: sqlc.New(pool), h: New(Deps{
 		Log: log, DB: pool, Catalog: sqlc.New(pool), Pools: pools,
 		Resolver: &tenant.Resolver{Pool: pool, BaseDomain: "inovarsistemas.biz", AdminHost: hostConsole},
-		Public:   sqlc.New(pool), Captcha: cap, RecaptchaSite: "chave-publica-de-teste",
+		Public:   sqlc.New(pool), Captcha: cap, RecaptchaSite: "chave-publica-de-teste", Tenants: svc,
 	})}
 }
 

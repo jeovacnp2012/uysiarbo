@@ -8,6 +8,25 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Auditorium struct {
+	ID         int64              `json:"id"`
+	Quando     pgtype.Timestamptz `json:"quando"`
+	AtorTipo   string             `json:"ator_tipo"`
+	AtorID     string             `json:"ator_id"`
+	AtorNome   string             `json:"ator_nome"`
+	AtorEmail  string             `json:"ator_email"`
+	Ip         string             `json:"ip"`
+	UserAgent  string             `json:"user_agent"`
+	RequestID  string             `json:"request_id"`
+	Acao       string             `json:"acao"`
+	Entidade   string             `json:"entidade"`
+	EntidadeID string             `json:"entidade_id"`
+	Rotulo     string             `json:"rotulo"`
+	Antes      []byte             `json:"antes"`
+	Depois     []byte             `json:"depois"`
+	Detalhes   []byte             `json:"detalhes"`
+}
+
 type ClienteInfo struct {
 	Chave    string             `json:"chave"`
 	Valor    string             `json:"valor"`

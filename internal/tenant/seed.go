@@ -7,6 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
+	"uysiarbo/internal/audit"
 	"uysiarbo/internal/authz"
 	"uysiarbo/internal/db/sqlc"
 	"uysiarbo/internal/db/sqlccliente"
@@ -68,5 +69,20 @@ func (s *Service) SincronizarTodos(ctx context.Context) error {
 		}
 		s.Log.Info("cliente sincronizado", "cliente", c.Slug)
 	}
+	s.auditar(ctx, audit.Evento{Acao: "cliente.sincronizar", Entidade: "cliente", Rotulo: "todos os clientes", Detalhes: map[string]any{"clientes": len(clientes), "com_erro": len(erros)}})
 	return errors.Join(erros...)
+}
+
+// auditar registra uma ação no histórico da plataforma, se houver um configurado. Falha só vai para o log.
+func (s *Service) auditar(ctx context.Context, e audit.Evento) {
+	if s.Auditoria == nil {
+		return
+	}
+	audit.Preencher(ctx, &e)
+	if e.Ator.Tipo == "" {
+		e.Ator = audit.Sistema
+	}
+	if err := s.Auditoria.Registrar(ctx, e); err != nil {
+		s.Log.Error("ERRO AO GRAVAR AUDITORIA", "acao", e.Acao, "erro", err)
+	}
 }
