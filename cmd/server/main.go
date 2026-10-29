@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -16,7 +17,23 @@ import (
 	"uysiarbo/internal/server"
 )
 
+// version é preenchida no build (-ldflags "-X main.version=...").
+var version = "dev"
+
 func main() {
+	if len(os.Args) > 1 {
+		switch os.Args[1] {
+		case "version", "--version":
+			fmt.Println("uysiarbo", version)
+			return
+		case "migrate":
+			if err := migrate(os.Args[2:]); err != nil {
+				fmt.Fprintln(os.Stderr, "erro:", err)
+				os.Exit(1)
+			}
+			return
+		}
+	}
 	if err := run(); err != nil {
 		slog.Error("falha ao executar", "erro", err)
 		os.Exit(1)
@@ -53,7 +70,7 @@ func run() error {
 
 	errCh := make(chan error, 1)
 	go func() {
-		log.Info("servidor iniciado", "addr", cfg.Addr, "env", cfg.Env)
+		log.Info("servidor iniciado", "versao", version, "addr", cfg.Addr, "env", cfg.Env)
 		errCh <- srv.ListenAndServe()
 	}()
 
@@ -69,4 +86,17 @@ func run() error {
 		return srv.Shutdown(shutdownCtx)
 	}
 	return nil
+}
+
+// migrate aplica as migrações embutidas: "uysiarbo migrate [up|down|status|reset]".
+func migrate(args []string) error {
+	command := "up"
+	if len(args) > 0 {
+		command = args[0]
+	}
+	cfg, err := config.Load(".env")
+	if err != nil {
+		return err
+	}
+	return db.Migrate(context.Background(), cfg.DatabaseURL, command)
 }

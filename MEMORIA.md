@@ -5,7 +5,7 @@ Arquivo vivo, versionado no Git, para retomar o trabalho em qualquer PC. **O Cla
 ## Regras permanentes de trabalho
 - Toda comunicação, narração de ferramentas, commits, PRs e textos de interface em **pt_BR**. Código (variáveis, classes) em inglês técnico.
 - Uma sub-etapa por vez: propor, executar, testar, mostrar, esperar aprovação.
-- Nada de commit, push ou produção sem o usuário pedir.
+- Nada de commit ou produção sem o usuário pedir. Quando ele pedir para commitar, o Claude faz commit **e push** para `origin/main` (autorização permanente de 2026-10-29); se o push for bloqueado pelo sistema de permissões, só commit e avisar.
 - Mudança de escopo/decisão: atualizar `docs/plano-de-execucao.md` antes do código.
 - Regra de "pronto": testes passando, telas conferidas, Guia atualizado, versão em Novidades, migrações em todos os schemas, aprovação do usuário.
 
@@ -20,10 +20,11 @@ Nova versão do Geo Controle (controle de endemias/dengue para prefeituras) em G
 - Etapa 0: **0.1 concluída** (repo, `go.mod`, pastas, `cmd/server/main.go` "olá mundo").
 - **0.2 concluída** (Postgres 18 + PostGIS do Laragon, `.env.example`, `scripts/criar-banco.ps1`; `.env` local criado, o `postgres` local não exige senha).
 - **0.3 concluída**: `internal/config` (.env + ambiente), `internal/httpx` (JSON e erro padrão `{error:{code,message,request_id}}`), `internal/server` (chi, request-id, log de acesso, recoverer, `/healthz`), `cmd/server` com shutdown gracioso. Testes: `go test ./...`. Rodar: `go run ./cmd/server` (porta `APP_ADDR`, padrão `:8080`). `/readyz` com ping no banco entra na 0.4.
-- **0.4 concluída**: `migrations/` (goose, embutido via `embed`), `internal/db` (pool pgx, `Migrate`), `internal/db/queries` + `sqlc.yaml` → `internal/db/sqlc` (gerado; regenerar com `go tool sqlc generate`), `cmd/migrate`, `/readyz`. O servidor não sobe sem banco. Testes de integração usam o banco `uysiarbo_test` (`TEST_DATABASE_URL` para mudar). Rodar scripts .ps1 com `powershell -ExecutionPolicy Bypass -File ...` (a política padrão bloqueia).
+- **0.4 concluída**: `migrations/` (goose, embutido via `embed`), `internal/db` (pool pgx, `Migrate`), `internal/db/queries` + `sqlc.yaml` → `internal/db/sqlc` (gerado; regenerar com `go tool sqlc generate`), `/readyz`. O servidor não sobe sem banco. Testes de integração usam o banco `uysiarbo_test` (`TEST_DATABASE_URL` para mudar). Rodar scripts .ps1 com `powershell -ExecutionPolicy Bypass -File ...` (a política padrão bloqueia).
 - **Decisão (2026-10-29): o app Flutter do tablet é a ÚLTIMA etapa do projeto (agora Etapa 14, depois de Produção/Etapa 13).** A API de sincronização em lote (6.4) continua no backend, antes.
 - **0.5 concluída**: `web/` (embed, CSS UYSI claro/escuro, `app.js` com tema, toasts e campo de senha), `web/static/vendor` (htmx 2.0.4, alpine 3.14.9, baixados do jsDelivr), `web/views` (templ: layout com menu lateral, PageHeader, Table, Pager por HTMX, Modal, Toasts, PasswordField), rotas `/`, `/componentes`, `/componentes/tabela`, `/static/*`. Gerar telas: `go tool templ generate` (os `*_templ.go` vão para o Git). Conferido no navegador (desktop e celular). Ainda sem CSRF (entra com o login, etapa 1.5). Páginas `/componentes` são só demonstração e saem quando houver telas reais.
-- Próximas: 0.6 CI/build.
+- **0.6 concluída — Etapa 0 (Fundação) completa.** `cmd/server` virou o binário único (`uysiarbo migrate [up|down|status|reset]`, `uysiarbo version`; o `cmd/migrate` foi removido). `scripts/verificar.ps1` roda as mesmas checagens do CI antes de commitar; `scripts/build.ps1 [-Linux] [-Versao x]` gera `bin/uysiarbo.exe` ou `bin/uysiarbo-linux-amd64` (~15 MB, estático, testado isolado). CI em `.github/workflows/ci.yml` (imagem `postgis/postgis:18-3.6`, **ainda não executado no GitHub**: conferir a primeira execução). Aviso: no Windows o `go test` às vezes sai com erro "unlinkat" por causa do antivírus, mesmo com testes verdes.
+- **Próxima: Etapa 1** (clientes/schemas, acesso, usuário master, reset de senha). Antes de começar, rever com o usuário as decisões pendentes da Etapa 1 (chaves do reCAPTCHA, domínio, modelo comercial).
 
 ## Ambiente (PC principal do dono)
 - Windows 11, Laragon em `C:\laragon\www\uysiarbo`, Go 1.27.3.

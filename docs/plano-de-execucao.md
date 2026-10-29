@@ -40,9 +40,9 @@ Objetivo: base técnica pronta para receber qualquer módulo.
 - [x] 0.1 Repositório Git, módulo Go (`go.mod`), estrutura de pastas (`cmd/`, `internal/`, `web/`, `migrations/`, `docs/`)
 - [x] 0.2 Ambiente local: Postgres 18 + PostGIS 3.6.2 do Laragon (sem Docker); `.env.example`; `scripts/criar-banco.ps1` (comando único)
 - [x] 0.3 Servidor HTTP (`chi`), configuração (`.env`), logs estruturados (`slog`), erros padronizados em JSON, health check `/healthz`, encerramento gracioso
-- [x] 0.4 Migrações (`goose`, embutidas no binário; `go run ./cmd/migrate up|down|status|reset`) e acesso a dados (`sqlc` + `pgx`, `go tool sqlc generate`); primeira migração `00001_criar_app_info`; `/readyz` com ping no banco
+- [x] 0.4 Migrações (`goose`, embutidas no binário; ``uysiarbo migrate up|down|status|reset` (ou `go run ./cmd/server migrate ...`)`) e acesso a dados (`sqlc` + `pgx`, `go tool sqlc generate`); primeira migração `00001_criar_app_info`; `/readyz` com ping no banco
 - [x] 0.5 Front base: layout com menu lateral, tema claro/escuro, `templ` + HTMX + Alpine (arquivos em `web/static/vendor`, embutidos no binário), componentes de tabela paginada, filtros, modal, toasts e campo de senha com revelar
-- [ ] 0.6 CI (testes e lint) e script de build para um único binário
+- [x] 0.6 CI (GitHub Actions: gofmt, templ/sqlc em dia, go vet, testes com Postgres+PostGIS, build Linux) e scripts: `scripts/verificar.ps1` (mesmas checagens, local) e `scripts/build.ps1` (binário único, `-Linux` para a VPS)
 **Entrega:** "olá mundo" com layout, banco e testes rodando.
 
 ## Etapa 1 — Clientes (schemas), acesso e administração
