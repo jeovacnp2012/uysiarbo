@@ -1,0 +1,22 @@
+# Go
+/bin/
+*.exe
+*.test
+*.out
+coverage.*
+
+# Ambiente e segredos
+.env
+.env.*
+!.env.example
+
+# Dados e arquivos locais
+/tmp/
+/storage/
+*.log
+
+# Editor / SO
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
