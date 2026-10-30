@@ -1962,3 +1962,17 @@ form.gaveta.sem-anim,
 .gaveta-fundo.sem-anim {
     transition: none;
 }
+
+/* O select nativo escondido pelo seletor pesquisável nunca aparece, qualquer que seja o contêiner */
+select.sb-nativo {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    opacity: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+    clip-path: inset(50%);
+}

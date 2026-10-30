@@ -9,6 +9,7 @@ templ Mobilidade(l Layout, d MobilidadeData) {
 			method="get"
 			action="/mobilidade/historico"
 			class="cartao filtros filtros-vivos"
+			autocomplete="off"
 			hx-get="/mobilidade/historico"
 			hx-trigger="input delay:350ms, change delay:60ms, filtrar from:body"
 			hx-sync="this:replace"

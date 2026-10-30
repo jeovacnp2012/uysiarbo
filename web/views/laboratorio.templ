@@ -9,6 +9,7 @@ templ Laboratorio(l Layout, d LaboratorioData) {
 			method="get"
 			action="/laboratorio"
 			class="cartao filtros filtros-vivos"
+			autocomplete="off"
 			hx-get="/laboratorio"
 			hx-trigger="input delay:350ms, change delay:60ms, filtrar from:body"
 			hx-sync="this:replace"

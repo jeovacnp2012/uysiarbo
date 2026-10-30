@@ -35,6 +35,7 @@ templ Visitas(l Layout, d VisitasData) {
 			method="get"
 			action="/visitas"
 			class="cartao filtros filtros-vivos"
+			autocomplete="off"
 			hx-get="/visitas"
 			hx-trigger="input delay:350ms, change delay:60ms, filtrar from:body"
 			hx-sync="this:replace"

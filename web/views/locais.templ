@@ -45,6 +45,7 @@ templ Locais(l Layout, d LocaisData) {
 			method="get"
 			action="/locais"
 			class="cartao filtros filtros-vivos"
+			autocomplete="off"
 			hx-get="/locais"
 			hx-trigger="input delay:350ms, change delay:60ms, filtrar from:body"
 			hx-sync="this:replace"

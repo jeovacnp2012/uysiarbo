@@ -44,14 +44,14 @@ func Mobilidade(l Layout, d MobilidadeData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<form method=\"get\" action=\"/mobilidade/historico\" class=\"cartao filtros filtros-vivos\" hx-get=\"/mobilidade/historico\" hx-trigger=\"input delay:350ms, change delay:60ms, filtrar from:body\" hx-sync=\"this:replace\" hx-target=\"#mobilidade-lista\" hx-select=\"#mobilidade-lista\" hx-swap=\"outerHTML\" hx-push-url=\"true\" hx-indicator=\"#mobilidade-lista\"><div class=\"campo campo-largo\"><label for=\"f-dispositivo\">Aparelho</label> <input id=\"f-dispositivo\" name=\"dispositivo\" type=\"search\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<form method=\"get\" action=\"/mobilidade/historico\" class=\"cartao filtros filtros-vivos\" autocomplete=\"off\" hx-get=\"/mobilidade/historico\" hx-trigger=\"input delay:350ms, change delay:60ms, filtrar from:body\" hx-sync=\"this:replace\" hx-target=\"#mobilidade-lista\" hx-select=\"#mobilidade-lista\" hx-swap=\"outerHTML\" hx-push-url=\"true\" hx-indicator=\"#mobilidade-lista\"><div class=\"campo campo-largo\"><label for=\"f-dispositivo\">Aparelho</label> <input id=\"f-dispositivo\" name=\"dispositivo\" type=\"search\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templruntime.NewAttributeExpression(d.Filtro.Dispositivo).Resolve(ctx)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/mobilidade.templ`, Line: 23, Col: 91}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/mobilidade.templ`, Line: 24, Col: 91}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var3)
 			if templ_7745c5c3_Err != nil {
@@ -72,7 +72,7 @@ func Mobilidade(l Layout, d MobilidadeData) templ.Component {
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templruntime.NewAttributeExpression(d.Filtro.De).Resolve(ctx)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/mobilidade.templ`, Line: 28, Col: 62}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/mobilidade.templ`, Line: 29, Col: 62}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var4)
 			if templ_7745c5c3_Err != nil {
@@ -85,7 +85,7 @@ func Mobilidade(l Layout, d MobilidadeData) templ.Component {
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templruntime.NewAttributeExpression(d.Filtro.Ate).Resolve(ctx)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/mobilidade.templ`, Line: 32, Col: 65}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/mobilidade.templ`, Line: 33, Col: 65}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var5)
 			if templ_7745c5c3_Err != nil {
@@ -121,7 +121,7 @@ func Mobilidade(l Layout, d MobilidadeData) templ.Component {
 				var templ_7745c5c3_Var6 string
 				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(s.Recebido)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/mobilidade.templ`, Line: 64, Col: 22}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/mobilidade.templ`, Line: 65, Col: 22}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 				if templ_7745c5c3_Err != nil {
@@ -139,7 +139,7 @@ func Mobilidade(l Layout, d MobilidadeData) templ.Component {
 					var templ_7745c5c3_Var7 string
 					templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(s.Enviado)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/mobilidade.templ`, Line: 67, Col: 68}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/mobilidade.templ`, Line: 68, Col: 68}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 					if templ_7745c5c3_Err != nil {
@@ -163,7 +163,7 @@ func Mobilidade(l Layout, d MobilidadeData) templ.Component {
 					var templ_7745c5c3_Var8 string
 					templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(s.Dispositivo)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/mobilidade.templ`, Line: 74, Col: 26}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/mobilidade.templ`, Line: 75, Col: 26}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 					if templ_7745c5c3_Err != nil {
@@ -177,7 +177,7 @@ func Mobilidade(l Layout, d MobilidadeData) templ.Component {
 				var templ_7745c5c3_Var9 string
 				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(s.Credencial)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/mobilidade.templ`, Line: 77, Col: 52}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/mobilidade.templ`, Line: 78, Col: 52}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 				if templ_7745c5c3_Err != nil {
@@ -190,7 +190,7 @@ func Mobilidade(l Layout, d MobilidadeData) templ.Component {
 				var templ_7745c5c3_Var10 string
 				templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(s.Visitas))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/mobilidade.templ`, Line: 78, Col: 60}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/mobilidade.templ`, Line: 79, Col: 60}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 				if templ_7745c5c3_Err != nil {
@@ -203,7 +203,7 @@ func Mobilidade(l Layout, d MobilidadeData) templ.Component {
 				var templ_7745c5c3_Var11 string
 				templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(s.Criadas))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/mobilidade.templ`, Line: 79, Col: 60}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/mobilidade.templ`, Line: 80, Col: 60}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 				if templ_7745c5c3_Err != nil {
@@ -216,7 +216,7 @@ func Mobilidade(l Layout, d MobilidadeData) templ.Component {
 				var templ_7745c5c3_Var12 string
 				templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(s.Existentes))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/mobilidade.templ`, Line: 80, Col: 68}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/mobilidade.templ`, Line: 81, Col: 68}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 				if templ_7745c5c3_Err != nil {
@@ -234,7 +234,7 @@ func Mobilidade(l Layout, d MobilidadeData) templ.Component {
 					var templ_7745c5c3_Var13 string
 					templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(s.Conflitos))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/mobilidade.templ`, Line: 83, Col: 68}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/mobilidade.templ`, Line: 84, Col: 68}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 					if templ_7745c5c3_Err != nil {
@@ -262,7 +262,7 @@ func Mobilidade(l Layout, d MobilidadeData) templ.Component {
 					var templ_7745c5c3_Var14 string
 					templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(s.Rejeitadas))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/mobilidade.templ`, Line: 90, Col: 70}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/mobilidade.templ`, Line: 91, Col: 70}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 					if templ_7745c5c3_Err != nil {
@@ -285,7 +285,7 @@ func Mobilidade(l Layout, d MobilidadeData) templ.Component {
 				var templ_7745c5c3_Var15 string
 				templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(s.Amostras))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/mobilidade.templ`, Line: 95, Col: 62}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/mobilidade.templ`, Line: 96, Col: 62}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 				if templ_7745c5c3_Err != nil {

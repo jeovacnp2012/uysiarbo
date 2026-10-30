@@ -211,6 +211,12 @@
             botao.focus();
         });
 
+        var vizinho = sel.nextElementSibling;
+        while (vizinho && vizinho.classList.contains('sb')) {
+            var velho = vizinho;
+            vizinho = vizinho.nextElementSibling;
+            velho.remove();
+        }
         sel.classList.add('sb-nativo');
         sel.tabIndex = -1;
         sel.setAttribute('aria-hidden', 'true');
@@ -277,6 +283,14 @@
             if (s && s._sb) s._sb.atualizar();
         });
     }
+
+    function reconferir() {
+        document.querySelectorAll('select').forEach(function (s) {
+            if (s._sb) s._sb.atualizar();
+        });
+    }
+    window.addEventListener('load', reconferir);
+    window.addEventListener('pageshow', reconferir);
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar);
     else iniciar();
