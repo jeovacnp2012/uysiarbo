@@ -123,6 +123,7 @@ templ CidadeForm(l Layout, d CidadeFormData) {
 templ Bairros(l Layout, d BairrosData) {
 	@Base(l) {
 		@PageHeader("Bairros", "Bairros e povoados, com responsáveis e quarteirões.") {
+			<a class="btn" href="/cidades" data-icone="pin">Cidades</a>
 			if d.PodeEditar {
 				<a class="btn btn-primario" href="/bairros/novo">Novo bairro</a>
 			}

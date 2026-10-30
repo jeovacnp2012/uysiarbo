@@ -192,7 +192,6 @@ func (s *handlers) menu(r *http.Request) []views.NavGrupo {
 		add(pr.Pode("param_leis"), "Leis municipais", "/leis")
 		add(pr.Pode("param_doenca"), "Doenças e agravos", "/doencas")
 		add(pr.Pode("param_doenca"), "Entrevistas", "/entrevistas")
-		add(pr.Pode("bairro_visualizar"), "Cidades", "/cidades")
 		incluir("Parâmetros", "parametros")
 
 		if pr.Pode("auditoria_sistema") {
