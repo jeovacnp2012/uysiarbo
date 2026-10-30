@@ -110,7 +110,8 @@ Objetivo: migrar dados de outros sistemas e de planilhas, com segurança.
   - Feito em 2026-10-29 (versão 1.0.018): migração `cliente/00018` (`atividades` fixa com as 9 siglas, `ciclos` com exclusão lógica, `ciclo_atividades`, `ciclo_painel_atividades`, `ciclo_sincronizar`), tela `/ciclos` (permissão `param_ciclo`), aviso (não bloqueio) de períodos que se cruzam. O bloqueio por ciclo fechado e a semana epidemiológica ficam na 5.2.
 - [x] 5.2 Semana epidemiológica (ISO ou SINAN) e regra de ciclo fechado bloqueando edição
   - Feito em 2026-10-29 (versão 1.0.019): pacote `internal/epi` (SINAN e ISO, testado em viradas de ano), parâmetro `semana_epidemiologica` em `cliente_info` (padrão SINAN, escolhido na tela Ciclos), semanas mostradas na lista e na ficha do ciclo, e as regras reutilizáveis `cicloAceitaEdicao` (ciclo fechado exige `visita_editar_ciclo_fechado`) e `cicloAceitaData` (período, ou `permite_fora_periodo`) em `internal/server/semana.go`, que as telas de visita da Etapa 6 vão chamar.
-- [ ] 5.3 Parâmetros gerais, de mobilidade (app) e Leis Municipais com trechos
+- [x] 5.3 Parâmetros gerais, de mobilidade (app) e Leis Municipais com trechos
+  - Feito em 2026-10-29 (versão 1.0.020): registro tipado de parâmetros em `internal/server/parametros.go` (bool, int, CEP, senha; guardados em `cliente_info`), telas `/parametros/geral` e `/parametros/mobilidade`, migração `cliente/00019` (`leis_municipais` e `leis_trechos`, ambas com exclusão lógica e Lixeira), telas `/leis` com trechos, permissões `param_geral`, `param_mobilidade`, `param_leis`.
 - [ ] 5.4 Importador de ciclos; guia e Novidades atualizados
 
 ## Etapa 6 — Visitas e laboratório (núcleo do negócio)

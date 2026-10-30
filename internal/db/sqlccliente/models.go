@@ -223,6 +223,30 @@ type Importaco struct {
 	OrigemInfo          string             `json:"origem_info"`
 }
 
+type LeisMunicipai struct {
+	ID           int64              `json:"id"`
+	Numero       string             `json:"numero"`
+	Ano          int16              `json:"ano"`
+	Nome         string             `json:"nome"`
+	Publicacao   pgtype.Date        `json:"publicacao"`
+	Ativo        bool               `json:"ativo"`
+	CriadoEm     pgtype.Timestamptz `json:"criado_em"`
+	AtualizadoEm pgtype.Timestamptz `json:"atualizado_em"`
+	DeletedAt    pgtype.Timestamptz `json:"deleted_at"`
+	DeletedBy    pgtype.Int8        `json:"deleted_by"`
+}
+
+type LeisTrecho struct {
+	ID           int64              `json:"id"`
+	LeiID        int64              `json:"lei_id"`
+	Artigo       string             `json:"artigo"`
+	Texto        string             `json:"texto"`
+	CriadoEm     pgtype.Timestamptz `json:"criado_em"`
+	AtualizadoEm pgtype.Timestamptz `json:"atualizado_em"`
+	DeletedAt    pgtype.Timestamptz `json:"deleted_at"`
+	DeletedBy    pgtype.Int8        `json:"deleted_by"`
+}
+
 type Locai struct {
 	ID                   int64              `json:"id"`
 	Tipo                 string             `json:"tipo"`

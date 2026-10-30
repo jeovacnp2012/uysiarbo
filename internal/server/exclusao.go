@@ -323,6 +323,86 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 			return out, err
 		},
 	},
+	"lei": {
+		Chave: "lei", Rotulo: "Lei municipal", Plural: "Leis municipais", Genero: "a",
+		soft: func(ctx context.Context, q *sqlccliente.Queries, id int64, por pgtype.Int8) (int64, error) {
+			return q.SoftDeleteLei(ctx, sqlccliente.SoftDeleteLeiParams{ID: id, Por: por})
+		},
+		restore: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			return q.RestoreLei(ctx, id)
+		},
+		force: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			return q.ForceDeleteLei(ctx, id)
+		},
+		rotulo: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, bool, error) {
+			l, err := q.GetLeiQualquer(ctx, id)
+			return "Lei " + l.Numero + "/" + strconv.Itoa(int(l.Ano)), l.DeletedAt.Valid, err
+		},
+		filhosAtivos: func(ctx context.Context, q *sqlccliente.Queries, id int64) ([]string, error) {
+			n, err := q.ContarTrechosDaLei(ctx, id)
+			if err != nil || n.Ativos == 0 {
+				return nil, err
+			}
+			return []string{plural(n.Ativos, "trecho ativo", "trechos ativos")}, nil
+		},
+		vinculos: func(ctx context.Context, q *sqlccliente.Queries, id int64) ([]string, error) {
+			n, err := q.ContarTrechosDaLei(ctx, id)
+			if err != nil || n.Total == 0 {
+				return nil, err
+			}
+			return []string{plural(n.Total, "trecho", "trechos") + " (contando os excluídos)"}, nil
+		},
+		paiExcluido: func(context.Context, *sqlccliente.Queries, int64) (string, error) { return "", nil },
+		lixeira: func(ctx context.Context, q *sqlccliente.Queries) ([]views.LixeiraLinha, error) {
+			rows, err := q.ListLeisExcluidas(ctx)
+			out := make([]views.LixeiraLinha, len(rows))
+			for i, r := range rows {
+				out[i] = views.LixeiraLinha{ID: r.ID, Rotulo: r.Rotulo, Contexto: r.Contexto, Quando: r.DeletedAt.Time, Por: r.ExcluidoPor}
+			}
+			return out, err
+		},
+	},
+	"lei_trecho": {
+		Chave: "lei_trecho", Rotulo: "Trecho de lei", Plural: "Trechos de leis", Genero: "o",
+		soft: func(ctx context.Context, q *sqlccliente.Queries, id int64, por pgtype.Int8) (int64, error) {
+			return q.SoftDeleteTrecho(ctx, sqlccliente.SoftDeleteTrechoParams{ID: id, Por: por})
+		},
+		restore: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			return q.RestoreTrecho(ctx, id)
+		},
+		force: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			return q.ForceDeleteTrecho(ctx, id)
+		},
+		rotulo: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, bool, error) {
+			t, err := q.GetTrechoQualquer(ctx, id)
+			nome := t.Artigo
+			if nome == "" {
+				nome = "trecho " + strconv.FormatInt(t.ID, 10)
+			}
+			return nome, t.DeletedAt.Valid, err
+		},
+		// As visitas, notificações e autos que citam o trecho entram aqui quando as suas etapas existirem.
+		filhosAtivos: func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
+		vinculos:     func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
+		paiExcluido: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, error) {
+			t, err := q.GetTrechoQualquer(ctx, id)
+			if err != nil {
+				return "", err
+			}
+			if l, err := q.GetLeiQualquer(ctx, t.LeiID); err == nil && l.DeletedAt.Valid {
+				return "a lei " + l.Numero + "/" + strconv.Itoa(int(l.Ano)), nil
+			}
+			return "", nil
+		},
+		lixeira: func(ctx context.Context, q *sqlccliente.Queries) ([]views.LixeiraLinha, error) {
+			rows, err := q.ListTrechosExcluidos(ctx)
+			out := make([]views.LixeiraLinha, len(rows))
+			for i, r := range rows {
+				out[i] = views.LixeiraLinha{ID: r.ID, Rotulo: r.Rotulo, Contexto: r.Contexto, Quando: r.DeletedAt.Time, Por: r.ExcluidoPor}
+			}
+			return out, err
+		},
+	},
 	"grupo": {
 		Chave: "grupo", Rotulo: "Grupo de locais", Plural: "Grupos de locais", Genero: "o",
 		soft: func(ctx context.Context, q *sqlccliente.Queries, id int64, por pgtype.Int8) (int64, error) {
@@ -354,7 +434,7 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 }
 
 // ordemDaLixeira é a ordem das abas.
-var ordemDaLixeira = []string{"local", "quarteirao", "bairro", "cidade", "ciclo", "grupo", "mapeamento"}
+var ordemDaLixeira = []string{"local", "quarteirao", "bairro", "cidade", "ciclo", "lei", "lei_trecho", "grupo", "mapeamento"}
 
 // excluirLogicamente aplica a regra completa: recusa se há filhos ativos; senão marca deleted_at.
 // Devolve os motivos da recusa (vazio = excluído), o nome do registro e o erro de banco, se houve.

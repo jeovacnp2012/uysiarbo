@@ -1,0 +1,161 @@
+package views
+
+import "strconv"
+
+// ---- Leis municipais ----
+
+templ Leis(l Layout, linhas []LeiLinha) {
+	@Base(l) {
+		@PageHeader("Leis municipais", "As leis e os trechos (artigos) que podem ser citados em visitas, notificações e autos de infração.") {
+			<a class="btn btn-primario" href="/leis/nova">Nova lei</a>
+		}
+		<section class="cartao">
+			<div class="tabela-wrap">
+				<table class="tabela">
+					<thead>
+						<tr>
+							<th scope="col">Lei</th>
+							<th scope="col">Nome</th>
+							<th scope="col">Publicação</th>
+							<th scope="col">Trechos</th>
+							<th scope="col">Situação</th>
+							<th scope="col"><span class="sr-only">Ações</span></th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, x := range linhas {
+							<tr>
+								<td data-rotulo="Lei"><strong>{ x.Numero }/{ strconv.Itoa(x.Ano) }</strong></td>
+								<td data-rotulo="Nome">{ x.Nome }</td>
+								<td data-rotulo="Publicação">{ x.Publicacao }</td>
+								<td data-rotulo="Trechos">{ strconv.Itoa(x.Trechos) }</td>
+								<td data-rotulo="Situação">
+									if x.Ativo {
+										<span class="selo selo-ok">Ativa</span>
+									} else {
+										<span class="selo selo-aviso">Inativa</span>
+									}
+								</td>
+								<td data-rotulo="Ações"><a class="btn" href={ templ.SafeURL("/leis/" + strconv.FormatInt(x.ID, 10)) }>Abrir</a></td>
+							</tr>
+						}
+					</tbody>
+				</table>
+				if len(linhas) == 0 {
+					<div class="tabela-vazia">Nenhuma lei cadastrada.</div>
+				}
+			</div>
+		</section>
+	}
+}
+
+templ LeiForm(l Layout, d LeiFormData) {
+	@Base(l) {
+		if d.Novo() {
+			@PageHeader("Nova lei", "") {
+				<a class="btn" href="/leis">Voltar</a>
+			}
+		} else {
+			@PageHeader("Lei municipal", d.Numero + "/" + d.Ano + " — " + d.Nome) {
+				<a class="btn" href="/leis">Voltar</a>
+			}
+			@Presenca("lei", strconv.FormatInt(d.ID, 10), modoDaTela(true))
+		}
+		<form
+			method="post"
+			if d.Novo() {
+				action="/leis"
+			} else {
+				action={ templ.SafeURL("/leis/" + strconv.FormatInt(d.ID, 10)) }
+			}
+			class="cartao form-admin"
+		>
+			<input type="hidden" name="csrf" value={ d.CSRF }/>
+			if d.Erro != "" {
+				<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
+			}
+			<fieldset class="sem-borda">
+				<div class="grade-form">
+					<div class="campo">
+						<label for="numero">Número</label>
+						<input id="numero" name="numero" type="text" value={ d.Numero } maxlength="15" required/>
+					</div>
+					<div class="campo">
+						<label for="ano">Ano</label>
+						<input id="ano" name="ano" type="number" value={ d.Ano } min="1900" max="2100" required/>
+					</div>
+					<div class="campo">
+						<label for="publicacao">Data de publicação (opcional)</label>
+						<input id="publicacao" name="publicacao" type="date" value={ d.Publicacao }/>
+					</div>
+				</div>
+				<div class="campo">
+					<label for="nome">Nome / ementa</label>
+					<input id="nome" name="nome" type="text" value={ d.Nome } maxlength="200" required/>
+				</div>
+				if !d.Novo() {
+					<label class="marcar">
+						<input type="checkbox" name="ativo" value="1" checked?={ d.Ativo }/>
+						Lei ativa (pode ser escolhida em novos registros)
+					</label>
+				}
+			</fieldset>
+			<div class="form-acoes">
+				<button type="submit" class="btn btn-primario">Salvar</button>
+				<a class="btn" href="/leis">Cancelar</a>
+			</div>
+		</form>
+		if !d.Novo() {
+			<section class="cartao form-admin" id="trechos">
+				<h2>Trechos da lei</h2>
+				<p class="subtitulo">Os artigos, parágrafos ou incisos que podem ser citados. Cada trecho tem um rótulo (como "Art. 12, §2º") e o texto.</p>
+				if d.ErroTrecho != "" {
+					<p class="alerta alerta-erro" role="alert">{ d.ErroTrecho }</p>
+				}
+				for _, t := range d.Trechos {
+					<form method="post" action={ templ.SafeURL("/leis/" + strconv.FormatInt(d.ID, 10) + "/trechos/" + strconv.FormatInt(t.ID, 10)) } class="form-admin">
+						<input type="hidden" name="csrf" value={ d.CSRF }/>
+						<div class="campo">
+							<label for={ "artigo-" + strconv.FormatInt(t.ID, 10) }>Rótulo</label>
+							<input id={ "artigo-" + strconv.FormatInt(t.ID, 10) } name="artigo" type="text" value={ t.Artigo } maxlength="60"/>
+						</div>
+						<div class="campo">
+							<label for={ "texto-" + strconv.FormatInt(t.ID, 10) }>Texto</label>
+							<textarea id={ "texto-" + strconv.FormatInt(t.ID, 10) } name="texto" rows="3" maxlength="4000" required>{ t.Texto }</textarea>
+						</div>
+						<div class="form-acoes">
+							<button type="submit" class="btn">Salvar trecho</button>
+							<button type="submit" class="btn" formaction={ templ.SafeURL("/leis/" + strconv.FormatInt(d.ID, 10) + "/trechos/" + strconv.FormatInt(t.ID, 10) + "/excluir") } formnovalidate onclick="return confirm('Enviar para a lixeira?')">Excluir trecho</button>
+						</div>
+					</form>
+				}
+				if len(d.Trechos) == 0 {
+					<p class="subtitulo">Nenhum trecho cadastrado.</p>
+				}
+				<h3>Novo trecho</h3>
+				<form method="post" action={ templ.SafeURL("/leis/" + strconv.FormatInt(d.ID, 10) + "/trechos") } class="form-admin">
+					<input type="hidden" name="csrf" value={ d.CSRF }/>
+					<div class="campo">
+						<label for="novo-artigo">Rótulo</label>
+						<input id="novo-artigo" name="artigo" type="text" value={ d.NovoArtigo } maxlength="60" placeholder="Art. 12, §2º"/>
+					</div>
+					<div class="campo">
+						<label for="novo-texto">Texto</label>
+						<textarea id="novo-texto" name="texto" rows="3" maxlength="4000" required>{ d.NovoTexto }</textarea>
+					</div>
+					<div class="form-acoes">
+						<button type="submit" class="btn btn-primario">Adicionar trecho</button>
+					</div>
+				</form>
+			</section>
+			<section class="cartao form-admin" id="excluir">
+				<h2>Excluir lei</h2>
+				<p class="subtitulo">Só é possível se a lei não tiver trechos ativos. Nada é apagado de verdade: vai para a Lixeira e dá para restaurar.</p>
+				<form method="post" action={ templ.SafeURL("/leis/" + strconv.FormatInt(d.ID, 10) + "/excluir") } class="inline" onsubmit="return confirm('Enviar para a lixeira?')">
+					<input type="hidden" name="csrf" value={ d.CSRF }/>
+					<button type="submit" class="btn">Excluir lei</button>
+				</form>
+			</section>
+		}
+	}
+}

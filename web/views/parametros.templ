@@ -1,0 +1,69 @@
+package views
+
+import "strconv"
+
+templ Parametros(l Layout, d ParametrosData) {
+	@Base(l) {
+		@PageHeader(d.Titulo, d.Descricao) {
+		}
+		<form method="post" action={ templ.SafeURL(d.Acao) } class="cartao form-admin">
+			<input type="hidden" name="csrf" value={ d.CSRF }/>
+			if d.Salvo {
+				<p class="alerta alerta-ok" role="status">Parâmetros salvos.</p>
+			}
+			if d.Erro != "" {
+				<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
+			}
+			<fieldset class="sem-borda">
+				for _, c := range d.Campos {
+					switch c.Tipo {
+						case "bool":
+							<label class="marcar">
+								<input type="checkbox" name={ c.Chave } value="1" checked?={ c.Marcado }/>
+								{ c.Rotulo }
+							</label>
+							if c.Ajuda != "" {
+								<p class="subtitulo">{ c.Ajuda }</p>
+							}
+						case "senha":
+							<div class="campo">
+								<label for={ "p-" + c.Chave }>{ c.Rotulo }</label>
+								if c.Definida {
+									<p class="subtitulo">Há uma senha definida. Digite outra para trocá-la.</p>
+								}
+								<input id={ "p-" + c.Chave } name={ c.Chave } type="password" maxlength="64" autocomplete="new-password"/>
+								if c.Definida {
+									<label class="marcar">
+										<input type="checkbox" name={ c.Chave + "_remover" } value="1"/>
+										Remover a senha
+									</label>
+								}
+								if c.Ajuda != "" {
+									<p class="subtitulo">{ c.Ajuda }</p>
+								}
+							</div>
+						case "int":
+							<div class="campo">
+								<label for={ "p-" + c.Chave }>{ c.Rotulo }</label>
+								<input id={ "p-" + c.Chave } name={ c.Chave } type="number" value={ c.Valor } min={ strconv.Itoa(c.Min) } max={ strconv.Itoa(c.Max) } required/>
+								if c.Ajuda != "" {
+									<p class="subtitulo">{ c.Ajuda }</p>
+								}
+							</div>
+						default:
+							<div class="campo">
+								<label for={ "p-" + c.Chave }>{ c.Rotulo }</label>
+								<input id={ "p-" + c.Chave } name={ c.Chave } type="text" value={ c.Valor } maxlength="9" inputmode="numeric"/>
+								if c.Ajuda != "" {
+									<p class="subtitulo">{ c.Ajuda }</p>
+								}
+							</div>
+					}
+				}
+			</fieldset>
+			<div class="form-acoes">
+				<button type="submit" class="btn btn-primario">Salvar</button>
+			</div>
+		</form>
+	}
+}
