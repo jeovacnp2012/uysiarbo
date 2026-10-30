@@ -2162,3 +2162,17 @@ select.sb-nativo {
 @media (min-width: 641px) {
     .tabela td.quebra2 { max-width: none; min-width: 11rem; width: 100%; }
 }
+
+/* Ficha de caso (9.1) */
+.caso { display: flex; flex-direction: column; gap: 1rem; }
+.caso-forms { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); }
+.caso-form { display: flex; flex-direction: column; gap: 0.6rem; padding: 0.9rem; border: 1px solid var(--borda); border-radius: 0.6rem; }
+.caso-form textarea, .caso-form select, .caso-form input:not([type=hidden]) { width: 100%; }
+.caso-acoes { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.caso-anexos { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
+.caso-anexos li { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; }
+.caso-linha { list-style: none; margin: 0; padding: 0 0 0 1rem; border-left: 2px solid var(--borda); display: grid; gap: 1rem; }
+.caso-evento { position: relative; }
+.caso-evento::before { content: ""; position: absolute; left: -1.4rem; top: 0.35rem; width: 0.7rem; height: 0.7rem; border-radius: 50%; background: var(--marca); }
+.caso-evento-cab { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; }
+.caso-texto { white-space: pre-wrap; overflow-wrap: anywhere; margin: 0.3rem 0 0; }

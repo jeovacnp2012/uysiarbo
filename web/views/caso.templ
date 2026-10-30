@@ -1,0 +1,144 @@
+package views
+
+import "strconv"
+
+func casoBase(d FichaCasoData) string {
+	return "/casos/" + d.Tipo + "/" + strconv.FormatInt(d.ID, 10)
+}
+
+func iconeDoEvento(e string) string {
+	switch e {
+	case "comentario":
+		return "file"
+	case "acao":
+		return "play"
+	case "encaminhamento":
+		return "user"
+	case "anexo":
+		return "upload"
+	}
+	return "tag"
+}
+
+func rotuloDoEvento(e string) string {
+	switch e {
+	case "comentario":
+		return "Comentário"
+	case "acao":
+		return "Ação"
+	case "encaminhamento":
+		return "Encaminhamento"
+	case "anexo":
+		return "Anexo"
+	}
+	return "Registro criado"
+}
+
+// FichaCaso é a ficha comum dos casos: ações, encaminhamento, anexos e a linha do tempo de tudo o que aconteceu.
+templ FichaCaso(d FichaCasoData) {
+	<section class="cartao caso" id="linha-do-tempo">
+		<h2 class="rel-titulo" data-ico="activity">Andamento do caso</h2>
+		if d.Erro != "" {
+			<p class="alerta" role="alert">{ d.Erro }</p>
+		}
+		if d.Responsavel != "" {
+			<p class="subtitulo">Com <strong>{ d.Responsavel }</strong></p>
+		}
+		if d.PodeEditar {
+			if len(d.Acoes) > 0 {
+				<div class="form-acoes caso-acoes">
+					for _, a := range d.Acoes {
+						<form method="post" action={ templ.SafeURL(a.URL) }>
+							<input type="hidden" name="csrf" value={ d.CSRF }/>
+							if a.Confirmar != "" {
+								<button type="submit" class={ "btn", templ.KV("btn-perigo", a.Perigo) } data-icone={ a.Icone } onclick={ templ.JSFuncCall("return confirm", a.Confirmar) }>{ a.Rotulo }</button>
+							} else {
+								<button type="submit" class={ "btn", templ.KV("btn-perigo", a.Perigo) } data-icone={ a.Icone }>{ a.Rotulo }</button>
+							}
+						</form>
+					}
+				</div>
+			}
+			<div class="caso-forms">
+				<form method="post" action={ templ.SafeURL(casoBase(d) + "/comentario") } class="caso-form" data-sem-gaveta>
+					<input type="hidden" name="csrf" value={ d.CSRF }/>
+					<div class="campo">
+						<label for="caso-texto" data-ico="file">Comentário</label>
+						<textarea id="caso-texto" name="texto" rows="3" maxlength="2000" required placeholder="Escreva o que aconteceu ou o que foi combinado"></textarea>
+					</div>
+					<div class="form-acoes"><button type="submit" class="btn btn-primario" data-icone="save">Registrar</button></div>
+				</form>
+				<form method="post" action={ templ.SafeURL(casoBase(d) + "/encaminhar") } class="caso-form" data-sem-gaveta>
+					<input type="hidden" name="csrf" value={ d.CSRF }/>
+					<div class="campo">
+						<label for="caso-destino" data-ico="user">Encaminhar para</label>
+						<select id="caso-destino" name="destino" required>
+							<option value="">Escolha uma pessoa</option>
+							for _, u := range d.Usuarios {
+								<option value={ strconv.FormatInt(u.ID, 10) }>{ u.Rotulo }</option>
+							}
+						</select>
+					</div>
+					<div class="campo">
+						<label for="caso-motivo" data-ico="file">Recado (opcional)</label>
+						<input id="caso-motivo" name="texto" maxlength="2000"/>
+					</div>
+					<div class="form-acoes"><button type="submit" class="btn" data-icone="send">Encaminhar</button></div>
+				</form>
+				<form method="post" action={ templ.SafeURL(casoBase(d) + "/anexos") } enctype="multipart/form-data" class="caso-form" data-sem-gaveta>
+					<input type="hidden" name="csrf" value={ d.CSRF }/>
+					<div class="campo">
+						<label for="caso-arquivo" data-ico="upload">Anexar arquivos (JPEG, PNG, WebP ou PDF, até 5 MB cada)</label>
+						<input id="caso-arquivo" type="file" name="arquivo" multiple required accept="image/jpeg,image/png,image/webp,application/pdf"/>
+					</div>
+					<div class="form-acoes"><button type="submit" class="btn" data-icone="upload">Anexar</button></div>
+				</form>
+			</div>
+		}
+		if len(d.Anexos) > 0 {
+			<h3 class="rel-titulo" data-ico="file">Anexos</h3>
+			<ul class="caso-anexos">
+				for _, a := range d.Anexos {
+					<li>
+						<a href={ templ.SafeURL(casoBase(d) + "/anexos/" + strconv.FormatInt(a.ID, 10)) } target="_blank" rel="noopener">{ a.Nome }</a>
+						<span class="subtitulo">{ a.Tamanho } · { a.Autor } · { a.Quando }</span>
+						if d.PodeEditar {
+							<form method="post" action={ templ.SafeURL(casoBase(d) + "/anexos/" + strconv.FormatInt(a.ID, 10) + "/excluir") } class="inline">
+								<input type="hidden" name="csrf" value={ d.CSRF }/>
+								<button type="submit" class="btn btn-perigo" data-icone="trash" onclick="return confirm('Excluir este anexo?')">Excluir</button>
+							</form>
+						}
+					</li>
+				}
+			</ul>
+		}
+		<h3 class="rel-titulo" data-ico="calendar">Linha do tempo</h3>
+		<ol class="caso-linha">
+			for _, e := range d.Eventos {
+				<li class={ "caso-evento", "caso-" + e.Evento }>
+					<div class="caso-evento-cab">
+						<strong data-ico={ iconeDoEvento(e.Evento) }>{ rotuloDoEvento(e.Evento) }</strong>
+						<span class="subtitulo">{ e.Autor } · { e.Quando }</span>
+					</div>
+					if e.Evento == "acao" && e.Para != "" {
+						<p>
+							if e.De != "" {
+								<span class="selo">{ e.De }</span> →
+							}
+							<span class="selo selo-ok">{ e.Para }</span>
+						</p>
+					}
+					if e.Evento == "encaminhamento" && e.Destino != "" {
+						<p>Encaminhado para <strong>{ e.Destino }</strong></p>
+					}
+					if e.Texto != "" {
+						<p class="caso-texto">{ e.Texto }</p>
+					}
+				</li>
+			}
+			if len(d.Eventos) == 0 {
+				<li class="subtitulo">Nada registrado ainda.</li>
+			}
+		</ol>
+	</section>
+}

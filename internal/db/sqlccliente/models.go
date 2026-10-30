@@ -138,6 +138,32 @@ type BairroResponsavei struct {
 	UsuarioID int64 `json:"usuario_id"`
 }
 
+type CasoAnexo struct {
+	ID        int64              `json:"id"`
+	Tipo      string             `json:"tipo"`
+	CasoID    int64              `json:"caso_id"`
+	Nome      string             `json:"nome"`
+	TipoMidia string             `json:"tipo_midia"`
+	Conteudo  []byte             `json:"conteudo"`
+	CriadoPor pgtype.Int8        `json:"criado_por"`
+	CriadoEm  pgtype.Timestamptz `json:"criado_em"`
+	DeletedAt pgtype.Timestamptz `json:"deleted_at"`
+	DeletedBy pgtype.Int8        `json:"deleted_by"`
+}
+
+type CasoEvento struct {
+	ID           int64              `json:"id"`
+	Tipo         string             `json:"tipo"`
+	CasoID       int64              `json:"caso_id"`
+	Evento       string             `json:"evento"`
+	Texto        string             `json:"texto"`
+	SituacaoDe   pgtype.Text        `json:"situacao_de"`
+	SituacaoPara pgtype.Text        `json:"situacao_para"`
+	DestinoID    pgtype.Int8        `json:"destino_id"`
+	UsuarioID    pgtype.Int8        `json:"usuario_id"`
+	CriadoEm     pgtype.Timestamptz `json:"criado_em"`
+}
+
 type Ciclo struct {
 	ID                 int64              `json:"id"`
 	Nome               string             `json:"nome"`

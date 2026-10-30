@@ -183,6 +183,12 @@ func New(d Deps) http.Handler {
 	r.Get("/visitas/{id}/fotos/{fid}", h.exigir("visita_visualizar", h.visitaFotoVer))
 	r.Post("/visitas/{id}/fotos/{fid}/excluir", h.exigir("visita_editar", h.visitaFotoExcluir))
 	r.Post("/visitas/{id}/anotacoes", h.exigir("visita_anotacao", h.visitaAnotar))
+	// ficha de caso (9.1): andamento comum a todo tipo de caso; a permissão vem do tipo
+	r.Post("/casos/{tipo}/{id}/comentario", h.casoRota(true, h.casoComentar))
+	r.Post("/casos/{tipo}/{id}/encaminhar", h.casoRota(true, h.casoEncaminhar))
+	r.Post("/casos/{tipo}/{id}/anexos", h.casoRota(true, h.casoAnexar))
+	r.Get("/casos/{tipo}/{id}/anexos/{aid}", h.casoRota(false, h.casoAnexoVer))
+	r.Post("/casos/{tipo}/{id}/anexos/{aid}/excluir", h.casoRota(true, h.casoAnexoExcluir))
 	r.Post("/visitas/{id}/excluir", h.exigir("visita_desativar", h.visitaExcluir))
 	r.Post("/visitas/{id}/ativo", h.exigir("visita_desativar", h.visitaAtivo))
 	r.Post("/visitas/{id}/amostras", h.exigir("visita_editar", h.amostraCriar))
