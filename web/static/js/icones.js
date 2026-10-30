@@ -197,6 +197,13 @@
         (raiz || document).querySelectorAll('.campo > label').forEach(enfeitarCampo);
     }
 
+    // Texto cortado com reticências numa célula da tabela: ao passar o mouse, a dica mostra o texto completo.
+    document.addEventListener('mouseover', function (ev) {
+        var td = ev.target && ev.target.closest && ev.target.closest('.tabela td');
+        if (!td || td.hasAttribute('title')) return;
+        if (td.scrollWidth > td.clientWidth + 1) td.setAttribute('title', td.textContent.replace(/\s+/g, ' ').trim());
+    });
+
     var pendente = false;
     function agendar() {
         if (pendente) return;

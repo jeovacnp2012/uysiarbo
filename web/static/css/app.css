@@ -2054,3 +2054,66 @@ select.sb-nativo {
     width: 1rem;
     height: 1rem;
 }
+
+/* Células com texto longo: cortam com reticências (o texto completo aparece ao passar o mouse) e a tabela cabe na tela */
+@media (min-width: 641px) {
+    .tabela td {
+        max-width: clamp(6rem, 16vw, 19rem);
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .tabela td[data-rotulo="Ações"],
+    .tabela td.acoes,
+    .tabela td.quebra {
+        max-width: none;
+        overflow: visible;
+        text-overflow: clip;
+    }
+}
+
+/* Todo o conteúdo fica dentro do container do meio: tabela larga nunca empurra a página */
+.pagina {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.pagina > * {
+    min-width: 0;
+}
+
+.tabela-wrap,
+.tabela-rolavel,
+.cartao:has(> .tabela) {
+    container-type: inline-size;
+    max-width: 100%;
+}
+
+@media (min-width: 641px) {
+    .tabela td {
+        max-width: clamp(5rem, 17cqw, 19rem);
+    }
+}
+
+/* Títulos de coluna podem quebrar em duas linhas; células cortam mais cedo para caber na largura do cartão */
+@media (min-width: 641px) {
+    .tabela th {
+        white-space: normal;
+        vertical-align: bottom;
+    }
+
+    .tabela td {
+        max-width: clamp(4.5rem, 13cqw, 17rem);
+    }
+}
+
+@media (min-width: 641px) {
+    .tabela th,
+    .tabela td {
+        padding-left: 0.45rem;
+        padding-right: 0.45rem;
+    }
+
+    .tabela td {
+        max-width: clamp(4.5rem, 12cqw, 17rem);
+    }
+}
