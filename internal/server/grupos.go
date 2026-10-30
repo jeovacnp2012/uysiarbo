@@ -534,7 +534,7 @@ func (h *handlers) localNoGrupo(w http.ResponseWriter, r *http.Request) {
 	gid, _ := strconv.ParseInt(r.PostFormValue("grupo_id"), 10, 64)
 	g, err := q.GetGrupo(r.Context(), gid)
 	if errors.Is(err, pgx.ErrNoRows) {
-		http.Redirect(w, r, fmt.Sprintf("/locais/%d?ok=semgrupo", l.ID), http.StatusSeeOther)
+		http.Redirect(w, r, fmt.Sprintf("/locais/%d/grupos?ok=semgrupo", l.ID), http.StatusSeeOther)
 		return
 	} else if err != nil {
 		h.falhaInterna(w, r, "buscar grupo", err)
@@ -557,7 +557,7 @@ func (h *handlers) localNoGrupo(w http.ResponseWriter, r *http.Request) {
 	} else {
 		naoAuditar(r)
 	}
-	http.Redirect(w, r, fmt.Sprintf("/locais/%d?ok=nogrupo", l.ID), http.StatusSeeOther)
+	http.Redirect(w, r, fmt.Sprintf("/locais/%d/grupos?ok=nogrupo", l.ID), http.StatusSeeOther)
 }
 
 // ------------------------------------------------------------------- Exportar

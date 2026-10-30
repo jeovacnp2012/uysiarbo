@@ -3,16 +3,16 @@ package views
 import "strconv"
 
 // FichaLocalTopo é a visão da ficha do local: dados, moradores, habitantes, QR, totais, reincidência, visitas e módulos.
-templ FichaLocalTopo(d LocalFormData) {
+templ FichaLocalTopo(d LocalFormData, completa bool) {
 	{{ id := strconv.FormatInt(d.ID, 10) }}
 	<section class="cartao fl-bloco fl-azul">
 		<div class="fl-cab">
 			<h2>Dados do Local <small>({ id })</small></h2>
 			<div class="fl-acoes">
-				if d.PodeGrupos {
-					<a class="btn btn-escuro" href="#grupos">Grupos</a>
+				if completa && d.PodeGrupos {
+					<a class="btn btn-escuro" href={ templ.SafeURL("/locais/" + id + "/grupos") }>{ rotuloGrupos(d) }</a>
 				}
-				if d.PodeEditar {
+				if completa && d.PodeEditar {
 					<button type="button" class="btn btn-escuro" @click="editar = !editar; if (editar) $nextTick(() => document.getElementById('editar-local').scrollIntoView({behavior: 'smooth'}))">Editar</button>
 				}
 			</div>
@@ -70,6 +70,7 @@ templ FichaLocalTopo(d LocalFormData) {
 			</div>
 		</div>
 	</section>
+	if completa {
 	if d.Totais != nil {
 		<div class="fl-totais">
 			<div class="cartao fl-total fl-t-escuro"><span>Total de visitas</span><strong>{ strconv.Itoa(d.Totais.Visitas) }</strong><small>Última: { vazioOuTraco(d.Totais.Ultima) }</small></div>
@@ -178,6 +179,7 @@ templ FichaLocalTopo(d LocalFormData) {
 		</section>
 	}
 	@FichaArmadilhas(d.EDLs, "fl-indigo", "manutenção", d.ID)
+	}
 }
 
 templ FichaArmadilhas(s ArmadilhasFicha, cor string, ultima string, localID int64) {
@@ -214,6 +216,51 @@ templ FichaArmadilhas(s ArmadilhasFicha, cor string, ultima string, localID int6
 						</tbody>
 					</table>
 				</div>
+			}
+		</section>
+	}
+}
+
+// LocalGrupos é a tela de grupos do local (como /local/grupo/{id} do Geo Controle): os dados do local e os grupos a que ele pertence.
+templ LocalGrupos(l Layout, d LocalFormData) {
+	@Base(l) {
+		@PageHeader("Grupos do local", d.Campos.Endereco + ", " + d.Campos.Numero) {
+			<a class="btn" href={ templ.SafeURL("/locais/" + strconv.FormatInt(d.ID, 10)) }>Acessar local</a>
+			if d.PodeGrupos {
+				<a class="btn btn-sucesso" href="/grupos" data-icone="grupos">Visualizar Grupos</a>
+			}
+		}
+		if d.Aviso != "" {
+			<p class="alerta alerta-ok" role="status">{ d.Aviso }</p>
+		}
+		@FichaLocalTopo(d, false)
+		<section class="cartao fl-bloco fl-roxo" id="grupos">
+			<div class="fl-cab"><h2>Grupos de locais</h2></div>
+			if len(d.Grupos) == 0 {
+				<div class="tabela-vazia">Este local não está em nenhum grupo.</div>
+			} else {
+				<ul class="lista-simples">
+					for _, g := range d.Grupos {
+						<li><a href={ templ.SafeURL("/grupos/" + strconv.FormatInt(g.ID, 10)) }>{ g.Nome }</a></li>
+					}
+				</ul>
+			}
+			if d.PodeGerenciarGrupos && len(d.GruposParaEscolha) > 0 {
+				<form method="post" action={ templ.SafeURL("/locais/" + strconv.FormatInt(d.ID, 10) + "/grupo") } class="form-admin">
+					<input type="hidden" name="csrf" value={ d.CSRF }/>
+					<div class="campo">
+						<label for="grupo_id">Acrescentar a um grupo</label>
+						<select id="grupo_id" name="grupo_id" required>
+							<option value="">Escolha o grupo</option>
+							for _, g := range d.GruposParaEscolha {
+								<option value={ strconv.FormatInt(g.ID, 10) }>{ g.Nome }</option>
+							}
+						</select>
+					</div>
+					<div class="form-acoes">
+						<button type="submit" class="btn btn-primario">Acrescentar</button>
+					</div>
+				</form>
 			}
 		</section>
 	}

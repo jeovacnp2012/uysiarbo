@@ -377,6 +377,7 @@ func New(d Deps) http.Handler {
 	r.Get("/locais/{id}", h.exigir("local_visualizar", h.localEditarForm))
 	r.Get("/locais/{id}/qr.png", h.exigir("local_visualizar", h.localQR))
 	r.Post("/locais/{id}/ativo", h.exigir("local_desativar", h.localAtivo))
+	r.Get("/locais/{id}/grupos", h.exigir("local_grupo_visualizar", h.localGrupos))
 	r.Post("/locais/{id}/grupo", h.exigir("local_grupo_gerenciar", h.localNoGrupo))
 	r.Post("/locais/{id}/chave", h.exigir("local_adicionar", h.localNovaChave))
 	r.Post("/locais/{id}", h.exigir("local_adicionar", h.localSalvar))

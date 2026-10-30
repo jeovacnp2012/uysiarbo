@@ -39,3 +39,11 @@ func positivasTexto(n int) string {
 	}
 	return strconv.Itoa(n) + " positiva(s)"
 }
+
+// rotuloGrupos é o texto do botão de grupos na ficha do local.
+func rotuloGrupos(d LocalFormData) string {
+	if len(d.Grupos) > 0 {
+		return "Gerenciar Grupos"
+	}
+	return "Criar Grupo"
+}

@@ -304,17 +304,23 @@ func TestFichaDoLocalComSecoesGruposEHistorico(t *testing.T) {
 
 	corpo := ana.get("/locais/1").Body.String()
 	for _, quer := range []string{"Dados do Local", "Visitas", "Zoonose — Campanha Antirrábica", "Notificações", "Ovitrampa", "EDL — Estação",
-		"Grupos de locais", "não está em nenhum grupo", "Acrescentar a um grupo", "Rota 1", "Rota 2", "Histórico de alterações", "Cadastrou um local"} {
+		"Criar Grupo", "Histórico de alterações", "Cadastrou um local"} {
 		if !strings.Contains(corpo, quer) {
 			t.Errorf("a ficha do local deveria conter %q", quer)
 		}
 	}
 
+	gr := ana.get("/locais/1/grupos").Body.String()
+	for _, quer := range []string{"Grupos de locais", "não está em nenhum grupo", "Acrescentar a um grupo", "Rota 1", "Rota 2", "Dados do Local"} {
+		if !strings.Contains(gr, quer) {
+			t.Errorf("a tela de grupos do local deveria conter %q", quer)
+		}
+	}
 	rec := ana.post("/locais/1/grupo", url.Values{"grupo_id": {g1}})
-	if rec.Code != http.StatusSeeOther || local(rec) != "/locais/1?ok=nogrupo" {
+	if rec.Code != http.StatusSeeOther || local(rec) != "/locais/1/grupos?ok=nogrupo" {
 		t.Fatalf("acrescentar ao grupo: %d %q", rec.Code, local(rec))
 	}
-	corpo = ana.get("/locais/1?ok=nogrupo").Body.String()
+	corpo = ana.get("/locais/1/grupos?ok=nogrupo").Body.String()
 	if !strings.Contains(corpo, "Local acrescentado ao grupo.") || !strings.Contains(corpo, `href="/grupos/`+g1+`"`) {
 		t.Error("a ficha deveria mostrar o grupo e o aviso")
 	}

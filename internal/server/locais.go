@@ -503,6 +503,13 @@ func (h *handlers) localNovoForm(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handlers) localEditarForm(w http.ResponseWriter, r *http.Request) {
+	h.mostrarLocal(w, r, false)
+}
+
+// localGrupos mostra os grupos do local (tela própria, como no Geo Controle).
+func (h *handlers) localGrupos(w http.ResponseWriter, r *http.Request) { h.mostrarLocal(w, r, true) }
+
+func (h *handlers) mostrarLocal(w http.ResponseWriter, r *http.Request, soGrupos bool) {
 	id, ok := idDaURL(r)
 	if !ok {
 		http.NotFound(w, r)
@@ -542,11 +549,17 @@ func (h *handlers) localEditarForm(w http.ResponseWriter, r *http.Request) {
 		form.Aviso = "Local reativado."
 	case "chave":
 		form.Aviso = "Nova chave gerada. O QR Code antigo deixou de valer."
+	case "semgrupo":
+		form.Aviso = "Escolha um grupo da lista."
 	case "nogrupo":
 		form.Aviso = "Local acrescentado ao grupo."
 	}
 	if err := h.completarFichaDoLocal(ctx, r, q, l, &form); err != nil {
 		h.falhaInterna(w, r, "montar ficha do local", err)
+		return
+	}
+	if soGrupos {
+		render(w, r, views.LocalGrupos(h.layout(r, "Grupos do local", "/locais"), form))
 		return
 	}
 	render(w, r, views.LocalForm(h.layout(r, "Local", "/locais"), form))
