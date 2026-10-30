@@ -132,7 +132,7 @@ Objetivo: migrar dados de outros sistemas e de planilhas, com segurança.
   - Feito em 2026-10-30 (versão 1.0.032): tipos `visitas` e `amostras` no gerenciador de importação (`internal/server/importacao_visitas.go`, migração `cliente/00025`; reaproveita `validarVisita` com permissão interna `visita_agente_inativo`, só cria, ignora o que já existe, desfaz pela Lixeira; pela API, `tipo` visitas/amostras com o escopo `visitas:write`). Também: selo de tubitos em análise no menu Laboratório e menu lateral recolhível. **Etapa 6 concluída**, salvo os filtros do Laboratório (6.3b).
 
 ## Etapa 7 — Dashboard, B.I. e mapas
-- [ ] 7.1 Dashboard por nível de acesso (cartões e gráficos do sistema atual)
+- [x] 7.1 Dashboard por nível de acesso (cartões e gráficos do sistema atual) — rota `/dashboard`, ciclo escolhível, escopo `visita_visualizar_minha` (versão 1.0.034)
 - [ ] 7.2 B.I.: IIP, Breteau, cobertura LIT por bairro e ciclo (**validar as fórmulas com a área técnica**)
 - [ ] 7.3 B.I. Epidemiológico (curva de incidência, faixa etária, bairros monitorados)
 - [ ] 7.4 Mapas: visitas, doenças, rastro GPS, campanha, ovitrampa, EDL, com filtros

@@ -1,0 +1,103 @@
+package views
+
+import "strconv"
+
+// BarraDash é uma barra dos gráficos do dashboard; Destaque é a parte da barra que merece ênfase (ex.: com depósito).
+type BarraDash struct {
+	Rotulo   string
+	Valor    int
+	Destaque int
+}
+
+type DashboardData struct {
+	Ciclos                                     []CidadeOpcao
+	Todos                                      bool
+	Visitas, Locais, ComDeposito, Fechadas     int
+	Recusadas, Tentativas, ComAmostra, Agentes int
+	ComTratamento                              int
+	Semanas, PorAgente, Amostras               []BarraDash
+}
+
+func (d DashboardData) Pendentes() int { return d.Fechadas + d.Recusadas + d.Tentativas }
+
+// percentual devolve parte/total em porcentagem inteira (0 se não há total).
+func percentual(parte, total int) int {
+	if total <= 0 {
+		return 0
+	}
+	return parte * 100 / total
+}
+
+func maiorValor(barras []BarraDash) int {
+	m := 1
+	for _, b := range barras {
+		if b.Valor > m {
+			m = b.Valor
+		}
+	}
+	return m
+}
+
+templ Dashboard(l Layout, d DashboardData) {
+	@Base(l) {
+		@PageHeader("Dashboard", "Resumo das visitas do ciclo: produção, depósitos, pendências e amostras.")
+		<form method="get" action="/dashboard" class="cartao filtros">
+			<label class="campo">
+				<span>Ciclo</span>
+				<select name="ciclo" onchange="this.form.submit()">
+					<option value="todos" selected?={ d.Todos }>Todos os ciclos</option>
+					for _, c := range d.Ciclos {
+						<option value={ strconv.FormatInt(c.ID, 10) } selected?={ c.Selecionada }>{ c.Rotulo }</option>
+					}
+				</select>
+			</label>
+		</form>
+		<div class="grade-cartoes">
+			@dashNumero("Visitas", d.Visitas, strconv.Itoa(d.Locais)+" locais visitados")
+			@dashNumero("Com depósito", d.ComDeposito, strconv.Itoa(percentual(d.ComDeposito, d.Visitas))+"% das visitas")
+			@dashNumero("Pendências", d.Pendentes(), strconv.Itoa(d.Fechadas)+" fechadas, "+strconv.Itoa(d.Recusadas)+" recusadas, "+strconv.Itoa(d.Tentativas)+" tentativas")
+			@dashNumero("Com amostra", d.ComAmostra, strconv.Itoa(percentual(d.ComAmostra, d.Visitas))+"% das visitas")
+			@dashNumero("Com tratamento", d.ComTratamento, strconv.Itoa(percentual(d.ComTratamento, d.Visitas))+"% das visitas")
+			@dashNumero("Agentes", d.Agentes, "com visitas no período")
+		</div>
+		<div class="grade-cartoes dash-graficos">
+			@dashBarras("Visitas por semana", "Parte escura: visitas com depósito", d.Semanas)
+			@dashBarras("Visitas por agente", "10 agentes com mais visitas; parte escura: com depósito", d.PorAgente)
+			@dashBarras("Amostras por situação", "Tubitos do período", d.Amostras)
+		</div>
+	}
+}
+
+templ dashNumero(titulo string, valor int, nota string) {
+	<section class="cartao numero">
+		<span class="subtitulo">{ titulo }</span>
+		<span class="numero-valor">{ strconv.Itoa(valor) }</span>
+		<span class="subtitulo">{ nota }</span>
+	</section>
+}
+
+templ dashBarras(titulo, nota string, barras []BarraDash) {
+	<section class="cartao dash-grafico">
+		<h2>{ titulo }</h2>
+		<p class="subtitulo">{ nota }</p>
+		if len(barras) == 0 {
+			<p class="subtitulo">Sem dados no período.</p>
+		} else {
+			<ul class="dash-barras">
+				for _, b := range barras {
+					<li>
+						<span class="dash-rotulo" title={ b.Rotulo }>{ b.Rotulo }</span>
+						<span class="dash-trilho">
+							<span class="dash-barra" style={ "width:" + strconv.Itoa(percentual(b.Valor, maiorValor(barras))) + "%" }>
+								if b.Destaque > 0 {
+									<span class="dash-destaque" style={ "width:" + strconv.Itoa(percentual(b.Destaque, b.Valor)) + "%" }></span>
+								}
+							</span>
+						</span>
+						<span class="dash-valor">{ strconv.Itoa(b.Valor) }</span>
+					</li>
+				}
+			</ul>
+		}
+	</section>
+}
