@@ -311,7 +311,7 @@ func Visitas(l Layout, d VisitasData) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, " <form method=\"get\" action=\"/visitas\" class=\"cartao filtros filtros-vivos\" hx-get=\"/visitas\" hx-trigger=\"input changed delay:350ms from:find input, change from:find .filtro-auto, filtrar from:body\" hx-target=\"#visitas-lista\" hx-select=\"#visitas-lista\" hx-swap=\"outerHTML\" hx-push-url=\"true\" hx-indicator=\"#visitas-lista\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, " <form method=\"get\" action=\"/visitas\" class=\"cartao filtros filtros-vivos\" hx-get=\"/visitas\" hx-trigger=\"input delay:350ms, change delay:60ms, filtrar from:body\" hx-sync=\"this:replace\" hx-target=\"#visitas-lista\" hx-select=\"#visitas-lista\" hx-swap=\"outerHTML\" hx-push-url=\"true\" hx-indicator=\"#visitas-lista\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -323,7 +323,7 @@ func Visitas(l Layout, d VisitasData) templ.Component {
 				var templ_7745c5c3_Var20 string
 				templ_7745c5c3_Var20, templ_7745c5c3_Err = templruntime.NewAttributeExpression(strconv.FormatInt(d.LocalID, 10)).Resolve(ctx)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 47, Col: 78}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 48, Col: 78}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var20)
 				if templ_7745c5c3_Err != nil {
@@ -345,7 +345,7 @@ func Visitas(l Layout, d VisitasData) templ.Component {
 			var templ_7745c5c3_Var21 string
 			templ_7745c5c3_Var21, templ_7745c5c3_Err = templruntime.NewAttributeExpression(d.Filtro.Endereco).Resolve(ctx)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 52, Col: 82}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 53, Col: 82}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var21)
 			if templ_7745c5c3_Err != nil {
@@ -402,7 +402,7 @@ func Visitas(l Layout, d VisitasData) templ.Component {
 			var templ_7745c5c3_Var22 string
 			templ_7745c5c3_Var22, templ_7745c5c3_Err = templruntime.NewAttributeExpression(d.Filtro.De).Resolve(ctx)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 78, Col: 62}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 79, Col: 62}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var22)
 			if templ_7745c5c3_Err != nil {
@@ -415,7 +415,7 @@ func Visitas(l Layout, d VisitasData) templ.Component {
 			var templ_7745c5c3_Var23 string
 			templ_7745c5c3_Var23, templ_7745c5c3_Err = templruntime.NewAttributeExpression(d.Filtro.Ate).Resolve(ctx)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 82, Col: 65}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 83, Col: 65}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var23)
 			if templ_7745c5c3_Err != nil {
@@ -477,7 +477,7 @@ func Visitas(l Layout, d VisitasData) templ.Component {
 				var templ_7745c5c3_Var24 string
 				templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(d.Aviso)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 104, Col: 55}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 105, Col: 55}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 				if templ_7745c5c3_Err != nil {
@@ -503,7 +503,7 @@ func Visitas(l Layout, d VisitasData) templ.Component {
 			var templ_7745c5c3_Var25 string
 			templ_7745c5c3_Var25, templ_7745c5c3_Err = templruntime.NewAttributeExpression(l.CSRF).Resolve(ctx)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 109, Col: 51}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 110, Col: 51}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var25)
 			if templ_7745c5c3_Err != nil {
@@ -516,7 +516,7 @@ func Visitas(l Layout, d VisitasData) templ.Component {
 			var templ_7745c5c3_Var26 string
 			templ_7745c5c3_Var26, templ_7745c5c3_Err = templruntime.NewAttributeExpression("/visitas?" + d.Query.Encode()).Resolve(ctx)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 110, Col: 77}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 111, Col: 77}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var26)
 			if templ_7745c5c3_Err != nil {
@@ -559,7 +559,7 @@ func Visitas(l Layout, d VisitasData) templ.Component {
 					var templ_7745c5c3_Var27 string
 					templ_7745c5c3_Var27, templ_7745c5c3_Err = templruntime.NewAttributeExpression(strconv.FormatInt(v.ID, 10)).Resolve(ctx)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 141, Col: 103}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 142, Col: 103}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var27)
 					if templ_7745c5c3_Err != nil {
@@ -577,7 +577,7 @@ func Visitas(l Layout, d VisitasData) templ.Component {
 				var templ_7745c5c3_Var28 string
 				templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.FormatInt(v.ID, 10))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 143, Col: 58}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 144, Col: 58}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 				if templ_7745c5c3_Err != nil {
@@ -590,7 +590,7 @@ func Visitas(l Layout, d VisitasData) templ.Component {
 				var templ_7745c5c3_Var29 string
 				templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(v.Endereco)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 144, Col: 48}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 145, Col: 48}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 				if templ_7745c5c3_Err != nil {
@@ -603,7 +603,7 @@ func Visitas(l Layout, d VisitasData) templ.Component {
 				var templ_7745c5c3_Var30 string
 				templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(v.Data)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 145, Col: 48}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 146, Col: 48}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 				if templ_7745c5c3_Err != nil {
@@ -616,7 +616,7 @@ func Visitas(l Layout, d VisitasData) templ.Component {
 				var templ_7745c5c3_Var31 string
 				templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(v.Agente)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 145, Col: 65}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 146, Col: 65}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 				if templ_7745c5c3_Err != nil {
@@ -629,7 +629,7 @@ func Visitas(l Layout, d VisitasData) templ.Component {
 				var templ_7745c5c3_Var32 string
 				templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(v.Ciclo)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 146, Col: 41}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 147, Col: 41}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 				if templ_7745c5c3_Err != nil {
@@ -642,7 +642,7 @@ func Visitas(l Layout, d VisitasData) templ.Component {
 				var templ_7745c5c3_Var33 string
 				templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(v.Semana)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 147, Col: 41}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 148, Col: 41}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 				if templ_7745c5c3_Err != nil {
@@ -655,7 +655,7 @@ func Visitas(l Layout, d VisitasData) templ.Component {
 				var templ_7745c5c3_Var34 string
 				templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(v.Atividade)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 148, Col: 49}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 149, Col: 49}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 				if templ_7745c5c3_Err != nil {
@@ -668,7 +668,7 @@ func Visitas(l Layout, d VisitasData) templ.Component {
 				var templ_7745c5c3_Var35 string
 				templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(v.Pendencia)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 149, Col: 50}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 150, Col: 50}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 				if templ_7745c5c3_Err != nil {
@@ -681,7 +681,7 @@ func Visitas(l Layout, d VisitasData) templ.Component {
 				var templ_7745c5c3_Var36 string
 				templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(simNao(v.Deposito))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 150, Col: 51}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 151, Col: 51}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 				if templ_7745c5c3_Err != nil {
@@ -694,7 +694,7 @@ func Visitas(l Layout, d VisitasData) templ.Component {
 				var templ_7745c5c3_Var37 string
 				templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(simNao(v.Amostra))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 151, Col: 53}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 152, Col: 53}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 				if templ_7745c5c3_Err != nil {
@@ -707,7 +707,7 @@ func Visitas(l Layout, d VisitasData) templ.Component {
 				var templ_7745c5c3_Var38 string
 				templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(simNao(v.Tratou))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 152, Col: 50}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 153, Col: 50}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
 				if templ_7745c5c3_Err != nil {
@@ -720,7 +720,7 @@ func Visitas(l Layout, d VisitasData) templ.Component {
 				var templ_7745c5c3_Var39 string
 				templ_7745c5c3_Var39, templ_7745c5c3_Err = templruntime.NewAttributeExpression(templ.SafeURL("/visitas/" + strconv.FormatInt(v.ID, 10))).ResolveURL(ctx)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 154, Col: 87}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 155, Col: 87}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var39)
 				if templ_7745c5c3_Err != nil {
@@ -804,7 +804,7 @@ func numeroVisita(id, rotulo, nome, valor string, max string, passo string) temp
 		var templ_7745c5c3_Var41 string
 		templ_7745c5c3_Var41, templ_7745c5c3_Err = templruntime.NewAttributeExpression(id).Resolve(ctx)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 183, Col: 17}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 184, Col: 17}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var41)
 		if templ_7745c5c3_Err != nil {
@@ -817,7 +817,7 @@ func numeroVisita(id, rotulo, nome, valor string, max string, passo string) temp
 		var templ_7745c5c3_Var42 string
 		templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(rotulo)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 183, Col: 28}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 184, Col: 28}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
 		if templ_7745c5c3_Err != nil {
@@ -830,7 +830,7 @@ func numeroVisita(id, rotulo, nome, valor string, max string, passo string) temp
 		var templ_7745c5c3_Var43 string
 		templ_7745c5c3_Var43, templ_7745c5c3_Err = templruntime.NewAttributeExpression(id).Resolve(ctx)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 184, Col: 16}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 185, Col: 16}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var43)
 		if templ_7745c5c3_Err != nil {
@@ -843,7 +843,7 @@ func numeroVisita(id, rotulo, nome, valor string, max string, passo string) temp
 		var templ_7745c5c3_Var44 string
 		templ_7745c5c3_Var44, templ_7745c5c3_Err = templruntime.NewAttributeExpression(nome).Resolve(ctx)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 184, Col: 30}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 185, Col: 30}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var44)
 		if templ_7745c5c3_Err != nil {
@@ -856,7 +856,7 @@ func numeroVisita(id, rotulo, nome, valor string, max string, passo string) temp
 		var templ_7745c5c3_Var45 string
 		templ_7745c5c3_Var45, templ_7745c5c3_Err = templruntime.NewAttributeExpression(max).Resolve(ctx)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 184, Col: 84}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 185, Col: 84}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var45)
 		if templ_7745c5c3_Err != nil {
@@ -869,7 +869,7 @@ func numeroVisita(id, rotulo, nome, valor string, max string, passo string) temp
 		var templ_7745c5c3_Var46 string
 		templ_7745c5c3_Var46, templ_7745c5c3_Err = templruntime.NewAttributeExpression(passo).Resolve(ctx)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 184, Col: 99}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 185, Col: 99}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var46)
 		if templ_7745c5c3_Err != nil {
@@ -882,7 +882,7 @@ func numeroVisita(id, rotulo, nome, valor string, max string, passo string) temp
 		var templ_7745c5c3_Var47 string
 		templ_7745c5c3_Var47, templ_7745c5c3_Err = templruntime.NewAttributeExpression(valor).Resolve(ctx)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 184, Col: 115}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 185, Col: 115}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var47)
 		if templ_7745c5c3_Err != nil {
@@ -945,7 +945,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 					var templ_7745c5c3_Var51 string
 					templ_7745c5c3_Var51, templ_7745c5c3_Err = templruntime.NewAttributeExpression(templ.SafeURL("/visitas?local=" + strconv.FormatInt(d.LocalID, 10))).ResolveURL(ctx)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 192, Col: 93}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 193, Col: 93}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var51)
 					if templ_7745c5c3_Err != nil {
@@ -981,7 +981,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 					var templ_7745c5c3_Var53 string
 					templ_7745c5c3_Var53, templ_7745c5c3_Err = templruntime.NewAttributeExpression(templ.SafeURL("/visitas?local=" + strconv.FormatInt(d.LocalID, 10))).ResolveURL(ctx)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 196, Col: 93}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 197, Col: 93}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var53)
 					if templ_7745c5c3_Err != nil {
@@ -994,7 +994,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 					var templ_7745c5c3_Var54 string
 					templ_7745c5c3_Var54, templ_7745c5c3_Err = templruntime.NewAttributeExpression(templ.SafeURL("/locais/" + strconv.FormatInt(d.LocalID, 10))).ResolveURL(ctx)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 197, Col: 86}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 198, Col: 86}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var54)
 					if templ_7745c5c3_Err != nil {
@@ -1033,7 +1033,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 				var templ_7745c5c3_Var55 string
 				templ_7745c5c3_Var55, templ_7745c5c3_Err = templ.JoinStringErrs(d.Aviso)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 206, Col: 54}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 207, Col: 54}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var55))
 				if templ_7745c5c3_Err != nil {
@@ -1061,7 +1061,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 				var templ_7745c5c3_Var56 string
 				templ_7745c5c3_Var56, templ_7745c5c3_Err = templruntime.NewAttributeExpression(templ.SafeURL("/visitas/" + strconv.FormatInt(d.ID, 10))).ResolveURL(ctx)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 213, Col: 69}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 214, Col: 69}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var56)
 				if templ_7745c5c3_Err != nil {
@@ -1079,7 +1079,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 			var templ_7745c5c3_Var57 string
 			templ_7745c5c3_Var57, templ_7745c5c3_Err = templruntime.NewAttributeExpression("{ achou: " + strconv.FormatBool(d.Campos.Achou) + ", trat: " + strconv.FormatBool(d.Campos.Tratamento) + ", pend: '" + d.Campos.Pendencia + "' }").Resolve(ctx)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 216, Col: 158}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 217, Col: 158}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var57)
 			if templ_7745c5c3_Err != nil {
@@ -1092,7 +1092,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 			var templ_7745c5c3_Var58 string
 			templ_7745c5c3_Var58, templ_7745c5c3_Err = templruntime.NewAttributeExpression(d.CSRF).Resolve(ctx)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 218, Col: 50}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 219, Col: 50}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var58)
 			if templ_7745c5c3_Err != nil {
@@ -1110,7 +1110,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 				var templ_7745c5c3_Var59 string
 				templ_7745c5c3_Var59, templ_7745c5c3_Err = templruntime.NewAttributeExpression(strconv.FormatInt(d.LocalID, 10)).Resolve(ctx)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 220, Col: 78}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 221, Col: 78}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var59)
 				if templ_7745c5c3_Err != nil {
@@ -1129,7 +1129,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 				var templ_7745c5c3_Var60 string
 				templ_7745c5c3_Var60, templ_7745c5c3_Err = templ.JoinStringErrs(d.Erro)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 223, Col: 55}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 224, Col: 55}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var60))
 				if templ_7745c5c3_Err != nil {
@@ -1157,7 +1157,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 			var templ_7745c5c3_Var61 string
 			templ_7745c5c3_Var61, templ_7745c5c3_Err = templruntime.NewAttributeExpression(d.Campos.Data).Resolve(ctx)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 230, Col: 68}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 231, Col: 68}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var61)
 			if templ_7745c5c3_Err != nil {
@@ -1170,7 +1170,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 			var templ_7745c5c3_Var62 string
 			templ_7745c5c3_Var62, templ_7745c5c3_Err = templruntime.NewAttributeExpression(d.Campos.Hora).Resolve(ctx)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 234, Col: 68}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 235, Col: 68}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var62)
 			if templ_7745c5c3_Err != nil {
@@ -1188,7 +1188,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 				var templ_7745c5c3_Var63 string
 				templ_7745c5c3_Var63, templ_7745c5c3_Err = templruntime.NewAttributeExpression(strconv.FormatInt(o.ID, 10)).Resolve(ctx)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 240, Col: 51}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 241, Col: 51}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var63)
 				if templ_7745c5c3_Err != nil {
@@ -1211,7 +1211,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 				var templ_7745c5c3_Var64 string
 				templ_7745c5c3_Var64, templ_7745c5c3_Err = templ.JoinStringErrs(o.Rotulo)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 240, Col: 92}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 241, Col: 92}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var64))
 				if templ_7745c5c3_Err != nil {
@@ -1234,7 +1234,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 				var templ_7745c5c3_Var65 string
 				templ_7745c5c3_Var65, templ_7745c5c3_Err = templruntime.NewAttributeExpression(strconv.FormatInt(o.ID, 10)).Resolve(ctx)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 248, Col: 51}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 249, Col: 51}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var65)
 				if templ_7745c5c3_Err != nil {
@@ -1257,7 +1257,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 				var templ_7745c5c3_Var66 string
 				templ_7745c5c3_Var66, templ_7745c5c3_Err = templ.JoinStringErrs(o.Rotulo)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 248, Col: 92}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 249, Col: 92}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var66))
 				if templ_7745c5c3_Err != nil {
@@ -1280,7 +1280,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 				var templ_7745c5c3_Var67 string
 				templ_7745c5c3_Var67, templ_7745c5c3_Err = templruntime.NewAttributeExpression(strconv.FormatInt(o.ID, 10)).Resolve(ctx)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 256, Col: 51}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 257, Col: 51}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var67)
 				if templ_7745c5c3_Err != nil {
@@ -1303,7 +1303,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 				var templ_7745c5c3_Var68 string
 				templ_7745c5c3_Var68, templ_7745c5c3_Err = templ.JoinStringErrs(o.Rotulo)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 256, Col: 92}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 257, Col: 92}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var68))
 				if templ_7745c5c3_Err != nil {
@@ -1326,7 +1326,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 				var templ_7745c5c3_Var69 string
 				templ_7745c5c3_Var69, templ_7745c5c3_Err = templruntime.NewAttributeExpression(o.Valor).Resolve(ctx)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 264, Col: 31}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 265, Col: 31}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var69)
 				if templ_7745c5c3_Err != nil {
@@ -1349,7 +1349,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 				var templ_7745c5c3_Var70 string
 				templ_7745c5c3_Var70, templ_7745c5c3_Err = templ.JoinStringErrs(o.Rotulo)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 264, Col: 72}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 265, Col: 72}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var70))
 				if templ_7745c5c3_Err != nil {
@@ -1382,7 +1382,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 				var templ_7745c5c3_Var71 string
 				templ_7745c5c3_Var71, templ_7745c5c3_Err = templruntime.NewAttributeExpression(o.Valor).Resolve(ctx)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 272, Col: 31}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 273, Col: 31}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var71)
 				if templ_7745c5c3_Err != nil {
@@ -1405,7 +1405,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 				var templ_7745c5c3_Var72 string
 				templ_7745c5c3_Var72, templ_7745c5c3_Err = templ.JoinStringErrs(o.Rotulo)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 272, Col: 72}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 273, Col: 72}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var72))
 				if templ_7745c5c3_Err != nil {
@@ -1428,7 +1428,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 				var templ_7745c5c3_Var73 string
 				templ_7745c5c3_Var73, templ_7745c5c3_Err = templruntime.NewAttributeExpression(d.Campos.Pendencia).Resolve(ctx)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 276, Col: 71}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 277, Col: 71}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var73)
 				if templ_7745c5c3_Err != nil {
@@ -1451,7 +1451,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 				var templ_7745c5c3_Var74 string
 				templ_7745c5c3_Var74, templ_7745c5c3_Err = templ.JoinStringErrs(d.Semana)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 282, Col: 38}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 283, Col: 38}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var74))
 				if templ_7745c5c3_Err != nil {
@@ -1555,7 +1555,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 			var templ_7745c5c3_Var75 string
 			templ_7745c5c3_Var75, templ_7745c5c3_Err = templruntime.NewAttributeExpression(d.Campos.AdulticidaTipo).Resolve(ctx)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 323, Col: 116}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 324, Col: 116}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var75)
 			if templ_7745c5c3_Err != nil {
@@ -1584,7 +1584,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 			var templ_7745c5c3_Var76 string
 			templ_7745c5c3_Var76, templ_7745c5c3_Err = templruntime.NewAttributeExpression(d.Campos.Lat).Resolve(ctx)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 335, Col: 85}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 336, Col: 85}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var76)
 			if templ_7745c5c3_Err != nil {
@@ -1597,7 +1597,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 			var templ_7745c5c3_Var77 string
 			templ_7745c5c3_Var77, templ_7745c5c3_Err = templruntime.NewAttributeExpression(d.Campos.Lon).Resolve(ctx)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 339, Col: 85}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 340, Col: 85}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var77)
 			if templ_7745c5c3_Err != nil {
@@ -1610,7 +1610,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 			var templ_7745c5c3_Var78 string
 			templ_7745c5c3_Var78, templ_7745c5c3_Err = templruntime.NewAttributeExpression(d.Campos.Precisao).Resolve(ctx)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 343, Col: 100}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 344, Col: 100}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var78)
 			if templ_7745c5c3_Err != nil {
@@ -1623,7 +1623,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 			var templ_7745c5c3_Var79 string
 			templ_7745c5c3_Var79, templ_7745c5c3_Err = templ.JoinStringErrs(d.Campos.Anotacao)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 348, Col: 90}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 349, Col: 90}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var79))
 			if templ_7745c5c3_Err != nil {
@@ -1636,7 +1636,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 			var templ_7745c5c3_Var80 string
 			templ_7745c5c3_Var80, templ_7745c5c3_Err = templ.JoinStringErrs(d.Campos.Assinatura)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 352, Col: 98}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 353, Col: 98}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var80))
 			if templ_7745c5c3_Err != nil {
@@ -1654,7 +1654,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 				var templ_7745c5c3_Var81 string
 				templ_7745c5c3_Var81, templ_7745c5c3_Err = templruntime.NewAttributeExpression(templ.SafeURL("/visitas?local=" + strconv.FormatInt(d.LocalID, 10))).ResolveURL(ctx)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 358, Col: 94}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 359, Col: 94}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var81)
 				if templ_7745c5c3_Err != nil {
@@ -1678,7 +1678,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 					var templ_7745c5c3_Var82 string
 					templ_7745c5c3_Var82, templ_7745c5c3_Err = templruntime.NewAttributeExpression(templ.URL(d.Campos.Assinatura)).ResolveURL(ctx)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 366, Col: 46}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 367, Col: 46}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var82)
 					if templ_7745c5c3_Err != nil {
@@ -1701,7 +1701,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 					var templ_7745c5c3_Var83 string
 					templ_7745c5c3_Var83, templ_7745c5c3_Err = templ.JoinStringErrs(d.ErroFoto)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 372, Col: 60}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 373, Col: 60}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var83))
 					if templ_7745c5c3_Err != nil {
@@ -1730,7 +1730,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 					var templ_7745c5c3_Var84 string
 					templ_7745c5c3_Var84, templ_7745c5c3_Err = templruntime.NewAttributeExpression(templ.SafeURL("/visitas/" + strconv.FormatInt(d.ID, 10) + "/fotos/" + strconv.FormatInt(f.ID, 10))).ResolveURL(ctx)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 380, Col: 115}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 381, Col: 115}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var84)
 					if templ_7745c5c3_Err != nil {
@@ -1743,7 +1743,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 					var templ_7745c5c3_Var85 string
 					templ_7745c5c3_Var85, templ_7745c5c3_Err = templruntime.NewAttributeExpression("/visitas/" + strconv.FormatInt(d.ID, 10) + "/fotos/" + strconv.FormatInt(f.ID, 10)).ResolveURL(ctx)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 381, Col: 102}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 382, Col: 102}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var85)
 					if templ_7745c5c3_Err != nil {
@@ -1756,7 +1756,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 					var templ_7745c5c3_Var86 string
 					templ_7745c5c3_Var86, templ_7745c5c3_Err = templruntime.NewAttributeExpression("Foto " + f.Nome).Resolve(ctx)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 381, Col: 127}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 382, Col: 127}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var86)
 					if templ_7745c5c3_Err != nil {
@@ -1769,7 +1769,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 					var templ_7745c5c3_Var87 string
 					templ_7745c5c3_Var87, templ_7745c5c3_Err = templ.JoinStringErrs(f.Nome)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 383, Col: 39}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 384, Col: 39}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var87))
 					if templ_7745c5c3_Err != nil {
@@ -1782,7 +1782,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 					var templ_7745c5c3_Var88 string
 					templ_7745c5c3_Var88, templ_7745c5c3_Err = templ.JoinStringErrs(f.Tamanho)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 383, Col: 54}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 384, Col: 54}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var88))
 					if templ_7745c5c3_Err != nil {
@@ -1800,7 +1800,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 						var templ_7745c5c3_Var89 string
 						templ_7745c5c3_Var89, templ_7745c5c3_Err = templruntime.NewAttributeExpression(templ.SafeURL("/visitas/" + strconv.FormatInt(d.ID, 10) + "/fotos/" + strconv.FormatInt(f.ID, 10) + "/excluir")).ResolveURL(ctx)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 385, Col: 148}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 386, Col: 148}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var89)
 						if templ_7745c5c3_Err != nil {
@@ -1813,7 +1813,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 						var templ_7745c5c3_Var90 string
 						templ_7745c5c3_Var90, templ_7745c5c3_Err = templruntime.NewAttributeExpression(d.CSRF).Resolve(ctx)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 386, Col: 56}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 387, Col: 56}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var90)
 						if templ_7745c5c3_Err != nil {
@@ -1841,7 +1841,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 					var templ_7745c5c3_Var91 string
 					templ_7745c5c3_Var91, templ_7745c5c3_Err = templruntime.NewAttributeExpression(templ.SafeURL("/visitas/" + strconv.FormatInt(d.ID, 10) + "/fotos")).ResolveURL(ctx)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 394, Col: 101}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 395, Col: 101}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var91)
 					if templ_7745c5c3_Err != nil {
@@ -1854,7 +1854,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 					var templ_7745c5c3_Var92 string
 					templ_7745c5c3_Var92, templ_7745c5c3_Err = templruntime.NewAttributeExpression(d.CSRF).Resolve(ctx)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 395, Col: 53}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 396, Col: 53}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var92)
 					if templ_7745c5c3_Err != nil {
@@ -1883,7 +1883,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 					var templ_7745c5c3_Var93 string
 					templ_7745c5c3_Var93, templ_7745c5c3_Err = templ.JoinStringErrs(a.Autor)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 412, Col: 25}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 413, Col: 25}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var93))
 					if templ_7745c5c3_Err != nil {
@@ -1896,7 +1896,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 					var templ_7745c5c3_Var94 string
 					templ_7745c5c3_Var94, templ_7745c5c3_Err = templ.JoinStringErrs(a.Quando.In(d.Fuso).Format("02/01/2006 15:04"))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 412, Col: 109}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 413, Col: 109}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var94))
 					if templ_7745c5c3_Err != nil {
@@ -1909,7 +1909,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 					var templ_7745c5c3_Var95 string
 					templ_7745c5c3_Var95, templ_7745c5c3_Err = templ.JoinStringErrs(a.Texto)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 412, Col: 132}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 413, Col: 132}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var95))
 					if templ_7745c5c3_Err != nil {
@@ -1928,7 +1928,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 					var templ_7745c5c3_Var96 string
 					templ_7745c5c3_Var96, templ_7745c5c3_Err = templruntime.NewAttributeExpression(templ.SafeURL("/visitas/" + strconv.FormatInt(d.ID, 10) + "/anotacoes")).ResolveURL(ctx)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 415, Col: 105}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 416, Col: 105}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var96)
 					if templ_7745c5c3_Err != nil {
@@ -1941,7 +1941,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 					var templ_7745c5c3_Var97 string
 					templ_7745c5c3_Var97, templ_7745c5c3_Err = templruntime.NewAttributeExpression(d.CSRF).Resolve(ctx)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 416, Col: 53}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 417, Col: 53}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var97)
 					if templ_7745c5c3_Err != nil {
@@ -1979,7 +1979,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 							var templ_7745c5c3_Var98 string
 							templ_7745c5c3_Var98, templ_7745c5c3_Err = templ.JoinStringErrs(u.Quando)
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 438, Col: 46}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 439, Col: 46}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var98))
 							if templ_7745c5c3_Err != nil {
@@ -1992,7 +1992,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 							var templ_7745c5c3_Var99 string
 							templ_7745c5c3_Var99, templ_7745c5c3_Err = templ.JoinStringErrs(u.Ator)
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 439, Col: 42}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 440, Col: 42}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var99))
 							if templ_7745c5c3_Err != nil {
@@ -2005,7 +2005,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 							var templ_7745c5c3_Var100 string
 							templ_7745c5c3_Var100, templ_7745c5c3_Err = templ.JoinStringErrs(u.Acao)
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 440, Col: 44}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 441, Col: 44}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var100))
 							if templ_7745c5c3_Err != nil {
@@ -2018,7 +2018,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 							var templ_7745c5c3_Var101 string
 							templ_7745c5c3_Var101, templ_7745c5c3_Err = templ.JoinStringErrs(u.Registro)
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 441, Col: 50}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 442, Col: 50}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var101))
 							if templ_7745c5c3_Err != nil {
@@ -2051,7 +2051,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 					var templ_7745c5c3_Var102 string
 					templ_7745c5c3_Var102, templ_7745c5c3_Err = templ.JoinStringErrs(d.ErroAmostra)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 453, Col: 63}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 454, Col: 63}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var102))
 					if templ_7745c5c3_Err != nil {
@@ -2076,7 +2076,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 					var templ_7745c5c3_Var103 string
 					templ_7745c5c3_Var103, templ_7745c5c3_Err = templ.JoinStringErrs(a.Tubito)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 460, Col: 27}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 461, Col: 27}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var103))
 					if templ_7745c5c3_Err != nil {
@@ -2089,7 +2089,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 					var templ_7745c5c3_Var104 string
 					templ_7745c5c3_Var104, templ_7745c5c3_Err = templ.JoinStringErrs(a.StatusRotulo)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 460, Col: 65}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 461, Col: 65}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var104))
 					if templ_7745c5c3_Err != nil {
@@ -2102,7 +2102,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 					var templ_7745c5c3_Var105 string
 					templ_7745c5c3_Var105, templ_7745c5c3_Err = templruntime.NewAttributeExpression(templ.SafeURL("/visitas/" + strconv.FormatInt(d.ID, 10) + "/amostras/" + strconv.FormatInt(a.ID, 10))).ResolveURL(ctx)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 461, Col: 136}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 462, Col: 136}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var105)
 					if templ_7745c5c3_Err != nil {
@@ -2115,7 +2115,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 					var templ_7745c5c3_Var106 string
 					templ_7745c5c3_Var106, templ_7745c5c3_Err = templruntime.NewAttributeExpression(d.CSRF).Resolve(ctx)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 462, Col: 54}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 463, Col: 54}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var106)
 					if templ_7745c5c3_Err != nil {
@@ -2128,7 +2128,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 					var templ_7745c5c3_Var107 string
 					templ_7745c5c3_Var107, templ_7745c5c3_Err = templruntime.NewAttributeExpression("dep-" + strconv.FormatInt(a.ID, 10)).Resolve(ctx)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 464, Col: 57}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 465, Col: 57}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var107)
 					if templ_7745c5c3_Err != nil {
@@ -2141,7 +2141,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 					var templ_7745c5c3_Var108 string
 					templ_7745c5c3_Var108, templ_7745c5c3_Err = templruntime.NewAttributeExpression("dep-" + strconv.FormatInt(a.ID, 10)).Resolve(ctx)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 465, Col: 57}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 466, Col: 57}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var108)
 					if templ_7745c5c3_Err != nil {
@@ -2184,7 +2184,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 					var templ_7745c5c3_Var109 string
 					templ_7745c5c3_Var109, templ_7745c5c3_Err = templruntime.NewAttributeExpression("obs-" + strconv.FormatInt(a.ID, 10)).Resolve(ctx)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 473, Col: 57}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 474, Col: 57}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var109)
 					if templ_7745c5c3_Err != nil {
@@ -2197,7 +2197,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 					var templ_7745c5c3_Var110 string
 					templ_7745c5c3_Var110, templ_7745c5c3_Err = templruntime.NewAttributeExpression("obs-" + strconv.FormatInt(a.ID, 10)).Resolve(ctx)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 474, Col: 56}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 475, Col: 56}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var110)
 					if templ_7745c5c3_Err != nil {
@@ -2210,7 +2210,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 					var templ_7745c5c3_Var111 string
 					templ_7745c5c3_Var111, templ_7745c5c3_Err = templruntime.NewAttributeExpression(a.Observacao).Resolve(ctx)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 474, Col: 114}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 475, Col: 114}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var111)
 					if templ_7745c5c3_Err != nil {
@@ -2243,7 +2243,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 					var templ_7745c5c3_Var112 string
 					templ_7745c5c3_Var112, templ_7745c5c3_Err = templruntime.NewAttributeExpression(templ.SafeURL("/visitas/" + strconv.FormatInt(d.ID, 10) + "/amostras/" + strconv.FormatInt(a.ID, 10) + "/resultado")).ResolveURL(ctx)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 480, Col: 151}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 481, Col: 151}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var112)
 					if templ_7745c5c3_Err != nil {
@@ -2256,7 +2256,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 					var templ_7745c5c3_Var113 string
 					templ_7745c5c3_Var113, templ_7745c5c3_Err = templruntime.NewAttributeExpression(d.CSRF).Resolve(ctx)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 481, Col: 54}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 482, Col: 54}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var113)
 					if templ_7745c5c3_Err != nil {
@@ -2269,7 +2269,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 					var templ_7745c5c3_Var114 string
 					templ_7745c5c3_Var114, templ_7745c5c3_Err = templruntime.NewAttributeExpression("st-" + strconv.FormatInt(a.ID, 10)).Resolve(ctx)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 483, Col: 56}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 484, Col: 56}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var114)
 					if templ_7745c5c3_Err != nil {
@@ -2282,7 +2282,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 					var templ_7745c5c3_Var115 string
 					templ_7745c5c3_Var115, templ_7745c5c3_Err = templruntime.NewAttributeExpression("st-" + strconv.FormatInt(a.ID, 10)).Resolve(ctx)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 484, Col: 56}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 485, Col: 56}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var115)
 					if templ_7745c5c3_Err != nil {
@@ -2340,7 +2340,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 						var templ_7745c5c3_Var116 string
 						templ_7745c5c3_Var116, templ_7745c5c3_Err = templruntime.NewAttributeExpression(templ.SafeURL("/visitas/" + strconv.FormatInt(d.ID, 10) + "/amostras/" + strconv.FormatInt(a.ID, 10) + "/excluir")).ResolveURL(ctx)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 496, Col: 150}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 497, Col: 150}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var116)
 						if templ_7745c5c3_Err != nil {
@@ -2353,7 +2353,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 						var templ_7745c5c3_Var117 string
 						templ_7745c5c3_Var117, templ_7745c5c3_Err = templruntime.NewAttributeExpression(d.CSRF).Resolve(ctx)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 497, Col: 55}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 498, Col: 55}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var117)
 						if templ_7745c5c3_Err != nil {
@@ -2377,7 +2377,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 					var templ_7745c5c3_Var118 string
 					templ_7745c5c3_Var118, templ_7745c5c3_Err = templruntime.NewAttributeExpression(templ.SafeURL("/visitas/" + strconv.FormatInt(d.ID, 10) + "/amostras")).ResolveURL(ctx)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 505, Col: 104}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 506, Col: 104}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var118)
 					if templ_7745c5c3_Err != nil {
@@ -2390,7 +2390,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 					var templ_7745c5c3_Var119 string
 					templ_7745c5c3_Var119, templ_7745c5c3_Err = templruntime.NewAttributeExpression(d.CSRF).Resolve(ctx)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 506, Col: 53}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 507, Col: 53}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var119)
 					if templ_7745c5c3_Err != nil {
@@ -2448,7 +2448,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 					var templ_7745c5c3_Var120 string
 					templ_7745c5c3_Var120, templ_7745c5c3_Err = templruntime.NewAttributeExpression(templ.SafeURL("/visitas/" + strconv.FormatInt(d.ID, 10) + "/ativo")).ResolveURL(ctx)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 536, Col: 101}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 537, Col: 101}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var120)
 					if templ_7745c5c3_Err != nil {
@@ -2461,7 +2461,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 					var templ_7745c5c3_Var121 string
 					templ_7745c5c3_Var121, templ_7745c5c3_Err = templruntime.NewAttributeExpression(d.CSRF).Resolve(ctx)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 537, Col: 53}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 538, Col: 53}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var121)
 					if templ_7745c5c3_Err != nil {
@@ -2499,7 +2499,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 					var templ_7745c5c3_Var122 string
 					templ_7745c5c3_Var122, templ_7745c5c3_Err = templruntime.NewAttributeExpression(templ.SafeURL("/visitas/" + strconv.FormatInt(d.ID, 10) + "/excluir")).ResolveURL(ctx)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 552, Col: 103}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 553, Col: 103}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var122)
 					if templ_7745c5c3_Err != nil {
@@ -2512,7 +2512,7 @@ func VisitaForm(l Layout, d VisitaFormData) templ.Component {
 					var templ_7745c5c3_Var123 string
 					templ_7745c5c3_Var123, templ_7745c5c3_Err = templruntime.NewAttributeExpression(d.CSRF).Resolve(ctx)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 553, Col: 53}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/visitas.templ`, Line: 554, Col: 53}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var123)
 					if templ_7745c5c3_Err != nil {

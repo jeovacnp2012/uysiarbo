@@ -128,6 +128,12 @@ func TestLaboratorioFiltrosComoNoGeoControle(t *testing.T) {
 	visita, _ := m.cliQ.GetVisita(t.Context(), vs[0].ID)
 
 	acha := "/visitas/" + vid + "#amostras"
+	am, err := m.cliQ.ListAmostras(t.Context(), sqlccliente.ListAmostrasParams{Limite: 10})
+	if err != nil || len(am) == 0 {
+		t.Fatalf("amostras = %d, %v", len(am), err)
+	}
+	dia := visita.Data.Time.Format("2006-01-02")
+	dia2 := visita.Data.Time.AddDate(0, 0, 1).Format("2006-01-02")
 	casos := []struct {
 		filtro string
 		acha   bool
@@ -141,6 +147,12 @@ func TestLaboratorioFiltrosComoNoGeoControle(t *testing.T) {
 		{"atividade=1", true}, {"atividade=3", false},
 		{"semana=" + strconv.Itoa(int(visita.Semana.Int16)), true}, {"semana=" + strconv.Itoa(int(visita.Semana.Int16)%52+1), false},
 		{"bairro=" + s64(loc.BairroID) + "&numero=" + loc.Numero + "&atividade=1&visita=" + vid, true},
+		{"endereco=" + url.QueryEscape(loc.Endereco[:3]), true}, {"endereco=zzzzzz", false},
+		{"tubito=" + url.QueryEscape(am[0].NumeroTubito), true}, {"tubito=zzzz", false},
+		{"status=" + am[0].Status, true}, {"status=concluido", false},
+		{"ciclo=" + s64(visita.CicloID), true}, {"ciclo=" + s64(visita.CicloID+1000), false},
+		{"agente=" + s64(visita.AgenteID), true}, {"agente=" + s64(visita.AgenteID+1000), false},
+		{"de=" + dia + "&ate=" + dia, true}, {"de=" + dia2, false}, {"ate=2000-01-01", false},
 	}
 	for _, k := range casos {
 		corpo := ana.get("/laboratorio?" + k.filtro).Body.String()

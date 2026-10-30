@@ -1169,14 +1169,14 @@ func GrupoForm(l Layout, d GrupoFormData) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 103, "\" hx-trigger=\"input changed delay:350ms from:find input\" hx-target=\"#lista-do-grupo\" hx-select=\"#lista-do-grupo\" hx-swap=\"outerHTML\" hx-push-url=\"true\"><input type=\"search\" name=\"q\" value=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 103, "\" hx-trigger=\"input delay:350ms\" hx-sync=\"this:replace\" hx-target=\"#lista-do-grupo\" hx-select=\"#lista-do-grupo\" hx-swap=\"outerHTML\" hx-push-url=\"true\"><input type=\"search\" name=\"q\" value=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var63 string
 				templ_7745c5c3_Var63, templ_7745c5c3_Err = templruntime.NewAttributeExpression(d.Busca).Resolve(ctx)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/grupos.templ`, Line: 285, Col: 51}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/grupos.templ`, Line: 286, Col: 51}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var63)
 				if templ_7745c5c3_Err != nil {
@@ -1202,7 +1202,7 @@ func GrupoForm(l Layout, d GrupoFormData) templ.Component {
 					var templ_7745c5c3_Var64 string
 					templ_7745c5c3_Var64, templ_7745c5c3_Err = templruntime.NewAttributeExpression(templ.SafeURL("/locais/" + strconv.FormatInt(x.ID, 10))).ResolveURL(ctx)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/grupos.templ`, Line: 303, Col: 77}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/grupos.templ`, Line: 304, Col: 77}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var64)
 					if templ_7745c5c3_Err != nil {
@@ -1215,7 +1215,7 @@ func GrupoForm(l Layout, d GrupoFormData) templ.Component {
 					var templ_7745c5c3_Var65 string
 					templ_7745c5c3_Var65, templ_7745c5c3_Err = templ.JoinStringErrs(x.Endereco)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/grupos.templ`, Line: 303, Col: 100}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/grupos.templ`, Line: 304, Col: 100}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var65))
 					if templ_7745c5c3_Err != nil {
@@ -1228,7 +1228,7 @@ func GrupoForm(l Layout, d GrupoFormData) templ.Component {
 					var templ_7745c5c3_Var66 string
 					templ_7745c5c3_Var66, templ_7745c5c3_Err = templ.JoinStringErrs(x.Lado)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/grupos.templ`, Line: 305, Col: 26}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/grupos.templ`, Line: 306, Col: 26}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var66))
 					if templ_7745c5c3_Err != nil {
@@ -1251,7 +1251,7 @@ func GrupoForm(l Layout, d GrupoFormData) templ.Component {
 					var templ_7745c5c3_Var67 string
 					templ_7745c5c3_Var67, templ_7745c5c3_Err = templ.JoinStringErrs(x.Bairro)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/grupos.templ`, Line: 311, Col: 46}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/grupos.templ`, Line: 312, Col: 46}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var67))
 					if templ_7745c5c3_Err != nil {
@@ -1264,7 +1264,7 @@ func GrupoForm(l Layout, d GrupoFormData) templ.Component {
 					var templ_7745c5c3_Var68 string
 					templ_7745c5c3_Var68, templ_7745c5c3_Err = templ.JoinStringErrs(x.Quarteirao)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/grupos.templ`, Line: 311, Col: 102}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/grupos.templ`, Line: 312, Col: 102}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var68))
 					if templ_7745c5c3_Err != nil {
@@ -1277,7 +1277,7 @@ func GrupoForm(l Layout, d GrupoFormData) templ.Component {
 					var templ_7745c5c3_Var69 string
 					templ_7745c5c3_Var69, templ_7745c5c3_Err = templ.JoinStringErrs(x.Tipo)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/grupos.templ`, Line: 312, Col: 42}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/grupos.templ`, Line: 313, Col: 42}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var69))
 					if templ_7745c5c3_Err != nil {
@@ -1290,7 +1290,7 @@ func GrupoForm(l Layout, d GrupoFormData) templ.Component {
 					var templ_7745c5c3_Var70 string
 					templ_7745c5c3_Var70, templ_7745c5c3_Err = templruntime.NewAttributeExpression(templ.SafeURL("/locais/" + strconv.FormatInt(x.ID, 10))).ResolveURL(ctx)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/grupos.templ`, Line: 314, Col: 89}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/grupos.templ`, Line: 315, Col: 89}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var70)
 					if templ_7745c5c3_Err != nil {
@@ -1308,7 +1308,7 @@ func GrupoForm(l Layout, d GrupoFormData) templ.Component {
 						var templ_7745c5c3_Var71 string
 						templ_7745c5c3_Var71, templ_7745c5c3_Err = templruntime.NewAttributeExpression(templ.SafeURL("/grupos/" + strconv.FormatInt(d.ID, 10) + "/locais/" + strconv.FormatInt(x.ID, 10) + "/remover")).ResolveURL(ctx)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/grupos.templ`, Line: 316, Col: 153}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/grupos.templ`, Line: 317, Col: 153}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var71)
 						if templ_7745c5c3_Err != nil {
@@ -1321,7 +1321,7 @@ func GrupoForm(l Layout, d GrupoFormData) templ.Component {
 						var templ_7745c5c3_Var72 string
 						templ_7745c5c3_Var72, templ_7745c5c3_Err = templruntime.NewAttributeExpression(d.CSRF).Resolve(ctx)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/grupos.templ`, Line: 317, Col: 61}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/grupos.templ`, Line: 318, Col: 61}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var72)
 						if templ_7745c5c3_Err != nil {
@@ -1334,7 +1334,7 @@ func GrupoForm(l Layout, d GrupoFormData) templ.Component {
 						var templ_7745c5c3_Var73 string
 						templ_7745c5c3_Var73, templ_7745c5c3_Err = templruntime.NewAttributeExpression("Retirar " + x.Endereco + " do grupo").Resolve(ctx)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/grupos.templ`, Line: 318, Col: 123}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/grupos.templ`, Line: 319, Col: 123}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var73)
 						if templ_7745c5c3_Err != nil {
@@ -1380,7 +1380,7 @@ func GrupoForm(l Layout, d GrupoFormData) templ.Component {
 					var templ_7745c5c3_Var74 string
 					templ_7745c5c3_Var74, templ_7745c5c3_Err = templruntime.NewAttributeExpression(templ.SafeURL("/grupos/" + strconv.FormatInt(d.ID, 10))).ResolveURL(ctx)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/grupos.templ`, Line: 335, Col: 88}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/grupos.templ`, Line: 336, Col: 88}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var74)
 					if templ_7745c5c3_Err != nil {
@@ -1393,7 +1393,7 @@ func GrupoForm(l Layout, d GrupoFormData) templ.Component {
 					var templ_7745c5c3_Var75 string
 					templ_7745c5c3_Var75, templ_7745c5c3_Err = templruntime.NewAttributeExpression(d.CSRF).Resolve(ctx)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/grupos.templ`, Line: 336, Col: 52}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/grupos.templ`, Line: 337, Col: 52}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var75)
 					if templ_7745c5c3_Err != nil {
@@ -1411,7 +1411,7 @@ func GrupoForm(l Layout, d GrupoFormData) templ.Component {
 						var templ_7745c5c3_Var76 string
 						templ_7745c5c3_Var76, templ_7745c5c3_Err = templ.JoinStringErrs(d.Erro)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/grupos.templ`, Line: 338, Col: 57}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/grupos.templ`, Line: 339, Col: 57}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var76))
 						if templ_7745c5c3_Err != nil {
@@ -1429,7 +1429,7 @@ func GrupoForm(l Layout, d GrupoFormData) templ.Component {
 					var templ_7745c5c3_Var77 string
 					templ_7745c5c3_Var77, templ_7745c5c3_Err = templruntime.NewAttributeExpression(d.Nome).Resolve(ctx)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/grupos.templ`, Line: 344, Col: 62}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/grupos.templ`, Line: 345, Col: 62}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var77)
 					if templ_7745c5c3_Err != nil {
@@ -1442,7 +1442,7 @@ func GrupoForm(l Layout, d GrupoFormData) templ.Component {
 					var templ_7745c5c3_Var78 string
 					templ_7745c5c3_Var78, templ_7745c5c3_Err = templruntime.NewAttributeExpression(d.Descricao).Resolve(ctx)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/grupos.templ`, Line: 348, Col: 77}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/grupos.templ`, Line: 349, Col: 77}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var78)
 					if templ_7745c5c3_Err != nil {
@@ -1455,7 +1455,7 @@ func GrupoForm(l Layout, d GrupoFormData) templ.Component {
 					var templ_7745c5c3_Var79 string
 					templ_7745c5c3_Var79, templ_7745c5c3_Err = templruntime.NewAttributeExpression(templ.SafeURL("/grupos/" + strconv.FormatInt(d.ID, 10) + "/clonar")).ResolveURL(ctx)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/grupos.templ`, Line: 358, Col: 102}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/grupos.templ`, Line: 359, Col: 102}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var79)
 					if templ_7745c5c3_Err != nil {
@@ -1468,7 +1468,7 @@ func GrupoForm(l Layout, d GrupoFormData) templ.Component {
 					var templ_7745c5c3_Var80 string
 					templ_7745c5c3_Var80, templ_7745c5c3_Err = templruntime.NewAttributeExpression(d.CSRF).Resolve(ctx)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/grupos.templ`, Line: 359, Col: 54}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/grupos.templ`, Line: 360, Col: 54}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var80)
 					if templ_7745c5c3_Err != nil {
@@ -1481,7 +1481,7 @@ func GrupoForm(l Layout, d GrupoFormData) templ.Component {
 					var templ_7745c5c3_Var81 string
 					templ_7745c5c3_Var81, templ_7745c5c3_Err = templruntime.NewAttributeExpression(templ.SafeURL("/grupos/" + strconv.FormatInt(d.ID, 10) + "/limpar")).ResolveURL(ctx)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/grupos.templ`, Line: 362, Col: 102}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/grupos.templ`, Line: 363, Col: 102}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var81)
 					if templ_7745c5c3_Err != nil {
@@ -1494,7 +1494,7 @@ func GrupoForm(l Layout, d GrupoFormData) templ.Component {
 					var templ_7745c5c3_Var82 string
 					templ_7745c5c3_Var82, templ_7745c5c3_Err = templruntime.NewAttributeExpression(d.CSRF).Resolve(ctx)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/grupos.templ`, Line: 363, Col: 54}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/grupos.templ`, Line: 364, Col: 54}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var82)
 					if templ_7745c5c3_Err != nil {

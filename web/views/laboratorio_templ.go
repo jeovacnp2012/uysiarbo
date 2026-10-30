@@ -44,14 +44,14 @@ func Laboratorio(l Layout, d LaboratorioData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<form method=\"get\" action=\"/laboratorio\" class=\"cartao filtros filtros-vivos\" hx-get=\"/laboratorio\" hx-trigger=\"input changed delay:350ms from:find input, change from:find .filtro-auto, filtrar from:body\" hx-target=\"#laboratorio-lista\" hx-select=\"#laboratorio-lista\" hx-swap=\"outerHTML\" hx-push-url=\"true\" hx-indicator=\"#laboratorio-lista\"><div class=\"campo campo-largo\"><label for=\"f-endereco\">Endereço</label> <input id=\"f-endereco\" name=\"endereco\" type=\"search\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<form method=\"get\" action=\"/laboratorio\" class=\"cartao filtros filtros-vivos\" hx-get=\"/laboratorio\" hx-trigger=\"input delay:350ms, change delay:60ms, filtrar from:body\" hx-sync=\"this:replace\" hx-target=\"#laboratorio-lista\" hx-select=\"#laboratorio-lista\" hx-swap=\"outerHTML\" hx-push-url=\"true\" hx-indicator=\"#laboratorio-lista\"><div class=\"campo campo-largo\"><label for=\"f-endereco\">Endereço</label> <input id=\"f-endereco\" name=\"endereco\" type=\"search\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templruntime.NewAttributeExpression(d.Filtro.Endereco).Resolve(ctx)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/laboratorio.templ`, Line: 22, Col: 82}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/laboratorio.templ`, Line: 23, Col: 82}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var3)
 			if templ_7745c5c3_Err != nil {
@@ -120,7 +120,7 @@ func Laboratorio(l Layout, d LaboratorioData) templ.Component {
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templruntime.NewAttributeExpression(d.Filtro.De).Resolve(ctx)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/laboratorio.templ`, Line: 51, Col: 62}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/laboratorio.templ`, Line: 52, Col: 62}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var4)
 			if templ_7745c5c3_Err != nil {
@@ -133,7 +133,7 @@ func Laboratorio(l Layout, d LaboratorioData) templ.Component {
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templruntime.NewAttributeExpression(d.Filtro.Ate).Resolve(ctx)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/laboratorio.templ`, Line: 55, Col: 65}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/laboratorio.templ`, Line: 56, Col: 65}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var5)
 			if templ_7745c5c3_Err != nil {
@@ -159,7 +159,7 @@ func Laboratorio(l Layout, d LaboratorioData) templ.Component {
 				var templ_7745c5c3_Var6 string
 				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(a.Tubito)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/laboratorio.templ`, Line: 85, Col: 52}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/laboratorio.templ`, Line: 86, Col: 52}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 				if templ_7745c5c3_Err != nil {
@@ -172,7 +172,7 @@ func Laboratorio(l Layout, d LaboratorioData) templ.Component {
 				var templ_7745c5c3_Var7 string
 				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(a.Endereco)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/laboratorio.templ`, Line: 86, Col: 49}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/laboratorio.templ`, Line: 87, Col: 49}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
@@ -185,7 +185,7 @@ func Laboratorio(l Layout, d LaboratorioData) templ.Component {
 				var templ_7745c5c3_Var8 string
 				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(a.Data)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/laboratorio.templ`, Line: 87, Col: 49}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/laboratorio.templ`, Line: 88, Col: 49}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 				if templ_7745c5c3_Err != nil {
@@ -198,7 +198,7 @@ func Laboratorio(l Layout, d LaboratorioData) templ.Component {
 				var templ_7745c5c3_Var9 string
 				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(a.Agente)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/laboratorio.templ`, Line: 87, Col: 66}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/laboratorio.templ`, Line: 88, Col: 66}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 				if templ_7745c5c3_Err != nil {
@@ -211,7 +211,7 @@ func Laboratorio(l Layout, d LaboratorioData) templ.Component {
 				var templ_7745c5c3_Var10 string
 				templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(a.Ciclo)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/laboratorio.templ`, Line: 88, Col: 42}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/laboratorio.templ`, Line: 89, Col: 42}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 				if templ_7745c5c3_Err != nil {
@@ -224,7 +224,7 @@ func Laboratorio(l Layout, d LaboratorioData) templ.Component {
 				var templ_7745c5c3_Var11 string
 				templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(a.Deposito)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/laboratorio.templ`, Line: 89, Col: 44}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/laboratorio.templ`, Line: 90, Col: 44}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 				if templ_7745c5c3_Err != nil {
@@ -237,7 +237,7 @@ func Laboratorio(l Layout, d LaboratorioData) templ.Component {
 				var templ_7745c5c3_Var12 string
 				templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(a.Larvas))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/laboratorio.templ`, Line: 90, Col: 66}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/laboratorio.templ`, Line: 91, Col: 66}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 				if templ_7745c5c3_Err != nil {
@@ -250,7 +250,7 @@ func Laboratorio(l Layout, d LaboratorioData) templ.Component {
 				var templ_7745c5c3_Var13 string
 				templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(a.Pupas))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/laboratorio.templ`, Line: 90, Col: 94}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/laboratorio.templ`, Line: 91, Col: 94}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 				if templ_7745c5c3_Err != nil {
@@ -268,7 +268,7 @@ func Laboratorio(l Layout, d LaboratorioData) templ.Component {
 					var templ_7745c5c3_Var14 string
 					templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(a.StatusRotulo)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/laboratorio.templ`, Line: 93, Col: 54}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/laboratorio.templ`, Line: 94, Col: 54}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 					if templ_7745c5c3_Err != nil {
@@ -286,7 +286,7 @@ func Laboratorio(l Layout, d LaboratorioData) templ.Component {
 					var templ_7745c5c3_Var15 string
 					templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(a.StatusRotulo)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/laboratorio.templ`, Line: 95, Col: 57}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/laboratorio.templ`, Line: 96, Col: 57}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 					if templ_7745c5c3_Err != nil {
@@ -304,7 +304,7 @@ func Laboratorio(l Layout, d LaboratorioData) templ.Component {
 				var templ_7745c5c3_Var16 string
 				templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(a.Aegypti))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/laboratorio.templ`, Line: 98, Col: 60}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/laboratorio.templ`, Line: 99, Col: 60}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 				if templ_7745c5c3_Err != nil {
@@ -317,7 +317,7 @@ func Laboratorio(l Layout, d LaboratorioData) templ.Component {
 				var templ_7745c5c3_Var17 string
 				templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(a.Albopictus))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/laboratorio.templ`, Line: 99, Col: 66}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/laboratorio.templ`, Line: 100, Col: 66}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 				if templ_7745c5c3_Err != nil {
@@ -330,7 +330,7 @@ func Laboratorio(l Layout, d LaboratorioData) templ.Component {
 				var templ_7745c5c3_Var18 string
 				templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(a.Negativo))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/laboratorio.templ`, Line: 100, Col: 62}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/laboratorio.templ`, Line: 101, Col: 62}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 				if templ_7745c5c3_Err != nil {
@@ -343,7 +343,7 @@ func Laboratorio(l Layout, d LaboratorioData) templ.Component {
 				var templ_7745c5c3_Var19 string
 				templ_7745c5c3_Var19, templ_7745c5c3_Err = templruntime.NewAttributeExpression(templ.SafeURL("/visitas/" + strconv.FormatInt(a.VisitaID, 10) + "#amostras")).ResolveURL(ctx)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/laboratorio.templ`, Line: 101, Col: 133}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/laboratorio.templ`, Line: 102, Col: 133}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var19)
 				if templ_7745c5c3_Err != nil {

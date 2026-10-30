@@ -276,7 +276,8 @@ templ GrupoForm(l Layout, d GrupoFormData) {
 						action={ templ.SafeURL("/grupos/" + strconv.FormatInt(d.ID, 10)) }
 						class="busca-viva"
 						hx-get={ "/grupos/" + strconv.FormatInt(d.ID, 10) }
-						hx-trigger="input changed delay:350ms from:find input"
+						hx-trigger="input delay:350ms"
+						hx-sync="this:replace"
 						hx-target="#lista-do-grupo"
 						hx-select="#lista-do-grupo"
 						hx-swap="outerHTML"
