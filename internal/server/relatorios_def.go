@@ -16,8 +16,7 @@ import (
 // queries_cliente/relatorios.sql, linhas em texto e uma linha de totais. As colunas seguem o que o Geo Controle
 // mostra; cada um deve ser conferido contra um exemplo real antes de ser dado como fechado.
 //
-// Ainda sem relatório por falta de dados no sistema: Campanha de vacinação, LIRAa, Investigação (totais),
-// Locais por criticidade (sobrevoo) e a Pesquisa entomológica em papel.
+// Campanha, LIRAa, criticidade e a folha de pesquisa em papel ficam em relatorios_campo.go.
 
 func init() {
 	periodo := []campoRelatorio{{"de", "De", "data"}, {"ate", "Até", "data"}}
@@ -82,6 +81,30 @@ func init() {
 			Resumo: "Locais sem coordenada, sem CEP e, nos residenciais, sem proprietário ou sem número de moradores.",
 			Campos: []campoRelatorio{{"bairro", "Bairro", "bairro"}, {"tipo", "Tipo de local", "tipolocal"}},
 			Gerar:  (*handlers).relatorioLocalIncompleto,
+		},
+		definicaoRelatorio{
+			Slug: "campanha", Titulo: "Campanha de vacinação", Permissao: "relatorio_campanha",
+			Resumo: "Por bairro: atendimentos da campanha antirrábica, cães e gatos vacinados e não vacinados, recusas e casas fechadas.",
+			Campos: append([]campoRelatorio{{"bairro", "Bairro", "bairro"}}, periodo...),
+			Gerar:  (*handlers).relatorioCampanha,
+		},
+		definicaoRelatorio{
+			Slug: "liraa", Titulo: "LIRAa", Permissao: "relatorio_liraa",
+			Resumo: "Por bairro: quarteirões programados e encerrados, imóveis pesquisados, depósitos, positivos, IIP e Breteau.",
+			Campos: []campoRelatorio{{"ciclo", "Ciclo", "ciclo"}, {"bairro", "Bairro", "bairro"}},
+			Gerar:  (*handlers).relatorioLiraa,
+		},
+		definicaoRelatorio{
+			Slug: "criticidade", Titulo: "Locais por criticidade", Permissao: "relatorio_local_visita",
+			Resumo: "Locais com depósito encontrado em 2 ou mais visitas nos últimos 12 meses, os com tubitos positivos primeiro (apoio ao sobrevoo e ao bloqueio).",
+			Campos: []campoRelatorio{{"bairro", "Bairro", "bairro"}},
+			Gerar:  (*handlers).relatorioCriticidade,
+		},
+		definicaoRelatorio{
+			Slug: "pesquisa-papel", Titulo: "Pesquisa entomológica / tratamento em papel", Permissao: "relatorio_visita",
+			Resumo: "Lista de locais por quarteirão com colunas em branco para preencher a mão em campo quando o tablet não estiver disponível.",
+			Campos: []campoRelatorio{{"bairro", "Bairro", "bairro"}, {"tipo", "Tipo de local", "tipolocal"}},
+			Gerar:  (*handlers).relatorioPesquisaPapel,
 		},
 	)
 }

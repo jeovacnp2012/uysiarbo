@@ -213,6 +213,156 @@ func (q *Queries) RelBRI(ctx context.Context, arg RelBRIParams) ([]RelBRIRow, er
 	return items, nil
 }
 
+const relCampanha = `-- name: RelCampanha :many
+SELECT b.nome AS bairro, count(*)::int AS atendimentos,
+       COALESCE(sum(c.vac_cachorros), 0)::int AS vac_cachorros, COALESCE(sum(c.vac_gatos), 0)::int AS vac_gatos,
+       COALESCE(sum(c.nao_cachorros), 0)::int AS nao_cachorros, COALESCE(sum(c.nao_gatos), 0)::int AS nao_gatos,
+       count(*) FILTER (WHERE c.situacao = 'recusa')::int AS recusas,
+       count(*) FILTER (WHERE c.situacao IN ('fechada', 'responsavel_ausente'))::int AS fechadas
+FROM campanhas c
+JOIN locais l ON l.id = c.local_id
+JOIN bairros b ON b.id = l.bairro_id
+WHERE c.deleted_at IS NULL
+  AND ($1::date IS NULL OR (c.data_hora AT TIME ZONE $2::text)::date >= $1::date)
+  AND ($3::date IS NULL OR (c.data_hora AT TIME ZONE $2::text)::date <= $3::date)
+  AND ($4::bigint IS NULL OR l.bairro_id = $4::bigint)
+  AND ($5::bigint IS NULL OR usuario_ve_local($5::bigint, l.id, l.bairro_id, l.quarteirao_id))
+GROUP BY b.id, b.nome
+ORDER BY b.nome
+`
+
+type RelCampanhaParams struct {
+	DataDe         pgtype.Date `json:"data_de"`
+	Fuso           string      `json:"fuso"`
+	DataAte        pgtype.Date `json:"data_ate"`
+	BairroID       pgtype.Int8 `json:"bairro_id"`
+	SomenteUsuario pgtype.Int8 `json:"somente_usuario"`
+}
+
+type RelCampanhaRow struct {
+	Bairro       string `json:"bairro"`
+	Atendimentos int32  `json:"atendimentos"`
+	VacCachorros int32  `json:"vac_cachorros"`
+	VacGatos     int32  `json:"vac_gatos"`
+	NaoCachorros int32  `json:"nao_cachorros"`
+	NaoGatos     int32  `json:"nao_gatos"`
+	Recusas      int32  `json:"recusas"`
+	Fechadas     int32  `json:"fechadas"`
+}
+
+// Campanha antirrábica por bairro: atendimentos, animais vacinados e não vacinados, recusas e fechadas.
+func (q *Queries) RelCampanha(ctx context.Context, arg RelCampanhaParams) ([]RelCampanhaRow, error) {
+	rows, err := q.db.Query(ctx, relCampanha,
+		arg.DataDe,
+		arg.Fuso,
+		arg.DataAte,
+		arg.BairroID,
+		arg.SomenteUsuario,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []RelCampanhaRow
+	for rows.Next() {
+		var i RelCampanhaRow
+		if err := rows.Scan(
+			&i.Bairro,
+			&i.Atendimentos,
+			&i.VacCachorros,
+			&i.VacGatos,
+			&i.NaoCachorros,
+			&i.NaoGatos,
+			&i.Recusas,
+			&i.Fechadas,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const relCriticidade = `-- name: RelCriticidade :many
+SELECT b.nome AS bairro, q.nome AS quarteirao, l.endereco, l.numero, l.tipo,
+       count(v.id) FILTER (WHERE v.achou_deposito)::int AS com_deposito,
+       COALESCE(sum(pos.tubitos), 0)::int AS positivos,
+       max(v.data) FILTER (WHERE v.achou_deposito)::date AS ultima
+FROM locais l
+JOIN bairros b ON b.id = l.bairro_id
+JOIN quarteiroes q ON q.id = l.quarteirao_id
+JOIN visitas v ON v.local_id = l.id AND v.deleted_at IS NULL AND v.ativo AND v.data >= (CURRENT_DATE - interval '12 months')
+LEFT JOIN LATERAL (
+    SELECT count(*) AS tubitos FROM amostras a
+    WHERE a.visita_id = v.id AND a.deleted_at IS NULL AND a.status = 'concluido' AND (a.total_aegypti + a.total_albopictus) > 0
+) pos ON true
+WHERE l.deleted_at IS NULL AND l.ativo
+  AND ($1::bigint IS NULL OR l.bairro_id = $1::bigint)
+  AND ($2::bigint IS NULL OR usuario_ve_local($2::bigint, l.id, l.bairro_id, l.quarteirao_id))
+  AND ($3::bigint IS NULL OR v.agente_id = $3::bigint)
+GROUP BY l.id, b.nome, q.nome
+HAVING count(v.id) FILTER (WHERE v.achou_deposito) >= $4::int
+ORDER BY positivos DESC, com_deposito DESC, b.nome, q.nome, l.endereco, l.numero
+LIMIT 20001
+`
+
+type RelCriticidadeParams struct {
+	BairroID       pgtype.Int8 `json:"bairro_id"`
+	SomenteUsuario pgtype.Int8 `json:"somente_usuario"`
+	SomenteAgente  pgtype.Int8 `json:"somente_agente"`
+	Minimo         int32       `json:"minimo"`
+}
+
+type RelCriticidadeRow struct {
+	Bairro      string      `json:"bairro"`
+	Quarteirao  string      `json:"quarteirao"`
+	Endereco    string      `json:"endereco"`
+	Numero      string      `json:"numero"`
+	Tipo        string      `json:"tipo"`
+	ComDeposito int32       `json:"com_deposito"`
+	Positivos   int32       `json:"positivos"`
+	Ultima      pgtype.Date `json:"ultima"`
+}
+
+// Locais críticos: com visitas com depósito encontrado nos últimos 12 meses (a partir do mínimo informado) e
+// tubitos positivos; os mais graves primeiro.
+func (q *Queries) RelCriticidade(ctx context.Context, arg RelCriticidadeParams) ([]RelCriticidadeRow, error) {
+	rows, err := q.db.Query(ctx, relCriticidade,
+		arg.BairroID,
+		arg.SomenteUsuario,
+		arg.SomenteAgente,
+		arg.Minimo,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []RelCriticidadeRow
+	for rows.Next() {
+		var i RelCriticidadeRow
+		if err := rows.Scan(
+			&i.Bairro,
+			&i.Quarteirao,
+			&i.Endereco,
+			&i.Numero,
+			&i.Tipo,
+			&i.ComDeposito,
+			&i.Positivos,
+			&i.Ultima,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const relDiaTrabalhado = `-- name: RelDiaTrabalhado :many
 SELECT u.nome AS agente, v.data, count(*)::int AS visitas, count(DISTINCT v.local_id)::int AS locais,
        min(v.hora_entrada)::time AS primeira, max(v.hora_entrada)::time AS ultima
@@ -468,6 +618,163 @@ func (q *Queries) RelLaboratorioTotal(ctx context.Context, arg RelLaboratorioTot
 			&i.Aegypti,
 			&i.Albopictus,
 			&i.Negativo,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const relLiraa = `-- name: RelLiraa :many
+WITH ativ AS (SELECT id FROM atividades WHERE sigla = 'LIRAa'),
+v AS (
+    SELECT v.id, v.local_id, v.pendencia, v.achou_deposito, l.bairro_id,
+           COALESCE(v.dep_a1,0)+COALESCE(v.dep_a2,0)+COALESCE(v.dep_b,0)+COALESCE(v.dep_c,0)+COALESCE(v.dep_d1,0)+COALESCE(v.dep_d2,0)+COALESCE(v.dep_e,0) AS depositos
+    FROM visitas v JOIN locais l ON l.id = v.local_id
+    WHERE v.deleted_at IS NULL AND v.ativo AND v.atividade_id IN (SELECT id FROM ativ)
+      AND ($2::bigint IS NULL OR v.ciclo_id = $2::bigint)
+      AND ($3::bigint IS NULL OR l.bairro_id = $3::bigint)
+      AND ($4::bigint IS NULL OR v.agente_id = $4::bigint)
+),
+camp AS (
+    SELECT bairro_id,
+           count(DISTINCT local_id) FILTER (WHERE pendencia = 'nenhuma')::int AS pesquisados,
+           count(*) FILTER (WHERE pendencia <> 'nenhuma')::int AS pendencias,
+           COALESCE(sum(depositos) FILTER (WHERE pendencia = 'nenhuma'), 0)::int AS depositos
+    FROM v GROUP BY bairro_id
+),
+lab AS (
+    SELECT v.bairro_id, count(DISTINCT v.local_id)::int AS positivos, count(*)::int AS recipientes
+    FROM v JOIN amostras a ON a.visita_id = v.id
+    WHERE v.pendencia = 'nenhuma' AND a.deleted_at IS NULL AND a.status = 'concluido' AND (a.total_aegypti + a.total_albopictus) > 0
+    GROUP BY v.bairro_id
+),
+ag AS (
+    SELECT g.bairro_id,
+           count(*) FILTER (WHERE g.situacao <> 'desativado')::int AS programados,
+           count(*) FILTER (WHERE g.situacao = 'encerrado')::int AS encerrados
+    FROM liraa_agenda g
+    WHERE g.deleted_at IS NULL
+      AND ($2::bigint IS NULL OR g.ciclo_id = $2::bigint)
+      AND ($3::bigint IS NULL OR g.bairro_id = $3::bigint)
+    GROUP BY g.bairro_id
+)
+SELECT b.nome AS bairro,
+       COALESCE(ag.programados, 0)::int AS programados, COALESCE(ag.encerrados, 0)::int AS encerrados,
+       COALESCE(camp.pesquisados, 0)::int AS pesquisados, COALESCE(camp.pendencias, 0)::int AS pendencias,
+       COALESCE(camp.depositos, 0)::int AS depositos,
+       COALESCE(lab.positivos, 0)::int AS positivos, COALESCE(lab.recipientes, 0)::int AS recipientes
+FROM bairros b
+LEFT JOIN camp ON camp.bairro_id = b.id
+LEFT JOIN lab ON lab.bairro_id = b.id
+LEFT JOIN ag ON ag.bairro_id = b.id
+WHERE b.deleted_at IS NULL
+  AND (camp.bairro_id IS NOT NULL OR ag.bairro_id IS NOT NULL)
+  AND ($1::bigint IS NULL OR usuario_ve_bairro($1::bigint, b.id))
+ORDER BY b.nome
+`
+
+type RelLiraaParams struct {
+	SomenteUsuario pgtype.Int8 `json:"somente_usuario"`
+	CicloID        pgtype.Int8 `json:"ciclo_id"`
+	BairroID       pgtype.Int8 `json:"bairro_id"`
+	SomenteAgente  pgtype.Int8 `json:"somente_agente"`
+}
+
+type RelLiraaRow struct {
+	Bairro      string `json:"bairro"`
+	Programados int32  `json:"programados"`
+	Encerrados  int32  `json:"encerrados"`
+	Pesquisados int32  `json:"pesquisados"`
+	Pendencias  int32  `json:"pendencias"`
+	Depositos   int32  `json:"depositos"`
+	Positivos   int32  `json:"positivos"`
+	Recipientes int32  `json:"recipientes"`
+}
+
+// LIRAa por bairro: agenda de quarteirões (programados e encerrados) e o boletim de campo e laboratório das
+// visitas da atividade LIRAa no ciclo. Imóvel pesquisado = visita sem pendência; positivo = tubito concluído com Aedes.
+func (q *Queries) RelLiraa(ctx context.Context, arg RelLiraaParams) ([]RelLiraaRow, error) {
+	rows, err := q.db.Query(ctx, relLiraa,
+		arg.SomenteUsuario,
+		arg.CicloID,
+		arg.BairroID,
+		arg.SomenteAgente,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []RelLiraaRow
+	for rows.Next() {
+		var i RelLiraaRow
+		if err := rows.Scan(
+			&i.Bairro,
+			&i.Programados,
+			&i.Encerrados,
+			&i.Pesquisados,
+			&i.Pendencias,
+			&i.Depositos,
+			&i.Positivos,
+			&i.Recipientes,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const relLocaisParaPapel = `-- name: RelLocaisParaPapel :many
+SELECT b.nome AS bairro, q.nome AS quarteirao, l.endereco, l.numero, l.tipo
+FROM locais l
+JOIN bairros b ON b.id = l.bairro_id
+JOIN quarteiroes q ON q.id = l.quarteirao_id
+WHERE l.deleted_at IS NULL AND l.ativo
+  AND ($1::bigint IS NULL OR l.bairro_id = $1::bigint)
+  AND ($2::text = '' OR l.tipo = $2::text)
+  AND ($3::bigint IS NULL OR usuario_ve_local($3::bigint, l.id, l.bairro_id, l.quarteirao_id))
+ORDER BY b.nome, q.nome, l.endereco, l.numero
+LIMIT 20001
+`
+
+type RelLocaisParaPapelParams struct {
+	BairroID       pgtype.Int8 `json:"bairro_id"`
+	Tipo           string      `json:"tipo"`
+	SomenteUsuario pgtype.Int8 `json:"somente_usuario"`
+}
+
+type RelLocaisParaPapelRow struct {
+	Bairro     string `json:"bairro"`
+	Quarteirao string `json:"quarteirao"`
+	Endereco   string `json:"endereco"`
+	Numero     string `json:"numero"`
+	Tipo       string `json:"tipo"`
+}
+
+// Lista de locais ativos, por quarteirão, para imprimir e preencher a mão em campo.
+func (q *Queries) RelLocaisParaPapel(ctx context.Context, arg RelLocaisParaPapelParams) ([]RelLocaisParaPapelRow, error) {
+	rows, err := q.db.Query(ctx, relLocaisParaPapel, arg.BairroID, arg.Tipo, arg.SomenteUsuario)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []RelLocaisParaPapelRow
+	for rows.Next() {
+		var i RelLocaisParaPapelRow
+		if err := rows.Scan(
+			&i.Bairro,
+			&i.Quarteirao,
+			&i.Endereco,
+			&i.Numero,
+			&i.Tipo,
 		); err != nil {
 			return nil, err
 		}

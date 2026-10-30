@@ -57,6 +57,10 @@ func TestRelatoriosDoSistemaGeram(t *testing.T) {
 		"animais":            "Total",
 		"bri":                "Nenhum registro",
 		"local-incompleto":   "Total:",
+		"campanha":           "Nenhum registro",
+		"liraa":              "Nenhum registro",
+		"criticidade":        "Nenhum registro",
+		"pesquisa-papel":     "Total: 1 locais",
 	}
 	for slug, texto := range esperado {
 		quer(t, ana.get("/relatorios/"+slug), http.StatusOK, "Gerar relatório")
@@ -68,4 +72,8 @@ func TestRelatoriosDoSistemaGeram(t *testing.T) {
 	quer(t, ana.get("/relatorios/local-visita?gerar=1&situacao=nao"), http.StatusOK, "Nenhum registro")
 	quer(t, ana.get("/relatorios/producao?gerar=1&agente="+agente), http.StatusOK, "Total")
 	quer(t, ana.get("/relatorios/local-incompleto?gerar=1&tipo=comercio"), http.StatusOK)
+
+	// uma segunda visita com depósito torna o local crítico (2 visitas com depósito em 12 meses)
+	quer(t, ana.post("/visitas", c.form(agente, "achou", "1", "a1", "1", "total_eliminado", "1")), http.StatusSeeOther)
+	quer(t, ana.get("/relatorios/criticidade?gerar=1"), http.StatusOK, "Total: 1 locais")
 }
