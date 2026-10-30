@@ -14,6 +14,7 @@ import (
 	_ "time/tzdata" // fusos horários embutidos (o servidor da VPS pode não ter)
 
 	"uysiarbo/internal/audit"
+	"uysiarbo/internal/comunicacao"
 	"uysiarbo/internal/config"
 	"uysiarbo/internal/db"
 	"uysiarbo/internal/db/sqlc"
@@ -104,6 +105,8 @@ func run() error {
 			MapTileURL:                cfg.MapTileURL,
 			MapAttribution:            cfg.MapAttribution,
 			Geocoder:                  geocodificador(cfg),
+			Comunicacao:               provedorDeComunicacao(cfg, log),
+			Fundo:                     ctx,
 			APIKey:                    chaveDaAPI(cfg, log),
 			ImportPermitirRedePrivada: cfg.ImportPermitirRedePrivada,
 			Tenants:                   &tenant.Service{Pool: pool, URL: cfg.DatabaseURL, Log: log, Auditoria: audit.Plataforma{Q: sqlc.New(pool)}},
@@ -150,6 +153,17 @@ func exitOnError(err error) {
 		fmt.Fprintln(os.Stderr, "erro:", err)
 		os.Exit(1)
 	}
+}
+
+// provedorDeComunicacao liga o envio de e-mail quando o SMTP está configurado.
+func provedorDeComunicacao(cfg config.Config, log *slog.Logger) comunicacao.Provedor {
+	if cfg.SMTPHost == "" {
+		log.Warn("SMTP não configurado: os e-mails ficam na fila")
+		return comunicacao.Desligado{}
+	}
+	return comunicacao.Roteador{comunicacao.Email: &comunicacao.SMTP{
+		Host: cfg.SMTPHost, Porta: cfg.SMTPPort, Usuario: cfg.SMTPUser, Senha: cfg.SMTPPass, De: cfg.SMTPFrom, Seguranca: cfg.SMTPSecurity,
+	}}
 }
 
 // geocodificador escolhe a localização automática de endereços pela configuração.

@@ -302,11 +302,18 @@ func (q *Queries) ListComunicacoes(ctx context.Context, arg ListComunicacoesPara
 }
 
 const listComunicacoesVencidas = `-- name: ListComunicacoesVencidas :many
-SELECT id FROM comunicacoes WHERE status = 'fila' AND proxima_tentativa <= now() ORDER BY proxima_tentativa, id LIMIT $1
+SELECT id FROM comunicacoes
+WHERE status = 'fila' AND proxima_tentativa <= now() AND canal = ANY($1::text[])
+ORDER BY proxima_tentativa, id LIMIT $2
 `
 
-func (q *Queries) ListComunicacoesVencidas(ctx context.Context, limit int32) ([]int64, error) {
-	rows, err := q.db.Query(ctx, listComunicacoesVencidas, limit)
+type ListComunicacoesVencidasParams struct {
+	Canais []string `json:"canais"`
+	Limite int32    `json:"limite"`
+}
+
+func (q *Queries) ListComunicacoesVencidas(ctx context.Context, arg ListComunicacoesVencidasParams) ([]int64, error) {
+	rows, err := q.db.Query(ctx, listComunicacoesVencidas, arg.Canais, arg.Limite)
 	if err != nil {
 		return nil, err
 	}

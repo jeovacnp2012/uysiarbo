@@ -30,7 +30,9 @@ ORDER BY
 LIMIT sqlc.arg(limite) OFFSET sqlc.arg(deslocamento);
 
 -- name: ListComunicacoesVencidas :many
-SELECT id FROM comunicacoes WHERE status = 'fila' AND proxima_tentativa <= now() ORDER BY proxima_tentativa, id LIMIT $1;
+SELECT id FROM comunicacoes
+WHERE status = 'fila' AND proxima_tentativa <= now() AND canal = ANY(sqlc.arg(canais)::text[])
+ORDER BY proxima_tentativa, id LIMIT sqlc.arg(limite);
 
 -- name: SetComunicacaoEnviada :exec
 UPDATE comunicacoes SET status = 'enviada', tentativas = tentativas + 1, provedor = sqlc.arg(provedor), id_provedor = sqlc.arg(id_provedor),

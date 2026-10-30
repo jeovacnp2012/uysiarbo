@@ -25,7 +25,10 @@ Quem tem a permissão **Reenviar** pode criar uma mensagem em **Nova comunicaç�
 - **Cancelar:** vale para mensagem na fila ou que falhou.
 - **Marcar como entregue/visualizada:** registra o acompanhamento de uma mensagem já enviada.
 
-Se nenhum provedor de envio estiver configurado, as mensagens ficam na fila sem gastar tentativas, e o sistema avisa. A ligação com o WhatsApp e o servidor de e-mail é feita na etapa seguinte.
+## Envio automático
+O **e-mail** sai pelo servidor SMTP configurado no servidor do sistema (variáveis `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` e `SMTP_SECURITY`). Com o SMTP ligado, o sistema olha a fila a cada minuto, em todos os clientes, e envia sozinho o que já está no horário; mensagem com erro tenta de novo até 3 vezes.
+
+O **WhatsApp** ainda não tem provedor: as mensagens desse canal esperam na fila, sem gastar tentativas, e o sistema avisa. Sem SMTP configurado, o mesmo vale para os e-mails.
 
 ## Linha do tempo
 Cada mensagem mostra tudo o que aconteceu com ela: criação, tentativas, falhas, envio, entrega, leitura e quem fez cada ação. Mensagens não são apagadas; para parar um envio, cancele.

@@ -104,6 +104,9 @@ func (h *handlers) tentarEnvio(ctx context.Context, pool *pgxpool.Pool, q *sqlcc
 	if c.Status != "fila" {
 		return c.Status, errForaDaFila
 	}
+	if !h.provedorCom.Atende(c.Canal) {
+		return "fila", comunicacao.ErrDesligado
+	}
 	idExterno, err := h.provedorCom.Enviar(ctx, comunicacao.Mensagem{Canal: c.Canal, Destinatario: c.Destinatario, Nome: c.DestinatarioNome, Assunto: c.Assunto, Corpo: c.Corpo})
 	if errors.Is(err, comunicacao.ErrDesligado) {
 		return "fila", err
@@ -434,7 +437,12 @@ func (h *handlers) comunicacaoProcessarFila(w http.ResponseWriter, r *http.Reque
 		h.falhaInterna(w, r, "pool do cliente", err)
 		return
 	}
-	ids, err := q.ListComunicacoesVencidas(ctx, 50)
+	canais := h.canaisAtendidos()
+	if len(canais) == 0 {
+		http.Redirect(w, r, "/comunicacoes?aviso=sem_provedor", http.StatusSeeOther)
+		return
+	}
+	ids, err := q.ListComunicacoesVencidas(ctx, sqlccliente.ListComunicacoesVencidasParams{Canais: canais, Limite: 50})
 	if err != nil {
 		h.falhaInterna(w, r, "listar fila", err)
 		return

@@ -15,9 +15,12 @@ import (
 type provedorFalso struct {
 	enviadas []comunicacao.Mensagem
 	erro     error
+	soEmail  bool // simula um provedor só de e-mail
 }
 
 func (p *provedorFalso) Nome() string { return "falso" }
+
+func (p *provedorFalso) Atende(canal string) bool { return !p.soEmail || canal == comunicacao.Email }
 
 func (p *provedorFalso) Enviar(_ context.Context, m comunicacao.Mensagem) (string, error) {
 	if p.erro != nil {
@@ -89,4 +92,25 @@ func TestComunicacoes(t *testing.T) {
 	quer(t, ana.post(c3+"/cancelar", url.Values{}), http.StatusSeeOther)
 	quer(t, ana.get(c3), http.StatusOK, "Cancelada", "Reenviar")
 	quer(t, ana.get("/comunicacoes/999999"), http.StatusNotFound)
+}
+
+func TestComunicacoesCanalSemProvedor(t *testing.T) {
+	m := novoMundo(t)
+	ana := m.comAna(t)
+	m.com.soEmail = true
+	t.Cleanup(func() { m.com.soEmail = false })
+	rec := ana.post("/comunicacoes", url.Values{"canal": {"whatsapp"}, "destinatario": {"65999991234"}, "corpo": {"Oi"}})
+	quer(t, rec, http.StatusSeeOther)
+	c := strings.SplitN(local(rec), "?", 2)[0]
+	quer(t, ana.post(c+"/enviar", url.Values{}), http.StatusSeeOther)
+	if len(m.com.enviadas) != 0 {
+		t.Fatalf("enviou por canal sem provedor: %+v", m.com.enviadas)
+	}
+	quer(t, ana.get(c), http.StatusOK, "Na fila", "0 de 3")
+	quer(t, ana.post("/comunicacoes/processar", url.Values{}), http.StatusSeeOther)
+	if len(m.com.enviadas) != 0 {
+		t.Fatalf("a fila enviou por canal sem provedor: %+v", m.com.enviadas)
+	}
+	// o laço em segundo plano também respeita os canais atendidos
+	m.com.soEmail = false
 }

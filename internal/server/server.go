@@ -51,6 +51,9 @@ type Deps struct {
 	// Envio de WhatsApp e e-mail. nil = desligado (as mensagens ficam na fila).
 	Comunicacao comunicacao.Provedor
 
+	// Fundo é o contexto do servidor: quando acaba, o laço da fila de comunicações para. nil = sem laço (testes).
+	Fundo context.Context
+
 	// Importação por API de outro sistema: por segurança só acessa a internet pública; true libera a rede interna (testes).
 	ImportPermitirRedePrivada bool
 
@@ -98,6 +101,9 @@ func New(d Deps) http.Handler {
 	}
 	if h.provedorCom = d.Comunicacao; h.provedorCom == nil {
 		h.provedorCom = comunicacao.Desligado{}
+	}
+	if d.Fundo != nil {
+		go h.processarFilasEmSegundoPlano(d.Fundo)
 	}
 	if h.mapaTiles == "" {
 		h.mapaTiles, h.mapaCredito = "https://tile.openstreetmap.org/{z}/{x}/{y}.png", "© contribuidores do OpenStreetMap"

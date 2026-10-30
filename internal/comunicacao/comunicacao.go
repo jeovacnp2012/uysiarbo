@@ -28,6 +28,8 @@ type Mensagem struct {
 // Provedor envia uma mensagem e devolve o identificador dela no provedor (para acompanhar entrega e leitura).
 type Provedor interface {
 	Nome() string
+	// Atende diz se o provedor envia por esse canal (mensagem de canal sem provedor espera na fila).
+	Atende(canal string) bool
 	Enviar(ctx context.Context, m Mensagem) (idExterno string, err error)
 }
 
@@ -35,5 +37,7 @@ type Provedor interface {
 type Desligado struct{}
 
 func (Desligado) Nome() string { return "desligado" }
+
+func (Desligado) Atende(string) bool { return false }
 
 func (Desligado) Enviar(context.Context, Mensagem) (string, error) { return "", ErrDesligado }
