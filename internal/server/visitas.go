@@ -193,6 +193,16 @@ func (h *handlers) montarFormVisita(ctx context.Context, r *http.Request, q *sql
 		d.Semana = textoDaSemana(data, h.tipoSemana(r, q))
 	}
 	if id != 0 {
+		ams, err := q.ListAmostrasDaVisita(ctx, id)
+		if err != nil {
+			return d, err
+		}
+		d.Amostras = amostrasDaVisita(ams)
+		d.DepositosNovos = rotulosDepositoAmostra
+		d.ColetouAmostra = c.Amostra
+		d.PodeAmostra = pr.Pode("visita_editar") && c.Amostra
+		d.PodeResultado = pr.Pode("visita_laboratorio_adicionar")
+		d.TubitoAutomatico = h.tubitoAutomatico(r, q)
 		fotos, err := q.ListFotosDaVisita(ctx, id)
 		if err != nil {
 			return d, err
@@ -329,6 +339,12 @@ func avisoDaVisita(codigo string) string {
 		return "Foto(s) adicionada(s)."
 	case "anotacao":
 		return "Anotação adicionada."
+	case "amostra":
+		return "Amostra salva."
+	case "resultado":
+		return "Resultado salvo."
+	case "amostra-excluida":
+		return "Tubito enviado para a lixeira."
 	case "desativada":
 		return "Visita desativada."
 	case "reativada":

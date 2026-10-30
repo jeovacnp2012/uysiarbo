@@ -1,0 +1,93 @@
+package views
+
+import "strconv"
+
+templ Laboratorio(l Layout, d LaboratorioData) {
+	@Base(l) {
+		@PageHeader("Laboratório", "Tubitos coletados nas visitas e o resultado da análise. Para alterar um resultado, abra a visita.")
+		<form
+			method="get"
+			action="/laboratorio"
+			class="cartao filtros filtros-vivos"
+			hx-get="/laboratorio"
+			hx-trigger="input changed delay:350ms from:find input, change from:find .filtro-auto, filtrar from:body"
+			hx-target="#laboratorio-lista"
+			hx-select="#laboratorio-lista"
+			hx-swap="outerHTML"
+			hx-push-url="true"
+			hx-indicator="#laboratorio-lista"
+		>
+			@campoTexto("f-tubito", "Tubito", "tubito", d.Filtro.Tubito, "")
+			<div class="campo campo-largo">
+				<label for="f-endereco">Endereço</label>
+				<input id="f-endereco" name="endereco" type="search" value={ d.Filtro.Endereco } placeholder="Endereço"/>
+			</div>
+			@campoEscolha("f-status", "Status", "status", "Todos", d.Situacoes)
+			@campoEscolha("f-ciclo", "Ciclo", "ciclo", "Todos os ciclos", d.Ciclos)
+			@campoEscolha("f-agente", "Agente", "agente", "Todos os agentes", d.Agentes)
+			<div class="campo">
+				<label for="f-de">De</label>
+				<input id="f-de" name="de" type="date" value={ d.Filtro.De } class="filtro-auto"/>
+			</div>
+			<div class="campo">
+				<label for="f-ate">Até</label>
+				<input id="f-ate" name="ate" type="date" value={ d.Filtro.Ate } class="filtro-auto"/>
+			</div>
+			<div class="form-acoes">
+				<a class="btn btn-escuro" href="/laboratorio" data-icone="undo">Limpar filtros</a>
+			</div>
+			<noscript><button type="submit" class="btn btn-primario">Filtrar</button></noscript>
+		</form>
+		<div id="laboratorio-lista" class="lista-viva">
+			<section class="cartao">
+				@Paginacao(d.Pag, "/laboratorio", d.Query)
+				<div class="tabela-wrap">
+					<table class="tabela">
+						<thead>
+							<tr>
+								<th scope="col">Tubito</th>
+								<th scope="col">Endereço</th>
+								<th scope="col">Data / agente</th>
+								<th scope="col">Ciclo</th>
+								<th scope="col">Dep.</th>
+								<th scope="col">Larvas / pupas</th>
+								<th scope="col">Status</th>
+								<th scope="col">Aegypti</th>
+								<th scope="col">Albopictus</th>
+								<th scope="col">Negativo</th>
+								<th scope="col"><span class="sr-only">Ações</span></th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, a := range d.Linhas {
+								<tr>
+									<td data-rotulo="Tubito"><strong>{ a.Tubito }</strong></td>
+									<td data-rotulo="Endereço">{ a.Endereco }</td>
+									<td data-rotulo="Data / agente">{ a.Data } — { a.Agente }</td>
+									<td data-rotulo="Ciclo">{ a.Ciclo }</td>
+									<td data-rotulo="Dep.">{ a.Deposito }</td>
+									<td data-rotulo="Larvas / pupas">{ strconv.Itoa(a.Larvas) } / { strconv.Itoa(a.Pupas) }</td>
+									<td data-rotulo="Status">
+										if a.Status == "concluido" {
+											<span class="selo selo-ok">{ a.StatusRotulo }</span>
+										} else {
+											<span class="selo selo-aviso">{ a.StatusRotulo }</span>
+										}
+									</td>
+									<td data-rotulo="Aegypti">{ strconv.Itoa(a.Aegypti) }</td>
+									<td data-rotulo="Albopictus">{ strconv.Itoa(a.Albopictus) }</td>
+									<td data-rotulo="Negativo">{ strconv.Itoa(a.Negativo) }</td>
+									<td data-rotulo="Ações"><a class="btn" href={ templ.SafeURL("/visitas/" + strconv.FormatInt(a.VisitaID, 10) + "#amostras") }>Abrir visita</a></td>
+								</tr>
+							}
+						</tbody>
+					</table>
+					if len(d.Linhas) == 0 {
+						<div class="tabela-vazia">Nenhuma amostra encontrada.</div>
+					}
+				</div>
+				@Paginacao(d.Pag, "/laboratorio", d.Query)
+			</section>
+		</div>
+	}
+}

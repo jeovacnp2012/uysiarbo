@@ -424,6 +424,88 @@ templ VisitaForm(l Layout, d VisitaFormData) {
 					</form>
 				}
 			</section>
+			<section class="cartao form-admin" id="amostras">
+				<h2>Amostras (tubitos)</h2>
+				if d.ErroAmostra != "" {
+					<p class="alerta alerta-erro" role="alert">{ d.ErroAmostra }</p>
+				}
+				if !d.ColetouAmostra && len(d.Amostras) == 0 {
+					<p class="subtitulo">Esta visita não coletou amostra.</p>
+				}
+				for _, a := range d.Amostras {
+					<div class="cartao amostra">
+						<h3>Tubito { a.Tubito } <span class="selo">{ a.StatusRotulo }</span></h3>
+						<form method="post" action={ templ.SafeURL("/visitas/" + strconv.FormatInt(d.ID, 10) + "/amostras/" + strconv.FormatInt(a.ID, 10)) } class="filtros">
+							<input type="hidden" name="csrf" value={ d.CSRF }/>
+							<div class="campo">
+								<label for={ "dep-" + strconv.FormatInt(a.ID, 10) }>Depósito</label>
+								<select id={ "dep-" + strconv.FormatInt(a.ID, 10) } name="deposito" disabled?={ !d.PodeEditar }>
+									<option value="">—</option>
+									@opcoesDe(a.Depositos)
+								</select>
+							</div>
+							@numeroVisita("lar-"+strconv.FormatInt(a.ID, 10), "Larvas", "larvas", strconv.Itoa(a.Larvas), "9999", "1")
+							@numeroVisita("pup-"+strconv.FormatInt(a.ID, 10), "Pupas", "pupas", strconv.Itoa(a.Pupas), "9999", "1")
+							<div class="campo campo-largo">
+								<label for={ "obs-" + strconv.FormatInt(a.ID, 10) }>Observação</label>
+								<input id={ "obs-" + strconv.FormatInt(a.ID, 10) } name="observacao" maxlength="1000" value={ a.Observacao } disabled?={ !d.PodeEditar }/>
+							</div>
+							if d.PodeEditar {
+								<div class="form-acoes"><button type="submit" class="btn">Salvar coleta</button></div>
+							}
+						</form>
+						<form method="post" action={ templ.SafeURL("/visitas/" + strconv.FormatInt(d.ID, 10) + "/amostras/" + strconv.FormatInt(a.ID, 10) + "/resultado") } class="filtros">
+							<input type="hidden" name="csrf" value={ d.CSRF }/>
+							<div class="campo">
+								<label for={ "st-" + strconv.FormatInt(a.ID, 10) }>Status</label>
+								<select id={ "st-" + strconv.FormatInt(a.ID, 10) } name="status" disabled?={ !d.PodeResultado }>
+									@opcoesDe(a.Situacoes)
+								</select>
+							</div>
+							@numeroVisita("aeg-"+strconv.FormatInt(a.ID, 10), "Total Aedes aegypti", "aegypti", strconv.Itoa(a.Aegypti), "99999", "1")
+							@numeroVisita("alb-"+strconv.FormatInt(a.ID, 10), "Total Aedes albopictus", "albopictus", strconv.Itoa(a.Albopictus), "99999", "1")
+							@numeroVisita("neg-"+strconv.FormatInt(a.ID, 10), "Total negativo", "negativo", strconv.Itoa(a.Negativo), "99999", "1")
+							if d.PodeResultado {
+								<div class="form-acoes"><button type="submit" class="btn btn-primario">Salvar resultado</button></div>
+							}
+						</form>
+						if d.PodeEditar {
+							<form method="post" action={ templ.SafeURL("/visitas/" + strconv.FormatInt(d.ID, 10) + "/amostras/" + strconv.FormatInt(a.ID, 10) + "/excluir") } class="inline" onsubmit="return confirm('Enviar o tubito para a lixeira?')">
+								<input type="hidden" name="csrf" value={ d.CSRF }/>
+								<button type="submit" class="btn">Excluir tubito</button>
+							</form>
+						}
+					</div>
+				}
+				if d.PodeAmostra {
+					<h3>Novo tubito</h3>
+					<form method="post" action={ templ.SafeURL("/visitas/" + strconv.FormatInt(d.ID, 10) + "/amostras") } class="filtros">
+						<input type="hidden" name="csrf" value={ d.CSRF }/>
+						if !d.TubitoAutomatico {
+							<div class="campo">
+								<label for="novo-tubito">Número do tubito</label>
+								<input id="novo-tubito" name="tubito" maxlength="30" required/>
+							</div>
+						} else {
+							<p class="subtitulo">O número do tubito é gerado automaticamente.</p>
+						}
+						<div class="campo">
+							<label for="novo-dep">Depósito</label>
+							<select id="novo-dep" name="deposito">
+								<option value="">—</option>
+								@opcoesDe(d.DepositosNovos)
+							</select>
+						</div>
+						@numeroVisita("novo-lar", "Larvas", "larvas", "0", "9999", "1")
+						@numeroVisita("novo-pup", "Pupas", "pupas", "0", "9999", "1")
+						<div class="campo campo-largo">
+							<label for="novo-obs">Observação</label>
+							<input id="novo-obs" name="observacao" maxlength="1000"/>
+						</div>
+						<div class="form-acoes"><button type="submit" class="btn btn-sucesso">Adicionar tubito</button></div>
+					</form>
+				}
+			</section>
 			if d.PodeExcluir {
 				<section class="cartao form-admin" id="situacao">
 					<h2>Situação da visita</h2>

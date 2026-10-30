@@ -49,6 +49,13 @@ type VisitaFormData struct {
 	PodeAnotar          bool
 	PodeExcluir         bool
 	Fotos               []VisitaFotoLinha
+	Amostras            []AmostraLinha
+	DepositosNovos      []CidadeOpcao
+	ColetouAmostra      bool
+	PodeAmostra         bool
+	PodeResultado       bool
+	TubitoAutomatico    bool
+	ErroAmostra         string
 	Anotacoes           []VisitaAnotacaoLinha
 	Aviso               string
 	Erro                string
@@ -103,4 +110,38 @@ type VisitasFiltro struct {
 	Ciclo, Agente, Atividade, Semana, De, Ate      string
 	Pendencia, Deposito, Amostra, Tratamento, Foto string
 	Situacao                                       string
+}
+
+// AmostraLinha é um tubito na ficha da visita.
+type AmostraLinha struct {
+	ID                            int64
+	Tubito, Deposito, Observacao  string
+	Larvas, Pupas                 int
+	Status, StatusRotulo          string
+	Aegypti, Albopictus, Negativo int
+	Depositos, Situacoes          []CidadeOpcao
+}
+
+// AmostraListaLinha é um tubito na listagem do laboratório.
+type AmostraListaLinha struct {
+	ID, VisitaID                        int64
+	Tubito, Deposito, Endereco, Data    string
+	Ciclo, Agente, Status, StatusRotulo string
+	Larvas, Pupas                       int
+	Aegypti, Albopictus, Negativo       int
+}
+
+// LaboratorioFiltro são os filtros da listagem do laboratório.
+type LaboratorioFiltro struct {
+	Tubito, Status, Ciclo, Agente, De, Ate, Endereco string
+}
+
+type LaboratorioData struct {
+	Linhas    []AmostraListaLinha
+	Filtro    LaboratorioFiltro
+	Pag       Pagination
+	Query     url.Values
+	Ciclos    []CidadeOpcao
+	Agentes   []CidadeOpcao
+	Situacoes []CidadeOpcao
 }

@@ -444,9 +444,21 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 			v, err := q.GetVisitaQualquer(ctx, id)
 			return "Visita " + strconv.FormatInt(v.ID, 10), v.DeletedAt.Valid, err
 		},
-		// As amostras, notificações e demais registros da visita entram aqui quando as suas etapas existirem.
-		filhosAtivos: func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
-		vinculos:     func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
+		// Notificações e demais registros da visita entram aqui quando as suas etapas existirem.
+		filhosAtivos: func(ctx context.Context, q *sqlccliente.Queries, id int64) ([]string, error) {
+			n, err := q.ContarAmostrasDaVisita(ctx, id)
+			if err != nil || n.Ativas == 0 {
+				return nil, err
+			}
+			return []string{plural(n.Ativas, "amostra (tubito)", "amostras (tubitos)") + " ainda ativa(s)"}, nil
+		},
+		vinculos: func(ctx context.Context, q *sqlccliente.Queries, id int64) ([]string, error) {
+			n, err := q.ContarAmostrasDaVisita(ctx, id)
+			if err != nil || n.Total == 0 {
+				return nil, err
+			}
+			return []string{plural(n.Total, "amostra", "amostras") + " (contando as excluídas)"}, nil
+		},
 		paiExcluido: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, error) {
 			v, err := q.GetVisitaQualquer(ctx, id)
 			if err != nil {
@@ -462,6 +474,42 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 		},
 		lixeira: func(ctx context.Context, q *sqlccliente.Queries) ([]views.LixeiraLinha, error) {
 			rows, err := q.ListVisitasExcluidas(ctx)
+			out := make([]views.LixeiraLinha, len(rows))
+			for i, r := range rows {
+				out[i] = views.LixeiraLinha{ID: r.ID, Rotulo: r.Rotulo, Contexto: r.Contexto, Quando: r.DeletedAt.Time, Por: r.ExcluidoPor}
+			}
+			return out, err
+		},
+	},
+	"amostra": {
+		Chave: "amostra", Rotulo: "Amostra (tubito)", Plural: "Amostras (tubitos)", Genero: "a",
+		soft: func(ctx context.Context, q *sqlccliente.Queries, id int64, por pgtype.Int8) (int64, error) {
+			return q.SoftDeleteAmostra(ctx, sqlccliente.SoftDeleteAmostraParams{ID: id, Por: por})
+		},
+		restore: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			return q.RestoreAmostra(ctx, id)
+		},
+		force: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			return q.ForceDeleteAmostra(ctx, id)
+		},
+		rotulo: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, bool, error) {
+			a, err := q.GetAmostraQualquer(ctx, id)
+			return "Tubito " + a.NumeroTubito, a.DeletedAt.Valid, err
+		},
+		filhosAtivos: func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
+		vinculos:     func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
+		paiExcluido: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, error) {
+			a, err := q.GetAmostraQualquer(ctx, id)
+			if err != nil {
+				return "", err
+			}
+			if v, err := q.GetVisitaQualquer(ctx, a.VisitaID); err == nil && v.DeletedAt.Valid {
+				return "a visita " + strconv.FormatInt(v.ID, 10), nil
+			}
+			return "", nil
+		},
+		lixeira: func(ctx context.Context, q *sqlccliente.Queries) ([]views.LixeiraLinha, error) {
+			rows, err := q.ListAmostrasExcluidas(ctx)
 			out := make([]views.LixeiraLinha, len(rows))
 			for i, r := range rows {
 				out[i] = views.LixeiraLinha{ID: r.ID, Rotulo: r.Rotulo, Contexto: r.Contexto, Quando: r.DeletedAt.Time, Por: r.ExcluidoPor}
@@ -500,7 +548,7 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 }
 
 // ordemDaLixeira é a ordem das abas.
-var ordemDaLixeira = []string{"local", "quarteirao", "bairro", "cidade", "ciclo", "lei", "lei_trecho", "visita", "grupo", "mapeamento"}
+var ordemDaLixeira = []string{"local", "quarteirao", "bairro", "cidade", "ciclo", "lei", "lei_trecho", "visita", "amostra", "grupo", "mapeamento"}
 
 // excluirLogicamente aplica a regra completa: recusa se há filhos ativos; senão marca deleted_at.
 // Devolve os motivos da recusa (vazio = excluído), o nome do registro e o erro de banco, se houve.

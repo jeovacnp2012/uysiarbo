@@ -18,6 +18,27 @@ type AcessosLocal struct {
 	CriadoEm     pgtype.Timestamptz `json:"criado_em"`
 }
 
+type Amostra struct {
+	ID              int64              `json:"id"`
+	VisitaID        int64              `json:"visita_id"`
+	NumeroTubito    string             `json:"numero_tubito"`
+	Deposito        string             `json:"deposito"`
+	Larvas          int32              `json:"larvas"`
+	Pupas           int32              `json:"pupas"`
+	Status          string             `json:"status"`
+	TotalAegypti    int32              `json:"total_aegypti"`
+	TotalAlbopictus int32              `json:"total_albopictus"`
+	TotalNegativo   int32              `json:"total_negativo"`
+	ResultadoPor    pgtype.Int8        `json:"resultado_por"`
+	ResultadoEm     pgtype.Timestamptz `json:"resultado_em"`
+	Observacao      string             `json:"observacao"`
+	CriadoPor       pgtype.Int8        `json:"criado_por"`
+	CriadoEm        pgtype.Timestamptz `json:"criado_em"`
+	AtualizadoEm    pgtype.Timestamptz `json:"atualizado_em"`
+	DeletedAt       pgtype.Timestamptz `json:"deleted_at"`
+	DeletedBy       pgtype.Int8        `json:"deleted_by"`
+}
+
 type ApiChamada struct {
 	ID           int64              `json:"id"`
 	CredencialID int64              `json:"credencial_id"`
