@@ -1976,3 +1976,46 @@ select.sb-nativo {
     pointer-events: none !important;
     clip-path: inset(50%);
 }
+
+/* Tabelas mais compactas e sem quebra de linha nas células (rola na horizontal se faltar espaço) */
+.tabela-rolavel,
+.tabela-wrap,
+.cartao:has(> .tabela) {
+    overflow-x: auto;
+}
+
+@media (min-width: 641px) {
+    .tabela {
+        font-size: 0.8rem;
+    }
+
+    .tabela th {
+        padding: 0.5rem 0.6rem;
+        font-size: 0.68rem;
+        letter-spacing: 0.03em;
+        white-space: nowrap;
+    }
+
+    .tabela td {
+        padding: 0.5rem 0.6rem;
+        white-space: nowrap;
+        overflow-wrap: normal;
+    }
+
+    .tabela .btn {
+        padding: 0.3rem 0.6rem;
+        font-size: 0.78rem;
+    }
+
+    .tabela .selo {
+        font-size: 0.7rem;
+    }
+
+    /* textos longos de verdade (observações, descrições, histórico) continuam podendo quebrar */
+    .tabela td.quebra,
+    .tabela-mudancas td,
+    .detalhe-corpo td {
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+}
