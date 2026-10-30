@@ -45,6 +45,7 @@ var recursosPresenca = map[string]recursoPresenca{
 	"estoque_lote":     {ver: "estoque_entrada_visualizar", editar: "estoque_entrada_novo", noCliente: true},
 	"estoque_retirada": {ver: "estoque_retirada_visualizar", editar: "estoque_retirada_novo", noCliente: true},
 	"patrimonio":       {ver: "patrimonio_visualizar", editar: "patrimonio_editar", noCliente: true},
+	"banner":           {ver: "banner_visualizar", editar: "banner_editar", noCliente: true},
 	"lvc":              {ver: "zoonose_lvc_visualizar", editar: "zoonose_lvc_editar", noCliente: true},
 	"diaria":           {ver: "campanha_diaria_visualizar", editar: "campanha_diaria_editar", noCliente: true},
 	"drone":            {ver: "dronesolicitacao_visualizar", editar: "dronesolicitacao_atender", noCliente: true},

@@ -1,0 +1,229 @@
+package views
+
+import "strconv"
+
+templ Banners(l Layout, d BannersData) {
+	@Base(l) {
+		@PageHeader("Banners", "Imagens com texto montadas no editor visual, para avisos e comunicações.") {
+			if d.PodeNovo {
+				<a class="btn btn-primario" href="/banners/novo" data-icone="plus">Novo banner</a>
+			}
+		}
+		if d.Aviso != "" {
+			<p class="alerta alerta-ok" role="status">{ d.Aviso }</p>
+		}
+		<form
+			method="get"
+			action="/banners"
+			class="cartao filtros filtros-vivos"
+			autocomplete="off"
+			hx-get="/banners"
+			hx-trigger="input delay:350ms, change delay:60ms, filtrar from:body"
+			hx-sync="this:replace"
+			hx-target="#banners-lista"
+			hx-select="#banners-lista"
+			hx-swap="outerHTML"
+			hx-push-url="true"
+			hx-indicator="#banners-lista"
+		>
+			<input type="hidden" name="ordem" value={ d.Ordem }/>
+			<input type="hidden" name="dir" value={ d.Dir }/>
+			<div class="campo">
+				<label for="f-busca">Nome</label>
+				<input id="f-busca" name="busca" type="search" value={ d.Filtro.Busca }/>
+			</div>
+			@campoEscolha("f-situacao", "Situação", "situacao", "Todas", d.Situacoes)
+			<div class="form-acoes">
+				<a class="btn btn-escuro" href="/banners" data-icone="undo">Limpar filtros</a>
+			</div>
+			<noscript><button type="submit" class="btn btn-primario">Filtrar</button></noscript>
+		</form>
+		<div id="banners-lista" class="lista-viva">
+			<section class="cartao">
+				@Paginacao(d.Pag, "/banners", d.Query)
+				<div class="tabela-wrap">
+					<table class="tabela">
+						<thead>
+							<tr>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "id") }><a class="ordenar" href="#" data-ordenar="id" data-dir={ proximaDir(d.Ordem, d.Dir, "id") }>ID<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "id") }</span></a></th>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "nome") }><a class="ordenar" href="#" data-ordenar="nome" data-dir={ proximaDir(d.Ordem, d.Dir, "nome") }>Nome<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "nome") }</span></a></th>
+								<th scope="col">Tamanho</th>
+								<th scope="col">Fundo</th>
+								<th scope="col">Situação</th>
+								<th scope="col">Atualizado em</th>
+								<th scope="col" data-fixa><span class="sr-only">Ações</span></th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, x := range d.Linhas {
+								<tr>
+									<td data-rotulo="ID"><strong>{ x.IDTexto }</strong></td>
+									<td data-rotulo="Nome" class="quebra2">{ x.Nome }</td>
+									<td data-rotulo="Tamanho">{ x.Tamanho }</td>
+									<td data-rotulo="Fundo">{ x.Fundo }</td>
+									<td data-rotulo="Situação">{ x.Situacao }</td>
+									<td data-rotulo="Atualizado em">{ x.Atualizado }</td>
+									<td data-rotulo="Ações"><a class="btn" href={ templ.SafeURL("/banners/" + x.IDTexto) }>Abrir</a></td>
+								</tr>
+							}
+						</tbody>
+					</table>
+					if len(d.Linhas) == 0 {
+						<div class="tabela-vazia">Nenhum banner encontrado.</div>
+					}
+				</div>
+				@Paginacao(d.Pag, "/banners", d.Query)
+			</section>
+		</div>
+	}
+}
+
+func bannerAcao(id int64) string {
+	if id == 0 {
+		return "/banners"
+	}
+	return "/banners/" + strconv.FormatInt(id, 10)
+}
+
+templ BannerFicha(l Layout, d BannerForm) {
+	@Base(l) {
+		if d.Novo() {
+			@PageHeader("Novo banner", "") {
+				<a class="btn" href="/banners">Voltar</a>
+			}
+		} else {
+			@PageHeader(d.Nome, "Banner "+d.Largura+" × "+d.Altura) {
+				<a class="btn" href="/banners">Voltar</a>
+			}
+			@Presenca("banner", strconv.FormatInt(d.ID, 10), modoDaTela(d.PodeEditar))
+		}
+		if d.Aviso != "" {
+			<p class="alerta alerta-ok" role="status">{ d.Aviso }</p>
+		}
+		if d.Erro != "" {
+			<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
+		}
+		<form
+			method="post"
+			enctype="multipart/form-data"
+			action={ templ.SafeURL(bannerAcao(d.ID)) }
+			class="form-admin"
+			data-sem-gaveta
+			x-data="editorBanner"
+			data-def={ d.Definicao }
+			data-fundo={ bannerFundoURL(d) }
+			data-largura={ d.Largura }
+			data-altura={ d.Altura }
+			data-cor={ d.CorFundo }
+			x-on:submit="preparar()"
+		>
+			<input type="hidden" name="csrf" value={ d.CSRF }/>
+			<input type="hidden" name="definicao" x-ref="saida"/>
+			<fieldset class="sem-borda" disabled?={ !d.PodeEditar }>
+				<section class="cartao">
+					<div class="grade-form">
+						<div class="campo">
+							<label for="nome">Nome</label>
+							<input id="nome" name="nome" type="text" value={ d.Nome } maxlength="100" required/>
+						</div>
+						<div class="campo">
+							<label for="largura">Largura (px)</label>
+							<input id="largura" name="largura" type="number" min="100" max="4000" x-model.number="largura" required/>
+						</div>
+						<div class="campo">
+							<label for="altura">Altura (px)</label>
+							<input id="altura" name="altura" type="number" min="100" max="4000" x-model.number="altura" required/>
+						</div>
+						<div class="campo">
+							<label for="cor_fundo">Cor de fundo</label>
+							<input id="cor_fundo" name="cor_fundo" type="color" x-model="cor"/>
+						</div>
+						<div class="campo">
+							<label for="fundo">Imagem de fundo (JPEG, PNG ou WebP, até 2 MB)</label>
+							<input id="fundo" name="fundo" type="file" accept="image/jpeg,image/png,image/webp" x-on:change="escolherFundo($event)"/>
+						</div>
+						if d.TemFundo {
+							<label class="check"><input type="checkbox" name="remover_fundo" value="1" x-model="removerFundo"/> Remover a imagem de fundo</label>
+						}
+						<label class="check"><input type="checkbox" name="ativo" value="1" checked?={ d.Ativo }/> Ativo</label>
+					</div>
+				</section>
+				<section class="cartao">
+					<h2>Editor</h2>
+					<p class="subtitulo">Arraste o texto na imagem para posicionar. O tamanho é em pixels do banner.</p>
+					<div class="banner-palco-wrap">
+						<div class="banner-palco" x-ref="palco" x-bind:style="estiloPalco()">
+							<template x-for="(e, i) in els" x-bind:key="e._k">
+								<div class="banner-texto" x-bind:class="{ sel: sel === i }" x-bind:style="estiloTexto(e)" x-text="e.texto" x-on:pointerdown="arrastar($event, i)"></div>
+							</template>
+						</div>
+					</div>
+					<div class="form-acoes">
+						<button type="button" class="btn btn-escuro" data-icone="plus" x-on:click="adicionar()">Adicionar texto</button>
+						<button type="button" class="btn" data-icone="download" x-on:click="baixar()">Baixar PNG</button>
+					</div>
+					<template x-for="(e, i) in els" x-bind:key="e._k">
+						<div class="cartao banner-item" x-bind:class="{ sel: sel === i }" x-on:click="sel = i">
+							<div class="grade-form">
+								<div class="campo campo-largo">
+									<label x-bind:for="'t' + e._k">Texto</label>
+									<textarea x-bind:id="'t' + e._k" rows="2" maxlength="300" x-model="e.texto"></textarea>
+								</div>
+								<div class="campo">
+									<label>Fonte</label>
+									<select x-model="e.fonte" data-sem-busca>
+										<option value="sans">Sem serifa</option>
+										<option value="serif">Com serifa</option>
+										<option value="mono">Monoespaçada</option>
+									</select>
+								</div>
+								<div class="campo">
+									<label>Tamanho (px)</label>
+									<input type="number" min="8" max="600" x-model.number="e.tamanho"/>
+								</div>
+								<div class="campo">
+									<label>Cor</label>
+									<input type="color" x-model="e.cor"/>
+								</div>
+								<div class="campo">
+									<label>Alinhamento</label>
+									<select x-model="e.alinhar" data-sem-busca>
+										<option value="left">Esquerda</option>
+										<option value="center">Centro</option>
+										<option value="right">Direita</option>
+									</select>
+								</div>
+								<div class="campo">
+									<label>Posição X (%)</label>
+									<input type="number" min="0" max="100" step="0.5" x-model.number="e.x"/>
+								</div>
+								<div class="campo">
+									<label>Posição Y (%)</label>
+									<input type="number" min="0" max="100" step="0.5" x-model.number="e.y"/>
+								</div>
+								<label class="check"><input type="checkbox" x-model="e.negrito"/> Negrito</label>
+								<label class="check"><input type="checkbox" x-model="e.sombra"/> Sombra</label>
+								<button type="button" class="btn btn-perigo" data-icone="trash" x-on:click.stop="remover(i)">Remover texto</button>
+							</div>
+						</div>
+					</template>
+				</section>
+			</fieldset>
+			if d.PodeEditar {
+				<div class="form-acoes">
+					<button type="submit" class="btn btn-primario" data-icone="save">Salvar</button>
+					if !d.Novo() && d.PodeExcluir {
+						<button type="submit" class="btn btn-perigo" formaction={ bannerAcao(d.ID) + "/excluir" } formnovalidate onclick="return confirm('Enviar este banner para a lixeira?')" data-icone="trash">Excluir</button>
+					}
+				</div>
+			}
+		</form>
+	}
+}
+
+func bannerFundoURL(d BannerForm) string {
+	if d.TemFundo {
+		return "/banners/" + strconv.FormatInt(d.ID, 10) + "/fundo"
+	}
+	return ""
+}

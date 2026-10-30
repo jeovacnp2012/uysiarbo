@@ -2244,3 +2244,10 @@ select.sb-nativo {
 .fl-metrica small { color: var(--suave); font-size: .7rem; }
 .fl-veredito { display: grid; place-items: center; border-radius: .5rem; font-size: 1.25rem; font-weight: 700; color: #fff; padding: 1rem; }
 .fl-v-ok { background: #22c55e; } .fl-v-perigo { background: #dc2626; }
+
+/* Banners (12.4): editor visual */
+.banner-palco-wrap { max-width: 640px; margin: 0 auto 1rem; }
+.banner-palco { position: relative; width: 100%; container-type: inline-size; overflow: hidden; border: 1px solid var(--borda, #cbd5e1); border-radius: 6px; user-select: none; touch-action: none; }
+.banner-texto { position: absolute; white-space: pre-wrap; line-height: 1.2; cursor: move; outline: 1px dashed transparent; }
+.banner-texto.sel, .banner-texto:hover { outline-color: rgba(255, 255, 255, .9); box-shadow: 0 0 0 1px rgba(0, 0, 0, .5); }
+.banner-item.sel { border-color: var(--marca, #155a9e); }

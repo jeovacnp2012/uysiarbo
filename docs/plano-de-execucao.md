@@ -167,7 +167,7 @@ Objetivo: migrar dados de outros sistemas e de planilhas, com segurança.
 - [x] 12.1 Comunicações (WhatsApp e e-mail): fila, tentativas, reenvio, timeline, status de visualização
 - [x] 12.2 E-mail por SMTP (feito); provedor de WhatsApp ainda a decidir (fica para depois)
 - [ ] 12.3 SINAN / e-SUS / SUS: levantar formato oficial, exportar e/ou importar notificações
-- [ ] 12.4 Banners (editor visual)
+- [x] 12.4 Banners (editor visual)
 
 ## Etapa 13 — Produção, segurança e LGPD
 - [ ] 13.1 Deploy na VPS (Nginx, serviço systemd, Postgres, TLS) e script de atualização sem queda

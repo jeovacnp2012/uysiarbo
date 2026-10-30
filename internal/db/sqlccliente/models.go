@@ -223,6 +223,23 @@ type BairroResponsavei struct {
 	UsuarioID int64 `json:"usuario_id"`
 }
 
+type Banner struct {
+	ID           int64              `json:"id"`
+	Nome         string             `json:"nome"`
+	Largura      int32              `json:"largura"`
+	Altura       int32              `json:"altura"`
+	CorFundo     string             `json:"cor_fundo"`
+	FundoTipo    string             `json:"fundo_tipo"`
+	Fundo        []byte             `json:"fundo"`
+	Definicao    []byte             `json:"definicao"`
+	Ativo        bool               `json:"ativo"`
+	CriadoPor    pgtype.Int8        `json:"criado_por"`
+	CriadoEm     pgtype.Timestamptz `json:"criado_em"`
+	AtualizadoEm pgtype.Timestamptz `json:"atualizado_em"`
+	DeletedAt    pgtype.Timestamptz `json:"deleted_at"`
+	DeletedBy    pgtype.Int8        `json:"deleted_by"`
+}
+
 type Campanha struct {
 	ID           int64              `json:"id"`
 	IDExterno    pgtype.Text        `json:"id_externo"`

@@ -116,6 +116,9 @@ func (s *handlers) menu(r *http.Request) []views.NavGrupo {
 		if pr.Pode("historico_mobilidade") {
 			menu = append(menu, views.NavGrupo{Label: "Histórico de mobilidade", Icone: "mobilidade", Href: "/mobilidade/historico"})
 		}
+		if pr.Pode("banner_visualizar") {
+			menu = append(menu, views.NavGrupo{Label: "Banners", Icone: "banner", Href: "/banners"})
+		}
 		if pr.Pode("comunicacao_visualizar") {
 			menu = append(menu, views.NavGrupo{Label: "Comunicações", Icone: "comunicacao", Href: "/comunicacoes"})
 		}
@@ -123,9 +126,7 @@ func (s *handlers) menu(r *http.Request) []views.NavGrupo {
 			menu = append(menu, views.NavGrupo{Label: "Bairros", Icone: "bairros", Href: "/bairros"})
 		}
 		// Módulos que ainda não têm tela: aparecem apagados para quem tem a permissão de ver.
-		for _, m := range []struct{ perm, rotulo, icone string }{
-			{"banner_visualizar", "Banners", "banner"},
-		} {
+		for _, m := range []struct{ perm, rotulo, icone string }{} {
 			if pr.Pode(m.perm) {
 				menu = append(menu, views.NavGrupo{Label: m.rotulo, Icone: m.icone, EmBreve: true})
 			}
