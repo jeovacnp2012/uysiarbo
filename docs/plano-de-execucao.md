@@ -155,7 +155,7 @@ Objetivo: migrar dados de outros sistemas e de planilhas, com segurança.
 - [x] 10.2 Campanha antirrábica: registros, vacinados e não vacinados — concluída em 2026-10-30 (versão 1.0.055)
 - [x] 10.3 Diária de trabalho (equipe, temperaturas, defeitos, início e fim) — concluída em 2026-10-30 (versão 1.0.056)
 - [x] 10.4 LVC (teste do cachorro: DPP, reteste, desfecho) — concluída em 2026-10-30 (versão 1.0.057)
-- [ ] 10.5 LIRAa: grupos e agenda
+- [x] 10.5 LIRAa: grupos e agenda — concluída em 2026-10-30 (versão 1.0.058). **✅ Etapa 10 concluída.**
 
 ## Etapa 11 — Estoque e patrimônio
 - [ ] 11.1 Unidades, produtos (fracionáveis), lotes e movimentação

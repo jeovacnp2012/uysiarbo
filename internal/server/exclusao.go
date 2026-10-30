@@ -141,6 +141,16 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 			if len(itens) > 0 {
 				itens[len(itens)-1] += " (contando os excluídos)"
 			}
+			if c, err := q.CountLiraaAgendaDoBairroQualquer(ctx, id); err != nil {
+				return nil, err
+			} else if c > 0 {
+				itens = append(itens, plural(c, "agendamento do LIRAa", "agendamentos do LIRAa")+" (contando os excluídos)")
+			}
+			if c, err := q.CountLiraaGruposDoBairro(ctx, id); err != nil {
+				return nil, err
+			} else if c > 0 {
+				itens = append(itens, plural(c, "grupo do LIRAa", "grupos do LIRAa"))
+			}
 			f, err := q.ContarFichasDoBairro(ctx, id)
 			if err != nil {
 				return nil, err
@@ -195,11 +205,20 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 			return []string{plural(n.Ativos, "local", "locais")}, nil
 		},
 		vinculos: func(ctx context.Context, q *sqlccliente.Queries, id int64) ([]string, error) {
+			var itens []string
 			n, err := q.ContarFilhosDoQuarteirao(ctx, id)
-			if err != nil || n.Total == 0 {
+			if err != nil {
 				return nil, err
 			}
-			return []string{plural(n.Total, "local", "locais") + " (contando os excluídos)"}, nil
+			if n.Total > 0 {
+				itens = append(itens, plural(n.Total, "local", "locais")+" (contando os excluídos)")
+			}
+			if c, err := q.CountLiraaAgendaDoQuarteiraoQualquer(ctx, id); err != nil {
+				return nil, err
+			} else if c > 0 {
+				itens = append(itens, plural(c, "agendamento do LIRAa", "agendamentos do LIRAa")+" (contando os excluídos)")
+			}
+			return itens, nil
 		},
 		paiExcluido: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, error) {
 			x, err := q.GetQuarteiraoQualquer(ctx, id)
@@ -408,6 +427,11 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 				return nil, err
 			} else if v.Total > 0 {
 				itens = append(itens, plural(v.Total, "visita", "visitas")+" (contando as excluídas)")
+			}
+			if c, err := q.CountLiraaAgendaDoCicloQualquer(ctx, id); err != nil {
+				return nil, err
+			} else if c > 0 {
+				itens = append(itens, plural(c, "agendamento do LIRAa", "agendamentos do LIRAa")+" (contando os excluídos)")
 			}
 			f, err := q.ContarFichasDoCiclo(ctx, id)
 			if err != nil {
@@ -666,6 +690,60 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 			out := make([]views.LixeiraLinha, len(rows))
 			for i, r := range rows {
 				out[i] = views.LixeiraLinha{ID: r.ID, Rotulo: "Animal peçonhento " + strconv.FormatInt(r.ID, 10) + " — " + r.Paciente, Contexto: r.Animal, Quando: r.DeletedAt.Time, Por: r.Por}
+			}
+			return out, err
+		},
+	},
+	"liraa_grupo": {
+		Chave: "liraa_grupo", Rotulo: "Grupo do LIRAa", Plural: "Grupos do LIRAa", Genero: "o",
+		soft: func(ctx context.Context, q *sqlccliente.Queries, id int64, por pgtype.Int8) (int64, error) {
+			return q.SoftDeleteLiraaGrupo(ctx, sqlccliente.SoftDeleteLiraaGrupoParams{ID: id, Por: por})
+		},
+		restore: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			return q.RestoreLiraaGrupo(ctx, id)
+		},
+		force: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			return q.ForceDeleteLiraaGrupo(ctx, id)
+		},
+		rotulo: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, bool, error) {
+			g, err := q.GetLiraaGrupoQualquer(ctx, id)
+			return g.Nome, g.DeletedAt.Valid, err
+		},
+		filhosAtivos: func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
+		vinculos:     func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
+		paiExcluido:  func(context.Context, *sqlccliente.Queries, int64) (string, error) { return "", nil },
+		lixeira: func(ctx context.Context, q *sqlccliente.Queries) ([]views.LixeiraLinha, error) {
+			rows, err := q.ListLiraaGruposExcluidos(ctx)
+			out := make([]views.LixeiraLinha, len(rows))
+			for i, r := range rows {
+				out[i] = views.LixeiraLinha{ID: r.ID, Rotulo: r.Nome, Contexto: "LIRAa — grupo", Quando: r.DeletedAt.Time, Por: r.Por}
+			}
+			return out, err
+		},
+	},
+	"liraa_agenda": {
+		Chave: "liraa_agenda", Rotulo: "Agendamento do LIRAa", Plural: "Agendamentos do LIRAa", Genero: "o",
+		soft: func(ctx context.Context, q *sqlccliente.Queries, id int64, por pgtype.Int8) (int64, error) {
+			return q.SoftDeleteLiraaAgenda(ctx, sqlccliente.SoftDeleteLiraaAgendaParams{ID: id, Por: por})
+		},
+		restore: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			return q.RestoreLiraaAgenda(ctx, id)
+		},
+		force: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			return q.ForceDeleteLiraaAgenda(ctx, id)
+		},
+		rotulo: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, bool, error) {
+			a, err := q.GetLiraaAgendaQualquer(ctx, id)
+			return "Agendamento " + strconv.FormatInt(a.ID, 10), a.DeletedAt.Valid, err
+		},
+		filhosAtivos: func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
+		vinculos:     func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
+		paiExcluido:  func(context.Context, *sqlccliente.Queries, int64) (string, error) { return "", nil },
+		lixeira: func(ctx context.Context, q *sqlccliente.Queries) ([]views.LixeiraLinha, error) {
+			rows, err := q.ListLiraaAgendaExcluidas(ctx)
+			out := make([]views.LixeiraLinha, len(rows))
+			for i, r := range rows {
+				out[i] = views.LixeiraLinha{ID: r.ID, Rotulo: "Agendamento " + strconv.FormatInt(r.ID, 10), Contexto: r.Contexto, Quando: r.DeletedAt.Time, Por: r.Por}
 			}
 			return out, err
 		},
@@ -1098,7 +1176,7 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 }
 
 // ordemDaLixeira é a ordem das abas.
-var ordemDaLixeira = []string{"local", "quarteirao", "bairro", "cidade", "ciclo", "lei", "lei_trecho", "visita", "investigacao", "denuncia", "campanha", "diaria", "lvc", "drone", "baap", "ovitrampa", "edl", "notificacao", "infracao", "amostra", "reconhecimento", "resumosemanal", "grupo", "mapeamento"}
+var ordemDaLixeira = []string{"local", "quarteirao", "bairro", "cidade", "ciclo", "lei", "lei_trecho", "visita", "investigacao", "denuncia", "campanha", "diaria", "lvc", "liraa_agenda", "liraa_grupo", "drone", "baap", "ovitrampa", "edl", "notificacao", "infracao", "amostra", "reconhecimento", "resumosemanal", "grupo", "mapeamento"}
 
 // excluirLogicamente aplica a regra completa: recusa se há filhos ativos; senão marca deleted_at.
 // Devolve os motivos da recusa (vazio = excluído), o nome do registro e o erro de banco, se houve.

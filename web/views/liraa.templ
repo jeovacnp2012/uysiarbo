@@ -1,0 +1,296 @@
+package views
+
+import "strconv"
+
+templ LiraaGrupos(l Layout, d LiraaGruposData) {
+	@Base(l) {
+		@PageHeader("LIRAa — Grupos", "Estratos de bairros usados no levantamento.") {
+			if d.PodeGerir {
+				<a class="btn btn-primario" href="/liraa/grupo/novo" data-icone="plus">Novo grupo</a>
+			}
+		}
+		<section class="cartao">
+			@PaginacaoDoLayout(l)
+			<div class="tabela-wrap">
+				<table class="tabela">
+					<thead>
+						<tr>
+							<th scope="col" data-ord="ID">ID</th>
+							<th scope="col" data-ord="Nome">Nome do grupo</th>
+							<th scope="col" data-ord="Bairros">Bairros</th>
+							<th scope="col">Situação</th>
+							<th scope="col" data-fixa><span class="sr-only">Ações</span></th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, g := range d.Linhas {
+							<tr>
+								<td data-rotulo="ID"><strong>{ g.IDTexto }</strong></td>
+								<td data-rotulo="Nome do grupo">{ g.Nome }</td>
+								<td data-rotulo="Bairros">{ strconv.Itoa(int(g.Bairros)) }</td>
+								<td data-rotulo="Situação">{ ativoTexto(g.Ativo) }</td>
+								<td data-rotulo="Ações"><a class="btn" href={ templ.SafeURL("/liraa/grupo/" + g.IDTexto) }>Abrir</a></td>
+							</tr>
+						}
+					</tbody>
+				</table>
+				if len(d.Linhas) == 0 {
+					<div class="tabela-vazia">Nenhum grupo cadastrado.</div>
+				}
+			</div>
+			@PaginacaoDoLayout(l)
+		</section>
+	}
+}
+
+func ativoTexto(b bool) string {
+	if b {
+		return "Ativo"
+	}
+	return "Inativo"
+}
+
+templ LiraaGrupoFicha(l Layout, d LiraaGrupoData) {
+	@Base(l) {
+		if d.ID == 0 {
+			@PageHeader("Novo grupo do LIRAa", "") {
+				<a class="btn" href="/liraa/grupo">Voltar</a>
+			}
+		} else {
+			@PageHeader(d.Nome, "Grupo do LIRAa") {
+				<a class="btn" href="/liraa/grupo">Voltar</a>
+			}
+			@Presenca("liraa_grupo", strconv.FormatInt(d.ID, 10), modoDaTela(d.PodeEditar))
+		}
+		if d.Aviso != "" {
+			<p class="alerta alerta-ok" role="status">{ d.Aviso }</p>
+		}
+		<form method="post" action={ templ.SafeURL(liraaGrupoAcao(d.ID)) } class="cartao form-admin" data-sem-gaveta>
+			<input type="hidden" name="csrf" value={ d.CSRF }/>
+			if d.Erro != "" {
+				<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
+			}
+			<fieldset class="sem-borda" disabled?={ !d.PodeEditar }>
+				<div class="grade-form">
+					<div class="campo">
+						<label for="nome">Nome do grupo</label>
+						<input id="nome" name="nome" type="text" value={ d.Nome } maxlength="120" required/>
+					</div>
+					<div class="campo">
+						<label for="ativo">Situação</label>
+						<select id="ativo" name="ativo">
+							<option value="1" selected?={ d.Ativo }>Ativo</option>
+							<option value="0" selected?={ !d.Ativo }>Inativo</option>
+						</select>
+					</div>
+				</div>
+			</fieldset>
+			if d.PodeEditar {
+				<div class="form-acoes">
+					<button type="submit" class="btn btn-primario" data-icone="save">Salvar</button>
+					if d.ID != 0 {
+						<button type="submit" class="btn btn-perigo" formaction={ liraaGrupoAcao(d.ID) + "/excluir" } onclick="return confirm('Enviar este grupo para a lixeira?')" data-icone="trash">Excluir</button>
+					}
+				</div>
+			}
+		</form>
+		if d.ID != 0 {
+			<section class="cartao">
+				<h2>Bairros do grupo</h2>
+				if len(d.Bairros) == 0 {
+					<p class="subtitulo">Nenhum bairro neste grupo.</p>
+				}
+				for _, b := range d.Bairros {
+					<p class="form-acoes">
+						<span>{ b.Rotulo }</span>
+						if d.PodeEditar {
+							<form method="post" action={ templ.SafeURL(liraaGrupoAcao(d.ID) + "/bairros/" + strconv.FormatInt(b.ID, 10) + "/remover") } class="form-inline" data-sem-gaveta>
+								<input type="hidden" name="csrf" value={ d.CSRF }/>
+								<button type="submit" class="btn" data-icone="trash">Remover</button>
+							</form>
+						}
+					</p>
+				}
+				if d.PodeEditar {
+					<form method="post" action={ templ.SafeURL(liraaGrupoAcao(d.ID) + "/bairros") } class="form-acoes" data-sem-gaveta>
+						<input type="hidden" name="csrf" value={ d.CSRF }/>
+						<div class="campo">
+							<label for="bairro">Adicionar bairro</label>
+							<select id="bairro" name="bairro" required>
+								<option value="">—</option>
+								@opcoesDe(d.Candidatos)
+							</select>
+						</div>
+						<button type="submit" class="btn btn-primario" data-icone="plus">Adicionar</button>
+					</form>
+				}
+			</section>
+		}
+	}
+}
+
+func liraaGrupoAcao(id int64) string {
+	if id == 0 {
+		return "/liraa/grupo"
+	}
+	return "/liraa/grupo/" + strconv.FormatInt(id, 10)
+}
+
+templ LiraaAgenda(l Layout, d LiraaAgendaData) {
+	@Base(l) {
+		@PageHeader("LIRAa — Agenda", "Quarteirões agendados por ciclo, semana e agente.") {
+			if d.PodeNova {
+				<a class="btn btn-primario" href="/liraa/agenda/novo" data-icone="plus">Novo agendamento</a>
+			}
+		}
+		<form
+			method="get"
+			action="/liraa/agenda"
+			class="cartao filtros filtros-vivos"
+			autocomplete="off"
+			hx-get="/liraa/agenda"
+			hx-trigger="input delay:350ms, change delay:60ms, filtrar from:body"
+			hx-sync="this:replace"
+			hx-target="#agenda-lista"
+			hx-select="#agenda-lista"
+			hx-swap="outerHTML"
+			hx-push-url="true"
+			hx-indicator="#agenda-lista"
+		>
+			<input type="hidden" name="ordem" value={ d.Ordem }/>
+			<input type="hidden" name="dir" value={ d.Dir }/>
+			@campoEscolha("f-ciclo", "Ciclo", "ciclo", "Todos os ciclos", d.Ciclos)
+			<div class="campo">
+				<label for="f-semana">Semana</label>
+				<input id="f-semana" name="semana" type="number" min="1" max="53" value={ d.Filtro.Semana }/>
+			</div>
+			@campoEscolha("f-bairro", "Bairro", "bairro", "Todos os bairros", d.Bairros)
+			@campoEscolha("f-agente", "Agente", "agente", "Todos os agentes", d.Agentes)
+			@campoEscolha("f-situacao", "Situação", "situacao", "Todas", d.Situacoes)
+			<div class="form-acoes">
+				<a class="btn btn-escuro" href="/liraa/agenda" data-icone="undo">Limpar filtros</a>
+			</div>
+			<noscript><button type="submit" class="btn btn-primario">Filtrar</button></noscript>
+		</form>
+		<div id="agenda-lista" class="lista-viva">
+			<section class="cartao">
+				@Paginacao(d.Pag, "/liraa/agenda", d.Query)
+				<div class="tabela-wrap">
+					<table class="tabela">
+						<thead>
+							<tr>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "id") }><a class="ordenar" href="#" data-ordenar="id" data-dir={ proximaDir(d.Ordem, d.Dir, "id") }>ID<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "id") }</span></a></th>
+								<th scope="col">Ciclo</th>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "semana") }><a class="ordenar" href="#" data-ordenar="semana" data-dir={ proximaDir(d.Ordem, d.Dir, "semana") }>Semana<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "semana") }</span></a></th>
+								<th scope="col">Bairro</th>
+								<th scope="col">Quarteirão</th>
+								<th scope="col">Agente</th>
+								<th scope="col">Situação</th>
+								<th scope="col" data-fixa><span class="sr-only">Ações</span></th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, x := range d.Linhas {
+								<tr>
+									<td data-rotulo="ID"><strong>{ x.IDTexto }</strong></td>
+									<td data-rotulo="Ciclo">{ x.Ciclo }</td>
+									<td data-rotulo="Semana">{ strconv.Itoa(x.Semana) }</td>
+									<td data-rotulo="Bairro">{ x.Bairro }</td>
+									<td data-rotulo="Quarteirão">{ x.Quarteirao }</td>
+									<td data-rotulo="Agente">{ x.Agente }</td>
+									<td data-rotulo="Situação">{ x.Situacao }</td>
+									<td data-rotulo="Ações"><a class="btn" href={ templ.SafeURL("/liraa/agenda/" + x.IDTexto) }>Abrir</a></td>
+								</tr>
+							}
+						</tbody>
+					</table>
+					if len(d.Linhas) == 0 {
+						<div class="tabela-vazia">Nenhum agendamento encontrado.</div>
+					}
+				</div>
+				@Paginacao(d.Pag, "/liraa/agenda", d.Query)
+			</section>
+		</div>
+	}
+}
+
+templ LiraaAgendaFicha(l Layout, d LiraaAgendaForm) {
+	@Base(l) {
+		if d.Novo() {
+			@PageHeader("Novo agendamento", "") {
+				<a class="btn" href="/liraa/agenda">Voltar</a>
+			}
+		} else {
+			@PageHeader("Agendamento "+strconv.FormatInt(d.ID, 10), "") {
+				<a class="btn" href="/liraa/agenda">Voltar</a>
+			}
+			@Presenca("liraa_agenda", strconv.FormatInt(d.ID, 10), modoDaTela(d.PodeEditar))
+		}
+		if d.Aviso != "" {
+			<p class="alerta alerta-ok" role="status">{ d.Aviso }</p>
+		}
+		<form method="post" action={ templ.SafeURL(liraaAgendaAcao(d.ID)) } class="cartao form-admin" data-sem-gaveta>
+			<input type="hidden" name="csrf" value={ d.CSRF }/>
+			if d.Erro != "" {
+				<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
+			}
+			<fieldset class="sem-borda" disabled?={ !d.PodeEditar }>
+				<div class="grade-form">
+					<div class="campo">
+						<label for="ciclo">Ciclo</label>
+						<select id="ciclo" name="ciclo" required>
+							<option value="">—</option>
+							@opcoesDe(d.Ciclos)
+						</select>
+					</div>
+					<div class="campo">
+						<label for="semana">Semana</label>
+						<input id="semana" name="semana" type="number" min="1" max="53" value={ d.Semana } required/>
+					</div>
+					<div class="campo">
+						<label for="bairro">Bairro</label>
+						<select id="bairro" name="bairro" required hx-get="/liraa/agenda/quarteiroes" hx-target="#quarteirao" hx-trigger="change" hx-include="this">
+							<option value="">—</option>
+							@opcoesDe(d.Bairros)
+						</select>
+					</div>
+					<div class="campo">
+						<label for="quarteirao">Quarteirão</label>
+						<select id="quarteirao" name="quarteirao" required>
+							<option value="">Escolha o quarteirão</option>
+							@opcoesDe(d.Quarteiroes)
+						</select>
+					</div>
+					<div class="campo">
+						<label for="agente">Agente</label>
+						<select id="agente" name="agente">
+							<option value="">—</option>
+							@opcoesDe(d.Agentes)
+						</select>
+					</div>
+					<div class="campo">
+						<label for="situacao">Situação</label>
+						<select id="situacao" name="situacao" required>
+							@opcoesDe(d.Situacoes)
+						</select>
+					</div>
+				</div>
+			</fieldset>
+			if d.PodeEditar {
+				<div class="form-acoes">
+					<button type="submit" class="btn btn-primario" data-icone="save">Salvar</button>
+					if !d.Novo() {
+						<button type="submit" class="btn btn-perigo" formaction={ liraaAgendaAcao(d.ID) + "/excluir" } onclick="return confirm('Enviar este agendamento para a lixeira?')" data-icone="trash">Excluir</button>
+					}
+				</div>
+			}
+		</form>
+	}
+}
+
+func liraaAgendaAcao(id int64) string {
+	if id == 0 {
+		return "/liraa/agenda"
+	}
+	return "/liraa/agenda/" + strconv.FormatInt(id, 10)
+}

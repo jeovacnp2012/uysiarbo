@@ -138,8 +138,8 @@ func (s *handlers) menu(r *http.Request) []views.NavGrupo {
 		}
 		if pr.Pode("liraa_agenda_visualizar") || pr.Pode("liraa_grupo") {
 			menu = append(menu, views.NavGrupo{Label: "LIRAa", Icone: "liraa", Itens: []views.NavItem{
-				{Label: "Grupo", EmBreve: true},
-				{Label: "Agenda", EmBreve: true},
+				itemSe(pr.Pode("liraa_grupo"), "Grupo", "/liraa/grupo"),
+				itemSe(pr.Pode("liraa_agenda_visualizar"), "Agenda", "/liraa/agenda"),
 			}})
 		}
 
@@ -263,4 +263,12 @@ func lvcItem(pr authz.Principal) views.NavItem {
 		return views.NavItem{Label: "Leishmaniose Visceral Canina", Href: "/zoonose/lvc"}
 	}
 	return views.NavItem{Label: "Leishmaniose Visceral Canina", EmBreve: true}
+}
+
+// itemSe: item com tela só para quem pode; sem a permissão fica em construção.
+func itemSe(pode bool, rotulo, href string) views.NavItem {
+	if pode {
+		return views.NavItem{Label: rotulo, Href: href}
+	}
+	return views.NavItem{Label: rotulo, EmBreve: true}
 }

@@ -658,6 +658,7 @@ var modulosProntos = map[string]struct{ href, permissao string }{
 	"BAAP":                               {"/zoonose/baap", "zoonose_baap_visualizar"},
 	"Ovitrampa":                          {"/ovitrampas", "ovitrampa_visualizar"},
 	"Campanha antirrábica":               {"/zoonose/campanha", "campanha_visualizar"},
+	"LIRAa":                              {"/liraa/agenda", "liraa_agenda_visualizar"},
 	"Leishmaniose visceral canina (LVC)": {"/zoonose/lvc", "zoonose_lvc_visualizar"},
 	"Campanha antirrábica: diária de trabalho": {"/zoonose/campanha/diaria", "campanha_diaria_visualizar"},
 	"EDL: estação de monitoramento de Aedes":   {"/edls", "edl_visualizar"},

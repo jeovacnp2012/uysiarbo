@@ -525,6 +525,37 @@ type LeisTrecho struct {
 	DeletedBy    pgtype.Int8        `json:"deleted_by"`
 }
 
+type LiraaAgenda struct {
+	ID           int64              `json:"id"`
+	IDExterno    pgtype.Text        `json:"id_externo"`
+	CicloID      int64              `json:"ciclo_id"`
+	Semana       int32              `json:"semana"`
+	BairroID     int64              `json:"bairro_id"`
+	QuarteiraoID int64              `json:"quarteirao_id"`
+	UsuarioID    pgtype.Int8        `json:"usuario_id"`
+	Situacao     string             `json:"situacao"`
+	CriadoPor    pgtype.Int8        `json:"criado_por"`
+	CriadoEm     pgtype.Timestamptz `json:"criado_em"`
+	AtualizadoEm pgtype.Timestamptz `json:"atualizado_em"`
+	DeletedAt    pgtype.Timestamptz `json:"deleted_at"`
+	DeletedBy    pgtype.Int8        `json:"deleted_by"`
+}
+
+type LiraaGrupo struct {
+	ID        int64              `json:"id"`
+	IDExterno pgtype.Text        `json:"id_externo"`
+	Nome      string             `json:"nome"`
+	Ativo     bool               `json:"ativo"`
+	CriadoEm  pgtype.Timestamptz `json:"criado_em"`
+	DeletedAt pgtype.Timestamptz `json:"deleted_at"`
+	DeletedBy pgtype.Int8        `json:"deleted_by"`
+}
+
+type LiraaGrupoBairro struct {
+	GrupoID  int64 `json:"grupo_id"`
+	BairroID int64 `json:"bairro_id"`
+}
+
 type Locai struct {
 	ID                   int64              `json:"id"`
 	Tipo                 string             `json:"tipo"`
