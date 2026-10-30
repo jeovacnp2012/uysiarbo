@@ -119,6 +119,21 @@ func (h *handlers) dadosDaFichaDoLocal(ctx context.Context, r *http.Request, q *
 			})
 		}
 	}
+	form.Lvc = views.LvcSecaoFicha{Pode: pr.Pode("zoonose_lvc_visualizar"), PodeNovo: pr.Pode("zoonose_lvc_novo")}
+	if form.Lvc.Pode {
+		ts, err := q.ListLvcDaFichaDoLocal(ctx, localID)
+		if err != nil {
+			return err
+		}
+		for _, t := range ts {
+			reteste := "Não"
+			if t.PedidoReteste {
+				reteste = rotuloDe(rotulosResultadoLvc, t.ResultadoReteste)
+			}
+			form.Lvc.Linhas = append(form.Lvc.Linhas, views.LvcFichaLinha{ID: t.ID, Data: dataBR(t.Data), Nome: t.Nome, Dpp: rotuloDe(rotulosResultadoLvc, t.Dpp),
+				Reteste: reteste, Situacao: rotuloDe(rotulosSituacaoCachorro, t.SituacaoCachorro)})
+		}
+	}
 	form.Notificacoes = views.NotificacoesFicha{Pode: pr.Pode("notificacao_visualizar"), PodeNova: pr.Pode("notificacao_adicionar")}
 	if form.Notificacoes.Pode {
 		ns, err := q.ListNotificacoesDaFichaDoLocal(ctx, localID)

@@ -38,6 +38,7 @@ var recursosPresenca = map[string]recursoPresenca{
 	"edl":            {ver: "edl_visualizar", editar: "edl_editar", noCliente: true},
 	"baap":           {ver: "zoonose_baap_visualizar", editar: "zoonose_baap_editar", noCliente: true},
 	"campanha":       {ver: "campanha_visualizar", editar: "campanha_editar", noCliente: true},
+	"lvc":            {ver: "zoonose_lvc_visualizar", editar: "zoonose_lvc_editar", noCliente: true},
 	"diaria":         {ver: "campanha_diaria_visualizar", editar: "campanha_diaria_editar", noCliente: true},
 	"drone":          {ver: "dronesolicitacao_visualizar", editar: "dronesolicitacao_atender", noCliente: true},
 	"notificacao":    {ver: "notificacao_visualizar", editar: "notificacao_adicionar", noCliente: true},

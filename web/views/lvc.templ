@@ -1,0 +1,258 @@
+package views
+
+import "strconv"
+
+templ LvcLista(l Layout, d LvcData) {
+	@Base(l) {
+		@PageHeader("Leishmaniose Visceral Canina", "Testes de cães: DPP, reteste e situação do animal.") {
+			if d.PodeNovo {
+				<a class="btn btn-primario" href="/zoonose/lvc/novo" data-icone="plus">Novo teste</a>
+			}
+		}
+		<form
+			method="get"
+			action="/zoonose/lvc"
+			class="cartao filtros filtros-vivos"
+			autocomplete="off"
+			hx-get="/zoonose/lvc"
+			hx-trigger="input delay:350ms, change delay:60ms, filtrar from:body"
+			hx-sync="this:replace"
+			hx-target="#lvc-lista"
+			hx-select="#lvc-lista"
+			hx-swap="outerHTML"
+			hx-push-url="true"
+			hx-indicator="#lvc-lista"
+		>
+			<input type="hidden" name="ordem" value={ d.Ordem }/>
+			<input type="hidden" name="dir" value={ d.Dir }/>
+			<div class="campo campo-largo">
+				<label for="f-busca">Cachorro, proprietário, endereço ou número</label>
+				<input id="f-busca" name="busca" type="search" value={ d.Filtro.Busca } placeholder="Buscar"/>
+			</div>
+			@campoEscolha("f-dpp", "DPP", "dpp", "Todos", d.Dpps)
+			@campoEscolha("f-situacao", "Situação do cachorro", "situacao", "Todas", d.Situacoes)
+			@campoEscolha("f-bairro", "Bairro", "bairro", "Todos os bairros", d.Bairros)
+			<div class="campo">
+				<label for="f-de">Data de</label>
+				<input id="f-de" name="de" type="date" value={ d.Filtro.De } class="filtro-auto"/>
+			</div>
+			<div class="campo">
+				<label for="f-ate">Data até</label>
+				<input id="f-ate" name="ate" type="date" value={ d.Filtro.Ate } class="filtro-auto"/>
+			</div>
+			<div class="form-acoes">
+				<a class="btn btn-escuro" href="/zoonose/lvc" data-icone="undo">Limpar filtros</a>
+			</div>
+			<noscript><button type="submit" class="btn btn-primario">Filtrar</button></noscript>
+		</form>
+		<div id="lvc-lista" class="lista-viva">
+			<section class="cartao">
+				@Paginacao(d.Pag, "/zoonose/lvc", d.Query)
+				<div class="tabela-wrap">
+					<table class="tabela">
+						<thead>
+							<tr>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "id") }><a class="ordenar" href="#" data-ordenar="id" data-dir={ proximaDir(d.Ordem, d.Dir, "id") }>Nº de controle<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "id") }</span></a></th>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "data") }><a class="ordenar" href="#" data-ordenar="data" data-dir={ proximaDir(d.Ordem, d.Dir, "data") }>Data<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "data") }</span></a></th>
+								<th scope="col">Local</th>
+								<th scope="col">Proprietário</th>
+								<th scope="col">Cachorro</th>
+								<th scope="col">DPP</th>
+								<th scope="col">Reteste</th>
+								<th scope="col">Situação</th>
+								<th scope="col">Visita por</th>
+								<th scope="col" data-fixa><span class="sr-only">Ações</span></th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, x := range d.Linhas {
+								<tr>
+									<td data-rotulo="Nº de controle"><strong>{ x.IDTexto }</strong></td>
+									<td data-rotulo="Data">{ x.Data }</td>
+									<td data-rotulo="Local" class="quebra2" title={ x.Endereco }><span class="clamp2">{ x.Endereco }</span></td>
+									<td data-rotulo="Proprietário">{ x.Proprietario }</td>
+									<td data-rotulo="Cachorro">{ x.Cachorro }</td>
+									<td data-rotulo="DPP">{ x.Dpp }</td>
+									<td data-rotulo="Reteste">{ x.Reteste }</td>
+									<td data-rotulo="Situação">{ x.Situacao }</td>
+									<td data-rotulo="Visita por">{ x.Por }</td>
+									<td data-rotulo="Ações"><a class="btn" href={ templ.SafeURL("/zoonose/lvc/" + x.IDTexto) }>Abrir</a></td>
+								</tr>
+							}
+						</tbody>
+					</table>
+					if len(d.Linhas) == 0 {
+						<div class="tabela-vazia">Nenhum teste encontrado.</div>
+					}
+				</div>
+				@Paginacao(d.Pag, "/zoonose/lvc", d.Query)
+			</section>
+		</div>
+	}
+}
+
+templ LvcEscolher(l Layout, d CampanhaEscolherLocal) {
+	@Base(l) {
+		@PageHeader("Novo teste LVC", "Primeiro escolha o local do cachorro.") {
+			<a class="btn" href="/zoonose/lvc">Voltar</a>
+		}
+		<section class="cartao">
+			<form method="get" action="/zoonose/lvc/novo" class="form-acoes" data-sem-gaveta>
+				<div class="campo">
+					<label for="busca-local">Buscar local (endereço, número ou bairro)</label>
+					<input id="busca-local" name="busca_local" type="search" value={ d.Busca } maxlength="100" autofocus/>
+				</div>
+				<button type="submit" class="btn" data-icone="search">Buscar</button>
+			</form>
+			if d.Buscou && len(d.Locais) == 0 {
+				<p class="subtitulo">Nenhum local encontrado.</p>
+			}
+			for _, lc := range d.Locais {
+				<p class="form-acoes">
+					<span>{ lc.Endereco } <span class="subtitulo">· { lc.Bairro }</span></span>
+					<a class="btn btn-primario" href={ templ.SafeURL("/zoonose/lvc/novo/" + strconv.FormatInt(lc.ID, 10)) } data-icone="plus">Testar neste local</a>
+				</p>
+			}
+		</section>
+	}
+}
+
+templ lvcCampos(d LvcFormData) {
+	<fieldset class="sem-borda" disabled?={ !d.PodeEditar }>
+		<h2>Cachorro</h2>
+		<div class="grade-form">
+			<div class="campo">
+				<label for="data">Data</label>
+				<input id="data" name="data" type="date" value={ d.Data } required/>
+			</div>
+			<div class="campo">
+				<label for="nome">Nome</label>
+				<input id="nome" name="nome" type="text" value={ d.Nome } maxlength="120"/>
+			</div>
+			<div class="campo">
+				<label for="raca">Raça</label>
+				<input id="raca" name="raca" type="text" value={ d.Raca } maxlength="80"/>
+			</div>
+			<div class="campo">
+				<label for="pelagem">Pelagem</label>
+				<input id="pelagem" name="pelagem" type="text" value={ d.Pelagem } maxlength="80"/>
+			</div>
+			<div class="campo">
+				<label for="idade">Idade</label>
+				<input id="idade" name="idade" type="text" value={ d.Idade } maxlength="40"/>
+			</div>
+			<div class="campo">
+				<label for="sexo">Sexo</label>
+				<select id="sexo" name="sexo">
+					<option value="">—</option>
+					@opcoesDe(d.Sexos)
+				</select>
+			</div>
+		</div>
+		<h2>Proprietário</h2>
+		<div class="grade-form">
+			<div class="campo">
+				<label for="proprietario">Nome</label>
+				<input id="proprietario" name="proprietario" type="text" value={ d.Proprietario } maxlength="160"/>
+			</div>
+			<div class="campo">
+				<label for="proprietario_telefone">Telefone</label>
+				<input id="proprietario_telefone" name="proprietario_telefone" type="text" value={ d.Telefone } maxlength="20"/>
+			</div>
+			<div class="campo">
+				<label for="proprietario_cpf">CPF</label>
+				<input id="proprietario_cpf" name="proprietario_cpf" type="text" inputmode="numeric" value={ d.Cpf } maxlength="14"/>
+			</div>
+		</div>
+		<h2>Exames e desfecho</h2>
+		<div class="grade-form">
+			<div class="campo">
+				<label for="dpp">DPP</label>
+				<select id="dpp" name="dpp" required>
+					@opcoesDe(d.Dpps)
+				</select>
+			</div>
+			<div class="campo">
+				<label for="pedido_reteste">Pedido de reteste</label>
+				<select id="pedido_reteste" name="pedido_reteste">
+					<option value="0" selected?={ !d.Reteste }>Não</option>
+					<option value="1" selected?={ d.Reteste }>Sim</option>
+				</select>
+			</div>
+			<div class="campo">
+				<label for="data_pedido">Data do pedido</label>
+				<input id="data_pedido" name="data_pedido" type="date" value={ d.DataPedido }/>
+			</div>
+			<div class="campo">
+				<label for="data_pedido_recebido">Data do resultado recebido</label>
+				<input id="data_pedido_recebido" name="data_pedido_recebido" type="date" value={ d.DataRecebido }/>
+			</div>
+			<div class="campo">
+				<label for="resultado_reteste">Resultado do reteste</label>
+				<select id="resultado_reteste" name="resultado_reteste">
+					@opcoesDe(d.Retestes)
+				</select>
+			</div>
+			<div class="campo">
+				<label for="situacao_cachorro">Situação do cachorro</label>
+				<select id="situacao_cachorro" name="situacao_cachorro" required>
+					@opcoesDe(d.Situacoes)
+				</select>
+			</div>
+			<div class="campo">
+				<label for="data_morte">Data da morte</label>
+				<input id="data_morte" name="data_morte" type="date" value={ d.DataMorte }/>
+			</div>
+		</div>
+		<div class="campo">
+			<label for="observacao">Observação</label>
+			<textarea id="observacao" name="observacao" rows="3" maxlength="2000">{ d.Observacao }</textarea>
+		</div>
+	</fieldset>
+}
+
+templ LvcNovo(l Layout, d LvcFormData) {
+	@Base(l) {
+		@PageHeader("Novo teste LVC", d.LocalEndereco) {
+			<a class="btn" href="/zoonose/lvc/novo">Trocar o local</a>
+		}
+		<form method="post" action="/zoonose/lvc" class="cartao form-admin" data-sem-gaveta>
+			<input type="hidden" name="csrf" value={ d.CSRF }/>
+			<input type="hidden" name="local" value={ strconv.FormatInt(d.LocalID, 10) }/>
+			if d.Erro != "" {
+				<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
+			}
+			@lvcCampos(d)
+			<div class="form-acoes">
+				<button type="submit" class="btn btn-primario" data-icone="save">Registrar</button>
+				<a class="btn" href={ templ.SafeURL("/locais/" + strconv.FormatInt(d.LocalID, 10)) }>Cancelar</a>
+			</div>
+		</form>
+	}
+}
+
+templ LvcFicha(l Layout, d LvcFormData) {
+	@Base(l) {
+		@PageHeader("Teste LVC "+strconv.FormatInt(d.ID, 10), d.LocalEndereco) {
+			<a class="btn" href="/zoonose/lvc">Voltar</a>
+			<a class="btn" href={ templ.SafeURL("/locais/" + strconv.FormatInt(d.LocalID, 10)) }>Acessar local</a>
+		}
+		@Presenca("lvc", strconv.FormatInt(d.ID, 10), modoDaTela(d.PodeEditar))
+		if d.Aviso != "" {
+			<p class="alerta alerta-ok" role="status">{ d.Aviso }</p>
+		}
+		<form method="post" action={ templ.SafeURL("/zoonose/lvc/" + strconv.FormatInt(d.ID, 10)) } class="cartao form-admin" data-sem-gaveta>
+			<input type="hidden" name="csrf" value={ d.CSRF }/>
+			if d.Erro != "" {
+				<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
+			}
+			@lvcCampos(d)
+			if d.PodeEditar {
+				<div class="form-acoes">
+					<button type="submit" class="btn btn-primario" data-icone="save">Salvar</button>
+					<button type="submit" class="btn btn-perigo" formaction={ "/zoonose/lvc/" + strconv.FormatInt(d.ID, 10) + "/excluir" } onclick="return confirm('Enviar este teste para a lixeira?')" data-icone="trash">Excluir</button>
+				</div>
+			}
+		</form>
+	}
+}

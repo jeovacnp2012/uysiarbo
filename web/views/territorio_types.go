@@ -200,6 +200,7 @@ type LocalFormData struct {
 	Ovitrampas, EDLs ArmadilhasFicha
 	Notificacoes     NotificacoesFicha
 	Campanhas        CampanhasFicha
+	Lvc              LvcSecaoFicha
 }
 
 // VisitaDoLocal é uma linha do histórico de visitas na ficha do local.

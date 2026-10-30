@@ -264,6 +264,11 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 			} else if c > 0 {
 				itens = append(itens, plural(c, "campanha antirrábica ativa", "campanhas antirrábicas ativas"))
 			}
+			if c, err := q.CountLvcAtivosDoLocal(ctx, id); err != nil {
+				return nil, err
+			} else if c > 0 {
+				itens = append(itens, plural(c, "teste de LVC ativo", "testes de LVC ativos"))
+			}
 			if c, err := q.CountDronesAtivosDoLocal(ctx, id); err != nil {
 				return nil, err
 			} else if c > 0 {
@@ -301,6 +306,11 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 				return nil, err
 			} else if c > 0 {
 				itens = append(itens, plural(c, "campanha antirrábica", "campanhas antirrábicas")+" (contando as excluídas)")
+			}
+			if c, err := q.CountLvcDoLocalQualquer(ctx, id); err != nil {
+				return nil, err
+			} else if c > 0 {
+				itens = append(itens, plural(c, "teste de LVC", "testes de LVC")+" (contando os excluídos)")
 			}
 			if c, err := q.CountDronesDoLocalQualquer(ctx, id); err != nil {
 				return nil, err
@@ -656,6 +666,43 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 			out := make([]views.LixeiraLinha, len(rows))
 			for i, r := range rows {
 				out[i] = views.LixeiraLinha{ID: r.ID, Rotulo: "Animal peçonhento " + strconv.FormatInt(r.ID, 10) + " — " + r.Paciente, Contexto: r.Animal, Quando: r.DeletedAt.Time, Por: r.Por}
+			}
+			return out, err
+		},
+	},
+	"lvc": {
+		Chave: "lvc", Rotulo: "Teste de LVC", Plural: "Testes de LVC", Genero: "o",
+		soft: func(ctx context.Context, q *sqlccliente.Queries, id int64, por pgtype.Int8) (int64, error) {
+			return q.SoftDeleteLvc(ctx, sqlccliente.SoftDeleteLvcParams{ID: id, Por: por})
+		},
+		restore: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			return q.RestoreLvc(ctx, id)
+		},
+		force: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			return q.ForceDeleteLvc(ctx, id)
+		},
+		rotulo: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, bool, error) {
+			t, err := q.GetLvcQualquer(ctx, id)
+			return "Teste LVC " + strconv.FormatInt(t.ID, 10), t.DeletedAt.Valid, err
+		},
+		filhosAtivos: func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
+		vinculos:     func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
+		paiExcluido: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, error) {
+			t, err := q.GetLvcQualquer(ctx, id)
+			if err != nil {
+				return "", err
+			}
+			l, err := q.GetLocalQualquer(ctx, t.LocalID)
+			if err == nil && l.DeletedAt.Valid {
+				return "o local " + l.Endereco, nil
+			}
+			return "", err
+		},
+		lixeira: func(ctx context.Context, q *sqlccliente.Queries) ([]views.LixeiraLinha, error) {
+			rows, err := q.ListLvcExcluidos(ctx)
+			out := make([]views.LixeiraLinha, len(rows))
+			for i, r := range rows {
+				out[i] = views.LixeiraLinha{ID: r.ID, Rotulo: "Teste LVC " + strconv.FormatInt(r.ID, 10), Contexto: r.Contexto, Quando: r.DeletedAt.Time, Por: r.Por}
 			}
 			return out, err
 		},
@@ -1051,7 +1098,7 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 }
 
 // ordemDaLixeira é a ordem das abas.
-var ordemDaLixeira = []string{"local", "quarteirao", "bairro", "cidade", "ciclo", "lei", "lei_trecho", "visita", "investigacao", "denuncia", "campanha", "diaria", "drone", "baap", "ovitrampa", "edl", "notificacao", "infracao", "amostra", "reconhecimento", "resumosemanal", "grupo", "mapeamento"}
+var ordemDaLixeira = []string{"local", "quarteirao", "bairro", "cidade", "ciclo", "lei", "lei_trecho", "visita", "investigacao", "denuncia", "campanha", "diaria", "lvc", "drone", "baap", "ovitrampa", "edl", "notificacao", "infracao", "amostra", "reconhecimento", "resumosemanal", "grupo", "mapeamento"}
 
 // excluirLogicamente aplica a regra completa: recusa se há filhos ativos; senão marca deleted_at.
 // Devolve os motivos da recusa (vazio = excluído), o nome do registro e o erro de banco, se houve.

@@ -171,10 +171,38 @@ templ FichaLocalTopo(d LocalFormData, completa bool) {
 			}
 		</section>
 	}
-	<section class="cartao fl-bloco fl-laranja">
-		<div class="fl-cab"><h2>Zoonose — Leishmaniose Visceral Canina (LVC)</h2><span class="selo selo-aviso">chega na 10.4</span></div>
-		<div class="tabela-vazia">Nenhum teste encontrado.</div>
-	</section>
+	if d.Lvc.Pode {
+		<section class="cartao fl-bloco fl-laranja" id="lvc">
+			<div class="fl-cab">
+				<h2>Zoonose — Leishmaniose Visceral Canina (LVC)</h2>
+				if d.Lvc.PodeNovo {
+					<a class="btn btn-escuro" href={ templ.SafeURL("/zoonose/lvc/novo/" + id) }>Novo teste LVC</a>
+				}
+			</div>
+			if len(d.Lvc.Linhas) == 0 {
+				<div class="tabela-vazia">Nenhum teste encontrado.</div>
+			} else {
+				<div class="tabela-wrap">
+					<table class="tabela">
+						<thead><tr><th>Nº de controle</th><th>Data</th><th>Cachorro</th><th>DPP</th><th>Reteste</th><th>Situação</th><th>Ações</th></tr></thead>
+						<tbody>
+							for _, t := range d.Lvc.Linhas {
+								<tr>
+									<td data-rotulo="Nº de controle">{ strconv.FormatInt(t.ID, 10) }</td>
+									<td data-rotulo="Data">{ t.Data }</td>
+									<td data-rotulo="Cachorro">{ vazioOuTraco(t.Nome) }</td>
+									<td data-rotulo="DPP">{ t.Dpp }</td>
+									<td data-rotulo="Reteste">{ t.Reteste }</td>
+									<td data-rotulo="Situação">{ t.Situacao }</td>
+									<td data-rotulo="Ações"><a class="btn" data-icone="ver" title="Abrir" href={ templ.SafeURL("/zoonose/lvc/" + strconv.FormatInt(t.ID, 10)) }>Abrir</a></td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+			}
+		</section>
+	}
 	@FichaArmadilhas(d.Ovitrampas, "fl-teal", "contagem", d.ID)
 	if d.Notificacoes.Pode {
 		<section class="cartao fl-bloco fl-vermelho" id="notificacoes">

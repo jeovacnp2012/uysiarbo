@@ -132,7 +132,7 @@ func (s *handlers) menu(r *http.Request) []views.NavGrupo {
 			menu = append(menu, views.NavGrupo{Label: "Zoonose", Icone: "zoonose", Itens: []views.NavItem{
 				campanhaItem(pr),
 				diariaItem(pr),
-				{Label: "Leishmaniose Visceral Canina", EmBreve: true},
+				lvcItem(pr),
 				baapItem(pr),
 			}})
 		}
@@ -256,4 +256,11 @@ func campanhaItem(pr authz.Principal) views.NavItem {
 		return views.NavItem{Label: "Campanha Antirrábica", Href: "/zoonose/campanha"}
 	}
 	return views.NavItem{Label: "Campanha Antirrábica", EmBreve: true}
+}
+
+func lvcItem(pr authz.Principal) views.NavItem {
+	if pr.Pode("zoonose_lvc_visualizar") {
+		return views.NavItem{Label: "Leishmaniose Visceral Canina", Href: "/zoonose/lvc"}
+	}
+	return views.NavItem{Label: "Leishmaniose Visceral Canina", EmBreve: true}
 }

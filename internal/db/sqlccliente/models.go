@@ -580,6 +580,35 @@ type LocalGrupoIten struct {
 	AdicionadoEm pgtype.Timestamptz `json:"adicionado_em"`
 }
 
+type LvcTestis struct {
+	ID                   int64              `json:"id"`
+	IDExterno            pgtype.Text        `json:"id_externo"`
+	LocalID              int64              `json:"local_id"`
+	Data                 pgtype.Date        `json:"data"`
+	Nome                 string             `json:"nome"`
+	Raca                 string             `json:"raca"`
+	Pelagem              string             `json:"pelagem"`
+	Idade                string             `json:"idade"`
+	Sexo                 string             `json:"sexo"`
+	Proprietario         string             `json:"proprietario"`
+	ProprietarioTelefone string             `json:"proprietario_telefone"`
+	ProprietarioCpf      string             `json:"proprietario_cpf"`
+	Observacao           string             `json:"observacao"`
+	Dpp                  string             `json:"dpp"`
+	PedidoReteste        bool               `json:"pedido_reteste"`
+	DataPedido           pgtype.Date        `json:"data_pedido"`
+	DataPedidoRecebido   pgtype.Date        `json:"data_pedido_recebido"`
+	ResultadoReteste     string             `json:"resultado_reteste"`
+	SituacaoCachorro     string             `json:"situacao_cachorro"`
+	DataMorte            pgtype.Date        `json:"data_morte"`
+	VisitaID             pgtype.Int8        `json:"visita_id"`
+	CriadoPor            pgtype.Int8        `json:"criado_por"`
+	CriadoEm             pgtype.Timestamptz `json:"criado_em"`
+	AtualizadoEm         pgtype.Timestamptz `json:"atualizado_em"`
+	DeletedAt            pgtype.Timestamptz `json:"deleted_at"`
+	DeletedBy            pgtype.Int8        `json:"deleted_by"`
+}
+
 type Notificaco struct {
 	ID              int64              `json:"id"`
 	IDExterno       pgtype.Text        `json:"id_externo"`
