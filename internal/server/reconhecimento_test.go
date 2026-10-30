@@ -3,6 +3,7 @@ package server
 import (
 	"net/http"
 	"net/url"
+	"strings"
 	"testing"
 	"uysiarbo/internal/db/sqlccliente"
 )
@@ -57,8 +58,16 @@ func TestResumoSemanal(t *testing.T) {
 	c := m.cenarioVisita(t, ana)
 	agente := m.idUsuario(t, emailAna)
 
+	loc, err := m.cliQ.GetLocal(t.Context(), c.local)
+	if err != nil {
+		t.Fatal(err)
+	}
+	bairro := s64(loc.BairroID)
+
 	quer(t, ana.get("/resumosemanal"), http.StatusOK, "Nenhum resumo gerado")
-	quer(t, ana.post("/resumosemanal", url.Values{"ciclo_id": {s64(c.ciclo)}, "semana": {"99"}}), http.StatusBadRequest, "informe a semana")
+	quer(t, ana.get("/resumosemanal/novo"), http.StatusOK, "Adicionar - Resumo Semanal")
+	quer(t, ana.get("/resumosemanal/semanas?ciclo_id="+s64(c.ciclo)), http.StatusOK, "Semana")
+	quer(t, ana.post("/resumosemanal", url.Values{"ciclo_id": {s64(c.ciclo)}, "semana": {"99"}}), http.StatusBadRequest, "Escolha o ciclo")
 
 	quer(t, ana.post("/visitas", c.form(agente, "achou", "1", "a1", "3", "total_eliminado", "3")), http.StatusSeeOther)
 	quer(t, ana.post("/visitas", c.form(agente, "pendencia", "fechado")), http.StatusSeeOther)
@@ -72,13 +81,25 @@ func TestResumoSemanal(t *testing.T) {
 	if semana == "" {
 		t.Fatal("visita sem semana")
 	}
-	quer(t, ana.post("/resumosemanal", url.Values{"ciclo_id": {s64(c.ciclo)}, "semana": {"53"}}), http.StatusBadRequest, "Não há visitas")
+	f := func(sem string) url.Values {
+		return url.Values{"ciclo_id": {s64(c.ciclo)}, "semana": {sem}, "bairro_id": {bairro}, "atividade_id": {"1"}}
+	}
+	quer(t, ana.post("/resumosemanal", f("53")), http.StatusBadRequest, "não pertence ao ciclo")
 
-	rec := ana.post("/resumosemanal", url.Values{"ciclo_id": {s64(c.ciclo)}, "semana": {semana}})
+	quer(t, ana.post("/resumosemanal/visualizar", f(semana)), http.StatusOK)
+	rec := ana.post("/resumosemanal", f(semana))
 	quer(t, rec, http.StatusSeeOther)
-	destino := rec.Header().Get("Location")
-	quer(t, ana.get(destino), http.StatusOK, "Resumo semanal", "1 fechadas", "Depósitos encontrados", "Imprimir")
-	quer(t, ana.get("/resumosemanal"), http.StatusOK, "Todos os bairros")
+	quer(t, ana.get("/resumosemanal"), http.StatusOK, "Rua das Palmeiras")
+	rs, _ := m.cliQ.ListResumosSemanais(t.Context(), sqlccliente.ListResumosSemanaisParams{})
+	if len(rs) != 1 {
+		t.Fatalf("resumos = %d", len(rs))
+	}
+	destino := "/resumosemanal/" + s64(rs[0].ID)
+	pdf := ana.get(destino)
+	quer(t, pdf, http.StatusOK)
+	if !strings.HasPrefix(pdf.Body.String(), "%PDF") {
+		t.Fatal("não é PDF")
+	}
 
 	quer(t, ana.post(destino+"/excluir", url.Values{}), http.StatusSeeOther)
 	quer(t, ana.get(destino), http.StatusNotFound)

@@ -2,172 +2,177 @@ package views
 
 import "strconv"
 
-// ResumoDados é o retrato gravado no resumo semanal (as chaves são as colunas da consulta que o calcula).
-type ResumoDados struct {
-	Visitas          int     `json:"visitas"`
-	Locais           int     `json:"locais"`
-	Fechadas         int     `json:"fechadas"`
-	Recusadas        int     `json:"recusadas"`
-	Tentativas       int     `json:"tentativas"`
-	ComDeposito      int     `json:"com_deposito"`
-	ComAmostra       int     `json:"com_amostra"`
-	ComTratamento    int     `json:"com_tratamento"`
-	DepA1            int     `json:"dep_a1"`
-	DepA2            int     `json:"dep_a2"`
-	DepB             int     `json:"dep_b"`
-	DepC             int     `json:"dep_c"`
-	DepD1            int     `json:"dep_d1"`
-	DepD2            int     `json:"dep_d2"`
-	DepE             int     `json:"dep_e"`
-	Eliminados       int     `json:"eliminados"`
-	L1Gramas         float64 `json:"l1_gramas"`
-	L1Tratados       int     `json:"l1_tratados"`
-	L2Gramas         float64 `json:"l2_gramas"`
-	L2Tratados       int     `json:"l2_tratados"`
-	Cargas           int     `json:"cargas"`
-	Tubitos          int     `json:"tubitos"`
-	TubitosPositivos int     `json:"tubitos_positivos"`
+type ResumoLinha struct {
+	ID                               int64
+	Ciclo, Bairro, Atividade, Sigla  string
+	Gerado                           string
+	Semana                           int
 }
 
-type ResumoLinha struct {
-	ID                                  int64
-	Ciclo, Bairro, Atividade, Gerado    string
-	Semana                              int
-}
+type ResumoFiltro struct{ Ciclo, Bairro, Semana, De, Ate string }
 
 type ResumosData struct {
-	Linhas                      []ResumoLinha
+	Linhas            []ResumoLinha
+	Ciclos, Bairros   []CidadeOpcao
+	Filtro            ResumoFiltro
+	PodeGerar         bool
+	PodeExcluir       bool
+	Aviso, CSRF       string
+}
+
+type ResumoNovoData struct {
 	Ciclos, Bairros, Atividades []CidadeOpcao
-	PodeGerar                   bool
-	Erro, Aviso, CSRF           string
+	SemanasHTML                 string // <option> das semanas do ciclo escolhido
+	Erro, CSRF                  string
 }
-
-type ResumoVer struct {
-	ID                                              int64
-	Ciclo, Bairro, Atividade, Gerado, GeradoPor     string
-	Semana                                          int
-	Dados                                           ResumoDados
-	PodeExcluir                                     bool
-	CSRF                                            string
-}
-
-func decimalBR(f float64) string { return strconv.FormatFloat(f, 'f', 2, 64) }
 
 templ ResumosSemanais(l Layout, d ResumosData) {
 	@Base(l) {
-		@PageHeader("Resumo semanal", "O retrato da produção de uma semana do ciclo, por bairro e atividade, para imprimir e arquivar.")
+		<div class="page-header">
+			<h1 class="titulo">Resumo Semanal</h1>
+			if d.PodeGerar {
+				<a class="btn btn-escuro" href="/resumosemanal/novo" data-icone="plus">Novo Resumo Semanal</a>
+			}
+		</div>
 		if d.Aviso != "" {
 			<p class="alerta alerta-ok" role="status">{ d.Aviso }</p>
 		}
-		if d.Erro != "" {
-			<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
-		}
-		if d.PodeGerar {
-			<form method="post" action="/resumosemanal" class="cartao filtros">
-				<input type="hidden" name="csrf" value={ d.CSRF }/>
-				<div class="campo">
-					<label for="rs-ciclo">Ciclo</label>
-					<select id="rs-ciclo" name="ciclo_id">
-						<option value="">Escolha</option>
-						@opcoesDe(d.Ciclos)
-					</select>
-				</div>
-				<div class="campo">
-					<label for="rs-semana">Semana</label>
-					<input id="rs-semana" type="number" name="semana" min="1" max="53"/>
-				</div>
-				<div class="campo">
-					<label for="rs-bairro">Bairro</label>
-					<select id="rs-bairro" name="bairro_id">
-						<option value="">Todos</option>
-						@opcoesDe(d.Bairros)
-					</select>
-				</div>
-				<div class="campo">
-					<label for="rs-ativ">Atividade</label>
-					<select id="rs-ativ" name="atividade_id" data-sem-busca>
-						<option value="">Todas</option>
-						@opcoesDe(d.Atividades)
-					</select>
-				</div>
-				<div class="form-acoes">
-					<button type="submit" class="btn btn-primario">Gerar resumo</button>
-				</div>
-			</form>
-		}
-		@PaginacaoDoLayout(l)
-		<div class="cartao tabela-rolavel">
-			<table class="tabela">
-				<thead>
-					<tr><th data-ord="Bairro">Bairro</th><th data-ord="Ciclo">Ciclo</th><th data-ord="Semana">Semana</th><th data-ord="Atividade">Atividade</th><th data-ord="Gerado">Gerado em</th><th></th></tr>
-				</thead>
-				<tbody>
-					if len(d.Linhas) == 0 {
-						<tr><td colspan="6">Nenhum resumo gerado.</td></tr>
-					}
-					for _, x := range d.Linhas {
+		<form
+			method="get"
+			action="/resumosemanal"
+			class="cartao filtros filtros-vivos"
+			autocomplete="off"
+			hx-get="/resumosemanal"
+			hx-trigger="input delay:350ms, change delay:60ms"
+			hx-sync="this:replace"
+			hx-target="#resumos-lista"
+			hx-select="#resumos-lista"
+			hx-swap="outerHTML"
+			hx-push-url="true"
+		>
+			<div class="campo">
+				<label for="f-bairro">Bairro</label>
+				<select id="f-bairro" name="bairro">
+					<option value="">Todos os Bairros</option>
+					@opcoesDe(d.Bairros)
+				</select>
+			</div>
+			<div class="campo">
+				<label for="f-ciclo">Ciclo</label>
+				<select id="f-ciclo" name="ciclo">
+					<option value="">Todos os Ciclos</option>
+					@opcoesDe(d.Ciclos)
+				</select>
+			</div>
+			@campoTexto("f-semana", "Semana", "semana", d.Filtro.Semana, "")
+			<div class="campo">
+				<label for="f-de">Data início</label>
+				<input id="f-de" name="de" type="date" value={ d.Filtro.De }/>
+			</div>
+			<div class="campo">
+				<label for="f-ate">Data final</label>
+				<input id="f-ate" name="ate" type="date" value={ d.Filtro.Ate }/>
+			</div>
+			<div class="form-acoes">
+				<a class="btn btn-escuro" href="/resumosemanal" data-icone="undo">Limpar filtros</a>
+			</div>
+		</form>
+		<div id="resumos-lista">
+			@PaginacaoDoLayout(l)
+			<div class="cartao tabela-rolavel">
+				<table class="tabela">
+					<thead>
 						<tr>
-							<td>{ x.Bairro }</td>
-							<td>{ x.Ciclo }</td>
-							<td>{ strconv.Itoa(x.Semana) }</td>
-							<td>{ x.Atividade }</td>
-							<td>{ x.Gerado }</td>
-							<td><a class="btn" href={ templ.SafeURL("/resumosemanal/" + strconv.FormatInt(x.ID, 10)) }>Abrir</a></td>
+							<th scope="col" data-ord="ID">ID</th>
+							<th scope="col" data-ord="Bairro">Bairro</th>
+							<th scope="col" data-ord="Ciclo">Ciclo</th>
+							<th scope="col" data-ord="Semana">Semana</th>
+							<th scope="col" data-ord="Atividade">Atividade</th>
+							<th scope="col" data-ord="Gerado">Gerado em:</th>
+							<th scope="col" data-fixa><span class="sr-only">Ações</span></th>
 						</tr>
-					}
-				</tbody>
-			</table>
+					</thead>
+					<tbody>
+						if len(d.Linhas) == 0 {
+							<tr><td colspan="7">Nenhum resumo gerado.</td></tr>
+						}
+						for _, x := range d.Linhas {
+							<tr>
+								<td data-rotulo="ID">{ strconv.FormatInt(x.ID, 10) }</td>
+								<td data-rotulo="Bairro">{ x.Bairro }</td>
+								<td data-rotulo="Ciclo">{ x.Ciclo }</td>
+								<td data-rotulo="Semana">{ strconv.Itoa(x.Semana) }</td>
+								<td data-rotulo="Atividade">{ x.Atividade } <small>{ x.Sigla }</small></td>
+								<td data-rotulo="Gerado em">{ x.Gerado }</td>
+								<td data-rotulo="Ações">
+									<a class="btn btn-icone" data-icone="file" title="Imprimir" aria-label="Imprimir" target="_blank" rel="noopener" href={ templ.SafeURL("/resumosemanal/" + strconv.FormatInt(x.ID, 10)) }>Imprimir</a>
+									if d.PodeExcluir {
+										<form method="post" action={ templ.SafeURL("/resumosemanal/" + strconv.FormatInt(x.ID, 10) + "/excluir") } class="form-linha" hx-boost="false">
+											<input type="hidden" name="csrf" value={ d.CSRF }/>
+											<button type="submit" class="btn btn-icone btn-perigo" title="Excluir (vai para a Lixeira)" aria-label="Excluir" data-icone="trash">Excluir</button>
+										</form>
+									}
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+			@PaginacaoDoLayout(l)
 		</div>
-		@PaginacaoDoLayout(l)
 	}
 }
 
-templ ResumoSemanalVer(l Layout, d ResumoVer) {
+templ ResumoNovo(l Layout, d ResumoNovoData) {
 	@Base(l) {
-		@PageHeader("Resumo semanal — semana "+strconv.Itoa(d.Semana), d.Ciclo+" · "+d.Bairro+" · "+d.Atividade)
-		<p class="subtitulo">Gerado em { d.Gerado } por { d.GeradoPor }. Os números são os do momento da geração.</p>
-		<div class="grade-cartoes">
-			@dashNumero("Visitas", d.Dados.Visitas, strconv.Itoa(d.Dados.Locais)+" locais")
-			@dashNumero("Pendências", d.Dados.Fechadas+d.Dados.Recusadas+d.Dados.Tentativas, strconv.Itoa(d.Dados.Fechadas)+" fechadas, "+strconv.Itoa(d.Dados.Recusadas)+" recusadas, "+strconv.Itoa(d.Dados.Tentativas)+" tentativas")
-			@dashNumero("Com depósito", d.Dados.ComDeposito, strconv.Itoa(percentual(d.Dados.ComDeposito, d.Dados.Visitas))+"% das visitas")
-			@dashNumero("Tubitos", d.Dados.Tubitos, strconv.Itoa(d.Dados.TubitosPositivos)+" positivos")
+		<div class="page-header">
+			<h1 class="titulo">Adicionar - Resumo Semanal</h1>
 		</div>
-		<div class="cartao tabela-rolavel">
-			<table class="tabela">
-				<thead><tr><th>Depósitos encontrados</th><th>A1</th><th>A2</th><th>B</th><th>C</th><th>D1</th><th>D2</th><th>E</th><th>Eliminados</th></tr></thead>
-				<tbody>
-					<tr>
-						<td>Total na semana</td>
-						<td>{ strconv.Itoa(d.Dados.DepA1) }</td><td>{ strconv.Itoa(d.Dados.DepA2) }</td><td>{ strconv.Itoa(d.Dados.DepB) }</td>
-						<td>{ strconv.Itoa(d.Dados.DepC) }</td><td>{ strconv.Itoa(d.Dados.DepD1) }</td><td>{ strconv.Itoa(d.Dados.DepD2) }</td>
-						<td>{ strconv.Itoa(d.Dados.DepE) }</td><td>{ strconv.Itoa(d.Dados.Eliminados) }</td>
-					</tr>
-				</tbody>
-			</table>
-		</div>
-		<div class="cartao tabela-rolavel">
-			<table class="tabela">
-				<thead><tr><th>Tratamento</th><th>Larvicida L1 (g)</th><th>L1 tratados</th><th>Larvicida L2 (g)</th><th>L2 tratados</th><th>Cargas de adulticida</th><th>Visitas com tratamento</th></tr></thead>
-				<tbody>
-					<tr>
-						<td>Total na semana</td>
-						<td>{ decimalBR(d.Dados.L1Gramas) }</td><td>{ strconv.Itoa(d.Dados.L1Tratados) }</td>
-						<td>{ decimalBR(d.Dados.L2Gramas) }</td><td>{ strconv.Itoa(d.Dados.L2Tratados) }</td>
-						<td>{ strconv.Itoa(d.Dados.Cargas) }</td><td>{ strconv.Itoa(d.Dados.ComTratamento) }</td>
-					</tr>
-				</tbody>
-			</table>
-		</div>
-		<div class="form-acoes">
-			<button type="button" class="btn btn-primario" onclick="window.print()">Imprimir</button>
-			<a class="btn" href="/resumosemanal">Voltar</a>
-		</div>
-		if d.PodeExcluir {
-			<form method="post" action={ templ.SafeURL("/resumosemanal/" + strconv.FormatInt(d.ID, 10) + "/excluir") } class="cartao">
-				<input type="hidden" name="csrf" value={ d.CSRF }/>
-				<p class="subtitulo">Nada é apagado de verdade: o resumo vai para a Lixeira e dá para restaurar.</p>
-				<button type="submit" class="btn btn-perigo">Excluir</button>
-			</form>
+		if d.Erro != "" {
+			<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
 		}
+		<form method="post" action="/resumosemanal" class="cartao" id="resumo-novo" hx-boost="false">
+			<input type="hidden" name="csrf" value={ d.CSRF }/>
+			<div class="campo">
+				<label for="rs-ciclo">Ciclo</label>
+				<select
+					id="rs-ciclo"
+					name="ciclo_id"
+					required
+					hx-get="/resumosemanal/semanas"
+					hx-include="this"
+					hx-target="#rs-semana"
+					hx-swap="innerHTML"
+				>
+					<option value="">Selecione</option>
+					@opcoesDe(d.Ciclos)
+				</select>
+			</div>
+			<div class="campo">
+				<label for="rs-semana">Semana</label>
+				<select id="rs-semana" name="semana" required data-sem-busca>
+					@templ.Raw(d.SemanasHTML)
+				</select>
+			</div>
+			<div class="campo">
+				<label for="rs-bairro">Bairro</label>
+				<select id="rs-bairro" name="bairro_id" required>
+					<option value="">Selecione</option>
+					@opcoesDe(d.Bairros)
+				</select>
+			</div>
+			<div class="campo">
+				<label for="rs-ativ">Atividade</label>
+				<select id="rs-ativ" name="atividade_id" required data-sem-busca>
+					<option value="">Selecione</option>
+					@opcoesDe(d.Atividades)
+				</select>
+			</div>
+			<div class="form-acoes">
+				<button type="submit" class="btn btn-primario" data-icone="save">Salvar</button>
+				<button type="submit" class="btn" formaction="/resumosemanal/visualizar" formtarget="_blank" data-icone="eye">Visualizar</button>
+				<a class="btn" href="/resumosemanal" data-icone="x">Cancelar</a>
+			</div>
+		</form>
 	}
 }

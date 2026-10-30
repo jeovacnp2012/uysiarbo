@@ -10,4 +10,4 @@ Em **Território > Reconhecimento geográfico** fica a ficha de cada bairro em c
 
 # Resumo semanal
 
-Em **Resumo semanal** escolha ciclo, semana, bairro (ou todos) e atividade (ou todas) e clique em **Gerar resumo**. O sistema calcula as visitas, locais, pendências, depósitos encontrados (A1 a E), eliminados, tratamento (larvicida e adulticida) e tubitos da semana e **grava o retrato**: mesmo que as visitas mudem depois, o resumo guarda os números de quando foi gerado. Use **Imprimir** na ficha do resumo. Excluir envia para a Lixeira.
+Em **Resumo semanal** a lista mostra os resumos já gerados, com filtros (bairro, ciclo, semana, datas). Clique em **Novo Resumo Semanal**: escolha o **ciclo** e a **semana** (a lista de semanas vem do período do ciclo, não é digitada), o **bairro** e a **atividade**. **Visualizar** abre a ficha em PDF sem gravar; **Salvar** grava o retrato (mesmo que as visitas mudem depois, os números ficam como estavam) e **Imprimir** na lista abre o PDF no formulário oficial do PNCD (campos 01 a 68: imóveis por tipo, depósitos A1 a E, tratamento focal e perifocal, larvicida, adulticida, amostras laboratoriais). Excluir envia para a Lixeira.

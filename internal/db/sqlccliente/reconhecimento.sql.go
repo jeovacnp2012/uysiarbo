@@ -11,101 +11,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const calcularResumoSemanal = `-- name: CalcularResumoSemanal :one
-SELECT count(*)::int AS visitas, count(DISTINCT v.local_id)::int AS locais,
-       count(*) FILTER (WHERE v.pendencia = 'fechado')::int AS fechadas,
-       count(*) FILTER (WHERE v.pendencia = 'recusado')::int AS recusadas,
-       count(*) FILTER (WHERE v.pendencia = 'tentativa')::int AS tentativas,
-       count(*) FILTER (WHERE v.achou_deposito)::int AS com_deposito,
-       count(*) FILTER (WHERE v.coletou_amostra)::int AS com_amostra,
-       count(*) FILTER (WHERE v.fez_tratamento)::int AS com_tratamento,
-       COALESCE(sum(v.dep_a1), 0)::int AS dep_a1, COALESCE(sum(v.dep_a2), 0)::int AS dep_a2, COALESCE(sum(v.dep_b), 0)::int AS dep_b,
-       COALESCE(sum(v.dep_c), 0)::int AS dep_c, COALESCE(sum(v.dep_d1), 0)::int AS dep_d1, COALESCE(sum(v.dep_d2), 0)::int AS dep_d2,
-       COALESCE(sum(v.dep_e), 0)::int AS dep_e, COALESCE(sum(v.total_eliminado), 0)::int AS eliminados,
-       COALESCE(sum(v.l1_gramas), 0)::float8 AS l1_gramas, COALESCE(sum(v.l1_tratados), 0)::int AS l1_tratados,
-       COALESCE(sum(v.l2_gramas), 0)::float8 AS l2_gramas, COALESCE(sum(v.l2_tratados), 0)::int AS l2_tratados,
-       COALESCE(sum(v.adulticida_cargas), 0)::int AS cargas,
-       COALESCE(sum((SELECT count(*) FROM amostras a WHERE a.visita_id = v.id AND a.deleted_at IS NULL)), 0)::int AS tubitos,
-       COALESCE(sum((SELECT count(*) FROM amostras a WHERE a.visita_id = v.id AND a.deleted_at IS NULL AND a.status = 'concluido'
-                     AND a.total_aegypti + a.total_albopictus > 0)), 0)::int AS tubitos_positivos
-FROM visitas v JOIN locais l ON l.id = v.local_id
-WHERE v.deleted_at IS NULL AND v.ativo AND v.ciclo_id = $1 AND v.semana = $2
-  AND ($3::bigint IS NULL OR l.bairro_id = $3::bigint)
-  AND ($4::bigint IS NULL OR v.atividade_id = $4::bigint)
-  AND ($5::bigint IS NULL OR v.agente_id = $5::bigint)
-`
-
-type CalcularResumoSemanalParams struct {
-	CicloID       int64       `json:"ciclo_id"`
-	Semana        pgtype.Int2 `json:"semana"`
-	BairroID      pgtype.Int8 `json:"bairro_id"`
-	AtividadeID   pgtype.Int8 `json:"atividade_id"`
-	SomenteAgente pgtype.Int8 `json:"somente_agente"`
-}
-
-type CalcularResumoSemanalRow struct {
-	Visitas          int32   `json:"visitas"`
-	Locais           int32   `json:"locais"`
-	Fechadas         int32   `json:"fechadas"`
-	Recusadas        int32   `json:"recusadas"`
-	Tentativas       int32   `json:"tentativas"`
-	ComDeposito      int32   `json:"com_deposito"`
-	ComAmostra       int32   `json:"com_amostra"`
-	ComTratamento    int32   `json:"com_tratamento"`
-	DepA1            int32   `json:"dep_a1"`
-	DepA2            int32   `json:"dep_a2"`
-	DepB             int32   `json:"dep_b"`
-	DepC             int32   `json:"dep_c"`
-	DepD1            int32   `json:"dep_d1"`
-	DepD2            int32   `json:"dep_d2"`
-	DepE             int32   `json:"dep_e"`
-	Eliminados       int32   `json:"eliminados"`
-	L1Gramas         float64 `json:"l1_gramas"`
-	L1Tratados       int32   `json:"l1_tratados"`
-	L2Gramas         float64 `json:"l2_gramas"`
-	L2Tratados       int32   `json:"l2_tratados"`
-	Cargas           int32   `json:"cargas"`
-	Tubitos          int32   `json:"tubitos"`
-	TubitosPositivos int32   `json:"tubitos_positivos"`
-}
-
-func (q *Queries) CalcularResumoSemanal(ctx context.Context, arg CalcularResumoSemanalParams) (CalcularResumoSemanalRow, error) {
-	row := q.db.QueryRow(ctx, calcularResumoSemanal,
-		arg.CicloID,
-		arg.Semana,
-		arg.BairroID,
-		arg.AtividadeID,
-		arg.SomenteAgente,
-	)
-	var i CalcularResumoSemanalRow
-	err := row.Scan(
-		&i.Visitas,
-		&i.Locais,
-		&i.Fechadas,
-		&i.Recusadas,
-		&i.Tentativas,
-		&i.ComDeposito,
-		&i.ComAmostra,
-		&i.ComTratamento,
-		&i.DepA1,
-		&i.DepA2,
-		&i.DepB,
-		&i.DepC,
-		&i.DepD1,
-		&i.DepD2,
-		&i.DepE,
-		&i.Eliminados,
-		&i.L1Gramas,
-		&i.L1Tratados,
-		&i.L2Gramas,
-		&i.L2Tratados,
-		&i.Cargas,
-		&i.Tubitos,
-		&i.TubitosPositivos,
-	)
-	return i, err
-}
-
 const contarFichasDoBairro = `-- name: ContarFichasDoBairro :one
 SELECT (SELECT count(*) FROM reconhecimentos WHERE bairro_id = $1::bigint)::int AS reconhecimentos,
        (SELECT count(*) FROM resumos_semanais WHERE bairro_id = $1::bigint)::int AS resumos
@@ -532,31 +437,47 @@ func (q *Queries) ListReconhecimentosExcluidos(ctx context.Context) ([]ListRecon
 
 const listResumosSemanais = `-- name: ListResumosSemanais :many
 SELECT s.id, c.nome AS ciclo, s.semana, COALESCE(b.nome, 'Todos os bairros')::text AS bairro,
-       COALESCE(a.sigla, 'Todas')::text AS atividade, s.gerado_em
+       COALESCE(a.nome, 'Todas')::text AS atividade, COALESCE(a.sigla, '')::text AS atividade_sigla, s.gerado_em
 FROM resumos_semanais s JOIN ciclos c ON c.id = s.ciclo_id
 LEFT JOIN bairros b ON b.id = s.bairro_id LEFT JOIN atividades a ON a.id = s.atividade_id
 WHERE s.deleted_at IS NULL
   AND ($1::bigint IS NULL OR s.ciclo_id = $1::bigint)
-  AND ($2::bigint IS NULL OR (s.bairro_id IS NOT NULL AND usuario_ve_bairro($2::bigint, s.bairro_id)))
-ORDER BY s.gerado_em DESC LIMIT 5000
+  AND ($2::bigint IS NULL OR s.bairro_id = $2::bigint)
+  AND ($3::int IS NULL OR s.semana = $3::int)
+  AND ($4::date IS NULL OR s.gerado_em >= $4::date::timestamptz)
+  AND ($5::date IS NULL OR s.gerado_em < ($5::date + 1)::timestamptz)
+  AND ($6::bigint IS NULL OR (s.bairro_id IS NOT NULL AND usuario_ve_bairro($6::bigint, s.bairro_id)))
+ORDER BY s.gerado_em DESC, s.id DESC LIMIT 5000
 `
 
 type ListResumosSemanaisParams struct {
 	CicloID        pgtype.Int8 `json:"ciclo_id"`
+	BairroID       pgtype.Int8 `json:"bairro_id"`
+	Semana         pgtype.Int4 `json:"semana"`
+	DataDe         pgtype.Date `json:"data_de"`
+	DataAte        pgtype.Date `json:"data_ate"`
 	SomenteUsuario pgtype.Int8 `json:"somente_usuario"`
 }
 
 type ListResumosSemanaisRow struct {
-	ID        int64              `json:"id"`
-	Ciclo     string             `json:"ciclo"`
-	Semana    int16              `json:"semana"`
-	Bairro    string             `json:"bairro"`
-	Atividade string             `json:"atividade"`
-	GeradoEm  pgtype.Timestamptz `json:"gerado_em"`
+	ID             int64              `json:"id"`
+	Ciclo          string             `json:"ciclo"`
+	Semana         int16              `json:"semana"`
+	Bairro         string             `json:"bairro"`
+	Atividade      string             `json:"atividade"`
+	AtividadeSigla string             `json:"atividade_sigla"`
+	GeradoEm       pgtype.Timestamptz `json:"gerado_em"`
 }
 
 func (q *Queries) ListResumosSemanais(ctx context.Context, arg ListResumosSemanaisParams) ([]ListResumosSemanaisRow, error) {
-	rows, err := q.db.Query(ctx, listResumosSemanais, arg.CicloID, arg.SomenteUsuario)
+	rows, err := q.db.Query(ctx, listResumosSemanais,
+		arg.CicloID,
+		arg.BairroID,
+		arg.Semana,
+		arg.DataDe,
+		arg.DataAte,
+		arg.SomenteUsuario,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -570,6 +491,7 @@ func (q *Queries) ListResumosSemanais(ctx context.Context, arg ListResumosSemana
 			&i.Semana,
 			&i.Bairro,
 			&i.Atividade,
+			&i.AtividadeSigla,
 			&i.GeradoEm,
 		); err != nil {
 			return nil, err
