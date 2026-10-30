@@ -131,12 +131,30 @@ templ Paginacao(p Pagination, path string, query url.Values) {
 		</form>
 		<span>{ p.Summary() } · página { strconv.Itoa(p.Page) } de { strconv.Itoa(p.Pages()) }</span>
 		<div class="paginacao-botoes">
-			<a class="btn" href={ templ.SafeURL(pageURL(path, query, 1)) } aria-disabled?={ !p.HasPrev() }>« Primeira</a>
-			<a class="btn" href={ templ.SafeURL(pageURL(path, query, p.Page-1)) } aria-disabled?={ !p.HasPrev() }>← Anterior</a>
-			<a class="btn" href={ templ.SafeURL(pageURL(path, query, p.Page+1)) } aria-disabled?={ !p.HasNext() }>Próxima →</a>
-			<a class="btn" href={ templ.SafeURL(pageURL(path, query, p.Pages())) } aria-disabled?={ !p.HasNext() }>Última »</a>
+			<a class="btn btn-so-icone" data-sem-icone href={ templ.SafeURL(pageURL(path, query, 1)) } title="Primeira página" aria-label="Primeira página" aria-disabled?={ !p.HasPrev() }>@iconePagina("primeira")</a>
+			<a class="btn btn-so-icone" data-sem-icone href={ templ.SafeURL(pageURL(path, query, p.Page-1)) } title="Página anterior" aria-label="Página anterior" aria-disabled?={ !p.HasPrev() }>@iconePagina("anterior")</a>
+			<a class="btn btn-so-icone" data-sem-icone href={ templ.SafeURL(pageURL(path, query, p.Page+1)) } title="Próxima página" aria-label="Próxima página" aria-disabled?={ !p.HasNext() }>@iconePagina("proxima")</a>
+			<a class="btn btn-so-icone" data-sem-icone href={ templ.SafeURL(pageURL(path, query, p.Pages())) } title="Última página" aria-label="Última página" aria-disabled?={ !p.HasNext() }>@iconePagina("ultima")</a>
 		</div>
 	</div>
+}
+
+// iconePagina desenha a seta de um botão da paginação (o texto fica só na dica e no rótulo de acessibilidade).
+templ iconePagina(nome string) {
+	<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+		switch nome {
+			case "primeira":
+				<path d="m11 17-5-5 5-5"></path>
+				<path d="m18 17-5-5 5-5"></path>
+			case "anterior":
+				<path d="m15 18-6-6 6-6"></path>
+			case "proxima":
+				<path d="m9 18 6-6-6-6"></path>
+			case "ultima":
+				<path d="m6 17 5-5-5-5"></path>
+				<path d="m13 17 5-5-5-5"></path>
+		}
+	</svg>
 }
 
 // PaginacaoDoLayout mostra a barra da listagem carregada na memória (preenchida por paginar), se houver.

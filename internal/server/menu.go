@@ -42,7 +42,7 @@ func (s *handlers) menu(r *http.Request) []views.NavGrupo {
 			menu = append(menu, views.NavGrupo{Label: "B.I.", Icone: "bi", Href: "/bi"})
 		}
 		if pr.Pode("bi_epi_visualizar") {
-			menu = append(menu, views.NavGrupo{Label: "B.I. Epidemiológico", Icone: "bi", EmBreve: true})
+			menu = append(menu, views.NavGrupo{Label: "B.I. Epidemiológico", Icone: "bi-epi", EmBreve: true})
 		}
 	}
 
@@ -60,15 +60,11 @@ func (s *handlers) menu(r *http.Request) []views.NavGrupo {
 	}
 
 	if emCliente {
-		pode := pr.Pode("bairro_visualizar")
-		add(pode, "Bairros", "/bairros")
-		add(pode, "Cidades", "/cidades")
-		add(pr.Pode("local_visualizar"), "Locais", "/locais")
-		incluir("Território", "territorio")
-
+		// A ordem segue a do Geo Controle: telas de trabalho, módulos de campo, grupos (Zoonose, LIRAa, Relatórios,
+		// Estoque) e, por fim, Parâmetros, Auditoria e Configuração. Item sem tela aparece apagado (EmBreve): ao
+		// construir um, troque EmBreve por Href e ponha a permissão em pode().
 		if pr.Pode("bairro_visualizar") || pr.Pode("local_visualizar") {
-			// Mapa é um grupo: cada camada de interesse vira um item. Os que ainda não têm tela aparecem
-			// apagados; ao construir um, troque EmBreve por Href.
+			// Mapa é um grupo: cada camada de interesse vira um item.
 			rastro := views.NavItem{Label: "Rastro GPS", EmBreve: true}
 			if pr.Pode("mapa_coleta") {
 				rastro = views.NavItem{Label: "Rastro GPS", Href: "/mapa/rastro"}
@@ -80,6 +76,62 @@ func (s *handlers) menu(r *http.Request) []views.NavGrupo {
 				{Label: "Campanha Antirrábica", EmBreve: true},
 				{Label: "Ovitrampas", EmBreve: true},
 				{Label: "EDLs", EmBreve: true},
+			}})
+		}
+		if pr.Pode("local_visualizar") {
+			menu = append(menu, views.NavGrupo{Label: "Locais", Icone: "locais", Href: "/locais"})
+		}
+		if pr.Pode("visita_visualizar") {
+			menu = append(menu, views.NavGrupo{Label: "Visitas", Icone: "visitas", Href: "/visitas"})
+		}
+		if pr.Pode("visita_laboratorio_visualizar") {
+			emAnalise := 0
+			if q, _, err := s.cliente(r); err == nil {
+				if n, err := q.CountAmostrasEmAnalise(r.Context(), s.escopoVisitas(r)); err == nil {
+					emAnalise = int(n)
+				}
+			}
+			menu = append(menu, views.NavGrupo{Label: "Laboratório", Icone: "laboratorio", Href: "/laboratorio", Contagem: emAnalise})
+		}
+		if pr.Pode("investigacao_visualizar") {
+			menu = append(menu, views.NavGrupo{Label: "Investigações", Icone: "investigacao", Href: "/investigacoes"})
+		}
+		if pr.Pode("denuncia_visualizar") {
+			menu = append(menu, views.NavGrupo{Label: "Denúncias", Icone: "denuncia", Href: "/denuncias"})
+		}
+		if pr.Pode("notificacao_visualizar") {
+			menu = append(menu, views.NavGrupo{Label: "Notificações", Icone: "notificacao", Href: "/notificacoes"})
+			menu = append(menu, views.NavGrupo{Label: "Autos de infração", Icone: "auto", Href: "/infracoes"})
+		}
+		if pr.Pode("historico_mobilidade") {
+			menu = append(menu, views.NavGrupo{Label: "Histórico de mobilidade", Icone: "mobilidade", Href: "/mobilidade/historico"})
+		}
+		if pr.Pode("bairro_visualizar") {
+			menu = append(menu, views.NavGrupo{Label: "Bairros", Icone: "bairros", Href: "/bairros"})
+		}
+		// Módulos que ainda não têm tela: aparecem apagados para quem tem a permissão de ver.
+		for _, m := range []struct{ perm, rotulo, icone string }{
+			{"ovitrampa_visualizar", "Ovitrampas", "ovitrampa"},
+			{"edl_visualizar", "EDLs", "edl"},
+			{"dronesolicitacao_visualizar", "Solicitações de drone", "drone"},
+			{"comunicacao_visualizar", "Comunicações", "comunicacao"},
+			{"banner_visualizar", "Banners", "banner"},
+		} {
+			if pr.Pode(m.perm) {
+				menu = append(menu, views.NavGrupo{Label: m.rotulo, Icone: m.icone, EmBreve: true})
+			}
+		}
+		if pr.Pode("campanha_visualizar") || pr.Pode("zoonose_lvc_visualizar") || pr.Pode("zoonose_baap_visualizar") {
+			menu = append(menu, views.NavGrupo{Label: "Zoonose", Icone: "zoonose", Itens: []views.NavItem{
+				{Label: "Campanha Antirrábica", EmBreve: true},
+				{Label: "Leishmaniose Visceral Canina", EmBreve: true},
+				{Label: "Busca Ativa — Animais Peçonhentos", EmBreve: true},
+			}})
+		}
+		if pr.Pode("liraa_agenda_visualizar") || pr.Pode("liraa_grupo") {
+			menu = append(menu, views.NavGrupo{Label: "LIRAa", Icone: "liraa", Itens: []views.NavItem{
+				{Label: "Grupo", EmBreve: true},
+				{Label: "Agenda", EmBreve: true},
 			}})
 		}
 
@@ -119,52 +171,41 @@ func (s *handlers) menu(r *http.Request) []views.NavGrupo {
 			temTela = temTela || !it.EmBreve
 		}
 		if temTela {
-			menu = append(menu, views.NavGrupo{Label: "Relatórios", Icone: "visitas", Itens: relItens})
+			menu = append(menu, views.NavGrupo{Label: "Relatórios", Icone: "relatorios", Itens: relItens})
 		}
 
-		if pr.Pode("visita_visualizar") {
-			menu = append(menu, views.NavGrupo{Label: "Visitas", Icone: "visitas", Href: "/visitas"})
+		if pr.Pode("estoque_balanco_visualizar") || pr.Pode("estoque_produto_visualizar") || pr.Pode("estoque_retirada_visualizar") {
+			menu = append(menu, views.NavGrupo{Label: "Estoque", Icone: "estoque", Itens: []views.NavItem{
+				{Label: "Balanço Físico", EmBreve: true},
+				{Label: "Produtos", EmBreve: true},
+				{Label: "Entradas / Lotes", EmBreve: true},
+				{Label: "Retiradas", EmBreve: true},
+				{Label: "Patrimônio", EmBreve: true},
+				{Label: "Unidades de Estoque", EmBreve: true},
+			}})
 		}
 
-		if pr.Pode("visita_laboratorio_visualizar") {
-			emAnalise := 0
-			if q, _, err := s.cliente(r); err == nil {
-				if n, err := q.CountAmostrasEmAnalise(r.Context(), s.escopoVisitas(r)); err == nil {
-					emAnalise = int(n)
-				}
-			}
-			menu = append(menu, views.NavGrupo{Label: "Laboratório", Icone: "visitas", Href: "/laboratorio", Contagem: emAnalise})
-		}
+		add(pr.Pode("param_ciclo"), "Ciclos", "/ciclos")
+		add(pr.Pode("param_geral"), "Geral", "/parametros/geral")
+		add(pr.Pode("param_mobilidade"), "Mobilidade (aplicativo)", "/parametros/mobilidade")
+		add(pr.Pode("acesso_local"), "Controle de acesso", "/parametros/acesso")
+		add(pr.Pode("param_leis"), "Leis municipais", "/leis")
+		add(pr.Pode("param_doenca"), "Doenças e agravos", "/doencas")
+		add(pr.Pode("param_doenca"), "Entrevistas", "/entrevistas")
+		add(pr.Pode("bairro_visualizar"), "Cidades", "/cidades")
+		incluir("Parâmetros", "parametros")
 
-		if pr.Pode("investigacao_visualizar") {
-			menu = append(menu, views.NavGrupo{Label: "Investigações", Icone: "visitas", Href: "/investigacoes"})
-		}
-
-		if pr.Pode("denuncia_visualizar") {
-			menu = append(menu, views.NavGrupo{Label: "Denúncias", Icone: "visitas", Href: "/denuncias"})
-		}
-
-		if pr.Pode("notificacao_visualizar") {
-			menu = append(menu, views.NavGrupo{Label: "Notificações", Icone: "visitas", Href: "/notificacoes"})
-			menu = append(menu, views.NavGrupo{Label: "Autos de infração", Icone: "visitas", Href: "/infracoes"})
+		if pr.Pode("auditoria_sistema") {
+			menu = append(menu, views.NavGrupo{Label: "Auditoria", Icone: "auditoria", Href: "/auditoria"})
 		}
 
 		add(pr.Pode("conf_usuario"), "Usuários", "/usuarios")
 		add(pr.Pode("conf_papel"), "Papéis", "/papeis")
-		add(pr.Pode("param_ciclo"), "Ciclos", "/ciclos")
-		add(pr.Pode("param_leis"), "Leis municipais", "/leis")
-		add(pr.Pode("param_doenca"), "Doenças e agravos", "/doencas")
-		add(pr.Pode("param_doenca"), "Entrevistas", "/entrevistas")
-		add(pr.Pode("param_geral"), "Parâmetros gerais", "/parametros/geral")
-		add(pr.Pode("param_mobilidade"), "Mobilidade (aplicativo)", "/parametros/mobilidade")
-		add(pr.Pode("historico_mobilidade"), "Histórico de mobilidade", "/mobilidade/historico")
-		add(pr.Pode("acesso_local"), "Controle de acesso", "/parametros/acesso")
 		add(pr.Pode("conf_importacao"), "Importação de dados", "/importacoes")
 		add(pr.Pode("conf_lixeira"), "Lixeira", "/lixeira")
 		add(pr.Pode("conf_api"), "API e integrações", "/parametros/api")
-		add(pr.Pode("auditoria_sistema"), "Auditoria", "/auditoria")
 		add(pr.Master, "Componentes", "/componentes")
-		incluir("Administração", "administracao")
+		incluir("Configuração", "configuracao")
 	} else {
 		add(pr.Master, "Clientes", "/clientes")
 		add(pr.Master, "Usuários da plataforma", "/plataforma/usuarios")

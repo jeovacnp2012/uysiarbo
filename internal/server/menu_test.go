@@ -33,29 +33,27 @@ func TestMenuPorCategoriaComGruposRecolhidos(t *testing.T) {
 	if len(abertos) != 0 {
 		t.Errorf("na página inicial os grupos deveriam estar recolhidos, abertos: %v", abertos)
 	}
-	if strings.Join(recolhidos, ",") != "Território,Mapa,Relatórios,Administração" {
-		t.Errorf("grupos recolhidos = %v, quer Território, Mapa, Relatórios e Administração", recolhidos)
+	if strings.Join(recolhidos, ",") != "Mapa,Zoonose,LIRAa,Relatórios,Estoque,Parâmetros,Configuração" {
+		t.Errorf("grupos recolhidos = %v", recolhidos)
 	}
 
-	// Numa tela de um grupo, só esse grupo abre.
-	abertos, recolhidos = gruposDoMenu(ana.get("/bairros").Body.String())
-	if strings.Join(abertos, ",") != "Território" || strings.Join(recolhidos, ",") != "Mapa,Relatórios,Administração" {
-		t.Errorf("em /bairros: abertos=%v recolhidos=%v", abertos, recolhidos)
+	// Numa tela de um grupo, só esse grupo abre; telas de item simples não abrem nenhum.
+	abertos, _ = gruposDoMenu(ana.get("/bairros").Body.String())
+	if len(abertos) != 0 {
+		t.Errorf("em /bairros (item simples): abertos=%v", abertos)
 	}
 	abertos, _ = gruposDoMenu(ana.get("/usuarios").Body.String())
-	if strings.Join(abertos, ",") != "Administração" {
+	if strings.Join(abertos, ",") != "Configuração" {
 		t.Errorf("em /usuarios: abertos=%v", abertos)
 	}
-	// Dentro de um bairro, a categoria dele continua aberta.
-	bid := m.criarBairro(t, m.criarCidade(t, "Nova Mutum", "MT"), "Centro")
-	abertos, _ = gruposDoMenu(ana.get("/bairros/" + s64(bid)).Body.String())
-	if strings.Join(abertos, ",") != "Território" {
-		t.Errorf("na ficha do bairro: abertos=%v", abertos)
+	abertos, _ = gruposDoMenu(ana.get("/ciclos").Body.String())
+	if strings.Join(abertos, ",") != "Parâmetros" {
+		t.Errorf("em /ciclos: abertos=%v", abertos)
 	}
 
 	// Itens simples (sem grupo) e o item ativo marcado.
 	corpo := ana.get("/guia").Body.String()
-	for _, quer := range []string{`class="menu-item" href="/"`, `class="menu-item" href="/guia" aria-current`, `class="menu-item" href="/novidades"`, `class="menu-subitem" href="/bairros"`, `class="menu-subitem" href="/auditoria"`} {
+	for _, quer := range []string{`class="menu-item" href="/"`, `class="menu-item" href="/guia" aria-current`, `class="menu-item" href="/novidades"`, `class="menu-item" href="/bairros"`, `class="menu-item" href="/auditoria"`, `class="menu-subitem" href="/ciclos"`} {
 		if !strings.Contains(corpo, quer) {
 			t.Errorf("o menu deveria conter %q", quer)
 		}
@@ -67,7 +65,7 @@ func TestMenuPorCategoriaComGruposRecolhidos(t *testing.T) {
 
 func TestMenuEscondeCategoriasSemPermissao(t *testing.T) {
 	m := novoMundo(t)
-	carla := m.comCarla(t) // só leitura de visitas: sem Território nem Administração
+	carla := m.comCarla(t) // só leitura de visitas: sem grupos com sub-itens
 	abertos, recolhidos := gruposDoMenu(carla.get("/").Body.String())
 	if len(abertos)+len(recolhidos) != 0 {
 		t.Errorf("a Carla não deveria ter categorias com sub-itens, tem %v %v", abertos, recolhidos)
