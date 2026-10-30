@@ -47,7 +47,7 @@ func TestGrupoCriarEditarEValidar(t *testing.T) {
 	id := m.criarGrupoPelaTela(t, ana, "Rota de segunda")
 	quer(t, ana.post("/grupos", url.Values{"nome": {"rota DE segunda"}}), http.StatusBadRequest, "Já existe um grupo")
 	quer(t, ana.get("/grupos"), http.StatusOK, "Rota de segunda", "para teste")
-	quer(t, ana.get("/grupos/"+id), http.StatusOK, "Rota de segunda", "Acrescentar locais", "Exportar planilha", "Clonar grupo", "Nenhum local neste grupo")
+	quer(t, ana.get("/grupos/"+id), http.StatusOK, "Rota de segunda", "Adicionar Local", "Exportar planilha", "Clonar grupo", "Nenhum registro encontrado")
 	quer(t, ana.get("/grupos/"+id+"?ok=criado"), http.StatusOK, "Grupo criado")
 
 	// Editar registra antes e depois; salvar igual não registra.
@@ -152,7 +152,7 @@ func TestGrupoAcrescentarRetirarEExcluir(t *testing.T) {
 		t.Errorf("grupo.local_remover = %d, queria 1", rem)
 	}
 	quer(t, ana.post("/grupos/"+id+"/limpar", url.Values{}), http.StatusSeeOther)
-	quer(t, ana.get("/grupos/"+id), http.StatusOK, "Nenhum local neste grupo")
+	quer(t, ana.get("/grupos/"+id), http.StatusOK, "Nenhum registro encontrado")
 
 	// Excluir o grupo não apaga os locais.
 	rec = ana.post("/grupos/"+id+"/excluir", url.Values{})

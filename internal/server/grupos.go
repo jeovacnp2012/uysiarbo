@@ -72,6 +72,13 @@ func (h *handlers) gruposLista(w http.ResponseWriter, r *http.Request) {
 	linhas := make([]views.GrupoLinha, len(rows))
 	for i, g := range rows {
 		linhas[i] = views.GrupoLinha{ID: g.ID, Nome: g.Nome, Descricao: g.Descricao, Total: int(g.TotalLocais), Criado: formatarData(h.fuso(r), g.CriadoEm.Time)}
+		if g.PrincipalID.Valid {
+			linhas[i].PrincipalID = g.PrincipalID.Int64
+			linhas[i].PrincipalEndereco = enderecoCompleto(g.PrincipalEndereco.String, g.PrincipalNumero.String)
+			linhas[i].PrincipalBairro, linhas[i].PrincipalQuarteirao = g.PrincipalBairro.String, g.PrincipalQuarteirao.String
+			linhas[i].PrincipalLado = g.PrincipalLado.String
+			linhas[i].PrincipalSequencia, linhas[i].PrincipalComplemento = textoInt(g.PrincipalSequencia), textoInt(g.PrincipalComplemento)
+		}
 	}
 	lay := h.layout(r, "Grupos de locais", "/locais")
 	linhas = paginar(r, &lay, linhas)
@@ -101,16 +108,40 @@ func (h *handlers) gruposLista(w http.ResponseWriter, r *http.Request) {
 func (h *handlers) montarFormGrupo(ctx context.Context, r *http.Request, q *sqlccliente.Queries, g sqlccliente.LocalGrupo, nome, descricao, aviso, erro string) (views.GrupoFormData, error) {
 	d := views.GrupoFormData{
 		ID: g.ID, Nome: nome, Descricao: descricao, PodeGerenciar: h.principal(r).Pode("local_grupo_gerenciar"),
-		Aviso: aviso, Erro: erro, CSRF: csrfToken(ctx), Pag: paginaDe(r),
+		Aviso: aviso, Erro: erro, CSRF: csrfToken(ctx), Pag: paginaDe(r), Busca: strings.TrimSpace(r.URL.Query().Get("q")),
 	}
 	if g.ID == 0 {
 		return d, nil
+	}
+	if g.PrincipalID.Valid {
+		if l, err := q.GetLocal(ctx, g.PrincipalID.Int64); err == nil {
+			p := &views.GrupoPrincipal{
+				ID: l.ID, Tipo: rotuloTipoLocal(l.Tipo), Endereco: enderecoCompleto(l.Endereco, l.Numero), Lado: l.Lado,
+				Sequencia: textoInt(l.Sequencia), Complemento: textoInt(l.Complemento), Proprietario: l.Proprietario,
+				CPF: mascararCPF(l.ProprietarioCpf), Telefone: l.ProprietarioTelefone, WhatsApp: l.ProprietarioWhatsapp,
+				Email: l.ProprietarioEmail, Inquilino: l.Inquilino, InquilinoTelefone: l.InquilinoTelefone,
+				Humanos: textoInt(l.Humanos), Cachorros: textoInt(l.Cachorros), Gatos: textoInt(l.Gatos), Roedores: textoInt(l.Roedores),
+			}
+			if b, err := q.GetBairro(ctx, l.BairroID); err == nil {
+				p.Bairro = b.Nome
+				if c, err := q.GetCidade(ctx, b.CidadeID); err == nil {
+					p.Cidade = c.Nome + " / " + c.Uf
+				}
+			}
+			if qt, err := q.GetQuarteirao(ctx, l.QuarteiraoID); err == nil {
+				p.Quarteirao = qt.Nome
+			}
+			if l.Latitude.Valid && l.Longitude.Valid {
+				p.Coordenadas = fmt.Sprintf("%.6f, %.6f", l.Latitude.Float64, l.Longitude.Float64)
+			}
+			d.Principal = p
+		}
 	}
 	e := h.escopoDosItens(r)
 	if n, err := strconv.Atoi(r.URL.Query().Get("pagina")); err == nil && n > 1 {
 		d.Pag.Page = n
 	}
-	total, err := q.CountLocaisDoGrupo(ctx, sqlccliente.CountLocaisDoGrupoParams{GrupoID: g.ID, SomenteUsuario: e.somente, SomentePe: e.soPE, VerDesativados: e.verDesativados})
+	total, err := q.CountLocaisDoGrupo(ctx, sqlccliente.CountLocaisDoGrupoParams{GrupoID: g.ID, Busca: d.Busca, SomenteUsuario: e.somente, SomentePe: e.soPE, VerDesativados: e.verDesativados})
 	if err != nil {
 		return d, err
 	}
@@ -119,7 +150,7 @@ func (h *handlers) montarFormGrupo(ctx context.Context, r *http.Request, q *sqlc
 		d.Pag.Page = d.Pag.Pages()
 	}
 	rows, err := q.ListLocaisDoGrupo(ctx, sqlccliente.ListLocaisDoGrupoParams{
-		GrupoID: g.ID, SomenteUsuario: e.somente, SomentePe: e.soPE, VerDesativados: e.verDesativados,
+		GrupoID: g.ID, Busca: d.Busca, SomenteUsuario: e.somente, SomentePe: e.soPE, VerDesativados: e.verDesativados,
 		Limite: int32(d.Pag.PerPage), Deslocamento: int32((d.Pag.Page - 1) * d.Pag.PerPage),
 	})
 	if err != nil {
@@ -132,6 +163,9 @@ func (h *handlers) montarFormGrupo(ctx context.Context, r *http.Request, q *sqlc
 		})
 	}
 	d.Query = url.Values{}
+	if d.Busca != "" {
+		d.Query.Set("q", d.Busca)
+	}
 	if d.PodeGerenciar {
 		somente, _ := h.escopoLocais(r)
 		bairros, err := q.ListBairrosAtivosParaLocal(ctx, somente)
@@ -400,6 +434,10 @@ func (h *handlers) grupoAdicionar(w http.ResponseWriter, r *http.Request) {
 		h.falhaInterna(w, r, "acrescentar locais", err)
 		return
 	}
+	if err := qt.EnsureGrupoPrincipal(ctx, g.ID); err != nil {
+		h.falhaInterna(w, r, "definir o local principal", err)
+		return
+	}
 	if n > 0 {
 		h.auditarCom(audit.Cliente{Q: qt}, r, audit.Evento{
 			Acao: "grupo.locais_adicionar", Entidade: "grupo", EntidadeID: s64txt(g.ID), Rotulo: g.Nome,
@@ -445,6 +483,10 @@ func (h *handlers) grupoRemoverLocal(w http.ResponseWriter, r *http.Request) {
 		h.falhaInterna(w, r, "retirar local", err)
 		return
 	}
+	if err := q.EnsureGrupoPrincipal(r.Context(), g.ID); err != nil {
+		h.falhaInterna(w, r, "ajustar o local principal", err)
+		return
+	}
 	if n > 0 {
 		h.auditar(r, audit.Evento{
 			Acao: "grupo.local_remover", Entidade: "grupo", EntidadeID: s64txt(g.ID), Rotulo: g.Nome,
@@ -465,6 +507,10 @@ func (h *handlers) grupoLimpar(w http.ResponseWriter, r *http.Request) {
 	n, err := q.ClearLocaisDoGrupo(r.Context(), sqlccliente.ClearLocaisDoGrupoParams{GrupoID: g.ID, SomenteUsuario: e.somente, SomentePe: e.soPE, VerDesativados: e.verDesativados})
 	if err != nil {
 		h.falhaInterna(w, r, "esvaziar grupo", err)
+		return
+	}
+	if err := q.EnsureGrupoPrincipal(r.Context(), g.ID); err != nil {
+		h.falhaInterna(w, r, "ajustar o local principal", err)
 		return
 	}
 	if n > 0 {
@@ -497,6 +543,10 @@ func (h *handlers) localNoGrupo(w http.ResponseWriter, r *http.Request) {
 	n, err := q.AddLocalAoGrupo(r.Context(), sqlccliente.AddLocalAoGrupoParams{GrupoID: g.ID, LocalID: l.ID})
 	if err != nil {
 		h.falhaInterna(w, r, "acrescentar ao grupo", err)
+		return
+	}
+	if err := q.EnsureGrupoPrincipal(r.Context(), g.ID); err != nil {
+		h.falhaInterna(w, r, "definir o local principal", err)
 		return
 	}
 	if n > 0 {

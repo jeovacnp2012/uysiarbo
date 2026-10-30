@@ -204,7 +204,7 @@ func (q *Queries) GetCidadeQualquer(ctx context.Context, id int64) (Cidade, erro
 }
 
 const getGrupoQualquer = `-- name: GetGrupoQualquer :one
-SELECT id, nome, descricao, criado_por, criado_em, atualizado_em, deleted_at, deleted_by FROM local_grupos WHERE id = $1
+SELECT id, nome, descricao, criado_por, criado_em, atualizado_em, deleted_at, deleted_by, principal_id FROM local_grupos WHERE id = $1
 `
 
 func (q *Queries) GetGrupoQualquer(ctx context.Context, id int64) (LocalGrupo, error) {
@@ -219,6 +219,7 @@ func (q *Queries) GetGrupoQualquer(ctx context.Context, id int64) (LocalGrupo, e
 		&i.AtualizadoEm,
 		&i.DeletedAt,
 		&i.DeletedBy,
+		&i.PrincipalID,
 	)
 	return i, err
 }

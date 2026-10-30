@@ -1495,3 +1495,151 @@ form.inline {
         grid-template-columns: 1fr;
     }
 }
+
+/* Ficha do grupo: local principal */
+.rotulo-mini {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--marca);
+}
+
+.grupo-principal {
+    display: grid;
+    gap: 0.1rem;
+    padding: 0.5rem 0.7rem;
+    border-radius: var(--radius);
+    background: var(--marca-fraca);
+    font-size: 0.85rem;
+}
+
+.ficha-principal-grade {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+    margin-top: 0.75rem;
+}
+
+.ficha-bloco {
+    display: grid;
+    align-content: start;
+    gap: 0.5rem;
+    padding: 1rem;
+    border-radius: var(--radius);
+}
+
+.ficha-bloco-azul {
+    background: var(--marca-fraca);
+}
+
+.ficha-lista {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.3rem;
+    font-size: 0.88rem;
+    color: var(--suave);
+}
+
+.ficha-quadro {
+    border: 1px solid var(--borda);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.ficha-quadro h3 {
+    margin: 0;
+    padding: 0.55rem 0.9rem;
+    font-size: 0.9rem;
+    color: #fff;
+}
+
+.ficha-quadro-azul h3 {
+    background: linear-gradient(135deg, #1f8bd6, #0b6fb8);
+}
+
+.ficha-quadro-verde h3 {
+    background: linear-gradient(135deg, #17a58a, #0f7a68);
+}
+
+.ficha-quadro dl {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    margin: 0;
+}
+
+.ficha-quadro dt,
+.ficha-quadro dd {
+    margin: 0;
+    padding: 0.5rem 0.9rem;
+    border-top: 1px solid var(--borda);
+    font-size: 0.88rem;
+}
+
+.ficha-quadro dt {
+    font-weight: 600;
+    color: var(--suave);
+}
+
+.ficha-quadro dd {
+    text-align: right;
+}
+
+.bolinha {
+    display: inline-grid;
+    place-items: center;
+    min-width: 1.9rem;
+    height: 1.9rem;
+    padding: 0 0.4rem;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.85rem;
+}
+
+.bolinha-azul {
+    background: #d9eefc;
+    color: #0b6fb8;
+}
+
+.bolinha-amarela {
+    background: #fdf0c8;
+    color: #9a6a00;
+}
+
+.bolinha-verde {
+    background: #d6f5ea;
+    color: #0f7a5c;
+}
+
+.bolinha-rosa {
+    background: #fde0e6;
+    color: #c20039;
+}
+
+.secao-topo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.painel-adicionar {
+    margin: 0.75rem 0;
+    padding: 0.9rem 1rem;
+    border: 1px dashed var(--borda);
+    border-radius: var(--radius);
+}
+
+.busca-viva {
+    display: flex;
+    justify-content: flex-end;
+    margin: 0.5rem 0;
+}
+
+.busca-viva input {
+    min-width: 15rem;
+}

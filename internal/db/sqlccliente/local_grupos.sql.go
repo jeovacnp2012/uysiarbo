@@ -125,15 +125,17 @@ func (q *Queries) CopyLocaisDoGrupo(ctx context.Context, arg CopyLocaisDoGrupoPa
 }
 
 const countLocaisDoGrupo = `-- name: CountLocaisDoGrupo :one
-SELECT count(*)::int FROM local_grupo_itens i JOIN locais l ON l.id = i.local_id
+SELECT count(*)::int FROM local_grupo_itens i JOIN locais l ON l.id = i.local_id JOIN bairros b ON b.id = l.bairro_id
 WHERE i.grupo_id = $1::bigint AND l.deleted_at IS NULL
-  AND ($2::bigint IS NULL OR usuario_ve_local($2::bigint, l.id, l.bairro_id, l.quarteirao_id))
-  AND (NOT $3::boolean OR l.tipo = 'ponto_estrategico')
-  AND ($4::boolean OR l.ativo)
+  AND ($2::text = '' OR position(lower($2::text) in lower(l.endereco || ' ' || l.numero || ' ' || l.referencia || ' ' || b.nome)) > 0)
+  AND ($3::bigint IS NULL OR usuario_ve_local($3::bigint, l.id, l.bairro_id, l.quarteirao_id))
+  AND (NOT $4::boolean OR l.tipo = 'ponto_estrategico')
+  AND ($5::boolean OR l.ativo)
 `
 
 type CountLocaisDoGrupoParams struct {
 	GrupoID        int64       `json:"grupo_id"`
+	Busca          string      `json:"busca"`
 	SomenteUsuario pgtype.Int8 `json:"somente_usuario"`
 	SomentePe      bool        `json:"somente_pe"`
 	VerDesativados bool        `json:"ver_desativados"`
@@ -142,6 +144,7 @@ type CountLocaisDoGrupoParams struct {
 func (q *Queries) CountLocaisDoGrupo(ctx context.Context, arg CountLocaisDoGrupoParams) (int32, error) {
 	row := q.db.QueryRow(ctx, countLocaisDoGrupo,
 		arg.GrupoID,
+		arg.Busca,
 		arg.SomenteUsuario,
 		arg.SomentePe,
 		arg.VerDesativados,
@@ -152,7 +155,7 @@ func (q *Queries) CountLocaisDoGrupo(ctx context.Context, arg CountLocaisDoGrupo
 }
 
 const createGrupo = `-- name: CreateGrupo :one
-INSERT INTO local_grupos (nome, descricao, criado_por) VALUES ($1, $2, $3) RETURNING id, nome, descricao, criado_por, criado_em, atualizado_em, deleted_at, deleted_by
+INSERT INTO local_grupos (nome, descricao, criado_por) VALUES ($1, $2, $3) RETURNING id, nome, descricao, criado_por, criado_em, atualizado_em, deleted_at, deleted_by, principal_id
 `
 
 type CreateGrupoParams struct {
@@ -173,12 +176,27 @@ func (q *Queries) CreateGrupo(ctx context.Context, arg CreateGrupoParams) (Local
 		&i.AtualizadoEm,
 		&i.DeletedAt,
 		&i.DeletedBy,
+		&i.PrincipalID,
 	)
 	return i, err
 }
 
+const ensureGrupoPrincipal = `-- name: EnsureGrupoPrincipal :exec
+UPDATE local_grupos g SET principal_id = (
+    SELECT i.local_id FROM local_grupo_itens i WHERE i.grupo_id = g.id ORDER BY i.adicionado_em, i.local_id LIMIT 1)
+WHERE g.id = $1 AND (g.principal_id IS NULL OR NOT EXISTS (
+    SELECT 1 FROM local_grupo_itens i WHERE i.grupo_id = g.id AND i.local_id = g.principal_id))
+`
+
+// O principal é sempre um local do grupo: sem principal (ou com o principal retirado), o primeiro local do grupo
+// passa a ser o principal; grupo vazio fica sem principal.
+func (q *Queries) EnsureGrupoPrincipal(ctx context.Context, id int64) error {
+	_, err := q.db.Exec(ctx, ensureGrupoPrincipal, id)
+	return err
+}
+
 const getGrupo = `-- name: GetGrupo :one
-SELECT id, nome, descricao, criado_por, criado_em, atualizado_em, deleted_at, deleted_by FROM local_grupos WHERE id = $1 AND deleted_at IS NULL
+SELECT id, nome, descricao, criado_por, criado_em, atualizado_em, deleted_at, deleted_by, principal_id FROM local_grupos WHERE id = $1 AND deleted_at IS NULL
 `
 
 func (q *Queries) GetGrupo(ctx context.Context, id int64) (LocalGrupo, error) {
@@ -193,6 +211,7 @@ func (q *Queries) GetGrupo(ctx context.Context, id int64) (LocalGrupo, error) {
 		&i.AtualizadoEm,
 		&i.DeletedAt,
 		&i.DeletedBy,
+		&i.PrincipalID,
 	)
 	return i, err
 }
@@ -246,14 +265,20 @@ func (q *Queries) ListAuditoriaDaEntidade(ctx context.Context, arg ListAuditoria
 
 const listGrupos = `-- name: ListGrupos :many
 
-SELECT g.id, g.nome, g.descricao, g.criado_em,
+SELECT g.id, g.nome, g.descricao, g.criado_em, g.principal_id,
+       pl.endereco AS principal_endereco, pl.numero AS principal_numero, pl.lado AS principal_lado,
+       pl.sequencia AS principal_sequencia, pl.complemento AS principal_complemento,
+       pb.nome AS principal_bairro, pq.nome AS principal_quarteirao,
        (SELECT count(*) FROM local_grupo_itens i JOIN locais l ON l.id = i.local_id
          WHERE i.grupo_id = g.id AND l.deleted_at IS NULL
            AND ($1::bigint IS NULL OR usuario_ve_local($1::bigint, l.id, l.bairro_id, l.quarteirao_id))
            AND (NOT $2::boolean OR l.tipo = 'ponto_estrategico')
            AND ($3::boolean OR l.ativo))::int AS total_locais
 FROM local_grupos g
-WHERE g.deleted_at IS NULL AND ($4::text = '' OR position(lower($4::text) in lower(g.nome || ' ' || g.descricao)) > 0)
+LEFT JOIN locais pl ON pl.id = g.principal_id AND pl.deleted_at IS NULL
+LEFT JOIN bairros pb ON pb.id = pl.bairro_id
+LEFT JOIN quarteiroes pq ON pq.id = pl.quarteirao_id
+WHERE g.deleted_at IS NULL AND ($4::text = '' OR position(lower($4::text) in lower(g.nome || ' ' || g.descricao || ' ' || COALESCE(pl.endereco || ' ' || pl.numero, ''))) > 0)
 ORDER BY lower(g.nome)
 `
 
@@ -265,11 +290,19 @@ type ListGruposParams struct {
 }
 
 type ListGruposRow struct {
-	ID          int64              `json:"id"`
-	Nome        string             `json:"nome"`
-	Descricao   string             `json:"descricao"`
-	CriadoEm    pgtype.Timestamptz `json:"criado_em"`
-	TotalLocais int32              `json:"total_locais"`
+	ID                   int64              `json:"id"`
+	Nome                 string             `json:"nome"`
+	Descricao            string             `json:"descricao"`
+	CriadoEm             pgtype.Timestamptz `json:"criado_em"`
+	PrincipalID          pgtype.Int8        `json:"principal_id"`
+	PrincipalEndereco    pgtype.Text        `json:"principal_endereco"`
+	PrincipalNumero      pgtype.Text        `json:"principal_numero"`
+	PrincipalLado        pgtype.Text        `json:"principal_lado"`
+	PrincipalSequencia   pgtype.Int4        `json:"principal_sequencia"`
+	PrincipalComplemento pgtype.Int4        `json:"principal_complemento"`
+	PrincipalBairro      pgtype.Text        `json:"principal_bairro"`
+	PrincipalQuarteirao  pgtype.Text        `json:"principal_quarteirao"`
+	TotalLocais          int32              `json:"total_locais"`
 }
 
 // ---------------------------------------------------------------- Grupos de Locais
@@ -294,6 +327,14 @@ func (q *Queries) ListGrupos(ctx context.Context, arg ListGruposParams) ([]ListG
 			&i.Nome,
 			&i.Descricao,
 			&i.CriadoEm,
+			&i.PrincipalID,
+			&i.PrincipalEndereco,
+			&i.PrincipalNumero,
+			&i.PrincipalLado,
+			&i.PrincipalSequencia,
+			&i.PrincipalComplemento,
+			&i.PrincipalBairro,
+			&i.PrincipalQuarteirao,
 			&i.TotalLocais,
 		); err != nil {
 			return nil, err
@@ -373,15 +414,17 @@ JOIN locais l ON l.id = i.local_id
 JOIN bairros b ON b.id = l.bairro_id
 JOIN quarteiroes q ON q.id = l.quarteirao_id
 WHERE i.grupo_id = $1::bigint AND l.deleted_at IS NULL
-  AND ($2::bigint IS NULL OR usuario_ve_local($2::bigint, l.id, l.bairro_id, l.quarteirao_id))
-  AND (NOT $3::boolean OR l.tipo = 'ponto_estrategico')
-  AND ($4::boolean OR l.ativo)
+  AND ($2::text = '' OR position(lower($2::text) in lower(l.endereco || ' ' || l.numero || ' ' || l.referencia || ' ' || b.nome)) > 0)
+  AND ($3::bigint IS NULL OR usuario_ve_local($3::bigint, l.id, l.bairro_id, l.quarteirao_id))
+  AND (NOT $4::boolean OR l.tipo = 'ponto_estrategico')
+  AND ($5::boolean OR l.ativo)
 ORDER BY lower(b.nome), lower(l.endereco), l.numero, l.id
-LIMIT $6::int OFFSET $5::int
+LIMIT $7::int OFFSET $6::int
 `
 
 type ListLocaisDoGrupoParams struct {
 	GrupoID        int64       `json:"grupo_id"`
+	Busca          string      `json:"busca"`
 	SomenteUsuario pgtype.Int8 `json:"somente_usuario"`
 	SomentePe      bool        `json:"somente_pe"`
 	VerDesativados bool        `json:"ver_desativados"`
@@ -409,6 +452,7 @@ type ListLocaisDoGrupoRow struct {
 func (q *Queries) ListLocaisDoGrupo(ctx context.Context, arg ListLocaisDoGrupoParams) ([]ListLocaisDoGrupoRow, error) {
 	rows, err := q.db.Query(ctx, listLocaisDoGrupo,
 		arg.GrupoID,
+		arg.Busca,
 		arg.SomenteUsuario,
 		arg.SomentePe,
 		arg.VerDesativados,
@@ -476,8 +520,22 @@ func (q *Queries) RemoveLocalDoGrupo(ctx context.Context, arg RemoveLocalDoGrupo
 	return result.RowsAffected(), nil
 }
 
+const setGrupoPrincipal = `-- name: SetGrupoPrincipal :exec
+UPDATE local_grupos SET principal_id = $2, atualizado_em = now() WHERE id = $1
+`
+
+type SetGrupoPrincipalParams struct {
+	ID          int64       `json:"id"`
+	PrincipalID pgtype.Int8 `json:"principal_id"`
+}
+
+func (q *Queries) SetGrupoPrincipal(ctx context.Context, arg SetGrupoPrincipalParams) error {
+	_, err := q.db.Exec(ctx, setGrupoPrincipal, arg.ID, arg.PrincipalID)
+	return err
+}
+
 const updateGrupo = `-- name: UpdateGrupo :one
-UPDATE local_grupos SET nome = $2, descricao = $3, atualizado_em = now() WHERE id = $1 RETURNING id, nome, descricao, criado_por, criado_em, atualizado_em, deleted_at, deleted_by
+UPDATE local_grupos SET nome = $2, descricao = $3, atualizado_em = now() WHERE id = $1 RETURNING id, nome, descricao, criado_por, criado_em, atualizado_em, deleted_at, deleted_by, principal_id
 `
 
 type UpdateGrupoParams struct {
@@ -498,6 +556,7 @@ func (q *Queries) UpdateGrupo(ctx context.Context, arg UpdateGrupoParams) (Local
 		&i.AtualizadoEm,
 		&i.DeletedAt,
 		&i.DeletedBy,
+		&i.PrincipalID,
 	)
 	return i, err
 }

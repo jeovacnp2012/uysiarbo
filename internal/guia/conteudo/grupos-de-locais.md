@@ -6,7 +6,7 @@ palavras: grupo, grupos de locais, lista, rota, exportar, planilha, csv, clonar,
 ---
 # Grupos de locais
 
-Um **grupo de locais** é uma lista com nome (por exemplo, "Rota de segunda" ou "Pontos estratégicos do centro") que reúne locais de qualquer parte do município. Fica em **Território → Grupos de locais**.
+Um **grupo de locais** é uma lista com nome (por exemplo, "Rota de segunda" ou "Pontos estratégicos do centro") que reúne locais de qualquer parte do município. Fica dentro de **Território → Locais**, no botão verde **Visualizar Grupos**. Cada grupo nasce de um **local principal** (o primeiro local acrescentado), e a ficha do grupo mostra os dados dele (moradores e habitantes), com os botões **Acessar Local Principal** e **Excluir Grupo**; em **Locais do Grupo** use a busca e o botão **Adicionar Local**.
 
 ## Criar e montar
 1. **Novo grupo**: dê um nome (único) e, se quiser, uma descrição.

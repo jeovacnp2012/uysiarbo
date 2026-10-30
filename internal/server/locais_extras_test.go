@@ -129,7 +129,8 @@ func TestCadastroDeLocaisEmLote(t *testing.T) {
 	qo := m.criarQuarteirao(t, outro, "9")
 
 	quer(t, ana.get("/locais/lote"), http.StatusOK, "Primeiro número", "Último número", "Sequência inicial", "Cadastro em lote")
-	quer(t, ana.get("/locais"), http.StatusOK, "Cadastro em lote")
+	// o acesso ao cadastro em lote está escondido da tela de Locais (pedido do usuário); a rota segue existindo
+	nao(t, ana.get("/locais"), "Cadastro em lote")
 
 	lote := func(extras ...string) url.Values {
 		v := url.Values{

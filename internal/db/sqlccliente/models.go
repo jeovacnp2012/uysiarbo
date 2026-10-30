@@ -293,6 +293,7 @@ type LocalGrupo struct {
 	AtualizadoEm pgtype.Timestamptz `json:"atualizado_em"`
 	DeletedAt    pgtype.Timestamptz `json:"deleted_at"`
 	DeletedBy    pgtype.Int8        `json:"deleted_by"`
+	PrincipalID  pgtype.Int8        `json:"principal_id"`
 }
 
 type LocalGrupoIten struct {
