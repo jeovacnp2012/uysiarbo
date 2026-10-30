@@ -253,7 +253,7 @@ func Rastro(l Layout, d RastroData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "\">\r\n\t\t\t(function () {\r\n\t\t\t\tvar eu = document.currentScript;\r\n\t\t\t\tfunction carregar(src, depois) {\r\n\t\t\t\t\tvar s = document.createElement(\"script\");\r\n\t\t\t\t\ts.src = src;\r\n\t\t\t\t\ts.onload = function () { s.remove(); if (depois) depois(); };\r\n\t\t\t\t\tdocument.head.appendChild(s);\r\n\t\t\t\t}\r\n\t\t\t\tfunction iniciar() { carregar(eu.dataset.js); }\r\n\t\t\t\tif (window.maplibregl) iniciar(); else carregar(eu.dataset.maplibre, iniciar);\r\n\t\t\t})();\r\n\t\t</script>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "\">\n\t\t\t(function () {\n\t\t\t\tvar eu = document.currentScript;\n\t\t\t\tfunction carregar(src, depois) {\n\t\t\t\t\tvar s = document.createElement(\"script\");\n\t\t\t\t\ts.src = src;\n\t\t\t\t\ts.onload = function () { s.remove(); if (depois) depois(); };\n\t\t\t\t\tdocument.head.appendChild(s);\n\t\t\t\t}\n\t\t\t\tfunction iniciar() { carregar(eu.dataset.js); }\n\t\t\t\tif (window.maplibregl) iniciar(); else carregar(eu.dataset.maplibre, iniciar);\n\t\t\t})();\n\t\t</script>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
