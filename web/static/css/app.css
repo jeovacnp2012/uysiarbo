@@ -2019,3 +2019,38 @@ select.sb-nativo {
         overflow-wrap: anywhere;
     }
 }
+
+/* Coluna de ações: botões só com ícone (o texto vira dica) */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.btn.btn-icone {
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    gap: 0;
+    flex: none;
+}
+
+.tabela td[data-rotulo="Ações"] {
+    white-space: nowrap;
+}
+
+.tabela td[data-rotulo="Ações"] > .btn,
+.tabela td[data-rotulo="Ações"] > form {
+    margin-right: 0.3rem;
+}
+
+.btn.btn-icone .ico-btn {
+    width: 1rem;
+    height: 1rem;
+}

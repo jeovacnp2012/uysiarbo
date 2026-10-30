@@ -162,8 +162,37 @@
         }
     }
 
+    // Coluna de ações das tabelas: só o ícone, com o texto do botão como dica (title) e para leitores de tela.
+    function compactarAcao(btn) {
+        if (btn._compacto || btn.hasAttribute('data-sem-compacto')) return;
+        var texto = btn.textContent.replace(/\s+/g, ' ').trim();
+        if (!texto) return;
+        var ico = btn.querySelector('svg');
+        if (!ico) {
+            ico = svg('eye');
+            btn.insertBefore(ico, btn.firstChild);
+        } else if (/^(abrir|ver |ver$|detalh)/.test(normalizar(texto))) {
+            // "Abrir", "Ver detalhes"...: o olho diz mais que a seta
+            var olho = svg('eye');
+            btn.replaceChild(olho, ico);
+        }
+        btn._compacto = true;
+        btn.classList.add('btn-icone');
+        if (!btn.hasAttribute('title')) btn.setAttribute('title', texto);
+        btn.setAttribute('aria-label', texto);
+        Array.prototype.slice.call(btn.childNodes).forEach(function (n) {
+            if (n.nodeType === 3 && n.textContent.trim()) {
+                var s = document.createElement('span');
+                s.className = 'sr-only';
+                s.textContent = n.textContent;
+                btn.replaceChild(s, n);
+            }
+        });
+    }
+
     function varrer(raiz) {
         (raiz || document).querySelectorAll('.btn').forEach(enfeitar);
+        (raiz || document).querySelectorAll('.tabela td[data-rotulo="Ações"] .btn').forEach(compactarAcao);
         (raiz || document).querySelectorAll('[data-ico]').forEach(enfeitarRotulo);
         (raiz || document).querySelectorAll('.campo > label').forEach(enfeitarCampo);
     }
