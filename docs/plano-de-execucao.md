@@ -135,7 +135,7 @@ Objetivo: migrar dados de outros sistemas e de planilhas, com segurança.
 ## Etapa 7 — Dashboard, B.I. e mapas
 - [x] 7.1 Dashboard por nível de acesso (cartões e gráficos do sistema atual) — rota `/dashboard`, ciclo escolhível, escopo `visita_visualizar_minha` (versão 1.0.034)
 - [x] 7.2 B.I.: IIP, Breteau, cobertura LIT por bairro e ciclo — rota `/bi` (`bi_visualizar`), fórmulas padrão PNCD (**ainda validar com a área técnica**) (versão 1.0.035)
-- [ ] 7.3 B.I. Epidemiológico (curva de incidência, faixa etária, bairros monitorados)
+- [x] 7.3 B.I. Epidemiológico (`/bi-epidemiologico`: casos por doença, semana e bairro, taxa de confirmação; versão 1.0.074). Faixa etária e sexo ficaram de fora: as investigações não guardam nascimento nem sexo
 - [ ] 7.4 Mapas: visitas, doenças, rastro GPS, campanha, ovitrampa, EDL, com filtros — **feitos: visitas (`/mapa`) e rastro GPS (`/mapa/rastro`, `mapa_coleta`, versão 1.0.036)**; doenças, campanha, ovitrampa e EDL entram com as etapas dos seus dados
 
 ## Etapa 8 — Relatórios e PDFs

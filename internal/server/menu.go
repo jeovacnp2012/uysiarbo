@@ -34,7 +34,7 @@ func (s *handlers) menu(r *http.Request) []views.NavGrupo {
 	pr := a.sess.Principal
 	_, emCliente := tenant.FromContext(r.Context())
 
-	// Painéis primeiro, logo depois de Início: Dashboard, B.I. e B.I. Epidemiológico (este ainda sem tela).
+	// Painéis primeiro, logo depois de Início: Dashboard, B.I. e B.I. Epidemiológico.
 	if emCliente {
 		if pr.Pode("visita_visualizar") {
 			menu = append(menu, views.NavGrupo{Label: "Dashboard", Icone: "dashboard", Href: "/dashboard"})
@@ -43,7 +43,7 @@ func (s *handlers) menu(r *http.Request) []views.NavGrupo {
 			menu = append(menu, views.NavGrupo{Label: "B.I.", Icone: "bi", Href: "/bi"})
 		}
 		if pr.Pode("bi_epi_visualizar") {
-			menu = append(menu, views.NavGrupo{Label: "B.I. Epidemiológico", Icone: "bi-epi", EmBreve: true})
+			menu = append(menu, views.NavGrupo{Label: "B.I. Epidemiológico", Icone: "bi-epi", Href: "/bi-epidemiologico"})
 		}
 	}
 

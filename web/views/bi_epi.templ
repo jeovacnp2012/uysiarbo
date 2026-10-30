@@ -1,0 +1,88 @@
+package views
+
+import "strconv"
+
+type BiEpiDoenca struct {
+	Nome                                                     string
+	Total, Confirmados, Descartados, Inconclusivos, EmInvestigacao int
+}
+
+type BiEpiData struct {
+	De, Ate                                                    string
+	Opcoes                                                     []CidadeOpcao
+	Total, Confirmados, Descartados, Inconclusivos, EmInvestigacao int
+	Doencas                                                    []BiEpiDoenca
+	Semanas, Bairros                                           []BarraDash
+}
+
+// TaxaConfirmacao é confirmados ÷ casos com resultado definido, em %.
+func (d BiEpiData) TaxaConfirmacao() string {
+	return razao(d.Confirmados, d.Confirmados+d.Descartados+d.Inconclusivos)
+}
+
+templ BiEpi(l Layout, d BiEpiData) {
+	@Base(l) {
+		@PageHeader("B.I. Epidemiológico", "Casos investigados no período, por doença, semana epidemiológica e bairro.")
+		<form method="get" action="/bi-epidemiologico" class="cartao filtros">
+			<label class="campo">
+				<span>Início de</span>
+				<input type="date" name="de" value={ d.De } onchange="this.form.submit()"/>
+			</label>
+			<label class="campo">
+				<span>até</span>
+				<input type="date" name="ate" value={ d.Ate } onchange="this.form.submit()"/>
+			</label>
+			<label class="campo">
+				<span>Doença</span>
+				<select name="doenca" onchange="this.form.submit()">
+					<option value="">Todas</option>
+					for _, o := range d.Opcoes {
+						<option value={ strconv.FormatInt(o.ID, 10) } selected?={ o.Selecionada }>{ o.Rotulo }</option>
+					}
+				</select>
+			</label>
+		</form>
+		<div class="grade-cartoes">
+			@dashNumero("Investigações", d.Total, "com data de início no período")
+			@dashNumero("Confirmados", d.Confirmados, "taxa de confirmação "+d.TaxaConfirmacao())
+			@dashNumero("Descartados", d.Descartados, strconv.Itoa(d.Inconclusivos)+" inconclusivos")
+			@dashNumero("Em investigação", d.EmInvestigacao, "resultado ainda aguardando")
+		</div>
+		<div class="grade-cartoes dash-graficos">
+			@dashBarras("Casos por semana epidemiológica", "Parte escura: confirmados (últimas 30 semanas do período)", d.Semanas)
+			@dashBarras("Casos por bairro", "12 bairros com mais casos; parte escura: confirmados", d.Bairros)
+		</div>
+		<div class="cartao tabela-rolavel">
+			<table class="tabela">
+				<thead>
+					<tr>
+						<th>Doença / agravo</th>
+						<th>Total</th>
+						<th>Confirmados</th>
+						<th>Descartados</th>
+						<th>Inconclusivos</th>
+						<th>Em investigação</th>
+						<th>Confirmação</th>
+					</tr>
+				</thead>
+				<tbody>
+					if len(d.Doencas) == 0 {
+						<tr><td colspan="7">Nenhuma investigação com início no período.</td></tr>
+					}
+					for _, x := range d.Doencas {
+						<tr>
+							<td>{ x.Nome }</td>
+							<td>{ strconv.Itoa(x.Total) }</td>
+							<td>{ strconv.Itoa(x.Confirmados) }</td>
+							<td>{ strconv.Itoa(x.Descartados) }</td>
+							<td>{ strconv.Itoa(x.Inconclusivos) }</td>
+							<td>{ strconv.Itoa(x.EmInvestigacao) }</td>
+							<td>{ razao(x.Confirmados, x.Confirmados+x.Descartados+x.Inconclusivos) }</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+		<p class="subtitulo">Confirmado = resultado positivo; descartado = negativo. Taxa de confirmação = confirmados ÷ casos com resultado definido (positivo, negativo ou inconclusivo). A semana vem da data de início da investigação. O bairro só aparece quando a investigação está ligada a um local; as demais ficam em "Sem bairro". Investigações sem data de início não entram no período.</p>
+	}
+}

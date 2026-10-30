@@ -396,6 +396,7 @@ func New(d Deps) http.Handler {
 	r.Get("/relatorios", h.relatoriosIndice)
 	r.Get("/relatorios/{slug}", h.relatorioGerar)
 	r.Get("/bi", h.exigir("bi_visualizar", h.biPagina))
+	r.Get("/bi-epidemiologico", h.exigir("bi_epi_visualizar", h.biEpiPagina))
 	r.Get("/laboratorio", h.exigir("visita_laboratorio_visualizar", h.laboratorioLista))
 	r.Get("/mobilidade/historico", h.exigir("historico_mobilidade", h.mobilidadeHistorico))
 	r.Post("/visitas/lote", h.exigir("visita_desativar", h.visitasLote))
