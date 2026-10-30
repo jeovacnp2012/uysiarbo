@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"uysiarbo/internal/audit"
+	"uysiarbo/internal/cifra"
 	"uysiarbo/internal/db/sqlccliente"
 	"uysiarbo/web/views"
 )
@@ -193,7 +194,7 @@ func (h *handlers) lerLvc(r *http.Request, d *views.LvcFormData) (p sqlccliente.
 		d.Erro = "A data da morte só vale para eutanásia ou óbito."
 	}
 	p = sqlccliente.UpdateLvcParams{Data: data, Nome: d.Nome, Raca: d.Raca, Pelagem: d.Pelagem, Idade: d.Idade, Sexo: sexo, Proprietario: d.Proprietario,
-		ProprietarioTelefone: d.Telefone, ProprietarioCpf: d.Cpf, Observacao: d.Observacao, Dpp: dpp, PedidoReteste: d.Reteste,
+		ProprietarioTelefone: d.Telefone, ProprietarioCpf: cifra.Cifrar(d.Cpf), Observacao: d.Observacao, Dpp: dpp, PedidoReteste: d.Reteste,
 		ResultadoReteste: res, SituacaoCachorro: sit}
 	if d.Reteste {
 		p.DataPedido, p.DataPedidoRecebido = dataOpcional(d.DataPedido), dataOpcional(d.DataRecebido)
@@ -281,7 +282,7 @@ func (h *handlers) lvcFicha(w http.ResponseWriter, r *http.Request) {
 	}
 	d := h.lvcForm(r, l)
 	d.ID, d.Data, d.Nome, d.Raca, d.Pelagem, d.Idade = t.ID, dataISO(t.Data), t.Nome, t.Raca, t.Pelagem, t.Idade
-	d.Proprietario, d.Telefone, d.Cpf, d.Observacao = t.Proprietario, t.ProprietarioTelefone, t.ProprietarioCpf, t.Observacao
+	d.Proprietario, d.Telefone, d.Cpf, d.Observacao = t.Proprietario, t.ProprietarioTelefone, cifra.Decifrar(t.ProprietarioCpf), t.Observacao
 	d.Reteste, d.DataPedido, d.DataRecebido, d.DataMorte = t.PedidoReteste, dataISO(t.DataPedido), dataISO(t.DataPedidoRecebido), dataISO(t.DataMorte)
 	d.Sexos, d.Dpps, d.Retestes, d.Situacoes = marcarOpcao(rotulosSexoLvc, t.Sexo), marcarOpcao(rotulosResultadoLvc, t.Dpp), marcarOpcao(rotulosResultadoLvc, t.ResultadoReteste), marcarOpcao(rotulosSituacaoCachorro, t.SituacaoCachorro)
 	d.PodeEditar = h.principal(r).Pode("zoonose_lvc_editar")

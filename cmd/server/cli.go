@@ -25,6 +25,8 @@ const ajuda = `uso:
   uysiarbo cliente sincronizar      reaplica o papel Administrador e as permissões do catálogo em todos os clientes
   uysiarbo master criar -nome "Nome Completo" -email e@mail   cria um master com senha forte gerada (mostrada uma vez)
   uysiarbo master resetar -email e@mail                       gera nova senha forte (mostrada uma vez)
+  uysiarbo dados chave              gera uma chave nova para DADOS_CHAVE (cifra de dados pessoais)
+  uysiarbo dados cifrar             cifra os dados pessoais antigos que ainda estão em texto puro (precisa de DADOS_CHAVE)
   uysiarbo master listar`
 
 // tenantService abre o banco e monta o serviço de clientes. close deve ser chamado ao fim.

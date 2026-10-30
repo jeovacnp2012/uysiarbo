@@ -14,6 +14,7 @@ import (
 	_ "time/tzdata" // fusos horários embutidos (o servidor da VPS pode não ter)
 
 	"uysiarbo/internal/audit"
+	"uysiarbo/internal/cifra"
 	"uysiarbo/internal/comunicacao"
 	"uysiarbo/internal/config"
 	"uysiarbo/internal/db"
@@ -37,6 +38,9 @@ func main() {
 			return
 		case "master":
 			exitOnError(masterCmd(context.Background(), os.Args[2:]))
+			return
+		case "dados":
+			exitOnError(dadosCmd(context.Background(), os.Args[2:]))
 			return
 		case "cliente":
 			exitOnError(clienteCmd(context.Background(), os.Args[2:]))
@@ -78,6 +82,13 @@ func run() error {
 		return err
 	}
 	defer pool.Close()
+
+	if err := cifra.Configurar(cfg.DadosChave); err != nil {
+		return err
+	}
+	if !cifra.Ativa() {
+		log.Warn("DADOS_CHAVE não configurada: CPF e outros dados pessoais ficam em texto puro (só aceitável fora de produção)")
+	}
 
 	var captcha server.Captcha = server.SemCaptcha{}
 	if cfg.RecaptchaSite != "" && cfg.RecaptchaSecret != "" {

@@ -17,6 +17,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"uysiarbo/internal/audit"
+	"uysiarbo/internal/cifra"
 	"uysiarbo/internal/db/sqlccliente"
 	"uysiarbo/web/views"
 )
@@ -250,6 +251,7 @@ func cpfValido(d string) bool {
 }
 
 func formatarCPF(d string) string {
+	d = cifra.Decifrar(d)
 	if len(d) != 11 {
 		return d
 	}
@@ -258,6 +260,7 @@ func formatarCPF(d string) string {
 
 // mascararCPF esconde o miolo para a auditoria (dado pessoal não vai inteiro para o histórico).
 func mascararCPF(d string) string {
+	d = cifra.Decifrar(d)
 	if len(d) != 11 {
 		return ""
 	}
@@ -398,7 +401,7 @@ func validarLocal(ctx context.Context, q *sqlccliente.Queries, c views.LocalCamp
 	return sqlccliente.CreateLocalParams{
 		Tipo: c.Tipo, Cep: cep, Endereco: c.Endereco, Numero: c.Numero, Referencia: c.Referencia, BairroID: b.ID, QuarteiraoID: qt.ID,
 		Lado: c.Lado, Sequencia: seq, Complemento: comp, Latitude: lat, Longitude: lon,
-		Proprietario: c.Proprietario, ProprietarioTelefone: c.ProprietarioTelefone, ProprietarioCpf: cpf,
+		Proprietario: c.Proprietario, ProprietarioTelefone: c.ProprietarioTelefone, ProprietarioCpf: cifra.Cifrar(cpf),
 		ProprietarioWhatsapp: c.Whatsapp, ProprietarioEmail: c.Email, AceitaWhatsapp: c.AceitaWhatsapp, AceitaEmail: c.AceitaEmail,
 		Inquilino: c.Inquilino, InquilinoTelefone: c.InquilinoTelefone,
 		Humanos: cont[0], Cachorros: cont[1], Gatos: cont[2], Roedores: cont[3],

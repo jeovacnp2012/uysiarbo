@@ -17,6 +17,7 @@ import (
 
 	"uysiarbo/internal/audit"
 	"uysiarbo/internal/auth"
+	"uysiarbo/internal/cifra"
 	"uysiarbo/internal/db"
 	"uysiarbo/internal/db/sqlc"
 	"uysiarbo/internal/db/sqlccliente"
@@ -70,6 +71,8 @@ var (
 
 // TestMain apaga o banco-modelo dos testes no fim.
 func TestMain(m *testing.M) {
+	chave, _ := cifra.NovaChave()
+	_ = cifra.Configurar(chave)
 	code := m.Run()
 	modeloBanco.Apagar()
 	os.Exit(code)

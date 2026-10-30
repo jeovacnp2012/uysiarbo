@@ -14,6 +14,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"uysiarbo/internal/audit"
+	"uysiarbo/internal/cifra"
 	"uysiarbo/internal/db/sqlccliente"
 	"uysiarbo/web/views"
 )
@@ -224,7 +225,7 @@ func (h *handlers) lerDadosDaDenuncia(r *http.Request, q *sqlccliente.Queries, i
 		d.Nome, d.Telefone, d.CPF = "", "", ""
 	}
 	p := sqlccliente.CreateDenunciaParams{
-		Anonima: d.Anonima, CidadaoNome: d.Nome, CidadaoTelefone: d.Telefone, CidadaoCpf: d.CPF, Tipo: d.Tipo, Titulo: d.Titulo, Descricao: d.Descricao,
+		Anonima: d.Anonima, CidadaoNome: d.Nome, CidadaoTelefone: d.Telefone, CidadaoCpf: cifra.Cifrar(d.CPF), Tipo: d.Tipo, Titulo: d.Titulo, Descricao: d.Descricao,
 		DataDenuncia: dataOpcional(d.Data), Origem: d.Origem, EnderecoTexto: d.Endereco, BairroID: bairro,
 	}
 	msg := ""
@@ -348,7 +349,7 @@ func (h *handlers) mostrarDenuncia(w http.ResponseWriter, r *http.Request, dados
 		d.Dados = *dadosForm
 	} else if d.PodeEditar {
 		f := views.DenunciaFormData{
-			ID: n.ID, Anonima: n.Anonima, Nome: n.CidadaoNome, Telefone: n.CidadaoTelefone, CPF: n.CidadaoCpf, Titulo: n.Titulo,
+			ID: n.ID, Anonima: n.Anonima, Nome: n.CidadaoNome, Telefone: n.CidadaoTelefone, CPF: cifra.Decifrar(n.CidadaoCpf), Titulo: n.Titulo,
 			Descricao: n.Descricao, Data: dataISO(n.DataDenuncia), Endereco: n.EnderecoTexto, Tipo: n.Tipo, Origem: n.Origem,
 		}
 		if d.Dados, err = h.formularioDeDenuncia(r, q, f, n.BairroID.Int64); err != nil {

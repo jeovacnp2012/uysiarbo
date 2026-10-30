@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"uysiarbo/internal/cifra"
 	"uysiarbo/internal/db/sqlccliente"
 )
 
@@ -103,12 +104,16 @@ func TestLocalCriarEditarEValidar(t *testing.T) {
 	}
 	id := s64(ls[0].ID)
 	l, _ := m.cliQ.GetLocal(t.Context(), ls[0].ID)
-	if l.Cep != "78450-000" || l.ProprietarioCpf != "52998224725" || !l.Latitude.Valid || l.Latitude.Float64 != -13.8247 || !l.AceitaWhatsapp || l.AceitaEmail || !l.CriadoPor.Valid {
+	if l.Cep != "78450-000" || !cifra.Cifrado(l.ProprietarioCpf) || cifra.Decifrar(l.ProprietarioCpf) != "52998224725" || strings.Contains(l.ProprietarioCpf, "52998224725") || !l.Latitude.Valid || l.Latitude.Float64 != -13.8247 || !l.AceitaWhatsapp || l.AceitaEmail || !l.CriadoPor.Valid {
 		t.Errorf("gravado: %+v", l)
 	}
 	quer(t, ana.get("/locais"), http.StatusOK, "Rua das Palmeiras, 120", "Centro", "Maria Souza", "seq. 5", "compl. 2", "Residencial", "Ativo")
 	quer(t, ana.get("/locais/"+id), http.StatusOK, "Perto da praça", cpfBom, "Maria Souza", "João Lima", `value="78450-000"`, "Salvar local")
 
+	// Abrir a ficha com dados pessoais fica registrado (LGPD).
+	if v := achar(m.eventos(t), "dados_pessoais.ver"); v == nil || v.Entidade != "local" || v.EntidadeID != id {
+		t.Errorf("dados_pessoais.ver: %+v", v)
+	}
 	// A auditoria guarda o CPF mascarado, nunca inteiro.
 	ev := achar(m.eventos(t), "local.criar")
 	if ev == nil || mapa(ev.Depois)["proprietario_cpf"] != "***.982.247-**" || mapa(ev.Depois)["bairro"] != "Centro" {
