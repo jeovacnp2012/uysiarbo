@@ -44,7 +44,41 @@
         });
     }
 
+
+    // Tabelas sem marcação própria ganham a escolha de colunas automaticamente (chave = caminho da página + posição).
+    function automatica(tabela, n) {
+        if (tabela.hasAttribute('data-colunas') || tabela.hasAttribute('data-sem-colunas') || tabela._colAuto) return;
+        var ths = tabela.querySelectorAll('thead tr:first-child > th');
+        if (ths.length < 4) return;
+        tabela._colAuto = true;
+        var chave = location.pathname + '#' + n;
+        ths.forEach(function (th, i) {
+            var t = th.textContent.replace(/[▲▼]/g, '').trim();
+            if (!t || /^a[çc][õo]es$/i.test(t)) { th.setAttribute('data-fixa', ''); return; }
+            th.setAttribute('data-col', 'c' + i + ':' + t);
+        });
+        tabela.querySelectorAll('tbody tr').forEach(function (tr) {
+            if (tr.children.length !== ths.length) return;
+            Array.prototype.forEach.call(tr.children, function (td, i) {
+                var c = ths[i].getAttribute('data-col');
+                if (c) td.setAttribute('data-col', c);
+            });
+        });
+        tabela.setAttribute('data-colunas', chave);
+        var menu = document.createElement('details');
+        menu.className = 'colunas-menu';
+        menu.setAttribute('data-colunas-menu', chave);
+        menu.innerHTML = '<summary class="btn" data-icone="table">Colunas</summary><div class="colunas-lista"></div>';
+        var ref = tabela.closest('.tabela-wrap, .tabela-rolavel') || tabela;
+        ref.parentNode.insertBefore(menu, ref);
+    }
+
+    function varrerAuto(raiz) {
+        document.querySelectorAll('table.tabela').forEach(function (t, n) { automatica(t, n); });
+    }
+
     function varrer(raiz) {
+        varrerAuto(raiz);
         (raiz || document).querySelectorAll('table[data-colunas]').forEach(aplicar);
         (raiz || document).querySelectorAll('[data-colunas-menu]').forEach(montarMenu);
     }
