@@ -1,3 +1,9 @@
+// Os filtros valem na hora: trocar qualquer seleção recarrega o mapa com a escolha.
+(function () {
+  var form = document.getElementById("mapa-filtros");
+  if (form) form.addEventListener("change", function () { form.requestSubmit(); });
+})();
+
 // Mapa do UYSI ARBO (MapLibre GL). Lê as escolhas dos atributos data-* de #mapa e busca os dados
 // do cliente nas rotas /mapa/*.geojson, sempre só da área que está na tela.
 (function () {

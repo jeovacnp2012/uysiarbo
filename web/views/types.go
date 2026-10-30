@@ -13,8 +13,9 @@ const Version = "0.5.0"
 
 // NavItem é um link do menu.
 type NavItem struct {
-	Label string
-	Href  string
+	Label   string
+	Href    string
+	EmBreve bool // tela ainda não construída: aparece apagada, sem link
 }
 
 // NavGrupo é uma categoria do menu lateral. Com Href, é um item simples (sem sub-itens); sem Href,

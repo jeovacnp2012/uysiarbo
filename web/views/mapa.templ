@@ -22,7 +22,7 @@ templ Mapa(l Layout, d MapaData) {
 	@Base(l) {
 		@PageHeader("Mapa", "Bairros, quarteirões e locais no mapa. Clique em um item para ver os detalhes.") {
 		}
-		<form method="get" action="/mapa" class="cartao filtros">
+		<form method="get" action="/mapa" class="cartao filtros" id="mapa-filtros">
 			<div class="campo">
 				<label for="m-bairro">Bairro</label>
 				<select id="m-bairro" name="bairro">
@@ -47,7 +47,6 @@ templ Mapa(l Layout, d MapaData) {
 				</select>
 			</div>
 			<div class="form-acoes">
-				<button type="submit" class="btn btn-primario">Aplicar</button>
 				<a class="btn" href="/mapa">Limpar</a>
 			</div>
 		</form>

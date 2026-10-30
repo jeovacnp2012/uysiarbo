@@ -1082,6 +1082,14 @@ form.inline {
     color: var(--texto);
 }
 
+.menu-subitem-embreve,
+.menu-subitem-embreve:hover {
+    background: none;
+    color: var(--slate-600);
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 .menu-subitem[aria-current='page'] {
     background: var(--marca-fraca);
     color: var(--marca);
