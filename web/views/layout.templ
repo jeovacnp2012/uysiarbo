@@ -1,5 +1,7 @@
 package views
 
+import "strconv"
+
 // Base é o layout das páginas internas: menu lateral, barra superior, tema e área de toasts.
 templ Base(l Layout) {
 	<!DOCTYPE html>
@@ -14,6 +16,9 @@ templ Base(l Layout) {
 						var t = localStorage.getItem('uysi-tema');
 						if (t === 'escuro' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
 							document.documentElement.dataset.tema = 'escuro';
+						}
+						if (localStorage.getItem('uysi-menu') === 'recolhido') {
+							document.documentElement.dataset.menu = 'recolhido';
 						}
 					} catch (e) {}
 				})();
@@ -45,6 +50,9 @@ templ Base(l Layout) {
 								<a class="menu-item" href={ templ.SafeURL(g.Href) } aria-current?={ g.Href == l.Active }>
 									@icone(g.Icone)
 									<span class="menu-texto">{ g.Label }</span>
+									if g.Contagem > 0 {
+										<span class="selo-contagem" title="Em análise">{ strconv.Itoa(g.Contagem) }</span>
+									}
 									if g.Href == "/novidades" && l.NovidadeNova {
 										<span class="selo selo-aviso">nova</span>
 									}
@@ -73,7 +81,7 @@ templ Base(l Layout) {
 				</aside>
 				<div class="conteudo">
 					<header class="barra">
-						<button type="button" class="btn btn-icone btn-menu" aria-label="Abrir menu" x-on:click="menu = true">☰</button>
+						<button type="button" class="btn btn-icone btn-menu" aria-label="Mostrar ou esconder o menu" title="Mostrar ou esconder o menu" x-on:click="if (window.matchMedia('(min-width: 64rem)').matches) { $store.menu.alternar() } else { menu = !menu }">☰</button>
 						<div class="barra-titulo">{ l.Title }</div>
 						if l.Usuario != "" {
 							<span class="barra-usuario">{ l.Usuario }</span>

@@ -16,6 +16,10 @@ const chaveSemana = "semana_epidemiologica"
 // permissaoCicloFechado deixa mexer em registros de um ciclo fechado (a lista de visitas, na Etapa 6, usa a mesma).
 const permissaoCicloFechado = "visita_editar_ciclo_fechado"
 
+// permissaoAgenteInativo não existe no catálogo: só o importador a concede a si mesmo, para trazer visitas antigas
+// de agentes que já foram desativados.
+const permissaoAgenteInativo = "visita_agente_inativo"
+
 // tipoSemana devolve o tipo de semana epidemiológica do cliente: "sinan" (padrão, domingo a sábado) ou "iso".
 func (h *handlers) tipoSemana(r *http.Request, q *sqlccliente.Queries) string {
 	if info, err := q.GetClienteInfo(r.Context(), chaveSemana); err == nil && epi.Valido(info.Valor) {

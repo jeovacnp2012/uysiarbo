@@ -13,7 +13,7 @@ Se você recebeu uma **senha temporária**, o sistema leva você direto para a t
 Depois de **5 tentativas erradas seguidas**, a conta fica bloqueada por 15 minutos. Isso protege você contra quem tenta adivinhar a sua senha.
 
 ## O menu
-- O **menu lateral** mostra só o que o seu papel permite. No celular, abra pelo botão de três risquinhas.
+- O **menu lateral** mostra só o que o seu papel permite. No celular, abra pelo botão de três risquinhas. No computador, o mesmo botão (☰) **esconde o menu para a esquerda** e o traz de volta; o navegador lembra a sua escolha.
 - O nome do ambiente (a prefeitura) aparece no topo do menu.
 - No canto de cima ficam o seu nome, o botão **Claro/Escuro** e o botão **Sair**.
 

@@ -127,7 +127,9 @@ Objetivo: migrar dados de outros sistemas e de planilhas, com segurança.
   - Feito em 2026-10-30 (versão 1.0.030): `ListVisitasDoLocal` e `ResumoDoLocal12Meses` (`queries_cliente/visitas.sql`), `visitasDoLocal` em `internal/server/ficha_local.go`, seção "Visitas e reincidência" na ficha. Critério confirmado pelo usuário (2026-10-30): reincidente = 2 ou mais visitas com depósito em 12 meses (`reincidenciaMinima`). Também: filtros do Mapa ao vivo e menu Mapa como grupo.
 - [x] 6.6 Auditoria de visita/local e histórico de mobilidade (sincronismos)
   - Feito em 2026-10-30 (versão 1.0.031): tela `/mobilidade/historico` (permissão `historico_mobilidade`, filtros ao vivo por aparelho, credencial, período no fuso do cliente e só problemas; `internal/server/mobilidade.go`, `ListSincronismos`), e seção "Histórico de alterações" na ficha da visita (`ListAuditoriaDaVisita`: visita + tubitos). A ficha do local já tinha o histórico (3.5). O histórico do GC (login, local novo etc.) não é reproduzido: só os envios de sincronização.
-- [ ] 6.7 Importador de visitas e laboratório
+- [ ] 6.3b **Filtros do Laboratório como no Geo Controle** (pedido do usuário, 2026-10-30; referência: `/laboratorio` do GC): Endereço, Número, Bairro, Quarteirão (pesquisável, depende do bairro), Lado, ID da visita, Status, Ciclo, Agente, Atividade e Semana, mais o botão "Limpar filtros". Hoje a tela tem tubito, endereço, status, ciclo, agente e período. Fazer logo depois da 6.7.
+- [x] 6.7 Importador de visitas e laboratório
+  - Feito em 2026-10-30 (versão 1.0.032): tipos `visitas` e `amostras` no gerenciador de importação (`internal/server/importacao_visitas.go`, migração `cliente/00025`; reaproveita `validarVisita` com permissão interna `visita_agente_inativo`, só cria, ignora o que já existe, desfaz pela Lixeira; pela API, `tipo` visitas/amostras com o escopo `visitas:write`). Também: selo de tubitos em análise no menu Laboratório e menu lateral recolhível. **Etapa 6 concluída**, salvo os filtros do Laboratório (6.3b).
 
 ## Etapa 7 — Dashboard, B.I. e mapas
 - [ ] 7.1 Dashboard por nível de acesso (cartões e gráficos do sistema atual)

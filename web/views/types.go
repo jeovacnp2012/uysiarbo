@@ -25,6 +25,8 @@ type NavGrupo struct {
 	Icone string // nome do ícone (ver icone em layout.templ)
 	Href  string
 	Itens []NavItem
+	// Contagem aparece como um selo ao lado do nome (0 = sem selo).
+	Contagem int
 }
 
 // Contem diz se o grupo é (ou tem dentro dele) a página ativa.

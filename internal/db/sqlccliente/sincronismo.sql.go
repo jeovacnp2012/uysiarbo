@@ -190,6 +190,37 @@ func (q *Queries) GetAmostraPorIdExterno(ctx context.Context, idExterno pgtype.T
 	return i, err
 }
 
+const getAmostraPorNumero = `-- name: GetAmostraPorNumero :one
+SELECT id, visita_id, numero_tubito, deposito, larvas, pupas, status, total_aegypti, total_albopictus, total_negativo, resultado_por, resultado_em, observacao, criado_por, criado_em, atualizado_em, deleted_at, deleted_by, id_externo FROM amostras WHERE numero_tubito = $1 AND deleted_at IS NULL
+`
+
+func (q *Queries) GetAmostraPorNumero(ctx context.Context, numeroTubito string) (Amostra, error) {
+	row := q.db.QueryRow(ctx, getAmostraPorNumero, numeroTubito)
+	var i Amostra
+	err := row.Scan(
+		&i.ID,
+		&i.VisitaID,
+		&i.NumeroTubito,
+		&i.Deposito,
+		&i.Larvas,
+		&i.Pupas,
+		&i.Status,
+		&i.TotalAegypti,
+		&i.TotalAlbopictus,
+		&i.TotalNegativo,
+		&i.ResultadoPor,
+		&i.ResultadoEm,
+		&i.Observacao,
+		&i.CriadoPor,
+		&i.CriadoEm,
+		&i.AtualizadoEm,
+		&i.DeletedAt,
+		&i.DeletedBy,
+		&i.IDExterno,
+	)
+	return i, err
+}
+
 const listAmostrasDasVisitas = `-- name: ListAmostrasDasVisitas :many
 SELECT id, visita_id, numero_tubito, deposito, larvas, pupas, status, total_aegypti, total_albopictus, total_negativo, resultado_por, resultado_em, observacao, criado_por, criado_em, atualizado_em, deleted_at, deleted_by, id_externo FROM amostras WHERE visita_id = ANY($1::bigint[]) AND deleted_at IS NULL ORDER BY id
 `

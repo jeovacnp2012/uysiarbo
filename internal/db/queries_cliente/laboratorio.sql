@@ -85,3 +85,9 @@ WHERE a.deleted_at IS NULL AND v.deleted_at IS NULL
   AND (sqlc.arg(endereco)::text = '' OR position(lower(sqlc.arg(endereco)::text) in lower(l.endereco)) > 0)
 ORDER BY v.data DESC, a.id DESC
 LIMIT sqlc.arg(limite)::int OFFSET sqlc.arg(deslocamento)::int;
+
+-- Selo do menu: tubitos ainda em análise (quem vê só as próprias visitas conta só as suas).
+-- name: CountAmostrasEmAnalise :one
+SELECT count(*)::int FROM amostras a JOIN visitas v ON v.id = a.visita_id
+WHERE a.deleted_at IS NULL AND v.deleted_at IS NULL AND a.status = 'em_analise'
+  AND (sqlc.narg(somente_agente)::bigint IS NULL OR v.agente_id = sqlc.narg(somente_agente)::bigint);

@@ -243,10 +243,14 @@ type paramsAnalise struct {
 	ExistenteID int64 // importação que estava em "mapeando" (0 = criar uma nova)
 }
 
-func (h *handlers) analisarPlanilha(ctx context.Context, q *sqlccliente.Queries, tipo string, p importacao.Planilha, m importacao.Mapeamento, atualizar bool) ([]linhaAnalisada, error) {
+func (h *handlers) analisarPlanilha(ctx context.Context, r *http.Request, q *sqlccliente.Queries, tipo string, p importacao.Planilha, m importacao.Mapeamento, atualizar bool) ([]linhaAnalisada, error) {
 	switch tipo {
 	case "ciclos":
 		return h.analisarCiclos(ctx, q, p, m, atualizar)
+	case "visitas":
+		return h.analisarVisitas(ctx, r, q, p, m)
+	case "amostras":
+		return h.analisarAmostras(ctx, r, q, p, m)
 	case "bairros":
 		return h.analisarBairros(ctx, q, p, m, atualizar)
 	case "quarteiroes":
@@ -259,7 +263,7 @@ func (h *handlers) analisarPlanilha(ctx context.Context, q *sqlccliente.Queries,
 
 // gravarAnalise analisa a planilha (sem gravar dados) e guarda a importação "analisada" com a prévia linha a linha.
 func (h *handlers) gravarAnalise(ctx context.Context, r *http.Request, pool *pgxpool.Pool, q *sqlccliente.Queries, p paramsAnalise) (sqlccliente.Importaco, error) {
-	linhas, err := h.analisarPlanilha(ctx, q, p.Tipo, p.Plan, p.Mapa, p.Atualizar)
+	linhas, err := h.analisarPlanilha(ctx, r, q, p.Tipo, p.Plan, p.Mapa, p.Atualizar)
 	if err != nil {
 		return sqlccliente.Importaco{}, err
 	}

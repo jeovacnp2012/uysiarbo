@@ -63,7 +63,13 @@ func (s *handlers) menu(r *http.Request) []views.NavGrupo {
 		}
 
 		if pr.Pode("visita_laboratorio_visualizar") {
-			menu = append(menu, views.NavGrupo{Label: "Laboratório", Icone: "visitas", Href: "/laboratorio"})
+			emAnalise := 0
+			if q, _, err := s.cliente(r); err == nil {
+				if n, err := q.CountAmostrasEmAnalise(r.Context(), s.escopoVisitas(r)); err == nil {
+					emAnalise = int(n)
+				}
+			}
+			menu = append(menu, views.NavGrupo{Label: "Laboratório", Icone: "visitas", Href: "/laboratorio", Contagem: emAnalise})
 		}
 
 		add(pr.Pode("conf_usuario"), "Usuários", "/usuarios")

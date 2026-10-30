@@ -34,6 +34,10 @@ func permissaoDoTipo(tipo string) string {
 		return "local_adicionar"
 	case "ciclos":
 		return "param_ciclo"
+	case "visitas":
+		return "visita_adicionar"
+	case "amostras":
+		return "visita_laboratorio_adicionar"
 	}
 	return "bairro_adicionar"
 }

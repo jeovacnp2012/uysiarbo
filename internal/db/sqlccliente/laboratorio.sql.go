@@ -73,6 +73,20 @@ func (q *Queries) CountAmostras(ctx context.Context, arg CountAmostrasParams) (i
 	return column_1, err
 }
 
+const countAmostrasEmAnalise = `-- name: CountAmostrasEmAnalise :one
+SELECT count(*)::int FROM amostras a JOIN visitas v ON v.id = a.visita_id
+WHERE a.deleted_at IS NULL AND v.deleted_at IS NULL AND a.status = 'em_analise'
+  AND ($1::bigint IS NULL OR v.agente_id = $1::bigint)
+`
+
+// Selo do menu: tubitos ainda em análise (quem vê só as próprias visitas conta só as suas).
+func (q *Queries) CountAmostrasEmAnalise(ctx context.Context, somenteAgente pgtype.Int8) (int32, error) {
+	row := q.db.QueryRow(ctx, countAmostrasEmAnalise, somenteAgente)
+	var column_1 int32
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
 const createAmostra = `-- name: CreateAmostra :one
 
 INSERT INTO amostras (visita_id, numero_tubito, deposito, larvas, pupas, observacao, criado_por)

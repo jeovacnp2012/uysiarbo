@@ -414,7 +414,7 @@ paths:
               required: [tipo, linhas]
               additionalProperties: false
               properties:
-                tipo: { type: string, enum: [bairros, quarteiroes, locais, ciclos] }
+                tipo: { type: string, enum: [bairros, quarteiroes, locais, ciclos, visitas, amostras] }
                 atualizar_existentes: { type: boolean, default: false, description: "Se verdadeiro, altera os registros que já existem (só com o que vier preenchido)." }
                 linhas:
                   type: array

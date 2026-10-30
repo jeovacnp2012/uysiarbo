@@ -18,6 +18,9 @@ Dá para corrigir depósito, larvas, pupas e observação com **Salvar coleta** 
 ## Resultado da análise
 Cada tubito tem o **status** (Em análise ou Concluído) e os totais de ***Aedes aegypti***, ***Aedes albopictus*** e **negativo**. Salve com **Salvar resultado**. Quem faz isso precisa da permissão **Alterar resultados** do Laboratório; em **ciclo fechado**, da permissão **Alterar resultados (ciclo fechado)**. O nome de quem registrou e a hora ficam guardados, e tudo vai para a **Auditoria**.
 
+## Contagem no menu
+Ao lado de **Laboratório**, no menu, um selo mostra quantos tubitos ainda estão **em análise**. Quem vê só as próprias visitas conta só os próprios tubitos.
+
 ## Listagem do laboratório
 O menu **Laboratório** lista os tubitos de todas as visitas, com filtros que pesquisam na hora: tubito, endereço, status, ciclo, agente e período. **Abrir visita** leva à ficha, onde se altera o resultado. Quem vê só as próprias visitas vê só os próprios tubitos.
 

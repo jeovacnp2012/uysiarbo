@@ -467,7 +467,7 @@ func (h *handlers) validarVisita(ctx context.Context, r *http.Request, q *sqlccl
 	if err != nil {
 		return out, "Escolha o agente."
 	}
-	if u, err := q.GetUsuarioByID(ctx, agente); err != nil || !u.Ativo {
+	if u, err := q.GetUsuarioByID(ctx, agente); err != nil || (!u.Ativo && !pr.Pode(permissaoAgenteInativo)) {
 		return out, "O agente escolhido não existe ou está inativo."
 	}
 	if !validoEm(rotulosTipoVisita, c.Tipo) {

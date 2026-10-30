@@ -122,12 +122,16 @@ func (h *handlers) apiImportacaoCriar(w http.ResponseWriter, r *http.Request) {
 	}
 	tipo, ok := importacao.TipoPorCodigo(tipoCod)
 	if !ok {
-		h.apiErroCampo(w, r, "tipo", "use bairros, quarteiroes, locais ou ciclos")
+		h.apiErroCampo(w, r, "tipo", "use bairros, quarteiroes, locais, ciclos, visitas ou amostras")
 		return
 	}
 	cred, _ := credencialDe(ctx)
-	if !apiauth.Permite(cred.Escopos, tipoCod+":write") {
-		h.apiErro(w, r, http.StatusForbidden, "insufficient_scope", "Importar "+tipoCod+" também exige o escopo "+tipoCod+":write.")
+	recursoDoTipo := tipoCod
+	if tipoCod == "amostras" { // os tubitos seguem o escopo das visitas
+		recursoDoTipo = "visitas"
+	}
+	if !apiauth.Permite(cred.Escopos, recursoDoTipo+":write") {
+		h.apiErro(w, r, http.StatusForbidden, "insufficient_scope", "Importar "+tipoCod+" também exige o escopo "+recursoDoTipo+":write.")
 		return
 	}
 	var objetos []map[string]any

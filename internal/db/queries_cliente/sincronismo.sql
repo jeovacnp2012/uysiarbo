@@ -57,3 +57,6 @@ WHERE (sqlc.arg(dispositivo)::text = '' OR position(lower(sqlc.arg(dispositivo):
   AND (sqlc.arg(problemas)::boolean = false OR s.conflitos > 0 OR s.rejeitadas > 0)
 ORDER BY s.recebido_em DESC, s.id DESC
 LIMIT sqlc.arg(limite)::int OFFSET sqlc.arg(deslocamento)::int;
+
+-- name: GetAmostraPorNumero :one
+SELECT * FROM amostras WHERE numero_tubito = $1 AND deleted_at IS NULL;

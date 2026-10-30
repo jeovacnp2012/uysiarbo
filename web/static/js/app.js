@@ -16,6 +16,22 @@ document.addEventListener('alpine:init', () => {
         },
     });
 
+    // Menu lateral recolhível no computador (no celular ele abre como gaveta). A escolha fica no navegador.
+    Alpine.store('menu', {
+        alternar() {
+            const raiz = document.documentElement;
+            const recolher = raiz.dataset.menu !== 'recolhido';
+            if (recolher) {
+                raiz.dataset.menu = 'recolhido';
+            } else {
+                delete raiz.dataset.menu;
+            }
+            try {
+                localStorage.setItem('uysi-menu', recolher ? 'recolhido' : '');
+            } catch (e) {}
+        },
+    });
+
     // Mensagens rápidas. Disparo: window.dispatchEvent(new CustomEvent('toast', {detail: {kind, message}}))
     // ou, vindo do servidor, o cabeçalho HX-Trigger: {"toast": {"kind": "sucesso", "message": "..."}}.
     Alpine.data('toasts', () => ({

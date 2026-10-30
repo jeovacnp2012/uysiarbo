@@ -230,6 +230,10 @@ func aplicarLinha(ctx context.Context, q *sqlccliente.Queries, tipo string, ln s
 	switch tipo {
 	case "ciclos":
 		return aplicarCiclo(ctx, q, ln)
+	case "visitas":
+		return aplicarVisita(ctx, q, ln, usuarioID)
+	case "amostras":
+		return aplicarAmostra(ctx, q, ln, usuarioID)
 	case "bairros":
 		var c cargaBairro
 		if err := json.Unmarshal(ln.Dados, &c); err != nil {
@@ -407,6 +411,10 @@ func desfazerLinha(ctx context.Context, q *sqlccliente.Queries, tipo string, ln 
 	switch tipo {
 	case "ciclos":
 		return desfazerCiclo(ctx, q, ln, criado, id, motivo)
+	case "visitas":
+		return desfazerCriacao(ctx, q, "visita", id)
+	case "amostras":
+		return desfazerCriacao(ctx, q, "amostra", id)
 	case "bairros":
 		if criado {
 			return desfazerCriacao(ctx, q, "bairro", id)

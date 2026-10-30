@@ -2,7 +2,7 @@ titulo: Importação de dados
 resumo: Como trazer bairros, quarteirões e locais de uma planilha, com prévia, relatório e desfazer.
 ordem: 11
 permissao: conf_importacao
-palavras: ciclos, importar, importação, planilha, excel, csv, xlsx, modelo, prévia, desfazer, bairros, quarteirões, locais, migração
+palavras: visitas, tubitos, laboratório, ciclos, importar, importação, planilha, excel, csv, xlsx, modelo, prévia, desfazer, bairros, quarteirões, locais, migração
 ---
 # Importação de dados
 
@@ -34,6 +34,9 @@ Quando os nomes das colunas da origem não batem com os do sistema (ou quando vo
 - **Ciclos** (exige a permissão de Ciclos): **nome**, **data de início** e **data final** (dd/mm/aaaa ou aaaa-mm-dd); opcionais: situação (operando ou fechado), atividades (siglas separadas por vírgula, como `LIT, LI, PE`), permite fora do período, painel público e as atividades do painel. Um ciclo que já existe é reconhecido pelo nome; célula vazia mantém o valor atual (inclusive a lista de atividades). Desfazer manda os ciclos criados para a Lixeira e restaura os atualizados.
 
 Importe nessa ordem: **bairros → quarteirões → locais**.
+
+- **Visitas** (exige a permissão de adicionar visitas; importe **depois** dos locais, ciclos e usuários): **ID de origem** da visita, **local** (o ID de origem do local), **ciclo** (nome), **atividade** (sigla), **agente** (nome ou e-mail) e **data**; opcionais: hora, tipo, pendência, depósitos A1 a E, total eliminado, coletou amostra, tratamento (L1, L2, adulticida), BRI, latitude e longitude e anotação. A visita passa pelas **mesmas regras** da tela de visita (período do ciclo, atividade do ciclo, pendência, depósitos); a diferença é que o importador **aceita ciclo fechado e agente desativado**, porque o histórico antigo costuma ter os dois. Só cria: uma visita com o mesmo ID de origem é **ignorada**, então dá para repetir a importação sem duplicar. Desfazer manda as visitas criadas para a Lixeira.
+- **Laboratório (tubitos)** (exige a permissão de registrar resultados do laboratório; importe **depois** das visitas): **visita** (o ID de origem), e opcionais número do tubito (vazio usa a numeração automática, se o município a adota), depósito, larvas, pupas, observação, status, totais de *aegypti*, *albopictus* e negativo. A visita precisa ter **coletado amostra**. Se vierem totais ou status "concluído", o resultado é gravado junto. Um tubito com o mesmo número (ou o mesmo ID de origem) é ignorado.
 
 ## Registros que já existem
 Por padrão, o que já existe é **ignorado**. Marcando **Atualizar os registros que já existem**, a importação altera esses registros, **só com o que vier preenchido** na planilha (célula vazia mantém o valor atual). Um registro é reconhecido pelo nome (bairro: cidade e nome; quarteirão: bairro e nome; local: quarteirão, rua, número, lado, sequência e complemento) ou pelo **ID de origem** (`id_externo`), se informado.
