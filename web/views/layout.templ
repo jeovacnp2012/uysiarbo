@@ -47,7 +47,7 @@ templ Base(l Layout) {
 					} else if l.Console {
 						<div class="menu-cliente">Console da plataforma</div>
 					}
-					<nav class="menu-lista">
+					<nav class="menu-lista" id="menu-lista">
 						for _, g := range l.Nav {
 							if g.EmBreve {
 								<span class="menu-item menu-item-embreve" title="Em construção" aria-disabled="true">
@@ -114,11 +114,20 @@ templ Base(l Layout) {
 						}
 					</header>
 					<main class="pagina">
-						@AbasParametros(l.Abas)
-						if l.Aviso != "" {
-							<p class="alerta alerta-ok" role="status">{ l.Aviso }</p>
+						if len(l.Abas) > 0 {
+							<div id="aba-area" hx-boost="true" hx-target="#aba-area" hx-select="#aba-area" hx-select-oob="#menu-lista" hx-swap="outerHTML show:window:top">
+								@AbasParametros(l.Abas)
+								if l.Aviso != "" {
+									<p class="alerta alerta-ok" role="status">{ l.Aviso }</p>
+								}
+								{ children... }
+							</div>
+						} else {
+							if l.Aviso != "" {
+								<p class="alerta alerta-ok" role="status">{ l.Aviso }</p>
+							}
+							{ children... }
 						}
-						{ children... }
 					</main>
 				</div>
 			</div>

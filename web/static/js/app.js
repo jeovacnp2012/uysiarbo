@@ -94,8 +94,8 @@ window.addEventListener('pagehide', () => {
 });
 
 // Parâmetros: campo com data-so-se="campo=valor;outro=valor" só aparece quando todas as condições valem.
-document.addEventListener('DOMContentLoaded', () => {
-    const els = [...document.querySelectorAll('[data-so-se]')].filter((el) => el.dataset.soSe);
+function uysiSoSe(raiz) {
+    const els = [...(raiz || document).querySelectorAll('[data-so-se]')].filter((el) => el.dataset.soSe);
     if (!els.length) return;
     const aplicar = () => {
         els.forEach((el) => {
@@ -109,7 +109,29 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     els.forEach((el) => el.dataset.soSe.split(';').forEach((c) => {
         const f = document.querySelector('[name="' + c.split('=')[0] + '"]');
-        if (f) f.addEventListener('change', aplicar);
+        if (f && !f.dataset.soSeLigado) {
+            f.dataset.soSeLigado = '1';
+            f.addEventListener('change', aplicar);
+        }
     }));
     aplicar();
+}
+document.addEventListener('DOMContentLoaded', () => uysiSoSe(document));
+document.addEventListener('htmx:load', (e) => uysiSoSe(e.target));
+
+// Abas de Parâmetros: o conteúdo da aba troca dentro da página (#aba-area). Resposta sem a área (outra tela) vira
+// navegação normal; erros de validação (400, 409...) com a área também são mostrados dentro da aba.
+document.addEventListener('htmx:beforeSwap', (e) => {
+    const d = e.detail;
+    if (!d.target || d.target.id !== 'aba-area') return;
+    const txt = d.serverResponse || '';
+    if (txt.indexOf('id="aba-area"') < 0) {
+        d.shouldSwap = false;
+        if (d.requestConfig && d.requestConfig.verb === 'get' && d.pathInfo) window.location.href = d.pathInfo.requestPath;
+        return;
+    }
+    if (d.xhr.status >= 400) {
+        d.shouldSwap = true;
+        d.isError = false;
+    }
 });

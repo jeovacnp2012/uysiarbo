@@ -43,9 +43,9 @@ templ Parametros(l Layout, d ParametrosData) {
 
 templ AbasParametros(abas []AbaParam) {
 	if len(abas) > 0 {
-		<nav class="abas" aria-label="Parâmetros">
+		<nav class="abas abas-topo" aria-label="Parâmetros">
 			for _, a := range abas {
-				<a href={ templ.SafeURL(a.Href) } class={ "aba", templ.KV("aba-ativa", a.Ativa) }>{ a.Rotulo }</a>
+				<a href={ templ.SafeURL(a.Href) } class={ "aba", templ.KV("aba-ativa", a.Ativa) } aria-current?={ a.Ativa }>{ a.Rotulo }</a>
 			}
 		</nav>
 	}

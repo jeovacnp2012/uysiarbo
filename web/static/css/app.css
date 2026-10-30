@@ -2190,3 +2190,10 @@ select.sb-nativo {
 .param-cartao { border: 1px solid var(--borda, #cbd5e1); border-radius: .5rem; padding: 1rem; }
 .param-cartao h3 { margin: 0 0 .25rem; font-size: 1rem; }
 @media (max-width: 800px) { .param-grade.param-duas { grid-template-columns: 1fr; } }
+
+/* Abas de Parâmetros, como no Geo Controle: uma linha, letra menor, aba ativa escura */
+.abas.abas-topo { flex-wrap: nowrap; overflow-x: auto; gap: 0; margin: 0 0 1rem; border-bottom: 1px solid var(--borda, #cbd5e1); }
+.abas-topo .aba { border: 0; border-radius: .5rem .5rem 0 0; padding: .55rem 1rem; font-size: .8rem; white-space: nowrap; color: var(--texto-suave, #475569); }
+.abas-topo .aba:hover { background: rgba(100, 116, 139, .12); }
+.abas-topo .aba-ativa { background: #334155; color: #fff; }
+:root[data-tema="escuro"] .abas-topo .aba-ativa { background: #475569; }

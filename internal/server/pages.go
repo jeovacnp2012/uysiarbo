@@ -25,8 +25,10 @@ var avisosPorCodigo = map[string]string{
 
 // layout monta o layout da página; no endereço de um cliente, mostra o nome dele no menu.
 func (s *handlers) layout(r *http.Request, title, active string) views.Layout {
-	l := views.Layout{Title: title, Active: active, Nav: s.menu(r), CSRF: csrfToken(r.Context()), Aviso: avisosPorCodigo[r.URL.Query().Get("aviso")]}
-	if abaDeParametros[active] {
+	nav := s.menu(r)
+	active = ativoPelaURL(nav, r.URL.Path, active)
+	l := views.Layout{Title: title, Active: active, Nav: nav, CSRF: csrfToken(r.Context()), Aviso: avisosPorCodigo[r.URL.Query().Get("aviso")]}
+	if abaDeParametros[active] || abaDeParametros[r.URL.Path] {
 		l.Abas = s.abasParametros(r, active)
 	}
 	if id, versao := s.ultimaVersao(r.Context()); versao != "" {
@@ -89,4 +91,28 @@ func demoPage(r *http.Request) (views.DemoFilter, [][]string, views.Pagination) 
 	start := (p.Page - 1) * p.PerPage
 	end := min(start+p.PerPage, len(all))
 	return f, all[start:end], p
+}
+
+// ativoPelaURL escolhe o item do menu que corresponde à URL aberta: o endereço do menu mais longo que seja a própria
+// URL ou o começo dela (ficha, novo e editar marcam o item da lista). Sem correspondência, vale o que o handler indicou.
+func ativoPelaURL(nav []views.NavGrupo, caminho, padrao string) string {
+	melhor := ""
+	testar := func(href string) {
+		if href == "" || len(href) <= len(melhor) {
+			return
+		}
+		if caminho == href || (href != "/" && strings.HasPrefix(caminho, href+"/")) {
+			melhor = href
+		}
+	}
+	for _, g := range nav {
+		testar(g.Href)
+		for _, it := range g.Itens {
+			testar(it.Href)
+		}
+	}
+	if melhor == "" {
+		return padrao
+	}
+	return melhor
 }
