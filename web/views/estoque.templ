@@ -1,0 +1,537 @@
+package views
+
+import "strconv"
+
+// ------------------------------------------------------------------ unidades
+
+templ EstoqueUnidades(l Layout, d EstoqueUnidadesData) {
+	@Base(l) {
+		@PageHeader("Unidades de Estoque", "Locais ou setores que guardam produtos.") {
+			if d.PodeGerir {
+				<a class="btn btn-primario" href="/estoque/unidade/novo" data-icone="plus">Nova unidade</a>
+			}
+		}
+		<section class="cartao">
+			@PaginacaoDoLayout(l)
+			<div class="tabela-wrap">
+				<table class="tabela">
+					<thead>
+						<tr>
+							<th scope="col" data-ord="IDTexto">ID</th>
+							<th scope="col" data-ord="Nome">Nome</th>
+							<th scope="col">Descrição</th>
+							<th scope="col" data-ord="Produtos">Produtos</th>
+							<th scope="col">Situação</th>
+							<th scope="col" data-fixa><span class="sr-only">Ações</span></th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, u := range d.Linhas {
+							<tr>
+								<td data-rotulo="ID"><strong>{ u.IDTexto }</strong></td>
+								<td data-rotulo="Nome">{ u.Nome }</td>
+								<td data-rotulo="Descrição" class="quebra2">{ u.Descricao }</td>
+								<td data-rotulo="Produtos">{ strconv.Itoa(int(u.Produtos)) }</td>
+								<td data-rotulo="Situação">{ ativoTexto(u.Ativo) }</td>
+								<td data-rotulo="Ações"><a class="btn" href={ templ.SafeURL("/estoque/unidade/" + u.IDTexto) }>Abrir</a></td>
+							</tr>
+						}
+					</tbody>
+				</table>
+				if len(d.Linhas) == 0 {
+					<div class="tabela-vazia">Nenhuma unidade cadastrada.</div>
+				}
+			</div>
+			@PaginacaoDoLayout(l)
+		</section>
+	}
+}
+
+func estoqueUnidadeAcao(id int64) string {
+	if id == 0 {
+		return "/estoque/unidade"
+	}
+	return "/estoque/unidade/" + strconv.FormatInt(id, 10)
+}
+
+templ EstoqueUnidadeFicha(l Layout, d EstoqueUnidadeForm) {
+	@Base(l) {
+		if d.ID == 0 {
+			@PageHeader("Nova unidade de estoque", "") {
+				<a class="btn" href="/estoque/unidade">Voltar</a>
+			}
+		} else {
+			@PageHeader(d.Nome, "Unidade de estoque") {
+				<a class="btn" href="/estoque/unidade">Voltar</a>
+			}
+			@Presenca("estoque_unidade", strconv.FormatInt(d.ID, 10), modoDaTela(d.PodeEditar))
+		}
+		if d.Aviso != "" {
+			<p class="alerta alerta-ok" role="status">{ d.Aviso }</p>
+		}
+		<form method="post" action={ templ.SafeURL(estoqueUnidadeAcao(d.ID)) } class="cartao form-admin" data-sem-gaveta>
+			<input type="hidden" name="csrf" value={ d.CSRF }/>
+			if d.Erro != "" {
+				<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
+			}
+			<fieldset class="sem-borda" disabled?={ !d.PodeEditar }>
+				<div class="grade-form">
+					<div class="campo">
+						<label for="nome">Nome</label>
+						<input id="nome" name="nome" type="text" value={ d.Nome } maxlength="100" required/>
+					</div>
+					<div class="campo">
+						<label for="ativo">Situação</label>
+						<select id="ativo" name="ativo">
+							<option value="1" selected?={ d.Ativo }>Ativo</option>
+							<option value="0" selected?={ !d.Ativo }>Inativo</option>
+						</select>
+					</div>
+					<div class="campo campo-largo">
+						<label for="descricao">Descrição</label>
+						<textarea id="descricao" name="descricao" rows="3" maxlength="500">{ d.Descricao }</textarea>
+					</div>
+				</div>
+			</fieldset>
+			if d.PodeEditar {
+				<div class="form-acoes">
+					<button type="submit" class="btn btn-primario" data-icone="save">Salvar</button>
+					if d.ID != 0 {
+						<button type="submit" class="btn btn-perigo" formaction={ estoqueUnidadeAcao(d.ID) + "/excluir" } onclick="return confirm('Enviar esta unidade para a lixeira?')" data-icone="trash">Excluir</button>
+					}
+				</div>
+			}
+		</form>
+	}
+}
+
+// ------------------------------------------------------------------ produtos
+
+templ EstoqueProdutos(l Layout, d EstoqueProdutosData) {
+	@Base(l) {
+		@PageHeader("Produtos", "Vacinas, equipamentos, insumos e outros itens do estoque.") {
+			if d.PodeNovo {
+				<a class="btn btn-primario" href="/estoque/produto/novo" data-icone="plus">Novo produto</a>
+			}
+		}
+		<form
+			method="get"
+			action="/estoque/produto"
+			class="cartao filtros filtros-vivos"
+			autocomplete="off"
+			hx-get="/estoque/produto"
+			hx-trigger="input delay:350ms, change delay:60ms, filtrar from:body"
+			hx-sync="this:replace"
+			hx-target="#produtos-lista"
+			hx-select="#produtos-lista"
+			hx-swap="outerHTML"
+			hx-push-url="true"
+			hx-indicator="#produtos-lista"
+		>
+			<input type="hidden" name="ordem" value={ d.Ordem }/>
+			<input type="hidden" name="dir" value={ d.Dir }/>
+			<div class="campo">
+				<label for="f-busca">Nome</label>
+				<input id="f-busca" name="busca" type="search" value={ d.Filtro.Busca }/>
+			</div>
+			@campoEscolha("f-tipo", "Tipo", "tipo", "Todos os tipos", d.Tipos)
+			@campoEscolha("f-unidade", "Unidade", "unidade", "Todas as unidades", d.Unidades)
+			@campoEscolha("f-situacao", "Situação", "situacao", "Todas", d.Situacoes)
+			<div class="form-acoes">
+				<a class="btn btn-escuro" href="/estoque/produto" data-icone="undo">Limpar filtros</a>
+			</div>
+			<noscript><button type="submit" class="btn btn-primario">Filtrar</button></noscript>
+		</form>
+		<div id="produtos-lista" class="lista-viva">
+			<section class="cartao">
+				@Paginacao(d.Pag, "/estoque/produto", d.Query)
+				<div class="tabela-wrap">
+					<table class="tabela">
+						<thead>
+							<tr>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "id") }><a class="ordenar" href="#" data-ordenar="id" data-dir={ proximaDir(d.Ordem, d.Dir, "id") }>ID<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "id") }</span></a></th>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "nome") }><a class="ordenar" href="#" data-ordenar="nome" data-dir={ proximaDir(d.Ordem, d.Dir, "nome") }>Produto<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "nome") }</span></a></th>
+								<th scope="col">Tipo</th>
+								<th scope="col">Unidade</th>
+								<th scope="col">Medida</th>
+								<th scope="col">Saldo</th>
+								<th scope="col">Situação</th>
+								<th scope="col" data-fixa><span class="sr-only">Ações</span></th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, x := range d.Linhas {
+								<tr>
+									<td data-rotulo="ID"><strong>{ x.IDTexto }</strong></td>
+									<td data-rotulo="Produto">{ x.Nome }</td>
+									<td data-rotulo="Tipo">{ x.Tipo }</td>
+									<td data-rotulo="Unidade">{ x.Unidade }</td>
+									<td data-rotulo="Medida">{ x.Medida }</td>
+									<td data-rotulo="Saldo">{ x.Saldo }</td>
+									<td data-rotulo="Situação">{ ativoTexto(x.Ativo) }</td>
+									<td data-rotulo="Ações"><a class="btn" href={ templ.SafeURL("/estoque/produto/" + x.IDTexto) }>Abrir</a></td>
+								</tr>
+							}
+						</tbody>
+					</table>
+					if len(d.Linhas) == 0 {
+						<div class="tabela-vazia">Nenhum produto encontrado.</div>
+					}
+				</div>
+				@Paginacao(d.Pag, "/estoque/produto", d.Query)
+			</section>
+		</div>
+	}
+}
+
+func estoqueProdutoAcao(id int64) string {
+	if id == 0 {
+		return "/estoque/produto"
+	}
+	return "/estoque/produto/" + strconv.FormatInt(id, 10)
+}
+
+templ EstoqueProdutoFicha(l Layout, d EstoqueProdutoForm) {
+	@Base(l) {
+		if d.Novo() {
+			@PageHeader("Novo produto", "") {
+				<a class="btn" href="/estoque/produto">Voltar</a>
+			}
+		} else {
+			@PageHeader(d.Nome, "Produto de estoque — saldo "+d.Saldo+" "+d.Medida) {
+				<a class="btn" href="/estoque/produto">Voltar</a>
+				<a class="btn" href={ templ.SafeURL("/estoque/lote?produto=" + strconv.FormatInt(d.ID, 10)) }>Ver lotes</a>
+			}
+			@Presenca("estoque_produto", strconv.FormatInt(d.ID, 10), modoDaTela(d.PodeEditar))
+		}
+		if d.Aviso != "" {
+			<p class="alerta alerta-ok" role="status">{ d.Aviso }</p>
+		}
+		<form method="post" action={ templ.SafeURL(estoqueProdutoAcao(d.ID)) } class="cartao form-admin" data-sem-gaveta>
+			<input type="hidden" name="csrf" value={ d.CSRF }/>
+			if d.Erro != "" {
+				<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
+			}
+			<fieldset class="sem-borda" disabled?={ !d.PodeEditar }>
+				<div class="grade-form">
+					<div class="campo">
+						<label for="nome">Nome</label>
+						<input id="nome" name="nome" type="text" value={ d.Nome } maxlength="150" required/>
+					</div>
+					<div class="campo">
+						<label for="unidade">Unidade de estoque</label>
+						<select id="unidade" name="unidade" required>
+							<option value="">—</option>
+							@opcoesDe(d.Unidades)
+						</select>
+					</div>
+					<div class="campo">
+						<label for="tipo">Tipo</label>
+						<select id="tipo" name="tipo" required>
+							@opcoesDe(d.Tipos)
+						</select>
+					</div>
+					<div class="campo">
+						<label for="medida">Unidade de medida</label>
+						<input id="medida" name="medida" type="text" value={ d.Medida } maxlength="20" placeholder="frasco, caixa, un..." required/>
+					</div>
+					<div class="campo">
+						<label for="saida">Saída permitida</label>
+						<select id="saida" name="saida" required>
+							@opcoesDe(d.Saidas)
+						</select>
+					</div>
+					<div class="campo">
+						<label for="ativo">Situação</label>
+						<select id="ativo" name="ativo">
+							<option value="1" selected?={ d.Ativo }>Ativo</option>
+							<option value="0" selected?={ !d.Ativo }>Inativo</option>
+						</select>
+					</div>
+					<div class="campo">
+						<label for="fracionavel">Fracionável?</label>
+						<select id="fracionavel" name="fracionavel">
+							<option value="0" selected?={ !d.Fracionavel }>Não</option>
+							<option value="1" selected?={ d.Fracionavel }>Sim (usa em frações, como doses)</option>
+						</select>
+					</div>
+					<div class="campo">
+						<label for="doses">Frações por unidade</label>
+						<input id="doses" name="doses" type="text" inputmode="decimal" value={ d.Doses } placeholder="ex.: 25"/>
+					</div>
+					<div class="campo">
+						<label for="fracao">Unidade da fração</label>
+						<select id="fracao" name="fracao">
+							<option value="">—</option>
+							@opcoesDe(d.Fracoes)
+						</select>
+					</div>
+					<div class="campo">
+						<label for="selecionavel">Aparece na diária da campanha?</label>
+						<select id="selecionavel" name="selecionavel">
+							<option value="0" selected?={ !d.SelecionavelDiaria }>Não</option>
+							<option value="1" selected?={ d.SelecionavelDiaria }>Sim</option>
+						</select>
+					</div>
+					<div class="campo">
+						<label for="categoria">Categoria na diária</label>
+						<select id="categoria" name="categoria">
+							<option value="">—</option>
+							@opcoesDe(d.Categorias)
+						</select>
+					</div>
+					<div class="campo campo-largo">
+						<label for="descricao">Descrição</label>
+						<textarea id="descricao" name="descricao" rows="3" maxlength="1000">{ d.Descricao }</textarea>
+					</div>
+				</div>
+			</fieldset>
+			if d.PodeEditar {
+				<div class="form-acoes">
+					<button type="submit" class="btn btn-primario" data-icone="save">Salvar</button>
+					if !d.Novo() {
+						<button type="submit" class="btn btn-perigo" formaction={ estoqueProdutoAcao(d.ID) + "/excluir" } onclick="return confirm('Enviar este produto para a lixeira?')" data-icone="trash">Excluir</button>
+					}
+				</div>
+			}
+		</form>
+	}
+}
+
+// ------------------------------------------------------------------ lotes
+
+templ EstoqueLotes(l Layout, d EstoqueLotesData) {
+	@Base(l) {
+		@PageHeader("Entradas / Lotes", "Lotes recebidos, com saldo e validade.") {
+			if d.PodeNovo {
+				<a class="btn btn-primario" href="/estoque/lote/novo" data-icone="plus">Nova entrada</a>
+			}
+		}
+		<form
+			method="get"
+			action="/estoque/lote"
+			class="cartao filtros filtros-vivos"
+			autocomplete="off"
+			hx-get="/estoque/lote"
+			hx-trigger="input delay:350ms, change delay:60ms, filtrar from:body"
+			hx-sync="this:replace"
+			hx-target="#lotes-lista"
+			hx-select="#lotes-lista"
+			hx-swap="outerHTML"
+			hx-push-url="true"
+			hx-indicator="#lotes-lista"
+		>
+			<input type="hidden" name="ordem" value={ d.Ordem }/>
+			<input type="hidden" name="dir" value={ d.Dir }/>
+			<div class="campo">
+				<label for="f-busca">Lote, produto, fornecedor ou nota</label>
+				<input id="f-busca" name="busca" type="search" value={ d.Filtro.Busca }/>
+			</div>
+			@campoEscolha("f-produto", "Produto", "produto", "Todos os produtos", d.Produtos)
+			@campoEscolha("f-situacao", "Situação", "situacao", "Todas", d.Situacoes)
+			<div class="form-acoes">
+				<a class="btn btn-escuro" href="/estoque/lote" data-icone="undo">Limpar filtros</a>
+			</div>
+			<noscript><button type="submit" class="btn btn-primario">Filtrar</button></noscript>
+		</form>
+		<div id="lotes-lista" class="lista-viva">
+			<section class="cartao">
+				@Paginacao(d.Pag, "/estoque/lote", d.Query)
+				<div class="tabela-wrap">
+					<table class="tabela">
+						<thead>
+							<tr>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "id") }><a class="ordenar" href="#" data-ordenar="id" data-dir={ proximaDir(d.Ordem, d.Dir, "id") }>ID<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "id") }</span></a></th>
+								<th scope="col">Produto</th>
+								<th scope="col">Lote</th>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "validade") }><a class="ordenar" href="#" data-ordenar="validade" data-dir={ proximaDir(d.Ordem, d.Dir, "validade") }>Validade<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "validade") }</span></a></th>
+								<th scope="col">Entrada</th>
+								<th scope="col">Saldo</th>
+								<th scope="col">Fornecedor</th>
+								<th scope="col" data-fixa><span class="sr-only">Ações</span></th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, x := range d.Linhas {
+								<tr>
+									<td data-rotulo="ID"><strong>{ x.IDTexto }</strong></td>
+									<td data-rotulo="Produto">{ x.Produto }</td>
+									<td data-rotulo="Lote">{ x.Numero }</td>
+									<td data-rotulo="Validade">{ x.Validade } { x.Alerta }</td>
+									<td data-rotulo="Entrada">{ x.Quantidade } { x.Medida }</td>
+									<td data-rotulo="Saldo">{ x.Saldo } { x.Medida }</td>
+									<td data-rotulo="Fornecedor" class="quebra2">{ x.Fornecedor }</td>
+									<td data-rotulo="Ações"><a class="btn" href={ templ.SafeURL("/estoque/lote/" + x.IDTexto) }>Abrir</a></td>
+								</tr>
+							}
+						</tbody>
+					</table>
+					if len(d.Linhas) == 0 {
+						<div class="tabela-vazia">Nenhum lote encontrado.</div>
+					}
+				</div>
+				@Paginacao(d.Pag, "/estoque/lote", d.Query)
+			</section>
+		</div>
+	}
+}
+
+func estoqueLoteAcao(id int64) string {
+	if id == 0 {
+		return "/estoque/lote"
+	}
+	return "/estoque/lote/" + strconv.FormatInt(id, 10)
+}
+
+templ EstoqueLoteFicha(l Layout, d EstoqueLoteForm) {
+	@Base(l) {
+		if d.Novo() {
+			@PageHeader("Nova entrada de estoque", "") {
+				<a class="btn" href="/estoque/lote">Voltar</a>
+			}
+		} else {
+			@PageHeader("Lote "+d.Numero, d.ProdutoNome+" — saldo "+d.Saldo+" "+d.Medida) {
+				<a class="btn" href="/estoque/lote">Voltar</a>
+			}
+			@Presenca("estoque_lote", strconv.FormatInt(d.ID, 10), modoDaTela(d.PodeEditar))
+		}
+		if d.Aviso != "" {
+			<p class="alerta alerta-ok" role="status">{ d.Aviso }</p>
+		}
+		<form method="post" action={ templ.SafeURL(estoqueLoteAcao(d.ID)) } class="cartao form-admin" data-sem-gaveta>
+			<input type="hidden" name="csrf" value={ d.CSRF }/>
+			if d.Erro != "" {
+				<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
+			}
+			<fieldset class="sem-borda" disabled?={ !d.PodeEditar }>
+				<div class="grade-form">
+					if d.Novo() {
+						<div class="campo">
+							<label for="produto">Produto</label>
+							<select id="produto" name="produto" required>
+								<option value="">—</option>
+								@opcoesDe(d.Produtos)
+							</select>
+						</div>
+						<div class="campo">
+							<label for="numero">Número do lote</label>
+							<input id="numero" name="numero" type="text" value={ d.Numero } maxlength="40" required/>
+						</div>
+						<div class="campo">
+							<label for="quantidade">Quantidade recebida</label>
+							<input id="quantidade" name="quantidade" type="text" inputmode="decimal" value={ d.Quantidade } required/>
+						</div>
+					} else {
+						<div class="campo">
+							<label>Produto</label>
+							<input type="text" value={ d.ProdutoNome } disabled/>
+						</div>
+						<div class="campo">
+							<label>Número do lote</label>
+							<input type="text" value={ d.Numero } disabled/>
+						</div>
+						<div class="campo">
+							<label>Quantidade recebida</label>
+							<input type="text" value={ d.Quantidade + " " + d.Medida } disabled/>
+						</div>
+					}
+					<div class="campo">
+						<label for="fabricante">Fabricante</label>
+						<input id="fabricante" name="fabricante" type="text" value={ d.Fabricante } maxlength="100"/>
+					</div>
+					<div class="campo">
+						<label for="fabricacao">Fabricação</label>
+						<input id="fabricacao" name="fabricacao" type="date" value={ d.Fabricacao }/>
+					</div>
+					<div class="campo">
+						<label for="validade">Validade</label>
+						<input id="validade" name="validade" type="date" value={ d.Validade }/>
+					</div>
+					<div class="campo">
+						<label for="custo">Custo unitário (R$)</label>
+						<input id="custo" name="custo" type="text" inputmode="decimal" value={ d.Custo }/>
+					</div>
+					<div class="campo">
+						<label for="nota">Nota fiscal</label>
+						<input id="nota" name="nota" type="text" value={ d.NotaFiscal } maxlength="30"/>
+					</div>
+					<div class="campo">
+						<label for="fornecedor">Fornecedor</label>
+						<input id="fornecedor" name="fornecedor" type="text" value={ d.Fornecedor } maxlength="120"/>
+					</div>
+					<div class="campo campo-largo">
+						<label for="observacao">Observação</label>
+						<textarea id="observacao" name="observacao" rows="3" maxlength="1000">{ d.Observacao }</textarea>
+					</div>
+				</div>
+			</fieldset>
+			if d.PodeEditar {
+				<div class="form-acoes">
+					<button type="submit" class="btn btn-primario" data-icone="save">Salvar</button>
+					if !d.Novo() {
+						<button type="submit" class="btn btn-perigo" formaction={ estoqueLoteAcao(d.ID) + "/excluir" } onclick="return confirm('Enviar este lote para a lixeira?')" data-icone="trash">Excluir</button>
+					}
+				</div>
+			}
+		</form>
+		if !d.Novo() {
+			if d.PodeEditar {
+				<form method="post" action={ templ.SafeURL(estoqueLoteAcao(d.ID) + "/movimentar") } class="cartao form-admin" data-sem-gaveta>
+					<input type="hidden" name="csrf" value={ d.CSRF }/>
+					<h2>Movimentar o saldo</h2>
+					<div class="grade-form">
+						<div class="campo">
+							<label for="mov-tipo">Tipo</label>
+							<select id="mov-tipo" name="tipo" required>
+								@opcoesDe(d.TiposMovimento)
+							</select>
+						</div>
+						<div class="campo">
+							<label for="mov-qtd">Quantidade (em "ajuste", o novo saldo)</label>
+							<input id="mov-qtd" name="quantidade" type="text" inputmode="decimal" required/>
+						</div>
+						<div class="campo campo-largo">
+							<label for="mov-desc">Motivo</label>
+							<input id="mov-desc" name="descricao" type="text" maxlength="255" required/>
+						</div>
+					</div>
+					<div class="form-acoes">
+						<button type="submit" class="btn btn-escuro" data-icone="save">Registrar movimentação</button>
+					</div>
+				</form>
+			}
+			<section class="cartao">
+				<h2>Histórico do lote</h2>
+				<div class="tabela-wrap">
+					<table class="tabela">
+						<thead>
+							<tr>
+								<th scope="col">Quando</th>
+								<th scope="col">Tipo</th>
+								<th scope="col">Quantidade</th>
+								<th scope="col">Saldo após</th>
+								<th scope="col">Motivo</th>
+								<th scope="col">Por</th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, m := range d.Movimentos {
+								<tr>
+									<td data-rotulo="Quando">{ m.Quando }</td>
+									<td data-rotulo="Tipo">{ m.Tipo }</td>
+									<td data-rotulo="Quantidade">{ m.Quantidade }</td>
+									<td data-rotulo="Saldo após">{ m.SaldoApos }</td>
+									<td data-rotulo="Motivo" class="quebra2">{ m.Descricao }</td>
+									<td data-rotulo="Por">{ m.Por }</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+					if len(d.Movimentos) == 0 {
+						<div class="tabela-vazia">Sem movimentações.</div>
+					}
+				</div>
+			</section>
+		}
+	}
+}

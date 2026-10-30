@@ -694,6 +694,131 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 			return out, err
 		},
 	},
+	"estoque_unidade": {
+		Chave: "estoque_unidade", Rotulo: "Unidade de estoque", Plural: "Unidades de estoque", Genero: "a",
+		soft: func(ctx context.Context, q *sqlccliente.Queries, id int64, por pgtype.Int8) (int64, error) {
+			return q.SoftDeleteEstoqueUnidade(ctx, sqlccliente.SoftDeleteEstoqueUnidadeParams{ID: id, Por: por})
+		},
+		restore: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			return q.RestoreEstoqueUnidade(ctx, id)
+		},
+		force: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			return q.ForceDeleteEstoqueUnidade(ctx, id)
+		},
+		rotulo: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, bool, error) {
+			u, err := q.GetEstoqueUnidadeQualquer(ctx, id)
+			return u.Nome, u.DeletedAt.Valid, err
+		},
+		filhosAtivos: func(ctx context.Context, q *sqlccliente.Queries, id int64) ([]string, error) {
+			n, err := q.CountEstoqueProdutosDaUnidade(ctx, id)
+			if err != nil || n.Ativos == 0 {
+				return nil, err
+			}
+			return []string{plural(n.Ativos, "produto", "produtos")}, nil
+		},
+		vinculos: func(ctx context.Context, q *sqlccliente.Queries, id int64) ([]string, error) {
+			n, err := q.CountEstoqueProdutosDaUnidade(ctx, id)
+			if err != nil || n.Total == 0 {
+				return nil, err
+			}
+			return []string{plural(n.Total, "produto", "produtos") + " (contando os excluídos)"}, nil
+		},
+		paiExcluido: func(context.Context, *sqlccliente.Queries, int64) (string, error) { return "", nil },
+		lixeira: func(ctx context.Context, q *sqlccliente.Queries) ([]views.LixeiraLinha, error) {
+			rows, err := q.ListEstoqueUnidadesExcluidas(ctx)
+			out := make([]views.LixeiraLinha, len(rows))
+			for i, r := range rows {
+				out[i] = views.LixeiraLinha{ID: r.ID, Rotulo: r.Nome, Contexto: "Estoque — unidade", Quando: r.DeletedAt.Time, Por: r.Por}
+			}
+			return out, err
+		},
+	},
+	"estoque_produto": {
+		Chave: "estoque_produto", Rotulo: "Produto de estoque", Plural: "Produtos de estoque", Genero: "o",
+		soft: func(ctx context.Context, q *sqlccliente.Queries, id int64, por pgtype.Int8) (int64, error) {
+			return q.SoftDeleteEstoqueProduto(ctx, sqlccliente.SoftDeleteEstoqueProdutoParams{ID: id, Por: por})
+		},
+		restore: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			return q.RestoreEstoqueProduto(ctx, id)
+		},
+		force: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			return q.ForceDeleteEstoqueProduto(ctx, id)
+		},
+		rotulo: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, bool, error) {
+			p, err := q.GetEstoqueProdutoQualquer(ctx, id)
+			return p.Nome, p.DeletedAt.Valid, err
+		},
+		filhosAtivos: func(ctx context.Context, q *sqlccliente.Queries, id int64) ([]string, error) {
+			n, err := q.CountEstoqueLotesDoProduto(ctx, id)
+			if err != nil || n.Ativos == 0 {
+				return nil, err
+			}
+			return []string{plural(n.Ativos, "lote", "lotes")}, nil
+		},
+		vinculos: func(ctx context.Context, q *sqlccliente.Queries, id int64) ([]string, error) {
+			n, err := q.CountEstoqueLotesDoProduto(ctx, id)
+			if err != nil || n.Total == 0 {
+				return nil, err
+			}
+			return []string{plural(n.Total, "lote", "lotes") + " (contando os excluídos)"}, nil
+		},
+		paiExcluido: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, error) {
+			p, err := q.GetEstoqueProdutoQualquer(ctx, id)
+			if err != nil {
+				return "", err
+			}
+			u, err := q.GetEstoqueUnidadeQualquer(ctx, p.UnidadeID)
+			if err != nil || !u.DeletedAt.Valid {
+				return "", err
+			}
+			return "a unidade " + u.Nome, nil
+		},
+		lixeira: func(ctx context.Context, q *sqlccliente.Queries) ([]views.LixeiraLinha, error) {
+			rows, err := q.ListEstoqueProdutosExcluidos(ctx)
+			out := make([]views.LixeiraLinha, len(rows))
+			for i, r := range rows {
+				out[i] = views.LixeiraLinha{ID: r.ID, Rotulo: r.Nome, Contexto: "Estoque — produto", Quando: r.DeletedAt.Time, Por: r.Por}
+			}
+			return out, err
+		},
+	},
+	"estoque_lote": {
+		Chave: "estoque_lote", Rotulo: "Lote de estoque", Plural: "Lotes de estoque", Genero: "o",
+		soft: func(ctx context.Context, q *sqlccliente.Queries, id int64, por pgtype.Int8) (int64, error) {
+			return q.SoftDeleteEstoqueLote(ctx, sqlccliente.SoftDeleteEstoqueLoteParams{ID: id, Por: por})
+		},
+		restore: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			return q.RestoreEstoqueLote(ctx, id)
+		},
+		force: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			return q.ForceDeleteEstoqueLote(ctx, id)
+		},
+		rotulo: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, bool, error) {
+			l, err := q.GetEstoqueLoteQualquer(ctx, id)
+			return "Lote " + l.NumeroLote, l.DeletedAt.Valid, err
+		},
+		filhosAtivos: func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
+		vinculos:     func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
+		paiExcluido: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, error) {
+			l, err := q.GetEstoqueLoteQualquer(ctx, id)
+			if err != nil {
+				return "", err
+			}
+			p, err := q.GetEstoqueProdutoQualquer(ctx, l.ProdutoID)
+			if err != nil || !p.DeletedAt.Valid {
+				return "", err
+			}
+			return "o produto " + p.Nome, nil
+		},
+		lixeira: func(ctx context.Context, q *sqlccliente.Queries) ([]views.LixeiraLinha, error) {
+			rows, err := q.ListEstoqueLotesExcluidos(ctx)
+			out := make([]views.LixeiraLinha, len(rows))
+			for i, r := range rows {
+				out[i] = views.LixeiraLinha{ID: r.ID, Rotulo: "Lote " + strconv.FormatInt(r.ID, 10), Contexto: r.Contexto, Quando: r.DeletedAt.Time, Por: r.Por}
+			}
+			return out, err
+		},
+	},
 	"liraa_grupo": {
 		Chave: "liraa_grupo", Rotulo: "Grupo do LIRAa", Plural: "Grupos do LIRAa", Genero: "o",
 		soft: func(ctx context.Context, q *sqlccliente.Queries, id int64, por pgtype.Int8) (int64, error) {
@@ -1176,7 +1301,7 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 }
 
 // ordemDaLixeira é a ordem das abas.
-var ordemDaLixeira = []string{"local", "quarteirao", "bairro", "cidade", "ciclo", "lei", "lei_trecho", "visita", "investigacao", "denuncia", "campanha", "diaria", "lvc", "liraa_agenda", "liraa_grupo", "drone", "baap", "ovitrampa", "edl", "notificacao", "infracao", "amostra", "reconhecimento", "resumosemanal", "grupo", "mapeamento"}
+var ordemDaLixeira = []string{"local", "quarteirao", "bairro", "cidade", "ciclo", "lei", "lei_trecho", "visita", "investigacao", "denuncia", "campanha", "diaria", "lvc", "liraa_agenda", "liraa_grupo", "estoque_lote", "estoque_produto", "estoque_unidade", "drone", "baap", "ovitrampa", "edl", "notificacao", "infracao", "amostra", "reconhecimento", "resumosemanal", "grupo", "mapeamento"}
 
 // excluirLogicamente aplica a regra completa: recusa se há filhos ativos; senão marca deleted_at.
 // Devolve os motivos da recusa (vazio = excluído), o nome do registro e o erro de banco, se houve.

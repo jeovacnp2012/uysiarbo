@@ -158,7 +158,7 @@ Objetivo: migrar dados de outros sistemas e de planilhas, com segurança.
 - [x] 10.5 LIRAa: grupos e agenda — concluída em 2026-10-30 (versão 1.0.058). **✅ Etapa 10 concluída.**
 
 ## Etapa 11 — Estoque e patrimônio
-- [ ] 11.1 Unidades, produtos (fracionáveis), lotes e movimentação
+- [x] 11.1 Unidades, produtos (fracionáveis), lotes e movimentação
 - [ ] 11.2 Retiradas (campo e permanente), balanço físico
 - [ ] 11.3 Patrimônio (atribuir, manutenção, baixa)
 - [ ] 11.4 Integração com a campanha antirrábica (a diária consome vacina e seringa)

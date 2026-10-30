@@ -416,6 +416,68 @@ type EntrevistaGrupo struct {
 	AtualizadoEm pgtype.Timestamptz `json:"atualizado_em"`
 }
 
+type EstoqueLote struct {
+	ID             int64              `json:"id"`
+	IDExterno      pgtype.Text        `json:"id_externo"`
+	ProdutoID      int64              `json:"produto_id"`
+	NumeroLote     string             `json:"numero_lote"`
+	Fabricante     string             `json:"fabricante"`
+	DataFabricacao pgtype.Date        `json:"data_fabricacao"`
+	DataValidade   pgtype.Date        `json:"data_validade"`
+	Quantidade     pgtype.Numeric     `json:"quantidade"`
+	Saldo          pgtype.Numeric     `json:"saldo"`
+	CustoUnitario  pgtype.Numeric     `json:"custo_unitario"`
+	NotaFiscal     string             `json:"nota_fiscal"`
+	Fornecedor     string             `json:"fornecedor"`
+	Observacao     string             `json:"observacao"`
+	CriadoEm       pgtype.Timestamptz `json:"criado_em"`
+	DeletedAt      pgtype.Timestamptz `json:"deleted_at"`
+	DeletedBy      pgtype.Int8        `json:"deleted_by"`
+}
+
+type EstoqueMovimentaco struct {
+	ID         int64              `json:"id"`
+	LoteID     int64              `json:"lote_id"`
+	Tipo       string             `json:"tipo"`
+	Quantidade pgtype.Numeric     `json:"quantidade"`
+	SaldoApos  pgtype.Numeric     `json:"saldo_apos"`
+	UsuarioID  pgtype.Int8        `json:"usuario_id"`
+	Descricao  string             `json:"descricao"`
+	Origem     string             `json:"origem"`
+	CriadoEm   pgtype.Timestamptz `json:"criado_em"`
+}
+
+type EstoqueProduto struct {
+	ID                 int64              `json:"id"`
+	IDExterno          pgtype.Text        `json:"id_externo"`
+	UnidadeID          int64              `json:"unidade_id"`
+	Nome               string             `json:"nome"`
+	Tipo               string             `json:"tipo"`
+	UnidadeMedida      string             `json:"unidade_medida"`
+	SaidaPermitida     string             `json:"saida_permitida"`
+	Fracionavel        bool               `json:"fracionavel"`
+	DosesPorUnidade    pgtype.Numeric     `json:"doses_por_unidade"`
+	UnidadeFracao      pgtype.Text        `json:"unidade_fracao"`
+	Descricao          string             `json:"descricao"`
+	SelecionavelDiaria bool               `json:"selecionavel_diaria"`
+	CategoriaDiaria    pgtype.Text        `json:"categoria_diaria"`
+	Ativo              bool               `json:"ativo"`
+	CriadoEm           pgtype.Timestamptz `json:"criado_em"`
+	DeletedAt          pgtype.Timestamptz `json:"deleted_at"`
+	DeletedBy          pgtype.Int8        `json:"deleted_by"`
+}
+
+type EstoqueUnidade struct {
+	ID        int64              `json:"id"`
+	IDExterno pgtype.Text        `json:"id_externo"`
+	Nome      string             `json:"nome"`
+	Descricao string             `json:"descricao"`
+	Ativo     bool               `json:"ativo"`
+	CriadoEm  pgtype.Timestamptz `json:"criado_em"`
+	DeletedAt pgtype.Timestamptz `json:"deleted_at"`
+	DeletedBy pgtype.Int8        `json:"deleted_by"`
+}
+
 type ImportacaoLinha struct {
 	ImportacaoID int64       `json:"importacao_id"`
 	Linha        int32       `json:"linha"`
