@@ -185,6 +185,16 @@ func (s *handlers) menu(r *http.Request) []views.NavGrupo {
 			}})
 		}
 
+		// Conta Ovos: grupo reservado para as telas da integração (ver MEMORIA.md, "Conta Ovos"). Por ora só a
+		// configuração existe; os demais itens aparecem apagados.
+		if pr.Pode("param_geral") {
+			menu = append(menu, views.NavGrupo{Label: "Conta Ovos", Icone: "ovitrampa", Itens: []views.NavItem{
+				{Label: "Configuração da API", Href: "/parametros/contaovos"},
+				{Label: "Ovitrampas e envio de contagens", EmBreve: true},
+				{Label: "Mapa de ovos", EmBreve: true},
+			}})
+		}
+
 		add(pr.Pode("param_ciclo"), "Ciclos", "/ciclos")
 		add(pr.Pode("param_geral"), "Geral", "/parametros/geral")
 		add(pr.Pode("param_ciclo"), "Semanas epidemiológicas", "/parametros/semanas")

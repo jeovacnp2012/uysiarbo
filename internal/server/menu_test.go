@@ -33,7 +33,7 @@ func TestMenuPorCategoriaComGruposRecolhidos(t *testing.T) {
 	if len(abertos) != 0 {
 		t.Errorf("na página inicial os grupos deveriam estar recolhidos, abertos: %v", abertos)
 	}
-	if strings.Join(recolhidos, ",") != "Mapa,Zoonose,LIRAa,Relatórios,Estoque,Parâmetros,Configuração" {
+	if strings.Join(recolhidos, ",") != "Mapa,Zoonose,LIRAa,Relatórios,Estoque,Conta Ovos,Parâmetros,Configuração" {
 		t.Errorf("grupos recolhidos = %v", recolhidos)
 	}
 

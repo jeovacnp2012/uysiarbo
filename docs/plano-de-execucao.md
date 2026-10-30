@@ -196,6 +196,11 @@ Objetivo: migrar dados de outros sistemas e de planilhas, com segurança.
 | 7 | Fórmulas do IIP, Breteau e cobertura, e exemplos reais de PDFs a reproduzir | Etapas 7 e 8 |
 | 8 | Modelo comercial: haverá plano/licença por cliente (limite de usuários, módulos por contrato)? | Etapa 1 ou 13 |
 
+## 2.9 Parâmetros em abas e Conta Ovos (pedido do usuário, 2026-10-30)
+Ver `MEMORIA.md`, seção "Pedidos anotados": conferir cada aba de `/parametros` do Geo Controle (Novo, Ver, Editar, Excluir de cada uma), ajustar as nossas e criar as telas do menu **Conta Ovos** com a API de https://contaovos.com/pt-br/api/.
+- [ ] Comparar aba por aba (Leis, Semanas SINAN, Numeração, Mobilidade, Grupos, Doenças, Conta Ovos) e ajustar
+- [ ] Ler a documentação da API Conta Ovos e definir as telas do menu Conta Ovos
+
 ## 3. Como vamos trabalhar
 - Uma **sub-etapa por vez**: eu proponho o que será feito, executo, testo e mostro; você aprova e seguimos.
 - Mudança de escopo ou de decisão vira atualização deste documento antes de código.
