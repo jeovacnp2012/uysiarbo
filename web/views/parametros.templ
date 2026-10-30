@@ -59,12 +59,12 @@ templ ParametrosSemanas(l Layout, d SemanasData) {
 		}
 		<div class="cartao">
 			<table class="tabela">
-				<thead><tr><th>Ano</th><th>Primeiro dia</th><th>Último dia</th><th>Semanas</th><th>Ações</th></tr></thead>
+				<thead><tr><th>Ano</th><th>Primeiro dia</th><th>Último dia</th><th>Semanas</th><th scope="col"><span class="sr-only">Ações</span></th></tr></thead>
 				<tbody>
 					for _, a := range d.Anos {
 						<tr>
 							<td><strong>{ strconv.Itoa(a.Ano) }</strong></td><td>{ a.Primeiro }</td><td>{ a.Ultimo }</td><td>{ strconv.Itoa(a.Semanas) }</td>
-							<td class="acoes">
+							<td data-rotulo="Ações">
 								<a class="btn" href={ templ.SafeURL("/parametros/semanas?ano=" + strconv.Itoa(a.Ano)) } title="Ver as semanas">Ver semanas</a>
 								<a class="btn" href={ templ.SafeURL("/parametros/semanas/" + strconv.Itoa(a.Ano)) } title="Editar">Editar</a>
 								<form method="post" action={ templ.SafeURL("/parametros/semanas/" + strconv.Itoa(a.Ano) + "/excluir") } class="em-linha" onsubmit={ templ.JSFuncCall("return confirm", "Deseja realmente excluir o ano "+strconv.Itoa(a.Ano)+"?") }>
