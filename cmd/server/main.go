@@ -42,6 +42,9 @@ func main() {
 		case "dados":
 			exitOnError(dadosCmd(context.Background(), os.Args[2:]))
 			return
+		case "backup":
+			exitOnError(backupCmd(context.Background(), os.Args[2:]))
+			return
 		case "cliente":
 			exitOnError(clienteCmd(context.Background(), os.Args[2:]))
 			return

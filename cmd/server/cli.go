@@ -27,6 +27,8 @@ const ajuda = `uso:
   uysiarbo master resetar -email e@mail                       gera nova senha forte (mostrada uma vez)
   uysiarbo dados chave              gera uma chave nova para DADOS_CHAVE (cifra de dados pessoais)
   uysiarbo dados cifrar             cifra os dados pessoais antigos que ainda estão em texto puro (precisa de DADOS_CHAVE)
+  uysiarbo backup                   copia o catálogo e cada cliente (um .dump por schema), confere e apaga as rodadas antigas
+  uysiarbo backup listar|verificar|restaurar   ver "uysiarbo backup -h"
   uysiarbo master listar`
 
 // tenantService abre o banco e monta o serviço de clientes. close deve ser chamado ao fim.
