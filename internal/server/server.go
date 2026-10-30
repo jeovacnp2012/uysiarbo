@@ -161,6 +161,7 @@ func New(d Deps) http.Handler {
 	r.Get("/ciclos", h.exigir("param_ciclo", h.ciclosLista))
 	r.Get("/ciclos/novo", h.exigir("param_ciclo", h.cicloNovoForm))
 	r.Post("/ciclos", h.exigir("param_ciclo", h.cicloSalvar))
+	r.Post("/ciclos/semana", h.exigir("param_ciclo", h.ciclosSemanaSalvar))
 	r.Get("/ciclos/{id}", h.exigir("param_ciclo", h.cicloEditarForm))
 	r.Post("/ciclos/{id}", h.exigir("param_ciclo", h.cicloSalvar))
 	r.Post("/ciclos/{id}/excluir", h.exigir("param_ciclo", h.cicloExcluir))

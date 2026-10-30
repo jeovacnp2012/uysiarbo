@@ -49,14 +49,16 @@ func (h *handlers) ciclosLista(w http.ResponseWriter, r *http.Request) {
 		h.falhaInterna(w, r, "listar ciclos", err)
 		return
 	}
+	tipo := h.tipoSemana(r, q)
 	linhas := make([]views.CicloLinha, len(rows))
 	for i, c := range rows {
 		linhas[i] = views.CicloLinha{
 			ID: c.ID, Nome: c.Nome, Inicio: dataBR(c.DataInicio), Final: dataBR(c.DataFinal),
+			Semanas: textoDaSemana(c.DataInicio.Time, tipo) + " a " + textoDaSemana(c.DataFinal.Time, tipo),
 			Fechado: c.Situacao == "fechado", Publico: c.PainelPublico, Atividades: c.Atividades,
 		}
 	}
-	render(w, r, views.Ciclos(h.layout(r, "Ciclos", "/ciclos"), views.CiclosData{Linhas: linhas, PodeEditar: true}))
+	render(w, r, views.Ciclos(h.layout(r, "Ciclos", "/ciclos"), views.CiclosData{Linhas: linhas, PodeEditar: true, TipoSemana: tipo, RotuloSemana: rotuloDoTipoSemana(tipo), CSRF: csrfToken(r.Context())}))
 }
 
 func (h *handlers) cicloNovoForm(w http.ResponseWriter, r *http.Request) {
@@ -110,6 +112,8 @@ func (h *handlers) cicloEditarForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	d.Aviso = h.avisoDeCruzamento(r.Context(), q, id, c.DataInicio, c.DataFinal)
+	tipo := h.tipoSemana(r, q)
+	d.Semanas = textoDaSemana(c.DataInicio.Time, tipo) + " a " + textoDaSemana(c.DataFinal.Time, tipo) + " (" + rotuloDoTipoSemana(tipo) + ")"
 	render(w, r, views.CicloForm(h.layout(r, "Ciclo", "/ciclos"), d))
 }
 

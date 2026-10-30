@@ -201,6 +201,7 @@ var Rotulos = map[string]string{
 	"api.credencial_rotacionar":     "Gerou novo segredo de uma credencial de API",
 	"api.credencial_ativar":         "Reativou uma credencial de API",
 	"api.credencial_desativar":      "Desativou uma credencial de API",
+	"parametro.semana":              "Mudou o tipo de semana epidemiológica",
 	"acesso.metodo":                 "Mudou o método de controle de acesso aos locais",
 	"acesso.criar":                  "Concedeu acesso a locais",
 	"acesso.remover":                "Retirou um acesso a locais",

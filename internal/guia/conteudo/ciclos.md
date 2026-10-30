@@ -2,7 +2,7 @@ titulo: Ciclos e atividades
 resumo: Como cadastrar os ciclos de trabalho, as atividades de cada um, o painel público e a sincronização entre ciclos.
 ordem: 13
 permissao: param_ciclo
-palavras: ciclo, ciclos, atividade, LIT, LI, PE, DF, PVE, LIRAa, LIA, BRI, período, fechado, operando, painel público, sincronizar
+palavras: semana epidemiológica, SE, SINAN, ISO, ciclo, ciclos, atividade, LIT, LI, PE, DF, PVE, LIRAa, LIA, BRI, período, fechado, operando, painel público, sincronizar
 ---
 # Ciclos e atividades
 
@@ -14,6 +14,13 @@ Em **Parâmetros → Ciclos** você cadastra os períodos de trabalho (em geral 
 - **Permitir registros fora do período**: libera registros com data fora das datas do ciclo.
 - Se o período cruza o de outro ciclo, o sistema **avisa** na ficha, mas não impede.
 
+## Semana epidemiológica
+Na própria tela **Ciclos** você escolhe como as semanas são numeradas neste ambiente:
+- **SINAN / Ministério da Saúde** (padrão): semanas de **domingo a sábado**; a semana 1 é a que tem ao menos 4 dias em janeiro.
+- **ISO 8601**: semanas de **segunda a domingo**; a semana 1 é a que tem a primeira quinta-feira do ano.
+
+A lista e a ficha de cada ciclo mostram as semanas que ele cobre (por exemplo, "SE 1/2026 a SE 9/2026"). As visitas e os relatórios usam a mesma regra. Mudar o tipo não altera nenhum registro: só muda a numeração mostrada.
+
 ## Atividades
 O catálogo é fixo: **LIT** (levantamento de índice com tratamento), **LI** (levantamento de índice), **PE** (ponto estratégico), **T** (tratamento), **DF** (delimitação de foco), **PVE** (pesquisa vetorial especial), **LIRAa**, **LIA** (levantamento de índice amostral) e **BRI** (bloqueio com borrifação residual). Marque as que valem em cada ciclo.
 
@@ -22,6 +29,12 @@ Marque **Mostrar este ciclo no painel público**, escolha as atividades que apar
 
 ## Ciclos sincronizados
 Indica que o que se registra neste ciclo também vale para outros (por exemplo, um ciclo de campanha que acompanha o ciclo regular). Escolha os ciclos na lista da ficha.
+
+## O que o ciclo fechado e o período controlam
+- **Ciclo fechado**: quem não tem a permissão **Editar (ciclo fechado)** não consegue alterar os registros do ciclo; o sistema explica o motivo.
+- **Data fora do período**: um registro com data fora das datas do ciclo é recusado, a não ser que o ciclo permita registros fora do período.
+
+Essas regras passam a valer nas telas de visitas e de laboratório, nas próximas etapas.
 
 ## Excluir
 **Excluir** envia o ciclo para a **Lixeira** (dá para restaurar). A exclusão definitiva só é possível com autorização e se nenhum outro ciclo estiver sincronizado com ele.

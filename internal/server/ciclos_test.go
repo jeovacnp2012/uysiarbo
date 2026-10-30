@@ -5,6 +5,9 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
+
+	"uysiarbo/internal/authz"
 )
 
 func formCiclo(nome, ini, fim string, extra url.Values) url.Values {
@@ -112,4 +115,78 @@ func TestCiclosExigemPermissao(t *testing.T) {
 		quer(t, carla.get(p), http.StatusForbidden)
 	}
 	quer(t, carla.post("/ciclos", formCiclo("01 Ciclo", "2026-01-01", "2026-02-28", nil)), http.StatusForbidden)
+}
+
+func TestSemanaEpidemiologicaDosCiclos(t *testing.T) {
+	m := novoMundo(t)
+	ana := m.comAna(t)
+	quer(t, ana.post("/ciclos", formCiclo("01 Ciclo - 2026", "2026-01-04", "2026-03-07", nil)), http.StatusSeeOther)
+
+	// Padrão SINAN: 4/1/2026 abre a semana 1 e 7/3/2026 (sábado) fecha a 9.
+	quer(t, ana.get("/ciclos"), http.StatusOK, "SE 1/2026 a SE 9/2026", "Semana epidemiológica", "SINAN")
+	id := s64(mustCiclo(t, m).ID)
+	quer(t, ana.get("/ciclos/"+id), http.StatusOK, "SE 1/2026 a SE 9/2026")
+
+	// Trocar para ISO: o mesmo ciclo passa a ser contado de segunda a domingo.
+	quer(t, ana.post("/ciclos/semana", url.Values{"tipo": {"iso"}}), http.StatusSeeOther)
+	quer(t, ana.get("/ciclos"), http.StatusOK, "SE 1/2026 a SE 10/2026", "ISO 8601")
+	quer(t, ana.post("/ciclos/semana", url.Values{"tipo": {"lunar"}}), http.StatusBadRequest)
+	quer(t, ana.post("/ciclos/semana", url.Values{"tipo": {"iso"}}), http.StatusSeeOther) // igual: nada a registrar
+
+	n := 0
+	for _, e := range m.eventos(t) {
+		if e.Acao == "parametro.semana" {
+			n++
+			if mapa(e.Antes)["tipo"] == nil || mapa(e.Depois)["tipo"] == nil {
+				t.Errorf("antes/depois: %+v", e)
+			}
+		}
+	}
+	if n != 1 {
+		t.Errorf("parametro.semana registrado %d vezes, queria 1", n)
+	}
+	quer(t, m.comCarla(t).post("/ciclos/semana", url.Values{"tipo": {"sinan"}}), http.StatusForbidden)
+}
+
+func mustCiclo(t *testing.T, m *mundo) (c struct{ ID int64 }) {
+	t.Helper()
+	cs, err := m.cliQ.ListCiclos(t.Context())
+	if err != nil || len(cs) == 0 {
+		t.Fatalf("ciclos: %v %d", err, len(cs))
+	}
+	c.ID = cs[0].ID
+	return c
+}
+
+func TestRegrasDeCicloFechadoEPeriodo(t *testing.T) {
+	m := novoMundo(t)
+	ana := m.comAna(t)
+	quer(t, ana.post("/ciclos", formCiclo("01 Ciclo - 2026", "2026-01-04", "2026-03-07", url.Values{"fechado": {"1"}})), http.StatusSeeOther)
+	quer(t, ana.post("/ciclos", formCiclo("02 Ciclo - 2026", "2026-03-08", "2026-05-02", url.Values{"fora_periodo": {"1"}})), http.StatusSeeOther)
+	cs, _ := m.cliQ.ListCiclos(t.Context())
+	fechado, _ := m.cliQ.GetCiclo(t.Context(), cs[1].ID)
+	aberto, _ := m.cliQ.GetCiclo(t.Context(), cs[0].ID)
+
+	semPermissao := authz.Com()
+	comPermissao := authz.Com(permissaoCicloFechado)
+	if ok, msg := cicloAceitaEdicao(semPermissao, fechado); ok || !strings.Contains(msg, "fechado") {
+		t.Errorf("ciclo fechado sem permissão: %v %q", ok, msg)
+	}
+	if ok, _ := cicloAceitaEdicao(comPermissao, fechado); !ok {
+		t.Error("com a permissão própria, o ciclo fechado aceita edição")
+	}
+	if ok, _ := cicloAceitaEdicao(semPermissao, aberto); !ok {
+		t.Error("ciclo operando aceita edição")
+	}
+
+	dia := func(s string) time.Time { d, _ := time.Parse("2006-01-02", s); return d }
+	if ok, _ := cicloAceitaData(fechado, dia("2026-02-10")); !ok {
+		t.Error("data dentro do período")
+	}
+	if ok, msg := cicloAceitaData(fechado, dia("2026-03-08")); ok || !strings.Contains(msg, "fora do período") {
+		t.Errorf("data fora do período: %v %q", ok, msg)
+	}
+	if ok, _ := cicloAceitaData(aberto, dia("2026-07-01")); !ok {
+		t.Error("ciclo que permite fora do período aceita qualquer data")
+	}
 }

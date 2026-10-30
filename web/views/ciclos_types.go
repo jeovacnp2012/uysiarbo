@@ -10,11 +10,15 @@ type CicloLinha struct {
 	Fechado    bool
 	Publico    bool
 	Atividades string // siglas, separadas por vírgula
+	Semanas    string // "SE 1/2026 a SE 9/2026"
 }
 
 type CiclosData struct {
-	Linhas     []CicloLinha
-	PodeEditar bool
+	Linhas       []CicloLinha
+	PodeEditar   bool
+	TipoSemana   string // "sinan" ou "iso"
+	RotuloSemana string
+	CSRF         string
 }
 
 // AtividadeOpcao é uma atividade do catálogo, marcada ou não.
@@ -44,6 +48,7 @@ type CicloFormData struct {
 	Atividades         []AtividadeOpcao
 	Sincronizar        []CicloOpcao
 	Aviso              string // sobreposição de datas, não impede salvar
+	Semanas            string // semanas epidemiológicas que o ciclo cobre
 	PodeEditar         bool
 	Erro               string
 	CSRF               string
