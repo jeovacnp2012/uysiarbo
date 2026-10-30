@@ -25,6 +25,14 @@ WHERE l.deleted_at IS NULL AND (sqlc.arg(busca)::text = '' OR position(lower(sql
 ORDER BY
   CASE WHEN sqlc.arg(ordem)::text = 'endereco' THEN lower(l.endereco) END ASC,
   CASE WHEN sqlc.arg(ordem)::text = 'endereco_desc' THEN lower(l.endereco) END DESC,
+  CASE WHEN sqlc.arg(ordem)::text = 'bairro' THEN lower(b.nome) END ASC,
+  CASE WHEN sqlc.arg(ordem)::text = 'bairro_desc' THEN lower(b.nome) END DESC,
+  CASE WHEN sqlc.arg(ordem)::text = 'proprietario' THEN lower(l.proprietario) END ASC,
+  CASE WHEN sqlc.arg(ordem)::text = 'proprietario_desc' THEN lower(l.proprietario) END DESC,
+  CASE WHEN sqlc.arg(ordem)::text = 'habitantes' THEN l.humanos END ASC,
+  CASE WHEN sqlc.arg(ordem)::text = 'habitantes_desc' THEN l.humanos END DESC,
+  CASE WHEN sqlc.arg(ordem)::text = 'situacao' THEN l.ativo::int END ASC,
+  CASE WHEN sqlc.arg(ordem)::text = 'situacao_desc' THEN l.ativo::int END DESC,
   CASE WHEN sqlc.arg(ordem)::text = 'recentes' THEN l.id END DESC,
   CASE WHEN sqlc.arg(ordem)::text = 'antigos' THEN l.id END ASC,
   lower(b.nome), lower(l.endereco), l.numero, l.id

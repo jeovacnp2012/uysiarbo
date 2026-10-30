@@ -25,6 +25,24 @@ templ OpcoesDeQuarteiraoFiltro(itens []CidadeOpcao) {
 	@opcoesDe(itens)
 }
 
+// proximaOrdemLocal alterna entre crescente e decrescente da coluna ("chave" e "chave_desc").
+func proximaOrdemLocal(atual, chave string) string {
+	if atual == chave {
+		return chave + "_desc"
+	}
+	return chave
+}
+
+func setaOrdemLocal(atual, chave string) string {
+	switch atual {
+	case chave:
+		return " ▲"
+	case chave + "_desc":
+		return " ▼"
+	}
+	return ""
+}
+
 templ Locais(l Layout, d LocaisData) {
 	@Base(l) {
 		@PageHeader("Locais", "Imóveis, comércios, terrenos e pontos estratégicos.") {
@@ -143,11 +161,11 @@ templ Locais(l Layout, d LocaisData) {
 					<table class="tabela">
 						<thead>
 							<tr>
-								<th scope="col">Endereço</th>
-								<th scope="col">Bairro / quarteirão</th>
-								<th scope="col">Proprietário</th>
-								<th scope="col">Habitantes</th>
-								<th scope="col">Situação</th>
+								<th scope="col"><a class="ordenar" href="#" data-ordenar="endereco" data-valor={ proximaOrdemLocal(d.Filtro.Ordem, "endereco") }>Endereço<span class="seta">{ setaOrdemLocal(d.Filtro.Ordem, "endereco") }</span></a></th>
+								<th scope="col"><a class="ordenar" href="#" data-ordenar="bairro" data-valor={ proximaOrdemLocal(d.Filtro.Ordem, "bairro") }>Bairro / quarteirão<span class="seta">{ setaOrdemLocal(d.Filtro.Ordem, "bairro") }</span></a></th>
+								<th scope="col"><a class="ordenar" href="#" data-ordenar="proprietario" data-valor={ proximaOrdemLocal(d.Filtro.Ordem, "proprietario") }>Proprietário<span class="seta">{ setaOrdemLocal(d.Filtro.Ordem, "proprietario") }</span></a></th>
+								<th scope="col"><a class="ordenar" href="#" data-ordenar="habitantes" data-valor={ proximaOrdemLocal(d.Filtro.Ordem, "habitantes") }>Habitantes<span class="seta">{ setaOrdemLocal(d.Filtro.Ordem, "habitantes") }</span></a></th>
+								<th scope="col"><a class="ordenar" href="#" data-ordenar="situacao" data-valor={ proximaOrdemLocal(d.Filtro.Ordem, "situacao") }>Situação<span class="seta">{ setaOrdemLocal(d.Filtro.Ordem, "situacao") }</span></a></th>
 								<th scope="col"><span class="sr-only">Ações</span></th>
 							</tr>
 						</thead>

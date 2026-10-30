@@ -110,7 +110,22 @@ WHERE v.deleted_at IS NULL AND (v.ativo OR sqlc.arg(ver_desativadas)::boolean)
   AND (sqlc.arg(tratamento)::text = '' OR v.fez_tratamento = (sqlc.arg(tratamento)::text = 'sim'))
   AND (sqlc.arg(foto)::text = '' OR EXISTS (SELECT 1 FROM visita_fotos f WHERE f.visita_id = v.id AND f.deleted_at IS NULL) = (sqlc.arg(foto)::text = 'sim'))
   AND (sqlc.arg(situacao)::text = '' OR v.ativo = (sqlc.arg(situacao)::text = 'ativa'))
-ORDER BY v.data DESC, v.id DESC
+ORDER BY
+  CASE WHEN sqlc.arg(ordem)::text = 'id' AND sqlc.arg(dir)::text = 'asc' THEN COALESCE(v.id_externo, v.id::text) END ASC,
+  CASE WHEN sqlc.arg(ordem)::text = 'id' AND sqlc.arg(dir)::text = 'desc' THEN COALESCE(v.id_externo, v.id::text) END DESC,
+  CASE WHEN sqlc.arg(ordem)::text = 'endereco' AND sqlc.arg(dir)::text = 'asc' THEN lower(l.endereco) END ASC,
+  CASE WHEN sqlc.arg(ordem)::text = 'endereco' AND sqlc.arg(dir)::text = 'desc' THEN lower(l.endereco) END DESC,
+  CASE WHEN sqlc.arg(ordem)::text = 'data' AND sqlc.arg(dir)::text = 'asc' THEN v.data END ASC,
+  CASE WHEN sqlc.arg(ordem)::text = 'data' AND sqlc.arg(dir)::text = 'desc' THEN v.data END DESC,
+  CASE WHEN sqlc.arg(ordem)::text = 'ciclo' AND sqlc.arg(dir)::text = 'asc' THEN c.nome END ASC,
+  CASE WHEN sqlc.arg(ordem)::text = 'ciclo' AND sqlc.arg(dir)::text = 'desc' THEN c.nome END DESC,
+  CASE WHEN sqlc.arg(ordem)::text = 'semana' AND sqlc.arg(dir)::text = 'asc' THEN v.semana END ASC,
+  CASE WHEN sqlc.arg(ordem)::text = 'semana' AND sqlc.arg(dir)::text = 'desc' THEN v.semana END DESC,
+  CASE WHEN sqlc.arg(ordem)::text = 'atividade' AND sqlc.arg(dir)::text = 'asc' THEN a.sigla END ASC,
+  CASE WHEN sqlc.arg(ordem)::text = 'atividade' AND sqlc.arg(dir)::text = 'desc' THEN a.sigla END DESC,
+  CASE WHEN sqlc.arg(ordem)::text = 'pendencia' AND sqlc.arg(dir)::text = 'asc' THEN v.pendencia END ASC,
+  CASE WHEN sqlc.arg(ordem)::text = 'pendencia' AND sqlc.arg(dir)::text = 'desc' THEN v.pendencia END DESC,
+  v.data DESC, v.id DESC
 LIMIT sqlc.arg(limite)::int OFFSET sqlc.arg(deslocamento)::int;
 
 -- Ficha do local (6.5): últimas visitas e resumo dos últimos 12 meses.

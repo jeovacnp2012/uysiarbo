@@ -374,6 +374,14 @@ WHERE l.deleted_at IS NULL AND ($1::text = '' OR position(lower($1::text) in low
 ORDER BY
   CASE WHEN $17::text = 'endereco' THEN lower(l.endereco) END ASC,
   CASE WHEN $17::text = 'endereco_desc' THEN lower(l.endereco) END DESC,
+  CASE WHEN $17::text = 'bairro' THEN lower(b.nome) END ASC,
+  CASE WHEN $17::text = 'bairro_desc' THEN lower(b.nome) END DESC,
+  CASE WHEN $17::text = 'proprietario' THEN lower(l.proprietario) END ASC,
+  CASE WHEN $17::text = 'proprietario_desc' THEN lower(l.proprietario) END DESC,
+  CASE WHEN $17::text = 'habitantes' THEN l.humanos END ASC,
+  CASE WHEN $17::text = 'habitantes_desc' THEN l.humanos END DESC,
+  CASE WHEN $17::text = 'situacao' THEN l.ativo::int END ASC,
+  CASE WHEN $17::text = 'situacao_desc' THEN l.ativo::int END DESC,
   CASE WHEN $17::text = 'recentes' THEN l.id END DESC,
   CASE WHEN $17::text = 'antigos' THEN l.id END ASC,
   lower(b.nome), lower(l.endereco), l.numero, l.id

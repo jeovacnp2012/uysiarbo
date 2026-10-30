@@ -67,14 +67,16 @@ func (h *handlers) visitasLista(w http.ResponseWriter, r *http.Request) {
 	if n, err := strconv.Atoi(f.Semana); err == nil && n >= 1 && n <= 53 {
 		semana = pgtype.Int4{Int32: int32(n), Valid: true}
 	}
+	ordem, dir := ordemDeVisitas(qs.Get("ordem"), qs.Get("dir"))
 	arg := sqlccliente.ListVisitasParams{
+		Ordem: ordem, Dir: dir,
 		VerDesativadas: pr.Pode("visita_ver_desativados"), SomenteAgente: h.escopoVisitas(r), IDTexto: f.ID, Endereco: f.Endereco,
 		Numero: f.Numero, BairroID: idOpcional(f.Bairro), QuarteiraoID: idOpcional(f.Quarteirao), Lado: f.Lado,
 		CicloID: idOpcional(f.Ciclo), AgenteID: idOpcional(f.Agente), AtividadeID: idOpcional(f.Atividade), Semana: semana,
 		DataDe: dataOpcional(f.De), DataAte: dataOpcional(f.Ate), Pendencia: f.Pendencia, Deposito: f.Deposito,
 		Amostra: f.Amostra, Tratamento: f.Tratamento, Foto: f.Foto, Situacao: f.Situacao,
 	}
-	d := views.VisitasData{PodeNova: pr.Pode("visita_adicionar"), Filtro: f, PodeLote: pr.Pode("visita_desativar"), Aviso: avisoDoLoteDeVisitas(qs.Get("aviso"))}
+	d := views.VisitasData{PodeNova: pr.Pode("visita_adicionar"), Filtro: f, Ordem: ordem, Dir: dir, PodeLote: pr.Pode("visita_desativar"), Aviso: avisoDoLoteDeVisitas(qs.Get("aviso"))}
 	if txt := qs.Get("local"); txt != "" {
 		id, err := strconv.ParseInt(txt, 10, 64)
 		if err != nil {
@@ -182,6 +184,10 @@ func (h *handlers) visitasLista(w http.ResponseWriter, r *http.Request) {
 		marcarOpcao(opcoesSimNao, f.Tratamento), marcarOpcao(opcoesSimNao, f.Foto)
 
 	d.Query = url.Values{}
+	if ordem != "" {
+		d.Query.Set("ordem", ordem)
+		d.Query.Set("dir", dir)
+	}
 	for k, v := range map[string]string{
 		"id": f.ID, "endereco": f.Endereco, "numero": f.Numero, "bairro": f.Bairro, "quarteirao": f.Quarteirao, "lado": f.Lado,
 		"ciclo": f.Ciclo, "agente": f.Agente, "atividade": f.Atividade, "semana": f.Semana, "de": f.De, "ate": f.Ate,
@@ -323,4 +329,16 @@ func avisoDoLoteDeVisitas(codigo string) string {
 		msg += fmt.Sprintf(" e %d pulada(s) (sem acesso, ciclo fechado ou inexistente)", p)
 	}
 	return msg + "."
+}
+
+// ordemDeVisitas valida a coluna e o sentido pedidos pelo título da tabela (sem pedido, os mais recentes primeiro).
+func ordemDeVisitas(ordem, dir string) (string, string) {
+	switch ordem {
+	case "id", "endereco", "data", "ciclo", "semana", "atividade", "pendencia":
+		if dir != "desc" {
+			dir = "asc"
+		}
+		return ordem, dir
+	}
+	return "", ""
 }

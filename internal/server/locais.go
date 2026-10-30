@@ -202,10 +202,12 @@ func textoInt(v pgtype.Int4) string {
 }
 
 // ordensDeLocal são as ordenações da lista de locais ("" = por bairro e endereço).
-var ordensDeLocal = []string{"", "endereco", "endereco_desc", "recentes", "antigos"}
+var ordensDeLocal = []string{"", "endereco", "endereco_desc", "recentes", "antigos",
+	"bairro", "bairro_desc", "proprietario", "proprietario_desc", "habitantes", "habitantes_desc", "situacao", "situacao_desc"}
 
 func opcoesOrdemLocal(atual string) []views.CidadeOpcao {
-	rotulos := []string{"Bairro e endereço", "Endereço (A-Z)", "Endereço (Z-A)", "Mais recentes", "Mais antigos"}
+	rotulos := []string{"Bairro e endereço", "Endereço (A-Z)", "Endereço (Z-A)", "Mais recentes", "Mais antigos",
+		"Bairro (A-Z)", "Bairro (Z-A)", "Proprietário (A-Z)", "Proprietário (Z-A)", "Habitantes (menos)", "Habitantes (mais)", "Situação (inativos antes)", "Situação (ativos antes)"}
 	out := make([]views.CidadeOpcao, len(ordensDeLocal))
 	for i, v := range ordensDeLocal {
 		out[i] = views.CidadeOpcao{Rotulo: rotulos[i], Valor: v, Selecionada: v == atual}

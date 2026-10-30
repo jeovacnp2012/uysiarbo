@@ -86,6 +86,7 @@ type VisitaLinha struct {
 
 type VisitasData struct {
 	Linhas      []VisitaLinha
+	Ordem, Dir  string
 	LocalID     int64
 	Local       string
 	PodeNova    bool

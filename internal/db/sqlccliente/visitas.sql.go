@@ -693,8 +693,23 @@ WHERE v.deleted_at IS NULL AND (v.ativo OR $1::boolean)
   AND ($19::text = '' OR v.fez_tratamento = ($19::text = 'sim'))
   AND ($20::text = '' OR EXISTS (SELECT 1 FROM visita_fotos f WHERE f.visita_id = v.id AND f.deleted_at IS NULL) = ($20::text = 'sim'))
   AND ($21::text = '' OR v.ativo = ($21::text = 'ativa'))
-ORDER BY v.data DESC, v.id DESC
-LIMIT $23::int OFFSET $22::int
+ORDER BY
+  CASE WHEN $22::text = 'id' AND $23::text = 'asc' THEN COALESCE(v.id_externo, v.id::text) END ASC,
+  CASE WHEN $22::text = 'id' AND $23::text = 'desc' THEN COALESCE(v.id_externo, v.id::text) END DESC,
+  CASE WHEN $22::text = 'endereco' AND $23::text = 'asc' THEN lower(l.endereco) END ASC,
+  CASE WHEN $22::text = 'endereco' AND $23::text = 'desc' THEN lower(l.endereco) END DESC,
+  CASE WHEN $22::text = 'data' AND $23::text = 'asc' THEN v.data END ASC,
+  CASE WHEN $22::text = 'data' AND $23::text = 'desc' THEN v.data END DESC,
+  CASE WHEN $22::text = 'ciclo' AND $23::text = 'asc' THEN c.nome END ASC,
+  CASE WHEN $22::text = 'ciclo' AND $23::text = 'desc' THEN c.nome END DESC,
+  CASE WHEN $22::text = 'semana' AND $23::text = 'asc' THEN v.semana END ASC,
+  CASE WHEN $22::text = 'semana' AND $23::text = 'desc' THEN v.semana END DESC,
+  CASE WHEN $22::text = 'atividade' AND $23::text = 'asc' THEN a.sigla END ASC,
+  CASE WHEN $22::text = 'atividade' AND $23::text = 'desc' THEN a.sigla END DESC,
+  CASE WHEN $22::text = 'pendencia' AND $23::text = 'asc' THEN v.pendencia END ASC,
+  CASE WHEN $22::text = 'pendencia' AND $23::text = 'desc' THEN v.pendencia END DESC,
+  v.data DESC, v.id DESC
+LIMIT $25::int OFFSET $24::int
 `
 
 type ListVisitasParams struct {
@@ -719,6 +734,8 @@ type ListVisitasParams struct {
 	Tratamento     string      `json:"tratamento"`
 	Foto           string      `json:"foto"`
 	Situacao       string      `json:"situacao"`
+	Ordem          string      `json:"ordem"`
+	Dir            string      `json:"dir"`
 	Deslocamento   int32       `json:"deslocamento"`
 	Limite         int32       `json:"limite"`
 }
@@ -764,6 +781,8 @@ func (q *Queries) ListVisitas(ctx context.Context, arg ListVisitasParams) ([]Lis
 		arg.Tratamento,
 		arg.Foto,
 		arg.Situacao,
+		arg.Ordem,
+		arg.Dir,
 		arg.Deslocamento,
 		arg.Limite,
 	)

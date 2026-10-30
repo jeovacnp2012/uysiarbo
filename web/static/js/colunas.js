@@ -94,8 +94,12 @@
             e.preventDefault();
             var form = document.querySelector('form.filtros-vivos');
             if (!form || !form.elements.ordem) return;
-            form.elements.ordem.value = a.getAttribute('data-ordenar');
-            form.elements.dir.value = a.getAttribute('data-dir') || 'asc';
+            if (a.hasAttribute('data-valor')) {
+                form.elements.ordem.value = a.getAttribute('data-valor');
+            } else {
+                form.elements.ordem.value = a.getAttribute('data-ordenar');
+                form.elements.dir.value = a.getAttribute('data-dir') || 'asc';
+            }
             document.body.dispatchEvent(new Event('filtrar'));
             return;
         }
