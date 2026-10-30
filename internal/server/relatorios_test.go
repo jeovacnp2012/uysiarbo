@@ -37,3 +37,33 @@ func TestRelatorioVisitas(t *testing.T) {
 	quer(t, sem.get("/relatorios/visitas"), http.StatusNotFound)
 	quer(t, sem.get("/relatorios"), http.StatusOK, "nenhum relatório")
 }
+
+func TestRelatoriosDoSistemaGeram(t *testing.T) {
+	m := novoMundo(t)
+	ana := m.comAna(t)
+	c := m.cenarioVisita(t, ana)
+	agente := m.idUsuario(t, emailAna)
+	quer(t, ana.post("/visitas", c.form(agente, "achou", "1", "a1", "2", "total_eliminado", "2", "amostra", "1")), http.StatusSeeOther)
+	quer(t, ana.post("/visitas", c.form(agente, "pendencia", "recusado")), http.StatusSeeOther)
+
+	esperado := map[string]string{
+		"local-visita":      "Total: 1 locais",
+		"producao":          "Total",
+		"antivetorial":      "Total",
+		"dia-trabalhado":    "1 dias trabalhados",
+		"laboratorio-total": "Nenhum registro",
+		"animais":           "Total",
+		"bri":               "Nenhum registro",
+		"local-incompleto":  "Total:",
+	}
+	for slug, texto := range esperado {
+		quer(t, ana.get("/relatorios/"+slug), http.StatusOK, "Gerar relatório")
+		quer(t, ana.get("/relatorios/"+slug+"?gerar=1"), http.StatusOK, texto)
+		for _, fmt := range []string{"pdf", "xlsx", "csv"} {
+			quer(t, ana.get("/relatorios/"+slug+"?formato="+fmt), http.StatusOK)
+		}
+	}
+	quer(t, ana.get("/relatorios/local-visita?gerar=1&situacao=nao"), http.StatusOK, "Nenhum registro")
+	quer(t, ana.get("/relatorios/producao?gerar=1&agente="+agente), http.StatusOK, "Total")
+	quer(t, ana.get("/relatorios/local-incompleto?gerar=1&tipo=comercio"), http.StatusOK)
+}

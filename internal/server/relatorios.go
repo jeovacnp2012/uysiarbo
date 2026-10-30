@@ -141,6 +141,10 @@ func (h *handlers) relatorioGerar(w http.ResponseWriter, r *http.Request) {
 			}
 		case "simnao":
 			v = simNaoValido(v)
+		case "tipolocal":
+			if !validoEm(opcoesTipo(""), v) {
+				v = ""
+			}
 		case "data":
 			if _, err := time.Parse(formatoDataISO, v); err != nil {
 				v = ""
@@ -271,6 +275,8 @@ func (h *handlers) camposDoRelatorio(ctx context.Context, q *sqlccliente.Queries
 			for _, o := range rotulosPendencia {
 				campo.Opcoes = append(campo.Opcoes, views.CidadeOpcao{Valor: o.Valor, Rotulo: o.Rotulo, Selecionada: o.Valor == f[c.Nome]})
 			}
+		case "tipolocal":
+			campo.Opcoes = opcoesTipo(f[c.Nome])
 		case "simnao":
 			campo.Opcoes = []views.CidadeOpcao{{Valor: "sim", Rotulo: "Sim", Selecionada: f[c.Nome] == "sim"}, {Valor: "nao", Rotulo: "Não", Selecionada: f[c.Nome] == "nao"}}
 		}

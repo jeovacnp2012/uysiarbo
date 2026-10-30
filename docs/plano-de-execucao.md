@@ -139,7 +139,7 @@ Objetivo: migrar dados de outros sistemas e de planilhas, com segurança.
 
 ## Etapa 8 — Relatórios e PDFs
 - [x] 8.1 Motor de relatórios parametrizados (filtros, tela, PDF, planilha) — `internal/relatorio` (Doc: tela, CSV, XLSX, PDF com fpdf), `internal/server/relatorios.go` (`relatoriosDoSistema`), `/relatorios`; primeiro relatório: Visitas (versão 1.0.037)
-- [ ] 8.2 Os 14 relatórios do sistema atual, um a um (cada um validado contra um exemplo real)
+- [x] 8.2 (parcial) Relatórios do sistema atual: **feitos 9 de 14** (Visitas, Local x visita, Produção, Antivetorial, Dia trabalhado, Laboratório totais, Animais, BRI, Locais incompletos; versão 1.0.038). **Faltam por depender de módulos futuros:** Campanha de vacinação, LIRAa, Investigação totais, Locais por criticidade, Pesquisa entomológica/Tratamento em papel. Cada um ainda precisa ser validado contra um exemplo real do GC
 - [ ] 8.3 Resumo semanal e Reconhecimento Geográfico
 
 ## Etapa 9 — Casos e fiscalização
