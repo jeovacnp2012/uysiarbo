@@ -207,6 +207,8 @@ func New(d Deps) http.Handler {
 	r.Post("/cidades/{id}", h.exigir("bairro_adicionar", h.cidadeSalvar))
 
 	r.Get("/mapa", h.mapaPagina)
+	r.Get("/mapa/rastro", h.exigir("mapa_coleta", h.rastroPagina))
+	r.Get("/mapa/rastro.geojson", h.exigir("mapa_coleta", h.rastroGeoJSON))
 	r.Get("/mapa/bairros.geojson", h.exigir("bairro_visualizar", h.mapaBairros))
 	r.Get("/mapa/quarteiroes.geojson", h.exigir("bairro_visualizar", h.mapaQuarteiroes))
 	r.Get("/mapa/locais.geojson", h.exigir("local_visualizar", h.mapaLocais))

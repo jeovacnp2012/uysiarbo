@@ -25,3 +25,6 @@ Só aparecem os locais com **latitude e longitude** preenchidas. O mapa informa 
 Para o mapa continuar rápido, cada tela carrega no máximo 5.000 pontos; se houver mais, o mapa avisa e basta aproximar. Quem só vê os bairros atribuídos, só pontos estratégicos, ou não vê desativados, enxerga no mapa apenas o que enxerga nas listas.
 
 O fundo do mapa vem do OpenStreetMap.
+
+## Rastro GPS
+No menu **Mapa > Rastro GPS** (permissão "Coleta GPS do app") aparecem os pontos de GPS gravados nas visitas feitas pelo aplicativo. Cada agente tem uma linha por dia, ligando as visitas em ordem de hora. Filtre por ciclo, agente e período; o filtro vale na hora. Pontos azuis são visitas sem depósito, laranja com depósito e cinza com pendência; clique num ponto para abrir a visita. Mostra até 5.000 pontos por vez. Visitas sem GPS (as lançadas pela tela) não aparecem.

@@ -48,9 +48,13 @@ func (s *handlers) menu(r *http.Request) []views.NavGrupo {
 		if pr.Pode("bairro_visualizar") || pr.Pode("local_visualizar") {
 			// Mapa é um grupo: cada camada de interesse vira um item. Os que ainda não têm tela aparecem
 			// apagados; ao construir um, troque EmBreve por Href.
+			rastro := views.NavItem{Label: "Rastro GPS", EmBreve: true}
+			if pr.Pode("mapa_coleta") {
+				rastro = views.NavItem{Label: "Rastro GPS", Href: "/mapa/rastro"}
+			}
 			menu = append(menu, views.NavGrupo{Label: "Mapa", Icone: "mapa", Itens: []views.NavItem{
 				{Label: "Visitas", Href: "/mapa"},
-				{Label: "Rastro GPS", EmBreve: true},
+				rastro,
 				{Label: "Doenças", EmBreve: true},
 				{Label: "Campanha Antirrábica", EmBreve: true},
 				{Label: "Ovitrampas", EmBreve: true},

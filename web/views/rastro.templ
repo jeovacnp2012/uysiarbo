@@ -1,0 +1,60 @@
+package views
+
+import "strconv"
+
+type RastroData struct {
+	TilesURL, Credito string
+	De, Ate           string
+	Ciclos, Agentes   []CidadeOpcao
+}
+
+templ Rastro(l Layout, d RastroData) {
+	@Base(l) {
+		@PageHeader("Rastro GPS", "O caminho dos agentes: os pontos de GPS das visitas feitas pelo aplicativo, ligados por data e hora.")
+		<form method="get" action="/mapa/rastro" class="cartao filtros" id="rastro-filtros">
+			<div class="campo">
+				<label for="r-ciclo">Ciclo</label>
+				<select id="r-ciclo" name="ciclo">
+					<option value="">Todos</option>
+					for _, c := range d.Ciclos {
+						<option value={ strconv.FormatInt(c.ID, 10) } selected?={ c.Selecionada }>{ c.Rotulo }</option>
+					}
+				</select>
+			</div>
+			<div class="campo">
+				<label for="r-agente">Agente</label>
+				<select id="r-agente" name="agente">
+					<option value="">Todos</option>
+					for _, a := range d.Agentes {
+						<option value={ strconv.FormatInt(a.ID, 10) } selected?={ a.Selecionada }>{ a.Rotulo }</option>
+					}
+				</select>
+			</div>
+			<div class="campo">
+				<label for="r-de">De</label>
+				<input id="r-de" type="date" name="de" value={ d.De }/>
+			</div>
+			<div class="campo">
+				<label for="r-ate">Até</label>
+				<input id="r-ate" type="date" name="ate" value={ d.Ate }/>
+			</div>
+			<div class="form-acoes">
+				<a class="btn" href="/mapa/rastro">Limpar</a>
+			</div>
+		</form>
+		<section class="cartao mapa-cartao">
+			<div class="mapa-camadas">
+				<span class="subtitulo" id="mapa-status" role="status" aria-live="polite"></span>
+			</div>
+			<div id="mapa" class="mapa" data-tiles={ d.TilesURL } data-credito={ d.Credito }></div>
+			<div class="mapa-legenda">
+				<span><i class="ponto ponto-comercio"></i> Visita com depósito</span>
+				<span><i class="ponto ponto-residencial"></i> Visita sem depósito</span>
+				<span><i class="ponto ponto-inativo"></i> Com pendência</span>
+			</div>
+		</section>
+		<link rel="stylesheet" href={ asset("/static/vendor/maplibre-gl.css") }/>
+		<script src={ asset("/static/vendor/maplibre-gl.js") }></script>
+		<script src={ asset("/static/js/rastro.js") }></script>
+	}
+}
