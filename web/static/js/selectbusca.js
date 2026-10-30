@@ -36,6 +36,7 @@
         botao.appendChild(texto);
         botao.appendChild(el('span', 'sb-seta', { 'aria-hidden': 'true' }));
         var painel = el('div', 'sb-painel');
+        if (quantas(sel) <= LIMITE) painel.classList.add('sb-sem-busca');
         painel.hidden = true;
         var busca = el('input', 'sb-busca', { type: 'search', placeholder: 'Pesquisar…', autocomplete: 'off', 'aria-label': 'Pesquisar na lista' });
         var lista = el('ul', 'sb-lista', { role: 'listbox' });
@@ -235,7 +236,7 @@
 
     function revisar(sel) {
         if (sel.multiple || sel.size > 1 || sel.hasAttribute('data-sem-busca')) return;
-        var deve = quantas(sel) > LIMITE;
+        var deve = quantas(sel) > LIMITE || sel.hasAttribute('data-sb-sempre');
         if (deve && !sel._sb) montar(sel);
         if (sel._sb) {
             sel._sb.raiz.hidden = !deve;

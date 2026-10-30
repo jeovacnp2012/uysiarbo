@@ -29,6 +29,8 @@ Nova versão do Geo Controle (controle de endemias/dengue para prefeituras) em G
 - Referências: `docs/engenharia-reversa-geocontrole.md`, `docs/engenharia-reversa-geocontrole-apendice.md`, `docs/geocontrole-modelo-dados.sql`.
 
 ## Estado atual
+- **Carga do Geo Controle de Nova Mutum (2026-10-29, versão 1.0.025), só no banco local (não no repositório):** 39.131 locais (`id_externo` = ID do Geo Controle; 4.790 pontos 0,0 viraram sem coordenada; 1.052 com complemento ≥ 90000 por endereço repetido ou sequência decimal, com nota na referência), 2.543 grupos (nome = endereço do local principal; o principal e os membros casados por endereço/bairro/quarteirão/lado/sequência/complemento entram como itens, ~98% casaram), 268 usuários (SEM senha: `senha_hash` inválido e `deve_trocar_senha`; 16 contas sem papel ficaram no papel "Sem papel (importado)" e desativadas), 13 papéis com permissões e 96 responsáveis de bairro. **Locais:** filtros ao vivo (ID, endereço, número, bairro, quarteirão, lado, sequência, complemento, referência, proprietário, tipo, situação, ordenação; HTMX com `hx-select`, sem botão) e botão verde "Visualizar Grupos" (grupos saíram do menu; a lista de grupos virou cartões). **Identidade visual:** `web/static/js/icones.js` (pacote de ícones SVG aplicado aos botões pelo texto; `data-icone`/`data-sem-icone`), botões `.btn-primario/.btn-sucesso/.btn-escuro/.btn-perigo` e efeitos no fim de `app.css`; select da paginação usa o seletor elegante (`data-sb-sempre`). **A suíte completa (`scripts/verificar.ps1`) deve rodar de novo** (o usuário pediu para deixar para depois; os testes rápidos de Locais/Grupos/Menu passam). Próximo: rever telas restantes quanto ao visual e seguir a fila de captura.
+- **Carga do Geo Controle (2026-10-29, só banco local `novamutum`, sem auditoria):** 110 bairros e 1154 quarteirões (49 desativados) capturados do Geo Controle de Nova Mutum pelo navegador do Claude e gravados com `id_externo` = ID de lá (bairros duplicados e quarteirões repetidos ganharam sufixo "(ID n)"). Geometrias: 1 bairro e 11 quarteirões (o resto não tem desenho lá). **Não vieram:** responsáveis dos bairros (as pessoas ainda não existem como usuários), cor/"bloqueado" do quarteirão, locais (~50 mil, a captura em lote pode usar `/local` do Geo Controle e o importador de locais) e visitas. Para repetir: bairros em `/bairro?page=n` (HTML), ficha em `/bairro/{id}/editar`, quarteirões em `/bairro/quarteirao/{id}/results?limit=1000&offset=0` (JSON), polígono em `const bairroData` de `/bairro/{id}/mapa`.
 - **Paginação (2026-10-29, versão 1.0.023):** ver regra transversal 8. Também foram cadastradas as 142 cidades do MT (IBGE) no cliente `novamutum` do banco local, direto no banco (sem auditoria e sem tela; produção não recebeu).
 - **6.1 concluída (2026-10-29, versão 1.0.022): visita completa.** Migração `cliente/00021` (`visitas` com `id_externo` único para idempotência do tablet, depósitos `dep_a1..dep_e`, tratamento L1/L2, adulticida, BRI, GPS, `ativo` + `deleted_at`; `visita_fotos` em `bytea`; `visita_anotacoes`). Código: `internal/server/visitas.go` (validação em `validarVisita`: ciclo fechado via `cicloAceitaEdicao`, período via `cicloAceitaData`, atividade tem de estar no ciclo, pendência ≠ nenhuma zera depósitos/amostra/tratamento, `visita_editar_pendencia` para mudar pendência, semana por `epi.Calcular` com `h.tipoSemana`), `web/views/visitas.templ`, consultas em `queries_cliente/visitas.sql`. Rotas `/visitas`, `/visitas/nova?local=`, `/visitas/{id}`, `/visitas/{id}/fotos[/{fid}[/excluir]]`, `/visitas/{id}/anotacoes`, `/visitas/{id}/excluir`. Escopo: `visita_visualizar_minha` (`escopoVisitas`) + acesso ao local (`visitaVisivel`). Lixeira (`visita`), local e ciclo com visitas ativas não se excluem. Menu "Visitas", seção Visitas da ficha do local com atalhos (`SecaoFicha.Links`). **Falta (6.2):** os 17 filtros, desativar/reativar (`ativo` e `visita_desativar` já existem; hoje `visita_desativar` abre a exclusão), imprimir, edição de lote; **6.3** laboratório (a amostra aqui é só o marcador `coletou_amostra`); **6.4** `POST /sync` usando `id_externo` e `data_tablet`/`data_sincronismo`. Guia `visitas.md`.
 - Etapa 0: **0.1 concluída** (repo, `go.mod`, pastas, `cmd/server/main.go` "olá mundo").
@@ -95,6 +97,35 @@ Detalhes e credenciais ficam em `C:\laragon\www\VPS_STATUS.md` (fora do Git; **n
 
 ## Bugs conhecidos para corrigir depois (visuais, apontados pelo usuário)
 - (nenhum aberto) 2026-10-29: botões colados em `/cidades/nova` corrigidos com a regra `.form-acoes` (flex, espaçamento) em `app.css`; o usuário confere no navegador.
+
+## Prioridade antes de novas etapas: identidade visual (pedido do usuário, 2026-10-29)
+- **Pacote de ícones elegantes** para botões, menus e tudo mais ("os ícones falam muito"): um conjunto único e consistente (traço fino, estilo Lucide/Feather em SVG inline, componente templ `Icone`), usado no menu lateral, nos botões, nas ações das tabelas, selos e avisos.
+- **Cores dos botões, efeitos de botões e telas** precisam melhorar: hierarquia clara (primário, secundário, perigo, fantasma), hover/foco/ativo com transição suave, sombras discretas, estados desativados, tema escuro coerente.
+- O select da paginação ("Mostrar N por página") agora usa o seletor elegante do sistema (feito em 2026-10-29).
+- Regra: "as telas sempre mais bonitas e elegantes" vale para toda tela nova.
+- Essas melhorias vêm **antes** da Etapa 6.2; o usuário conferirá no navegador.
+
+## Fila de captura do Geo Controle (pedido do usuário, 2026-10-29)
+Capturar, nesta ordem, pelo navegador do Claude (logado pelo usuário em https://geocontrole.novamutum.mt.gov.br), cada tela e suas subtelas, e gravar no sistema local. Feitos: cidades do MT, bairros, quarteirões, usuários (268, sem senha: o administrador redefine), papéis (13) e responsáveis dos bairros; em andamento: locais (39.131) e grupos de locais. Método: `fetch` no navegador + envio por beacon de imagem para um receptor Python local (CSP bloqueia fetch/POST para localhost; usar `?r=<aleatório>` contra cache e conferir partes faltando). Não importar senhas.
+Fila (prefixo `/` no domínio acima):
+1. `/parametros/ciclo` (tudo e subtelas)
+2. `/parametros/geral`
+3. `/parametros/acessolocal`
+4. `/estoque/produto`
+5. `/estoque/lote`
+6. `/estoque/retirada`
+7. `/estoque/unidade`
+8. `/liraa/grupo`
+9. `/liraa/agenda`
+10. `/comunicacao`
+11. `/dronesolicitacao`
+12. `/notificado`
+13. `/edl`
+14. `/ovitrampa`
+15. `/mobilidade/historico`
+16. `/investigacao`
+17. `/laboratorio`
+Observação: a maioria dessas telas ainda não existe no UYSI ARBO (estoque, LIRAa, drone, EDL, ovitrampa, investigação, laboratório); capturar os dados quando a etapa correspondente do plano for feita, ou guardar o bruto para a carga.
 
 ## Pendências de decisão do usuário
 Chaves do reCAPTCHA; domínio; provedor de geocodificação (etapa 3); WhatsApp/e-mail (12); formato SINAN/e-SUS (12); conectores de outros sistemas (4); fórmulas IIP/Breteau (7–8); modelo comercial (1 ou 14).

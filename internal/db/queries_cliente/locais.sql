@@ -8,12 +8,26 @@ JOIN bairros b ON b.id = l.bairro_id
 JOIN quarteiroes q ON q.id = l.quarteirao_id
 WHERE l.deleted_at IS NULL AND (sqlc.arg(busca)::text = '' OR position(lower(sqlc.arg(busca)::text) in lower(l.endereco || ' ' || l.numero || ' ' || l.proprietario)) > 0)
   AND (sqlc.narg(bairro_id)::bigint IS NULL OR l.bairro_id = sqlc.narg(bairro_id)::bigint)
+  AND (sqlc.narg(quarteirao_id)::bigint IS NULL OR l.quarteirao_id = sqlc.narg(quarteirao_id)::bigint)
+  AND (sqlc.arg(id_texto)::text = '' OR l.id::text = sqlc.arg(id_texto)::text OR l.id_externo = sqlc.arg(id_texto)::text)
+  AND (sqlc.arg(endereco)::text = '' OR position(lower(sqlc.arg(endereco)::text) in lower(l.endereco)) > 0)
+  AND (sqlc.arg(numero)::text = '' OR position(lower(sqlc.arg(numero)::text) in lower(l.numero)) > 0)
+  AND (sqlc.arg(referencia)::text = '' OR position(lower(sqlc.arg(referencia)::text) in lower(l.referencia)) > 0)
+  AND (sqlc.arg(proprietario)::text = '' OR position(lower(sqlc.arg(proprietario)::text) in lower(l.proprietario)) > 0)
+  AND (sqlc.arg(lado)::text = '' OR lower(l.lado) = lower(sqlc.arg(lado)::text))
+  AND (sqlc.narg(sequencia)::int IS NULL OR l.sequencia = sqlc.narg(sequencia)::int)
+  AND (sqlc.narg(complemento)::int IS NULL OR l.complemento = sqlc.narg(complemento)::int)
   AND (sqlc.arg(tipo)::text = '' OR l.tipo = sqlc.arg(tipo)::text)
   AND (sqlc.arg(situacao)::text = '' OR l.ativo = (sqlc.arg(situacao)::text = 'ativo'))
   AND (sqlc.narg(somente_usuario)::bigint IS NULL OR usuario_ve_local(sqlc.narg(somente_usuario)::bigint, l.id, l.bairro_id, l.quarteirao_id))
   AND (NOT sqlc.arg(somente_pe)::boolean OR l.tipo = 'ponto_estrategico')
   AND (sqlc.arg(ver_desativados)::boolean OR l.ativo)
-ORDER BY lower(b.nome), lower(l.endereco), l.numero, l.id
+ORDER BY
+  CASE WHEN sqlc.arg(ordem)::text = 'endereco' THEN lower(l.endereco) END ASC,
+  CASE WHEN sqlc.arg(ordem)::text = 'endereco_desc' THEN lower(l.endereco) END DESC,
+  CASE WHEN sqlc.arg(ordem)::text = 'recentes' THEN l.id END DESC,
+  CASE WHEN sqlc.arg(ordem)::text = 'antigos' THEN l.id END ASC,
+  lower(b.nome), lower(l.endereco), l.numero, l.id
 LIMIT sqlc.arg(limite)::int OFFSET sqlc.arg(deslocamento)::int;
 
 -- name: CountLocais :one
@@ -21,6 +35,15 @@ SELECT count(*)::int
 FROM locais l
 WHERE l.deleted_at IS NULL AND (sqlc.arg(busca)::text = '' OR position(lower(sqlc.arg(busca)::text) in lower(l.endereco || ' ' || l.numero || ' ' || l.proprietario)) > 0)
   AND (sqlc.narg(bairro_id)::bigint IS NULL OR l.bairro_id = sqlc.narg(bairro_id)::bigint)
+  AND (sqlc.narg(quarteirao_id)::bigint IS NULL OR l.quarteirao_id = sqlc.narg(quarteirao_id)::bigint)
+  AND (sqlc.arg(id_texto)::text = '' OR l.id::text = sqlc.arg(id_texto)::text OR l.id_externo = sqlc.arg(id_texto)::text)
+  AND (sqlc.arg(endereco)::text = '' OR position(lower(sqlc.arg(endereco)::text) in lower(l.endereco)) > 0)
+  AND (sqlc.arg(numero)::text = '' OR position(lower(sqlc.arg(numero)::text) in lower(l.numero)) > 0)
+  AND (sqlc.arg(referencia)::text = '' OR position(lower(sqlc.arg(referencia)::text) in lower(l.referencia)) > 0)
+  AND (sqlc.arg(proprietario)::text = '' OR position(lower(sqlc.arg(proprietario)::text) in lower(l.proprietario)) > 0)
+  AND (sqlc.arg(lado)::text = '' OR lower(l.lado) = lower(sqlc.arg(lado)::text))
+  AND (sqlc.narg(sequencia)::int IS NULL OR l.sequencia = sqlc.narg(sequencia)::int)
+  AND (sqlc.narg(complemento)::int IS NULL OR l.complemento = sqlc.narg(complemento)::int)
   AND (sqlc.arg(tipo)::text = '' OR l.tipo = sqlc.arg(tipo)::text)
   AND (sqlc.arg(situacao)::text = '' OR l.ativo = (sqlc.arg(situacao)::text = 'ativo'))
   AND (sqlc.narg(somente_usuario)::bigint IS NULL OR usuario_ve_local(sqlc.narg(somente_usuario)::bigint, l.id, l.bairro_id, l.quarteirao_id))

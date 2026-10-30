@@ -10,6 +10,7 @@ type GrupoLinha struct {
 	Descricao string
 	Total     int
 	Criado    string
+	Previa    []GrupoLocalLinha // os primeiros locais, para o cartão
 }
 
 type GruposData struct {

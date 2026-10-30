@@ -120,7 +120,7 @@ templ Paginacao(p Pagination, path string, query url.Values) {
 			}
 			<label>
 				Mostrar
-				<select name="por_pagina" onchange="this.form.submit()">
+				<select name="por_pagina" data-sb-sempre onchange="this.form.submit()">
 					for _, n := range PorPaginaOpcoes {
 						<option value={ strconv.Itoa(n) } selected?={ n == p.PerPage }>{ strconv.Itoa(n) }</option>
 					}

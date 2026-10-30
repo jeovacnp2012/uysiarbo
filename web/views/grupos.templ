@@ -30,36 +30,56 @@ templ Grupos(l Layout, d GruposData) {
 		</form>
 		<section class="cartao">
 			@PaginacaoDoLayout(l)
-			<div class="tabela-wrap">
-				<table class="tabela">
-					<thead>
-						<tr>
-							<th scope="col">Grupo</th>
-							<th scope="col">Locais</th>
-							<th scope="col">Criado em</th>
-							<th scope="col"><span class="sr-only">Ações</span></th>
-						</tr>
-					</thead>
-					<tbody>
-						for _, g := range d.Linhas {
-							<tr>
-								<td data-rotulo="Grupo">
-									<strong>{ g.Nome }</strong>
-									if g.Descricao != "" {
-										<div class="subtitulo">{ g.Descricao }</div>
-									}
-								</td>
-								<td data-rotulo="Locais">{ strconv.Itoa(g.Total) }</td>
-								<td data-rotulo="Criado em">{ g.Criado }</td>
-								<td data-rotulo="Ações"><a class="btn" href={ templ.SafeURL("/grupos/" + strconv.FormatInt(g.ID, 10)) }>Abrir</a></td>
-							</tr>
+			<div class="grupos-grade">
+				for _, g := range d.Linhas {
+					<article class="grupo-card">
+						<header class="grupo-card-topo">
+							<h3>{ g.Nome }</h3>
+							<span class="selo selo-ok">Total: <strong>{ strconv.Itoa(g.Total) }</strong></span>
+						</header>
+						if g.Descricao != "" {
+							<p class="subtitulo">{ g.Descricao }</p>
 						}
-					</tbody>
-				</table>
-				if len(d.Linhas) == 0 {
-					<div class="tabela-vazia">Nenhum grupo cadastrado.</div>
+						<div class="tabela-wrap">
+							<table class="tabela tabela-compacta">
+								<thead>
+									<tr>
+										<th scope="col">Endereço</th>
+										<th scope="col">Bairro</th>
+										<th scope="col">Quarteirão</th>
+										<th scope="col">Lado</th>
+									</tr>
+								</thead>
+								<tbody>
+									for _, x := range g.Previa {
+										<tr>
+											<td data-rotulo="Endereço">{ x.Endereco }</td>
+											<td data-rotulo="Bairro">{ x.Bairro }</td>
+											<td data-rotulo="Quarteirão">{ x.Quarteirao }</td>
+											<td data-rotulo="Lado">{ x.Lado }</td>
+										</tr>
+									}
+									if len(g.Previa) == 0 {
+										<tr>
+											<td colspan="4" class="subtitulo">Nenhum local neste grupo.</td>
+										</tr>
+									}
+								</tbody>
+							</table>
+						</div>
+						if g.Total > len(g.Previa) {
+							<p class="subtitulo">e mais { strconv.Itoa(g.Total - len(g.Previa)) } local(is)…</p>
+						}
+						<footer class="grupo-card-rodape">
+							<span class="subtitulo">Criado em { g.Criado }</span>
+							<a class="btn btn-escuro" href={ templ.SafeURL("/grupos/" + strconv.FormatInt(g.ID, 10)) } data-icone="pencil">Gerenciar</a>
+						</footer>
+					</article>
 				}
 			</div>
+			if len(d.Linhas) == 0 {
+				<div class="tabela-vazia">Nenhum grupo cadastrado.</div>
+			}
 			@PaginacaoDoLayout(l)
 		</section>
 	}

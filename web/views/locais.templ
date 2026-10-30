@@ -19,9 +19,18 @@ templ OpcoesDeQuarteirao(itens []CidadeOpcao) {
 	@opcoesDe(itens)
 }
 
+// OpcoesDeQuarteiraoFiltro reabastece o filtro Quarteirão quando o bairro muda (a pesquisa roda em seguida).
+templ OpcoesDeQuarteiraoFiltro(itens []CidadeOpcao) {
+	<option value="">Todos os quarteirões</option>
+	@opcoesDe(itens)
+}
+
 templ Locais(l Layout, d LocaisData) {
 	@Base(l) {
 		@PageHeader("Locais", "Imóveis, comércios, terrenos e pontos estratégicos.") {
+			if d.PodeGrupos {
+				<a class="btn btn-sucesso" href="/grupos" data-icone="grupos">Visualizar Grupos</a>
+			}
 			if d.PodeEditar {
 				<a class="btn" href="/locais/lote">Cadastro em lote</a>
 				<a class="btn btn-primario" href="/locais/novo">Novo local</a>
@@ -33,94 +42,157 @@ templ Locais(l Layout, d LocaisData) {
 		if d.Restrito {
 			<p class="alerta alerta-aviso" role="status">O seu papel mostra apenas parte dos locais (os dos seus bairros ou só pontos estratégicos).</p>
 		}
-		<form method="get" action="/locais" class="cartao filtros">
+		<form
+			method="get"
+			action="/locais"
+			class="cartao filtros filtros-vivos"
+			hx-get="/locais"
+			hx-trigger="input changed delay:350ms from:find input, change from:find .filtro-auto, filtrar from:body"
+			hx-target="#locais-lista"
+			hx-select="#locais-lista"
+			hx-swap="outerHTML"
+			hx-push-url="true"
+			hx-indicator="#locais-lista"
+		>
+			<input type="hidden" name="busca" value={ d.Filtro.Busca }/>
 			<div class="campo">
-				<label for="f-busca">Endereço, número ou proprietário</label>
-				<input id="f-busca" name="busca" type="search" value={ d.Filtro.Busca }/>
+				<label for="f-id">ID</label>
+				<input id="f-id" name="id" type="search" inputmode="numeric" value={ d.Filtro.ID } placeholder="ID"/>
+			</div>
+			<div class="campo campo-largo">
+				<label for="f-endereco">Endereço</label>
+				<input id="f-endereco" name="endereco" type="search" value={ d.Filtro.Endereco } placeholder="Endereço"/>
+			</div>
+			<div class="campo">
+				<label for="f-numero">Número</label>
+				<input id="f-numero" name="numero" type="search" value={ d.Filtro.Numero } placeholder="Número"/>
 			</div>
 			<div class="campo">
 				<label for="f-bairro">Bairro</label>
-				<select id="f-bairro" name="bairro">
-					<option value="">Todos</option>
+				<select
+					id="f-bairro"
+					name="bairro"
+					hx-get="/locais/quarteiroes?filtro=1"
+					hx-include="this"
+					hx-target="#f-quarteirao"
+					hx-swap="innerHTML"
+					hx-trigger="change"
+				>
+					<option value="">Todos os bairros</option>
 					@opcoesDe(d.Bairros)
 				</select>
 			</div>
 			<div class="campo">
+				<label for="f-quarteirao">Quarteirão</label>
+				<select id="f-quarteirao" name="quarteirao" class="filtro-auto" data-sb-sempre>
+					<option value="">Todos os quarteirões</option>
+					@opcoesDe(d.Quarteiroes)
+				</select>
+			</div>
+			<div class="campo">
+				<label for="f-lado">Lado</label>
+				<input id="f-lado" name="lado" type="search" value={ d.Filtro.Lado } placeholder="Lado"/>
+			</div>
+			<div class="campo">
+				<label for="f-sequencia">Sequência</label>
+				<input id="f-sequencia" name="sequencia" type="search" inputmode="numeric" value={ d.Filtro.Sequencia } placeholder="Sequência"/>
+			</div>
+			<div class="campo">
+				<label for="f-complemento">Complemento</label>
+				<input id="f-complemento" name="complemento" type="search" inputmode="numeric" value={ d.Filtro.Complemento } placeholder="Complemento"/>
+			</div>
+			<div class="campo">
+				<label for="f-referencia">Referência</label>
+				<input id="f-referencia" name="referencia" type="search" value={ d.Filtro.Referencia } placeholder="Referência"/>
+			</div>
+			<div class="campo">
+				<label for="f-proprietario">Proprietário</label>
+				<input id="f-proprietario" name="proprietario" type="search" value={ d.Filtro.Proprietario } placeholder="Proprietário"/>
+			</div>
+			<div class="campo">
 				<label for="f-tipo">Tipo</label>
-				<select id="f-tipo" name="tipo">
-					<option value="">Todos</option>
+				<select id="f-tipo" name="tipo" class="filtro-auto" data-sb-sempre>
+					<option value="">Todos os tipos</option>
 					@opcoesDe(d.Tipos)
 				</select>
 			</div>
 			<div class="campo">
 				<label for="f-situacao">Situação</label>
-				<select id="f-situacao" name="situacao">
+				<select id="f-situacao" name="situacao" class="filtro-auto" data-sb-sempre>
 					<option value="">Todas</option>
 					<option value="ativo" selected?={ d.Filtro.Situacao == "ativo" }>Ativo</option>
 					<option value="inativo" selected?={ d.Filtro.Situacao == "inativo" }>Inativo</option>
 				</select>
 			</div>
+			<div class="campo">
+				<label for="f-ordem">Ordenar por</label>
+				<select id="f-ordem" name="ordem" class="filtro-auto" data-sb-sempre>
+					@opcoesDe(d.Ordens)
+				</select>
+			</div>
 			<div class="form-acoes">
-				<button type="submit" class="btn btn-primario">Filtrar</button>
-				<a class="btn" href="/locais">Limpar</a>
+				<a class="btn btn-escuro" href="/locais" data-icone="undo">Limpar filtros</a>
 			</div>
+			<noscript><button type="submit" class="btn btn-primario">Filtrar</button></noscript>
 		</form>
-		<section class="cartao">
-			@Paginacao(d.Pag, "/locais", d.Query)
-			<div class="tabela-wrap">
-				<table class="tabela">
-					<thead>
-						<tr>
-							<th scope="col">Endereço</th>
-							<th scope="col">Bairro / quarteirão</th>
-							<th scope="col">Proprietário</th>
-							<th scope="col">Habitantes</th>
-							<th scope="col">Situação</th>
-							<th scope="col"><span class="sr-only">Ações</span></th>
-						</tr>
-					</thead>
-					<tbody>
-						for _, x := range d.Linhas {
+		<div id="locais-lista" class="lista-viva">
+			<section class="cartao">
+				@Paginacao(d.Pag, "/locais", d.Query)
+				<div class="tabela-wrap">
+					<table class="tabela">
+						<thead>
 							<tr>
-								<td data-rotulo="Endereço">
-									<strong>{ x.Endereco }</strong>
-									<div class="subtitulo">
-										{ x.Tipo } · lado { x.Lado }
-										if x.Sequencia != "" {
-											· seq. { x.Sequencia }
-										}
-										if x.Complemento != "" {
-											· compl. { x.Complemento }
-										}
-									</div>
-								</td>
-								<td data-rotulo="Bairro">{ x.Bairro } <span class="subtitulo">· quarteirão { x.Quarteirao }</span></td>
-								<td data-rotulo="Proprietário">
-									if x.Proprietario == "" {
-										<span class="subtitulo">não informado</span>
-									} else {
-										{ x.Proprietario }
-									}
-								</td>
-								<td data-rotulo="Habitantes">{ x.Habitantes }</td>
-								<td data-rotulo="Situação">
-									if x.Ativo {
-										<span class="selo selo-ok">Ativo</span>
-									} else {
-										<span class="selo selo-aviso">Inativo</span>
-									}
-								</td>
-								<td data-rotulo="Ações"><a class="btn" href={ templ.SafeURL("/locais/" + strconv.FormatInt(x.ID, 10)) }>Abrir</a></td>
+								<th scope="col">Endereço</th>
+								<th scope="col">Bairro / quarteirão</th>
+								<th scope="col">Proprietário</th>
+								<th scope="col">Habitantes</th>
+								<th scope="col">Situação</th>
+								<th scope="col"><span class="sr-only">Ações</span></th>
 							</tr>
-						}
-					</tbody>
-				</table>
-				if len(d.Linhas) == 0 {
-					<div class="tabela-vazia">Nenhum local encontrado.</div>
-				}
-			</div>
-			@Paginacao(d.Pag, "/locais", d.Query)
-		</section>
+						</thead>
+						<tbody>
+							for _, x := range d.Linhas {
+								<tr>
+									<td data-rotulo="Endereço">
+										<strong>{ x.Endereco }</strong>
+										<div class="subtitulo">
+											{ x.Tipo } · lado { x.Lado }
+											if x.Sequencia != "" {
+												· seq. { x.Sequencia }
+											}
+											if x.Complemento != "" {
+												· compl. { x.Complemento }
+											}
+										</div>
+									</td>
+									<td data-rotulo="Bairro">{ x.Bairro } <span class="subtitulo">· quarteirão { x.Quarteirao }</span></td>
+									<td data-rotulo="Proprietário">
+										if x.Proprietario == "" {
+											<span class="subtitulo">não informado</span>
+										} else {
+											{ x.Proprietario }
+										}
+									</td>
+									<td data-rotulo="Habitantes">{ x.Habitantes }</td>
+									<td data-rotulo="Situação">
+										if x.Ativo {
+											<span class="selo selo-ok">Ativo</span>
+										} else {
+											<span class="selo selo-aviso">Inativo</span>
+										}
+									</td>
+									<td data-rotulo="Ações"><a class="btn" href={ templ.SafeURL("/locais/" + strconv.FormatInt(x.ID, 10)) }>Abrir</a></td>
+								</tr>
+							}
+						</tbody>
+					</table>
+					if len(d.Linhas) == 0 {
+						<div class="tabela-vazia">Nenhum local encontrado.</div>
+					}
+				</div>
+				@Paginacao(d.Pag, "/locais", d.Query)
+			</section>
+		</div>
 	}
 }
 

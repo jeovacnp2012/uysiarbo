@@ -511,6 +511,32 @@ h3 {
     min-width: 4.5rem;
 }
 
+.paginacao-tam .sb {
+    width: auto;
+    min-width: 4.75rem;
+}
+
+.paginacao-tam .sb-botao {
+    padding: 0.35rem 0.65rem;
+    font-weight: 600;
+}
+
+.paginacao-tam .sb-painel {
+    min-width: 100%;
+    padding: 0.25rem;
+}
+
+/* lista curta: sem caixa de pesquisa visível (ela continua recebendo as setas e o Enter) */
+.sb-sem-busca .sb-busca {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    opacity: 0;
+}
+
 .tabela-wrap + .paginacao {
     border-top: 1px solid var(--borda, rgba(128, 128, 128, 0.25));
     margin-top: 0.75rem;
@@ -1258,4 +1284,214 @@ form.inline {
     padding: 0.6rem;
     color: var(--suave);
     font-size: 0.875rem;
+}
+
+/* ---------- Refinamento visual: botões, ícones e efeitos ---------- */
+:root {
+    --sombra-botao: 0 1px 2px rgb(15 23 43 / 0.08);
+    --sombra-botao-alta: 0 6px 16px rgb(21 90 158 / 0.28);
+    --transicao: 160ms cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+.btn {
+    position: relative;
+    font-weight: 500;
+    box-shadow: var(--sombra-botao);
+    transition: background var(--transicao), border-color var(--transicao), box-shadow var(--transicao),
+        transform var(--transicao), color var(--transicao), filter var(--transicao);
+}
+
+.btn:hover {
+    border-color: var(--brand-300);
+    background: var(--marca-fraca);
+    color: var(--marca);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgb(15 23 43 / 0.1);
+}
+
+.btn:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+.btn-primario {
+    border-color: transparent;
+    background: linear-gradient(135deg, var(--brand-500), var(--brand-700) 60%, var(--brand-900));
+    color: #fff;
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgb(15 23 43 / 0.2), inset 0 1px 0 rgb(255 255 255 / 0.18);
+}
+
+.btn-primario:hover {
+    border-color: transparent;
+    background: linear-gradient(135deg, var(--brand-400), var(--brand-600) 60%, var(--brand-700));
+    color: #fff;
+    filter: none;
+    box-shadow: var(--sombra-botao-alta), inset 0 1px 0 rgb(255 255 255 / 0.22);
+}
+
+.btn-perigo {
+    border-color: color-mix(in srgb, var(--perigo) 45%, transparent);
+    background: var(--perigo-fundo);
+    color: var(--perigo);
+}
+
+.btn-perigo:hover {
+    border-color: var(--perigo);
+    background: var(--perigo);
+    color: #fff;
+    box-shadow: 0 6px 16px rgb(194 0 57 / 0.28);
+}
+
+.btn-icone:hover {
+    transform: none;
+}
+
+.ico-btn {
+    width: 1.05rem;
+    height: 1.05rem;
+    flex: none;
+    transition: transform var(--transicao);
+}
+
+.btn:hover .ico-btn {
+    transform: scale(1.12);
+}
+
+.btn-primario .ico-btn,
+.btn-perigo:hover .ico-btn {
+    color: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .btn,
+    .ico-btn {
+        transition: none;
+    }
+
+    .btn:hover {
+        transform: none;
+    }
+}
+
+/* cartões e campos com resposta suave ao foco */
+.card,
+.cartao {
+    transition: box-shadow var(--transicao), border-color var(--transicao);
+}
+
+.campo input,
+.campo select,
+.campo textarea {
+    transition: border-color var(--transicao), box-shadow var(--transicao);
+}
+
+.campo input:focus,
+.campo select:focus,
+.campo textarea:focus {
+    border-color: var(--brand-400);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-400) 22%, transparent);
+    outline: none;
+}
+
+/* botões extras e filtros ao vivo */
+.btn-sucesso {
+    border-color: transparent;
+    background: linear-gradient(135deg, #16a36a, #0f7a5c);
+    color: #fff;
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgb(15 23 43 / 0.2), inset 0 1px 0 rgb(255 255 255 / 0.18);
+}
+
+.btn-sucesso:hover {
+    border-color: transparent;
+    background: linear-gradient(135deg, #1fb87a, #13926d);
+    color: #fff;
+    box-shadow: 0 6px 16px rgb(15 122 92 / 0.32);
+}
+
+.btn-escuro {
+    border-color: transparent;
+    background: linear-gradient(135deg, #3b4658, #1d293d);
+    color: #fff;
+    font-weight: 600;
+}
+
+.btn-escuro:hover {
+    border-color: transparent;
+    background: linear-gradient(135deg, #4a566b, #27344b);
+    color: #fff;
+}
+
+.filtros-vivos {
+    grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
+}
+
+.filtros-vivos .campo-largo {
+    grid-column: span 2;
+}
+
+.lista-viva.htmx-request {
+    opacity: 0.55;
+    transition: opacity 120ms;
+    pointer-events: none;
+}
+
+/* Grupos de locais em cartões */
+.grupos-grade {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(26rem, 1fr));
+    margin: 0.75rem 0;
+}
+
+.grupo-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--borda);
+    border-top: 3px solid var(--brand-500);
+    border-radius: var(--radius);
+    background: var(--superficie);
+    box-shadow: var(--sombra-botao);
+    transition: box-shadow var(--transicao), transform var(--transicao);
+}
+
+.grupo-card:hover {
+    box-shadow: var(--sombra);
+    transform: translateY(-2px);
+}
+
+.grupo-card-topo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.grupo-card-topo h3 {
+    margin: 0;
+    font-size: 1rem;
+    overflow-wrap: anywhere;
+}
+
+.grupo-card-rodape {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: auto;
+}
+
+.tabela-compacta th,
+.tabela-compacta td {
+    padding: 0.35rem 0.5rem;
+    font-size: 0.82rem;
+}
+
+@media (max-width: 520px) {
+    .grupos-grade {
+        grid-template-columns: 1fr;
+    }
 }

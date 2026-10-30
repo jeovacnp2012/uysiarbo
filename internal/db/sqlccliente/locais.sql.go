@@ -16,16 +16,34 @@ SELECT count(*)::int
 FROM locais l
 WHERE l.deleted_at IS NULL AND ($1::text = '' OR position(lower($1::text) in lower(l.endereco || ' ' || l.numero || ' ' || l.proprietario)) > 0)
   AND ($2::bigint IS NULL OR l.bairro_id = $2::bigint)
-  AND ($3::text = '' OR l.tipo = $3::text)
-  AND ($4::text = '' OR l.ativo = ($4::text = 'ativo'))
-  AND ($5::bigint IS NULL OR usuario_ve_local($5::bigint, l.id, l.bairro_id, l.quarteirao_id))
-  AND (NOT $6::boolean OR l.tipo = 'ponto_estrategico')
-  AND ($7::boolean OR l.ativo)
+  AND ($3::bigint IS NULL OR l.quarteirao_id = $3::bigint)
+  AND ($4::text = '' OR l.id::text = $4::text OR l.id_externo = $4::text)
+  AND ($5::text = '' OR position(lower($5::text) in lower(l.endereco)) > 0)
+  AND ($6::text = '' OR position(lower($6::text) in lower(l.numero)) > 0)
+  AND ($7::text = '' OR position(lower($7::text) in lower(l.referencia)) > 0)
+  AND ($8::text = '' OR position(lower($8::text) in lower(l.proprietario)) > 0)
+  AND ($9::text = '' OR lower(l.lado) = lower($9::text))
+  AND ($10::int IS NULL OR l.sequencia = $10::int)
+  AND ($11::int IS NULL OR l.complemento = $11::int)
+  AND ($12::text = '' OR l.tipo = $12::text)
+  AND ($13::text = '' OR l.ativo = ($13::text = 'ativo'))
+  AND ($14::bigint IS NULL OR usuario_ve_local($14::bigint, l.id, l.bairro_id, l.quarteirao_id))
+  AND (NOT $15::boolean OR l.tipo = 'ponto_estrategico')
+  AND ($16::boolean OR l.ativo)
 `
 
 type CountLocaisParams struct {
 	Busca          string      `json:"busca"`
 	BairroID       pgtype.Int8 `json:"bairro_id"`
+	QuarteiraoID   pgtype.Int8 `json:"quarteirao_id"`
+	IDTexto        string      `json:"id_texto"`
+	Endereco       string      `json:"endereco"`
+	Numero         string      `json:"numero"`
+	Referencia     string      `json:"referencia"`
+	Proprietario   string      `json:"proprietario"`
+	Lado           string      `json:"lado"`
+	Sequencia      pgtype.Int4 `json:"sequencia"`
+	Complemento    pgtype.Int4 `json:"complemento"`
 	Tipo           string      `json:"tipo"`
 	Situacao       string      `json:"situacao"`
 	SomenteUsuario pgtype.Int8 `json:"somente_usuario"`
@@ -37,6 +55,15 @@ func (q *Queries) CountLocais(ctx context.Context, arg CountLocaisParams) (int32
 	row := q.db.QueryRow(ctx, countLocais,
 		arg.Busca,
 		arg.BairroID,
+		arg.QuarteiraoID,
+		arg.IDTexto,
+		arg.Endereco,
+		arg.Numero,
+		arg.Referencia,
+		arg.Proprietario,
+		arg.Lado,
+		arg.Sequencia,
+		arg.Complemento,
 		arg.Tipo,
 		arg.Situacao,
 		arg.SomenteUsuario,
@@ -330,23 +357,47 @@ JOIN bairros b ON b.id = l.bairro_id
 JOIN quarteiroes q ON q.id = l.quarteirao_id
 WHERE l.deleted_at IS NULL AND ($1::text = '' OR position(lower($1::text) in lower(l.endereco || ' ' || l.numero || ' ' || l.proprietario)) > 0)
   AND ($2::bigint IS NULL OR l.bairro_id = $2::bigint)
-  AND ($3::text = '' OR l.tipo = $3::text)
-  AND ($4::text = '' OR l.ativo = ($4::text = 'ativo'))
-  AND ($5::bigint IS NULL OR usuario_ve_local($5::bigint, l.id, l.bairro_id, l.quarteirao_id))
-  AND (NOT $6::boolean OR l.tipo = 'ponto_estrategico')
-  AND ($7::boolean OR l.ativo)
-ORDER BY lower(b.nome), lower(l.endereco), l.numero, l.id
-LIMIT $9::int OFFSET $8::int
+  AND ($3::bigint IS NULL OR l.quarteirao_id = $3::bigint)
+  AND ($4::text = '' OR l.id::text = $4::text OR l.id_externo = $4::text)
+  AND ($5::text = '' OR position(lower($5::text) in lower(l.endereco)) > 0)
+  AND ($6::text = '' OR position(lower($6::text) in lower(l.numero)) > 0)
+  AND ($7::text = '' OR position(lower($7::text) in lower(l.referencia)) > 0)
+  AND ($8::text = '' OR position(lower($8::text) in lower(l.proprietario)) > 0)
+  AND ($9::text = '' OR lower(l.lado) = lower($9::text))
+  AND ($10::int IS NULL OR l.sequencia = $10::int)
+  AND ($11::int IS NULL OR l.complemento = $11::int)
+  AND ($12::text = '' OR l.tipo = $12::text)
+  AND ($13::text = '' OR l.ativo = ($13::text = 'ativo'))
+  AND ($14::bigint IS NULL OR usuario_ve_local($14::bigint, l.id, l.bairro_id, l.quarteirao_id))
+  AND (NOT $15::boolean OR l.tipo = 'ponto_estrategico')
+  AND ($16::boolean OR l.ativo)
+ORDER BY
+  CASE WHEN $17::text = 'endereco' THEN lower(l.endereco) END ASC,
+  CASE WHEN $17::text = 'endereco_desc' THEN lower(l.endereco) END DESC,
+  CASE WHEN $17::text = 'recentes' THEN l.id END DESC,
+  CASE WHEN $17::text = 'antigos' THEN l.id END ASC,
+  lower(b.nome), lower(l.endereco), l.numero, l.id
+LIMIT $19::int OFFSET $18::int
 `
 
 type ListLocaisParams struct {
 	Busca          string      `json:"busca"`
 	BairroID       pgtype.Int8 `json:"bairro_id"`
+	QuarteiraoID   pgtype.Int8 `json:"quarteirao_id"`
+	IDTexto        string      `json:"id_texto"`
+	Endereco       string      `json:"endereco"`
+	Numero         string      `json:"numero"`
+	Referencia     string      `json:"referencia"`
+	Proprietario   string      `json:"proprietario"`
+	Lado           string      `json:"lado"`
+	Sequencia      pgtype.Int4 `json:"sequencia"`
+	Complemento    pgtype.Int4 `json:"complemento"`
 	Tipo           string      `json:"tipo"`
 	Situacao       string      `json:"situacao"`
 	SomenteUsuario pgtype.Int8 `json:"somente_usuario"`
 	SomentePe      bool        `json:"somente_pe"`
 	VerDesativados bool        `json:"ver_desativados"`
+	Ordem          string      `json:"ordem"`
 	Deslocamento   int32       `json:"deslocamento"`
 	Limite         int32       `json:"limite"`
 }
@@ -371,11 +422,21 @@ func (q *Queries) ListLocais(ctx context.Context, arg ListLocaisParams) ([]ListL
 	rows, err := q.db.Query(ctx, listLocais,
 		arg.Busca,
 		arg.BairroID,
+		arg.QuarteiraoID,
+		arg.IDTexto,
+		arg.Endereco,
+		arg.Numero,
+		arg.Referencia,
+		arg.Proprietario,
+		arg.Lado,
+		arg.Sequencia,
+		arg.Complemento,
 		arg.Tipo,
 		arg.Situacao,
 		arg.SomenteUsuario,
 		arg.SomentePe,
 		arg.VerDesativados,
+		arg.Ordem,
 		arg.Deslocamento,
 		arg.Limite,
 	)

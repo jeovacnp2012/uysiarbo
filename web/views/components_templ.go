@@ -454,7 +454,7 @@ func Paginacao(p Pagination, path string, query url.Values) templ.Component {
 				}
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "<label>Mostrar <select name=\"por_pagina\" onchange=\"this.form.submit()\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "<label>Mostrar <select name=\"por_pagina\" data-sb-sempre onchange=\"this.form.submit()\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -2,6 +2,7 @@ package server
 
 import (
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"strconv"
 	"strings"
@@ -282,5 +283,35 @@ func TestCPFValido(t *testing.T) {
 	}
 	if mascararCPF("52998224725") != "***.982.247-**" || formatarCPF("52998224725") != cpfBom {
 		t.Error("máscara ou formatação do CPF")
+	}
+}
+
+func TestListaDeLocaisFiltros(t *testing.T) {
+	m := novoMundo(t)
+	ana := m.comAna(t)
+	cid := m.criarCidade(t, "Nova Mutum", "MT")
+	b1, b2 := m.criarBairro(t, cid, "Centro"), m.criarBairro(t, cid, "Jardim")
+	q1, q2 := m.criarQuarteirao(t, b1, "1"), m.criarQuarteirao(t, b2, "7")
+	quer(t, ana.post("/locais", formLocal(b1, q1, "endereco", "Rua das Palmeiras", "numero", "10", "lado", "Par", "sequencia", "3")), http.StatusSeeOther)
+	quer(t, ana.post("/locais", formLocal(b2, q2, "endereco", "Avenida Brasil", "numero", "20", "lado", "Impar", "tipo", "comercio", "referencia", "Perto do posto")), http.StatusSeeOther)
+
+	quer(t, ana.get("/locais"), http.StatusOK, "Rua das Palmeiras", "Avenida Brasil", "Visualizar Grupos", "filtros-vivos")
+	quer(t, ana.get("/locais?endereco=palmeiras"), http.StatusOK, "Rua das Palmeiras")
+	nao(t, ana.get("/locais?endereco=palmeiras"), "Avenida Brasil")
+	nao(t, ana.get("/locais?numero=20"), "Rua das Palmeiras")
+	quer(t, ana.get("/locais?referencia=posto"), http.StatusOK, "Avenida Brasil")
+	nao(t, ana.get("/locais?referencia=posto"), "Rua das Palmeiras")
+	nao(t, ana.get("/locais?quarteirao="+s64(q1)), "Avenida Brasil")
+	nao(t, ana.get("/locais?lado=impar"), "Rua das Palmeiras")
+	nao(t, ana.get("/locais?sequencia=3"), "Avenida Brasil")
+	nao(t, ana.get("/locais?tipo=comercio"), "Rua das Palmeiras")
+	quer(t, ana.get("/locais/quarteiroes?filtro=1&bairro="+s64(b1)), http.StatusOK, "Todos os quarteirões", ">1<")
+}
+
+// nao confere que a resposta não traz o texto (útil para provar que um filtro escondeu o registro).
+func nao(t *testing.T, rec *httptest.ResponseRecorder, texto string) {
+	t.Helper()
+	if strings.Contains(rec.Body.String(), texto) {
+		t.Errorf("a resposta não deveria conter %q", texto)
 	}
 }

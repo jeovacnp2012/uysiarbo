@@ -74,7 +74,25 @@ func (h *handlers) locaisLista(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	qs := r.URL.Query()
-	f := views.LocaisFiltro{Busca: strings.TrimSpace(qs.Get("busca")), Bairro: qs.Get("bairro"), Tipo: qs.Get("tipo"), Situacao: qs.Get("situacao")}
+	txt := func(k string) string { return strings.TrimSpace(qs.Get(k)) }
+	f := views.LocaisFiltro{
+		Busca: txt("busca"), Bairro: qs.Get("bairro"), Quarteirao: qs.Get("quarteirao"), Tipo: qs.Get("tipo"), Situacao: qs.Get("situacao"),
+		ID: txt("id"), Endereco: txt("endereco"), Numero: txt("numero"), Referencia: txt("referencia"), Proprietario: txt("proprietario"),
+		Lado: txt("lado"), Sequencia: txt("sequencia"), Complemento: txt("complemento"), Ordem: qs.Get("ordem"),
+	}
+	if !slices.Contains(ordensDeLocal, f.Ordem) {
+		f.Ordem = ""
+	}
+	inteiro := func(v string) pgtype.Int4 {
+		if n, err := strconv.ParseInt(v, 10, 32); err == nil && n >= 0 {
+			return pgtype.Int4{Int32: int32(n), Valid: true}
+		}
+		return pgtype.Int4{}
+	}
+	quarteiraoID := pgtype.Int8{}
+	if n, err := strconv.ParseInt(f.Quarteirao, 10, 64); err == nil && n > 0 {
+		quarteiraoID = pgtype.Int8{Int64: n, Valid: true}
+	}
 	if !slices.ContainsFunc(tiposDeLocal, func(t [2]string) bool { return t[0] == f.Tipo }) {
 		f.Tipo = ""
 	}
@@ -92,7 +110,11 @@ func (h *handlers) locaisLista(w http.ResponseWriter, r *http.Request) {
 	if n, err := strconv.Atoi(qs.Get("pagina")); err == nil && n > 1 {
 		pag.Page = n
 	}
-	total, err := q.CountLocais(ctx, sqlccliente.CountLocaisParams{Busca: f.Busca, BairroID: bairroID, Tipo: f.Tipo, Situacao: f.Situacao, SomenteUsuario: somente, SomentePe: soPE, VerDesativados: verDesativados})
+	total, err := q.CountLocais(ctx, sqlccliente.CountLocaisParams{
+		Busca: f.Busca, BairroID: bairroID, QuarteiraoID: quarteiraoID, IDTexto: f.ID, Endereco: f.Endereco, Numero: f.Numero,
+		Referencia: f.Referencia, Proprietario: f.Proprietario, Lado: f.Lado, Sequencia: inteiro(f.Sequencia), Complemento: inteiro(f.Complemento),
+		Tipo: f.Tipo, Situacao: f.Situacao, SomenteUsuario: somente, SomentePe: soPE, VerDesativados: verDesativados,
+	})
 	if err != nil {
 		h.falhaInterna(w, r, "contar locais", err)
 		return
@@ -102,7 +124,9 @@ func (h *handlers) locaisLista(w http.ResponseWriter, r *http.Request) {
 		pag.Page = pag.Pages()
 	}
 	rows, err := q.ListLocais(ctx, sqlccliente.ListLocaisParams{
-		Busca: f.Busca, BairroID: bairroID, Tipo: f.Tipo, Situacao: f.Situacao, SomenteUsuario: somente, SomentePe: soPE, VerDesativados: verDesativados,
+		Busca: f.Busca, BairroID: bairroID, QuarteiraoID: quarteiraoID, IDTexto: f.ID, Endereco: f.Endereco, Numero: f.Numero,
+		Referencia: f.Referencia, Proprietario: f.Proprietario, Lado: f.Lado, Sequencia: inteiro(f.Sequencia), Complemento: inteiro(f.Complemento),
+		Tipo: f.Tipo, Situacao: f.Situacao, SomenteUsuario: somente, SomentePe: soPE, VerDesativados: verDesativados, Ordem: f.Ordem,
 		Limite: int32(pag.PerPage), Deslocamento: int32((pag.Page - 1) * pag.PerPage),
 	})
 	if err != nil {
@@ -118,6 +142,17 @@ func (h *handlers) locaisLista(w http.ResponseWriter, r *http.Request) {
 	for i, b := range bairros {
 		opcoes[i] = views.CidadeOpcao{ID: b.ID, Rotulo: b.Nome, Selecionada: b.ID == bairroID.Int64}
 	}
+	var quarteiroes []views.CidadeOpcao
+	if bairroID.Valid {
+		qs2, err := q.ListQuarteiroesAtivosDoBairro(ctx, sqlccliente.ListQuarteiroesAtivosDoBairroParams{BairroID: bairroID.Int64, SomenteUsuario: somente})
+		if err != nil {
+			h.falhaInterna(w, r, "listar quarteirões", err)
+			return
+		}
+		for _, x := range qs2 {
+			quarteiroes = append(quarteiroes, views.CidadeOpcao{ID: x.ID, Rotulo: x.Nome, Selecionada: x.ID == quarteiraoID.Int64})
+		}
+	}
 	linhas := make([]views.LocalLinha, len(rows))
 	for i, l := range rows {
 		linhas[i] = views.LocalLinha{
@@ -127,13 +162,18 @@ func (h *handlers) locaisLista(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	query := url.Values{}
-	for k, v := range map[string]string{"busca": f.Busca, "bairro": f.Bairro, "tipo": f.Tipo, "situacao": f.Situacao} {
+	for k, v := range map[string]string{
+		"busca": f.Busca, "bairro": f.Bairro, "quarteirao": f.Quarteirao, "tipo": f.Tipo, "situacao": f.Situacao, "id": f.ID,
+		"endereco": f.Endereco, "numero": f.Numero, "referencia": f.Referencia, "proprietario": f.Proprietario, "lado": f.Lado,
+		"sequencia": f.Sequencia, "complemento": f.Complemento, "ordem": f.Ordem,
+	} {
 		if v != "" {
 			query.Set(k, v)
 		}
 	}
 	render(w, r, views.Locais(h.layout(r, "Locais", "/locais"), views.LocaisData{
-		Filtro: f, Bairros: opcoes, Tipos: opcoesTipo(f.Tipo), Linhas: linhas, Pag: pag, Query: query,
+		Filtro: f, Bairros: opcoes, Tipos: opcoesTipo(f.Tipo), Quarteiroes: quarteiroes, Ordens: opcoesOrdemLocal(f.Ordem),
+		PodeGrupos: h.principal(r).Pode("local_grupo_visualizar"), Linhas: linhas, Pag: pag, Query: query,
 		PodeEditar: h.principal(r).Pode("local_adicionar"), Restrito: somente.Valid || soPE, VerDesativados: verDesativados,
 		Aviso: avisoDoLote(qs),
 	}))
@@ -159,6 +199,18 @@ func textoInt(v pgtype.Int4) string {
 		return ""
 	}
 	return strconv.Itoa(int(v.Int32))
+}
+
+// ordensDeLocal são as ordenações da lista de locais ("" = por bairro e endereço).
+var ordensDeLocal = []string{"", "endereco", "endereco_desc", "recentes", "antigos"}
+
+func opcoesOrdemLocal(atual string) []views.CidadeOpcao {
+	rotulos := []string{"Bairro e endereço", "Endereço (A-Z)", "Endereço (Z-A)", "Mais recentes", "Mais antigos"}
+	out := make([]views.CidadeOpcao, len(ordensDeLocal))
+	for i, v := range ordensDeLocal {
+		out[i] = views.CidadeOpcao{Rotulo: rotulos[i], Valor: v, Selecionada: v == atual}
+	}
+	return out
 }
 
 func opcoesTipo(atual string) []views.CidadeOpcao {
@@ -500,9 +552,20 @@ func (h *handlers) localEditarForm(w http.ResponseWriter, r *http.Request) {
 
 // localQuarteiroes devolve as opções de quarteirão do bairro escolhido (HTMX, ao trocar o bairro).
 func (h *handlers) localQuarteiroes(w http.ResponseWriter, r *http.Request) {
+	filtro := r.URL.Query().Get("filtro") == "1" // lista de filtros: "Todos os quarteirões" e dispara a pesquisa
+	if filtro {
+		w.Header().Set("HX-Trigger", "filtrar")
+	}
 	bid, err := strconv.ParseInt(r.URL.Query().Get("bairro_id"), 10, 64)
+	if err != nil && filtro {
+		bid, err = strconv.ParseInt(r.URL.Query().Get("bairro"), 10, 64)
+	}
 	if err != nil || bid <= 0 {
-		render(w, r, views.OpcoesDeQuarteirao(nil))
+		if filtro {
+			render(w, r, views.OpcoesDeQuarteiraoFiltro(nil))
+		} else {
+			render(w, r, views.OpcoesDeQuarteirao(nil))
+		}
 		return
 	}
 	q, _, err := h.cliente(r)
@@ -526,6 +589,10 @@ func (h *handlers) localQuarteiroes(w http.ResponseWriter, r *http.Request) {
 	ops := make([]views.CidadeOpcao, len(qs))
 	for i, x := range qs {
 		ops[i] = views.CidadeOpcao{ID: x.ID, Rotulo: x.Nome}
+	}
+	if filtro {
+		render(w, r, views.OpcoesDeQuarteiraoFiltro(ops))
+		return
 	}
 	render(w, r, views.OpcoesDeQuarteirao(ops))
 }

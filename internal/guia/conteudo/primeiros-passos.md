@@ -28,3 +28,6 @@ Toda listagem mostra **10 registros por página**. Em cima e embaixo da tabela h
 
 ## Listas de escolha com pesquisa
 Qualquer lista de escolha com **mais de 5 opções** (cidade, bairro, agente, ciclo...) tem uma caixa de **pesquisa** dentro dela: clique na lista, digite parte do nome (acentos não atrapalham) e escolha. Pelo teclado, use as setas, **Enter** para escolher e **Esc** para fechar.
+
+## Botões e ícones
+Os botões trazem um ícone que indica a ação: **+** para criar, lápis para editar, lixeira para excluir, seta para voltar, funil para filtrar. O botão principal da tela é o azul com degradê; o botão vermelho é o de ação perigosa.

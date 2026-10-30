@@ -73,8 +73,23 @@ func (h *handlers) gruposLista(w http.ResponseWriter, r *http.Request) {
 	for i, g := range rows {
 		linhas[i] = views.GrupoLinha{ID: g.ID, Nome: g.Nome, Descricao: g.Descricao, Total: int(g.TotalLocais), Criado: formatarData(h.fuso(r), g.CriadoEm.Time)}
 	}
-	lay := h.layout(r, "Grupos de locais", "/grupos")
+	lay := h.layout(r, "Grupos de locais", "/locais")
 	linhas = paginar(r, &lay, linhas)
+	for i := range linhas {
+		previa, err := q.ListLocaisDoGrupo(r.Context(), sqlccliente.ListLocaisDoGrupoParams{
+			GrupoID: linhas[i].ID, SomenteUsuario: e.somente, SomentePe: e.soPE, VerDesativados: e.verDesativados, Limite: 6,
+		})
+		if err != nil {
+			h.falhaInterna(w, r, "prévia do grupo", err)
+			return
+		}
+		for _, l := range previa {
+			linhas[i].Previa = append(linhas[i].Previa, views.GrupoLocalLinha{
+				ID: l.ID, Endereco: enderecoCompleto(l.Endereco, l.Numero), Tipo: rotuloTipoLocal(l.Tipo), Bairro: l.BairroNome,
+				Quarteirao: l.QuarteiraoNome, Lado: l.Lado, Ativo: l.Ativo,
+			})
+		}
+	}
 	render(w, r, views.Grupos(lay, views.GruposData{
 		Busca: busca, Linhas: linhas, PodeGerenciar: h.principal(r).Pode("local_grupo_gerenciar"),
 		Aviso: map[string]string{"excluido": "Grupo excluído."}[r.URL.Query().Get("ok")],
@@ -142,7 +157,7 @@ func (h *handlers) grupoNovoForm(w http.ResponseWriter, r *http.Request) {
 		h.falhaInterna(w, r, "montar formulário", err)
 		return
 	}
-	render(w, r, views.GrupoForm(h.layout(r, "Novo grupo", "/grupos"), d))
+	render(w, r, views.GrupoForm(h.layout(r, "Novo grupo", "/locais"), d))
 }
 
 func (h *handlers) grupoFicha(w http.ResponseWriter, r *http.Request) {
@@ -167,7 +182,7 @@ func (h *handlers) grupoFicha(w http.ResponseWriter, r *http.Request) {
 		h.falhaInterna(w, r, "montar ficha", err)
 		return
 	}
-	render(w, r, views.GrupoForm(h.layout(r, "Grupo de locais", "/grupos"), d))
+	render(w, r, views.GrupoForm(h.layout(r, "Grupo de locais", "/locais"), d))
 }
 
 // ------------------------------------------------------------------- Salvar, excluir, clonar
@@ -197,7 +212,7 @@ func (h *handlers) grupoSalvar(w http.ResponseWriter, r *http.Request) {
 			h.falhaInterna(w, r, "montar formulário", e)
 			return
 		}
-		renderStatus(w, r, http.StatusBadRequest, views.GrupoForm(h.layout(r, "Grupo de locais", "/grupos"), d))
+		renderStatus(w, r, http.StatusBadRequest, views.GrupoForm(h.layout(r, "Grupo de locais", "/locais"), d))
 	}
 	switch {
 	case len([]rune(nome)) < 2 || len([]rune(nome)) > 120:
@@ -325,7 +340,7 @@ func (h *handlers) grupoAdicionar(w http.ResponseWriter, r *http.Request) {
 			h.falhaInterna(w, r, "montar ficha", e)
 			return
 		}
-		renderStatus(w, r, http.StatusBadRequest, views.GrupoForm(h.layout(r, "Grupo de locais", "/grupos"), d))
+		renderStatus(w, r, http.StatusBadRequest, views.GrupoForm(h.layout(r, "Grupo de locais", "/locais"), d))
 	}
 	bairroID, _ := strconv.ParseInt(r.PostFormValue("bairro_id"), 10, 64)
 	b, err := q.GetBairro(ctx, bairroID)

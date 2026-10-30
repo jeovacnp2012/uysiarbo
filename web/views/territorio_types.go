@@ -131,12 +131,17 @@ type LocalLinha struct {
 	Ativo        bool
 }
 
-type LocaisFiltro struct{ Busca, Bairro, Tipo, Situacao string }
+type LocaisFiltro struct {
+	Busca, Bairro, Quarteirao, Tipo, Situacao, ID, Endereco, Numero, Referencia, Proprietario, Lado, Sequencia, Complemento, Ordem string
+}
 
 type LocaisData struct {
 	Filtro         LocaisFiltro
 	Bairros        []CidadeOpcao
 	Tipos          []CidadeOpcao
+	Quarteiroes    []CidadeOpcao
+	Ordens         []CidadeOpcao
+	PodeGrupos     bool
 	Linhas         []LocalLinha
 	Pag            Pagination
 	Query          url.Values
