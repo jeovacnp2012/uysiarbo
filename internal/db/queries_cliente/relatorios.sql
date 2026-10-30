@@ -146,3 +146,20 @@ WHERE i.deleted_at IS NULL
   AND (sqlc.narg(data_ate)::date IS NULL OR COALESCE(i.data_inicio, i.criado_em::date) <= sqlc.narg(data_ate)::date)
   AND (sqlc.narg(somente_usuario)::bigint IS NULL OR i.criado_por = sqlc.narg(somente_usuario)::bigint OR i.responsavel_id = sqlc.narg(somente_usuario)::bigint)
 GROUP BY d.id, d.nome ORDER BY count(*) DESC, d.nome;
+
+-- name: RelInvestigacaoSinan :many
+SELECT i.id, COALESCE(i.id_externo, '')::text AS id_origem, d.nome AS agravo, i.data_inicio, i.paciente, i.telefone,
+       COALESCE(NULLIF(btrim(l.endereco || ', ' || l.numero), ','), '')::text AS logradouro_local,
+       COALESCE(b.nome, '')::text AS bairro_local, i.endereco_texto, i.situacao, i.resultado, i.encerrada_em,
+       COALESCE(u.nome, '')::text AS responsavel, i.observacao
+FROM investigacoes i
+JOIN doencas d ON d.id = i.doenca_id
+LEFT JOIN locais l ON l.id = i.local_id
+LEFT JOIN bairros b ON b.id = l.bairro_id
+LEFT JOIN usuarios u ON u.id = i.responsavel_id
+WHERE i.deleted_at IS NULL
+  AND (sqlc.narg(data_de)::date IS NULL OR COALESCE(i.data_inicio, i.criado_em::date) >= sqlc.narg(data_de)::date)
+  AND (sqlc.narg(data_ate)::date IS NULL OR COALESCE(i.data_inicio, i.criado_em::date) <= sqlc.narg(data_ate)::date)
+  AND (sqlc.narg(somente_usuario)::bigint IS NULL OR i.criado_por = sqlc.narg(somente_usuario)::bigint OR i.responsavel_id = sqlc.narg(somente_usuario)::bigint)
+ORDER BY COALESCE(i.data_inicio, i.criado_em::date), i.id
+LIMIT 20001;

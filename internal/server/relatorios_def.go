@@ -60,6 +60,12 @@ func init() {
 			Gerar:  (*handlers).relatorioInvestigacaoTotal,
 		},
 		definicaoRelatorio{
+			Slug: "investigacao-sinan", Titulo: "Investigações: layout SINAN / e-SUS", Permissao: "relatorio_investigacao_total",
+			Resumo: "As investigações em colunas (agravo, paciente, endereço, classificação final, encerramento) para digitar ou importar no SINAN ou e-SUS.",
+			Campos: periodo,
+			Gerar:  (*handlers).relatorioInvestigacaoSinan,
+		},
+		definicaoRelatorio{
 			Slug: "animais", Titulo: "Animais: totais", Permissao: "relatorio_animais",
 			Resumo: "Por bairro: locais, moradores, cães, gatos e roedores cadastrados.",
 			Campos: []campoRelatorio{{"bairro", "Bairro", "bairro"}},
@@ -283,5 +289,36 @@ func (h *handlers) relatorioInvestigacaoTotal(ctx context.Context, r *http.Reque
 	}
 	totalizar(&doc, "Total", 1, 2, 3, 4, 5, 6, 7, 8)
 	doc.Observar = "O período vale para a data de início da investigação (na falta dela, a data do registro)."
+	return doc, nil
+}
+
+// relatorioInvestigacaoSinan lista as investigações no formato de planilha para digitar ou importar no SINAN / e-SUS.
+// Não é o arquivo oficial (DBF/XML): é a ficha em colunas, com a classificação final no vocabulário da vigilância.
+func (h *handlers) relatorioInvestigacaoSinan(ctx context.Context, r *http.Request, q *sqlccliente.Queries, f filtrosRelatorio) (relatorio.Doc, error) {
+	rows, err := q.RelInvestigacaoSinan(ctx, sqlccliente.RelInvestigacaoSinanParams{DataDe: f.data("de"), DataAte: f.data("ate"), SomenteUsuario: h.escopoInvestigacoes(r)})
+	if err != nil {
+		return relatorio.Doc{}, err
+	}
+	doc := relatorio.Doc{Titulo: "Investigações no layout SINAN / e-SUS", Colunas: []relatorio.Coluna{
+		col("Nº", 0.8, true), col("Nº de origem", 1.2, false), col("Agravo", 2, false), col("Data da notificação", 1.5, false), col("Paciente", 3, false),
+		col("Telefone", 1.5, false), col("Logradouro", 3, false), col("Bairro", 2, false), col("Classificação final", 1.7, false),
+		col("Situação da investigação", 1.8, false), col("Data de encerramento", 1.6, false), col("Investigador", 2, false), col("Observação", 3, false)}}
+	rows = cortarLinhas(rows, &doc)
+	loc := h.fuso(r)
+	classif := map[string]string{"positivo": "Confirmado", "negativo": "Descartado", "inconclusivo": "Inconclusivo", "aguardando": "Em investigação"}
+	for _, v := range rows {
+		logradouro, bairro := v.LogradouroLocal, v.BairroLocal
+		if logradouro == "" {
+			logradouro = v.EnderecoTexto
+		}
+		encerrada := ""
+		if v.EncerradaEm.Valid {
+			encerrada = v.EncerradaEm.Time.In(loc).Format("02/01/2006")
+		}
+		doc.Linhas = append(doc.Linhas, []string{strconv.FormatInt(v.ID, 10), v.IDOrigem, v.Agravo, dataBR(v.DataInicio), v.Paciente, v.Telefone, logradouro, bairro,
+			classif[v.Resultado], rotuloDe(rotulosSituacaoInvestigacao, v.Situacao), encerrada, v.Responsavel, v.Observacao})
+	}
+	doc.Observar = "Planilha para digitação ou importação no SINAN / e-SUS Notifica, não é o arquivo oficial. Classificação final: positivo = Confirmado, negativo = Descartado. " +
+		"Sexo, data de nascimento e CID não são guardados nas investigações e não saem aqui. O período vale para a data de início (na falta dela, a do registro)."
 	return doc, nil
 }

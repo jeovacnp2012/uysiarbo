@@ -274,6 +274,82 @@ func (q *Queries) RelDiaTrabalhado(ctx context.Context, arg RelDiaTrabalhadoPara
 	return items, nil
 }
 
+const relInvestigacaoSinan = `-- name: RelInvestigacaoSinan :many
+SELECT i.id, COALESCE(i.id_externo, '')::text AS id_origem, d.nome AS agravo, i.data_inicio, i.paciente, i.telefone,
+       COALESCE(NULLIF(btrim(l.endereco || ', ' || l.numero), ','), '')::text AS logradouro_local,
+       COALESCE(b.nome, '')::text AS bairro_local, i.endereco_texto, i.situacao, i.resultado, i.encerrada_em,
+       COALESCE(u.nome, '')::text AS responsavel, i.observacao
+FROM investigacoes i
+JOIN doencas d ON d.id = i.doenca_id
+LEFT JOIN locais l ON l.id = i.local_id
+LEFT JOIN bairros b ON b.id = l.bairro_id
+LEFT JOIN usuarios u ON u.id = i.responsavel_id
+WHERE i.deleted_at IS NULL
+  AND ($1::date IS NULL OR COALESCE(i.data_inicio, i.criado_em::date) >= $1::date)
+  AND ($2::date IS NULL OR COALESCE(i.data_inicio, i.criado_em::date) <= $2::date)
+  AND ($3::bigint IS NULL OR i.criado_por = $3::bigint OR i.responsavel_id = $3::bigint)
+ORDER BY COALESCE(i.data_inicio, i.criado_em::date), i.id
+LIMIT 20001
+`
+
+type RelInvestigacaoSinanParams struct {
+	DataDe         pgtype.Date `json:"data_de"`
+	DataAte        pgtype.Date `json:"data_ate"`
+	SomenteUsuario pgtype.Int8 `json:"somente_usuario"`
+}
+
+type RelInvestigacaoSinanRow struct {
+	ID              int64              `json:"id"`
+	IDOrigem        string             `json:"id_origem"`
+	Agravo          string             `json:"agravo"`
+	DataInicio      pgtype.Date        `json:"data_inicio"`
+	Paciente        string             `json:"paciente"`
+	Telefone        string             `json:"telefone"`
+	LogradouroLocal string             `json:"logradouro_local"`
+	BairroLocal     string             `json:"bairro_local"`
+	EnderecoTexto   string             `json:"endereco_texto"`
+	Situacao        string             `json:"situacao"`
+	Resultado       string             `json:"resultado"`
+	EncerradaEm     pgtype.Timestamptz `json:"encerrada_em"`
+	Responsavel     string             `json:"responsavel"`
+	Observacao      string             `json:"observacao"`
+}
+
+func (q *Queries) RelInvestigacaoSinan(ctx context.Context, arg RelInvestigacaoSinanParams) ([]RelInvestigacaoSinanRow, error) {
+	rows, err := q.db.Query(ctx, relInvestigacaoSinan, arg.DataDe, arg.DataAte, arg.SomenteUsuario)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []RelInvestigacaoSinanRow
+	for rows.Next() {
+		var i RelInvestigacaoSinanRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.IDOrigem,
+			&i.Agravo,
+			&i.DataInicio,
+			&i.Paciente,
+			&i.Telefone,
+			&i.LogradouroLocal,
+			&i.BairroLocal,
+			&i.EnderecoTexto,
+			&i.Situacao,
+			&i.Resultado,
+			&i.EncerradaEm,
+			&i.Responsavel,
+			&i.Observacao,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const relInvestigacaoTotal = `-- name: RelInvestigacaoTotal :many
 SELECT d.nome AS doenca, count(*)::int AS total,
        count(*) FILTER (WHERE i.situacao = 'aguardando')::int AS aguardando,

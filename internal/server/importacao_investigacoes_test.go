@@ -45,6 +45,10 @@ func TestImportacaoDeInvestigacoes(t *testing.T) {
 		t.Fatalf("segunda análise: %+v", imp2)
 	}
 
+	// layout SINAN / e-SUS
+	quer(t, ana.get("/relatorios/investigacao-sinan?gerar=1"), http.StatusOK, "Maria Souza", "Descartado", "Classificação final")
+	quer(t, ana.get("/relatorios/investigacao-sinan?formato=csv"), http.StatusOK, "Maria Souza")
+
 	// desfazer manda para a Lixeira
 	quer(t, ana.post("/importacoes/"+id+"/desfazer", url.Values{}), http.StatusSeeOther)
 	if _, err := m.cliQ.GetInvestigacao(t.Context(), i.ID); err == nil {

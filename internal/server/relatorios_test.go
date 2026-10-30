@@ -53,6 +53,7 @@ func TestRelatoriosDoSistemaGeram(t *testing.T) {
 		"dia-trabalhado":     "1 dias trabalhados",
 		"laboratorio-total":  "Nenhum registro",
 		"investigacao-total": "Nenhum registro",
+		"investigacao-sinan": "Nenhum registro",
 		"animais":            "Total",
 		"bri":                "Nenhum registro",
 		"local-incompleto":   "Total:",

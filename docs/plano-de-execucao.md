@@ -166,7 +166,7 @@ Objetivo: migrar dados de outros sistemas e de planilhas, com segurança.
 ## Etapa 12 — Comunicação e integrações externas
 - [x] 12.1 Comunicações (WhatsApp e e-mail): fila, tentativas, reenvio, timeline, status de visualização
 - [x] 12.2 E-mail por SMTP (feito); provedor de WhatsApp ainda a decidir (fica para depois)
-- [ ] 12.3 SINAN / e-SUS / SUS: levantar formato oficial, exportar e/ou importar notificações
+- [x] 12.3 SINAN / e-SUS: planilha de investigações no layout da ficha (feito, decisão do usuário); arquivo oficial DBF/XML e importação ficam para quando houver arquivo de exemplo
 - [x] 12.4 Banners (editor visual)
 
 ## Etapa 13 — Produção, segurança e LGPD

@@ -39,3 +39,6 @@ Em **Importação de dados**, escolha **Investigações** e envie uma planilha (
 ## Relatório de totais
 Em **Relatórios**, o item **Investigação totais** mostra, por doença, quantas investigações existem, a situação de cada uma e o resultado (positivas, negativas e inconclusivas). O período vale para a data de início.
 
+
+## Planilha no layout SINAN / e-SUS
+Em **Relatórios**, **Investigações: layout SINAN / e-SUS** lista as investigações em colunas (número, agravo, data da notificação, paciente, telefone, logradouro, bairro, classificação final, situação, data de encerramento, investigador e observação). Baixe em planilha ou CSV para digitar ou importar no SINAN ou no e-SUS Notifica. **Não é o arquivo oficial** (DBF/XML): a classificação final usa os termos da vigilância (positivo = Confirmado, negativo = Descartado, aguardando = Em investigação). Sexo, data de nascimento e CID não são guardados nas investigações e por isso não saem.
