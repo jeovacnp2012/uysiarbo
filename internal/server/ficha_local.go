@@ -106,6 +106,19 @@ func (h *handlers) dadosDaFichaDoLocal(ctx context.Context, r *http.Request, q *
 			form.EDLs = sec
 		}
 	}
+	form.Campanhas = views.CampanhasFicha{Pode: pr.Pode("campanha_visualizar"), PodeNova: pr.Pode("campanha_adicionar")}
+	if form.Campanhas.Pode {
+		cs, err := q.ListCampanhasDaFichaDoLocal(ctx, localID)
+		if err != nil {
+			return err
+		}
+		for _, c := range cs {
+			form.Campanhas.Linhas = append(form.Campanhas.Linhas, views.CampanhaFichaLinha{
+				ID: c.ID, Data: c.DataHora.Time.In(loc).Format("02/01/2006 15:04"), Situacao: rotuloDe(rotulosSituacaoCampanha, c.Situacao),
+				Aplicador: c.Aplicador, Vacinados: int(c.VacCachorros + c.VacGatos), NaoVacinados: int(c.NaoCachorros + c.NaoGatos), Estoque: c.UsarEstoque,
+			})
+		}
+	}
 	form.Notificacoes = views.NotificacoesFicha{Pode: pr.Pode("notificacao_visualizar"), PodeNova: pr.Pode("notificacao_adicionar")}
 	if form.Notificacoes.Pode {
 		ns, err := q.ListNotificacoesDaFichaDoLocal(ctx, localID)

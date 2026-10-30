@@ -138,10 +138,39 @@ templ FichaLocalTopo(d LocalFormData, completa bool) {
 			}
 		</section>
 	}
-	<section class="cartao fl-bloco fl-roxo">
-		<div class="fl-cab"><h2>Zoonose — Campanha Antirrábica</h2><span class="selo selo-aviso">chega na 10.2</span></div>
-		<div class="tabela-vazia">Nenhuma campanha de vacinação encontrada.</div>
-	</section>
+	if d.Campanhas.Pode {
+		<section class="cartao fl-bloco fl-roxo" id="campanhas">
+			<div class="fl-cab">
+				<h2>Zoonose — Campanha Antirrábica</h2>
+				if d.Campanhas.PodeNova {
+					<a class="btn btn-escuro" href={ templ.SafeURL("/zoonose/campanha/novo/" + id) }>Nova Campanha</a>
+				}
+			</div>
+			if len(d.Campanhas.Linhas) == 0 {
+				<div class="tabela-vazia">Nenhuma campanha de vacinação encontrada.</div>
+			} else {
+				<div class="tabela-wrap">
+					<table class="tabela">
+						<thead><tr><th>ID</th><th>Data</th><th>Situação</th><th>Aplicador</th><th>Total vacinados</th><th>Total não vacinados</th><th>Uso do estoque?</th><th>Ações</th></tr></thead>
+						<tbody>
+							for _, c := range d.Campanhas.Linhas {
+								<tr>
+									<td data-rotulo="ID">{ strconv.FormatInt(c.ID, 10) }</td>
+									<td data-rotulo="Data">{ c.Data }</td>
+									<td data-rotulo="Situação">{ c.Situacao }</td>
+									<td data-rotulo="Aplicador">{ vazioOuTraco(c.Aplicador) }</td>
+									<td data-rotulo="Total vacinados">{ strconv.Itoa(c.Vacinados) }</td>
+									<td data-rotulo="Total não vacinados">{ strconv.Itoa(c.NaoVacinados) }</td>
+									<td data-rotulo="Uso do estoque?">{ simNao(c.Estoque) }</td>
+									<td data-rotulo="Ações"><a class="btn" data-icone="ver" title="Abrir" href={ templ.SafeURL("/zoonose/campanha/" + strconv.FormatInt(c.ID, 10)) }>Abrir</a></td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+			}
+		</section>
+	}
 	<section class="cartao fl-bloco fl-laranja">
 		<div class="fl-cab"><h2>Zoonose — Leishmaniose Visceral Canina (LVC)</h2><span class="selo selo-aviso">chega na 10.4</span></div>
 		<div class="tabela-vazia">Nenhum teste encontrado.</div>

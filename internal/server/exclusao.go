@@ -259,6 +259,11 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 			} else if c > 0 {
 				itens = append(itens, plural(c, "notificação de animal peçonhento ativa", "notificações de animais peçonhentos ativas"))
 			}
+			if c, err := q.CountCampanhasAtivasDoLocal(ctx, id); err != nil {
+				return nil, err
+			} else if c > 0 {
+				itens = append(itens, plural(c, "campanha antirrábica ativa", "campanhas antirrábicas ativas"))
+			}
 			if c, err := q.CountDronesAtivosDoLocal(ctx, id); err != nil {
 				return nil, err
 			} else if c > 0 {
@@ -291,6 +296,11 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 				return nil, err
 			} else if c > 0 {
 				itens = append(itens, plural(c, "notificação de animal peçonhento", "notificações de animais peçonhentos")+" (contando as excluídas)")
+			}
+			if c, err := q.CountCampanhasDoLocalQualquer(ctx, id); err != nil {
+				return nil, err
+			} else if c > 0 {
+				itens = append(itens, plural(c, "campanha antirrábica", "campanhas antirrábicas")+" (contando as excluídas)")
 			}
 			if c, err := q.CountDronesDoLocalQualquer(ctx, id); err != nil {
 				return nil, err
@@ -650,6 +660,43 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 			return out, err
 		},
 	},
+	"campanha": {
+		Chave: "campanha", Rotulo: "Campanha antirrábica", Plural: "Campanhas antirrábicas", Genero: "a",
+		soft: func(ctx context.Context, q *sqlccliente.Queries, id int64, por pgtype.Int8) (int64, error) {
+			return q.SoftDeleteCampanha(ctx, sqlccliente.SoftDeleteCampanhaParams{ID: id, Por: por})
+		},
+		restore: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			return q.RestoreCampanha(ctx, id)
+		},
+		force: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			return q.ForceDeleteCampanha(ctx, id)
+		},
+		rotulo: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, bool, error) {
+			c, err := q.GetCampanhaQualquer(ctx, id)
+			return "Campanha " + strconv.FormatInt(c.ID, 10), c.DeletedAt.Valid, err
+		},
+		filhosAtivos: func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
+		vinculos:     func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
+		paiExcluido: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, error) {
+			c, err := q.GetCampanhaQualquer(ctx, id)
+			if err != nil {
+				return "", err
+			}
+			l, err := q.GetLocalQualquer(ctx, c.LocalID)
+			if err == nil && l.DeletedAt.Valid {
+				return "o local " + l.Endereco, nil
+			}
+			return "", err
+		},
+		lixeira: func(ctx context.Context, q *sqlccliente.Queries) ([]views.LixeiraLinha, error) {
+			rows, err := q.ListCampanhasExcluidas(ctx)
+			out := make([]views.LixeiraLinha, len(rows))
+			for i, r := range rows {
+				out[i] = views.LixeiraLinha{ID: r.ID, Rotulo: "Campanha " + strconv.FormatInt(r.ID, 10), Contexto: r.Contexto, Quando: r.DeletedAt.Time, Por: r.Por}
+			}
+			return out, err
+		},
+	},
 	"drone": {
 		Chave: "drone", Rotulo: "Solicitação de drone", Plural: "Solicitações de drone", Genero: "a",
 		soft: func(ctx context.Context, q *sqlccliente.Queries, id int64, por pgtype.Int8) (int64, error) {
@@ -965,7 +1012,7 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 }
 
 // ordemDaLixeira é a ordem das abas.
-var ordemDaLixeira = []string{"local", "quarteirao", "bairro", "cidade", "ciclo", "lei", "lei_trecho", "visita", "investigacao", "denuncia", "drone", "baap", "ovitrampa", "edl", "notificacao", "infracao", "amostra", "reconhecimento", "resumosemanal", "grupo", "mapeamento"}
+var ordemDaLixeira = []string{"local", "quarteirao", "bairro", "cidade", "ciclo", "lei", "lei_trecho", "visita", "investigacao", "denuncia", "campanha", "drone", "baap", "ovitrampa", "edl", "notificacao", "infracao", "amostra", "reconhecimento", "resumosemanal", "grupo", "mapeamento"}
 
 // excluirLogicamente aplica a regra completa: recusa se há filhos ativos; senão marca deleted_at.
 // Devolve os motivos da recusa (vazio = excluído), o nome do registro e o erro de banco, se houve.

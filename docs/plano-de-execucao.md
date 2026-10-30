@@ -152,7 +152,7 @@ Objetivo: migrar dados de outros sistemas e de planilhas, com segurança.
 
 ## Etapa 10 — Armadilhas, zoonose e LIRAa
 - [x] 10.1 Ovitrampa (contagem de ovos) e EDL (manutenção) — concluída em 2026-10-30 (versão 1.0.053)
-- [ ] 10.2 Campanha antirrábica: registros, vacinados e não vacinados
+- [x] 10.2 Campanha antirrábica: registros, vacinados e não vacinados — concluída em 2026-10-30 (versão 1.0.055)
 - [ ] 10.3 Diária de trabalho (equipe, temperaturas, defeitos, início e fim)
 - [ ] 10.4 LVC
 - [ ] 10.5 LIRAa: grupos e agenda

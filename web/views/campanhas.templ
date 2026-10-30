@@ -1,0 +1,216 @@
+package views
+
+import "strconv"
+
+templ Campanhas(l Layout, d CampanhasData) {
+	@Base(l) {
+		@PageHeader("Campanha antirrábica", "Atendimentos da campanha de vacinação: animais vacinados e não vacinados em cada local.") {
+			if d.PodeNova {
+				<a class="btn btn-primario" href="/zoonose/campanha/novo" data-icone="plus">Nova campanha</a>
+			}
+		}
+		<form
+			method="get"
+			action="/zoonose/campanha"
+			class="cartao filtros filtros-vivos"
+			autocomplete="off"
+			hx-get="/zoonose/campanha"
+			hx-trigger="input delay:350ms, change delay:60ms, filtrar from:body"
+			hx-sync="this:replace"
+			hx-target="#campanhas-lista"
+			hx-select="#campanhas-lista"
+			hx-swap="outerHTML"
+			hx-push-url="true"
+			hx-indicator="#campanhas-lista"
+		>
+			<input type="hidden" name="ordem" value={ d.Ordem }/>
+			<input type="hidden" name="dir" value={ d.Dir }/>
+			<div class="campo campo-largo">
+				<label for="f-busca">Endereço, aplicador ou número</label>
+				<input id="f-busca" name="busca" type="search" value={ d.Filtro.Busca } placeholder="Buscar"/>
+			</div>
+			@campoEscolha("f-situacao", "Situação", "situacao", "Todas as situações", d.Situacoes)
+			@campoEscolha("f-bairro", "Bairro", "bairro", "Todos os bairros", d.Bairros)
+			<div class="campo">
+				<label for="f-de">Data de</label>
+				<input id="f-de" name="de" type="date" value={ d.Filtro.De } class="filtro-auto"/>
+			</div>
+			<div class="campo">
+				<label for="f-ate">Data até</label>
+				<input id="f-ate" name="ate" type="date" value={ d.Filtro.Ate } class="filtro-auto"/>
+			</div>
+			<div class="form-acoes">
+				<a class="btn btn-escuro" href="/zoonose/campanha" data-icone="undo">Limpar filtros</a>
+			</div>
+			<noscript><button type="submit" class="btn btn-primario">Filtrar</button></noscript>
+		</form>
+		<div id="campanhas-lista" class="lista-viva">
+			<section class="cartao">
+				@Paginacao(d.Pag, "/zoonose/campanha", d.Query)
+				<div class="tabela-wrap">
+					<table class="tabela">
+						<thead>
+							<tr>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "id") }><a class="ordenar" href="#" data-ordenar="id" data-dir={ proximaDir(d.Ordem, d.Dir, "id") }>ID<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "id") }</span></a></th>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "data") }><a class="ordenar" href="#" data-ordenar="data" data-dir={ proximaDir(d.Ordem, d.Dir, "data") }>Data<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "data") }</span></a></th>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "endereco") }><a class="ordenar" href="#" data-ordenar="endereco" data-dir={ proximaDir(d.Ordem, d.Dir, "endereco") }>Local<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "endereco") }</span></a></th>
+								<th scope="col">Bairro</th>
+								<th scope="col">Situação</th>
+								<th scope="col">Aplicador</th>
+								<th scope="col">Total vacinados</th>
+								<th scope="col">Total não vacinados</th>
+								<th scope="col">Uso do estoque?</th>
+								<th scope="col" data-fixa><span class="sr-only">Ações</span></th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, c := range d.Linhas {
+								<tr>
+									<td data-rotulo="ID"><strong>{ c.IDTexto }</strong></td>
+									<td data-rotulo="Data">{ c.Data }</td>
+									<td data-rotulo="Local" class="quebra2" title={ c.Endereco }><span class="clamp2">{ c.Endereco }</span></td>
+									<td data-rotulo="Bairro">{ c.Bairro }</td>
+									<td data-rotulo="Situação">{ c.Situacao }</td>
+									<td data-rotulo="Aplicador">{ c.Aplicador }</td>
+									<td data-rotulo="Total vacinados">{ strconv.Itoa(c.Vacinados) }</td>
+									<td data-rotulo="Total não vacinados">{ strconv.Itoa(c.NaoVacinados) }</td>
+									<td data-rotulo="Uso do estoque?">{ simNao(c.Estoque) }</td>
+									<td data-rotulo="Ações"><a class="btn" href={ templ.SafeURL("/zoonose/campanha/" + strconv.FormatInt(c.ID, 10)) }>Abrir</a></td>
+								</tr>
+							}
+						</tbody>
+					</table>
+					if len(d.Linhas) == 0 {
+						<div class="tabela-vazia">Nenhuma campanha de vacinação encontrada.</div>
+					}
+				</div>
+				@Paginacao(d.Pag, "/zoonose/campanha", d.Query)
+			</section>
+		</div>
+	}
+}
+
+templ CampanhaEscolher(l Layout, d CampanhaEscolherLocal) {
+	@Base(l) {
+		@PageHeader("Nova campanha de vacinação", "Primeiro escolha o local atendido.") {
+			<a class="btn" href="/zoonose/campanha">Voltar</a>
+		}
+		<section class="cartao">
+			<form method="get" action="/zoonose/campanha/novo" class="form-acoes" data-sem-gaveta>
+				<div class="campo">
+					<label for="busca-local">Buscar local (endereço, número ou bairro)</label>
+					<input id="busca-local" name="busca_local" type="search" value={ d.Busca } maxlength="100" autofocus/>
+				</div>
+				<button type="submit" class="btn" data-icone="search">Buscar</button>
+			</form>
+			if d.Buscou && len(d.Locais) == 0 {
+				<p class="subtitulo">Nenhum local encontrado.</p>
+			}
+			for _, lc := range d.Locais {
+				<p class="form-acoes">
+					<span>{ lc.Endereco } <span class="subtitulo">· { lc.Bairro }</span></span>
+					<a class="btn btn-primario" href={ templ.SafeURL("/zoonose/campanha/novo/" + strconv.FormatInt(lc.ID, 10)) } data-icone="plus">Registrar neste local</a>
+				</p>
+			}
+		</section>
+	}
+}
+
+templ campanhaCampos(d CampanhaFormData) {
+	<fieldset class="sem-borda" disabled?={ !d.PodeEditar }>
+		<div class="grade-form">
+			<div class="campo">
+				<label for="data">Data e hora</label>
+				<input id="data" name="data" type="datetime-local" value={ d.Data } required/>
+			</div>
+			<div class="campo">
+				<label for="situacao">Situação</label>
+				<select id="situacao" name="situacao" required>
+					@opcoesDe(d.Situacoes)
+				</select>
+			</div>
+			<div class="campo">
+				<label for="aplicador">Aplicador</label>
+				<select id="aplicador" name="aplicador">
+					<option value="">—</option>
+					@opcoesDe(d.Aplicadores)
+				</select>
+			</div>
+		</div>
+		<h2>Animais vacinados</h2>
+		<div class="grade-form">
+			<div class="campo">
+				<label for="vac_cachorros">Cães</label>
+				<input id="vac_cachorros" name="vac_cachorros" type="number" min="0" max="9999" value={ d.Vac[0] }/>
+			</div>
+			<div class="campo">
+				<label for="vac_gatos">Gatos</label>
+				<input id="vac_gatos" name="vac_gatos" type="number" min="0" max="9999" value={ d.Vac[1] }/>
+			</div>
+		</div>
+		<h2>Animais não vacinados</h2>
+		<div class="grade-form">
+			<div class="campo">
+				<label for="nao_cachorros">Cães</label>
+				<input id="nao_cachorros" name="nao_cachorros" type="number" min="0" max="9999" value={ d.Nao[0] }/>
+			</div>
+			<div class="campo">
+				<label for="nao_gatos">Gatos</label>
+				<input id="nao_gatos" name="nao_gatos" type="number" min="0" max="9999" value={ d.Nao[1] }/>
+			</div>
+		</div>
+		<div class="campo">
+			<label for="descricao">Anotação</label>
+			<textarea id="descricao" name="descricao" rows="3" maxlength="2000">{ d.Descricao }</textarea>
+		</div>
+	</fieldset>
+}
+
+templ CampanhaNova(l Layout, d CampanhaFormData) {
+	@Base(l) {
+		@PageHeader("Nova campanha de vacinação", d.LocalEndereco) {
+			<a class="btn" href="/zoonose/campanha/novo">Trocar o local</a>
+		}
+		<form method="post" action="/zoonose/campanha" class="cartao form-admin" data-sem-gaveta>
+			<input type="hidden" name="csrf" value={ d.CSRF }/>
+			<input type="hidden" name="local" value={ strconv.FormatInt(d.LocalID, 10) }/>
+			if d.Erro != "" {
+				<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
+			}
+			@campanhaCampos(d)
+			<div class="form-acoes">
+				<button type="submit" class="btn btn-primario" data-icone="save">Registrar</button>
+				<a class="btn" href={ templ.SafeURL("/locais/" + strconv.FormatInt(d.LocalID, 10)) }>Cancelar</a>
+			</div>
+		</form>
+	}
+}
+
+templ CampanhaFicha(l Layout, d CampanhaFormData) {
+	@Base(l) {
+		@PageHeader("Campanha "+strconv.FormatInt(d.ID, 10), d.LocalEndereco) {
+			<a class="btn" href="/zoonose/campanha">Voltar</a>
+			<a class="btn" href={ templ.SafeURL("/locais/" + strconv.FormatInt(d.LocalID, 10)) }>Acessar local</a>
+		}
+		@Presenca("campanha", strconv.FormatInt(d.ID, 10), modoDaTela(d.PodeEditar))
+		if d.Aviso != "" {
+			<p class="alerta alerta-ok" role="status">{ d.Aviso }</p>
+		}
+		<form method="post" action={ templ.SafeURL("/zoonose/campanha/" + strconv.FormatInt(d.ID, 10)) } class="cartao form-admin" data-sem-gaveta>
+			<input type="hidden" name="csrf" value={ d.CSRF }/>
+			if d.Erro != "" {
+				<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
+			}
+			if d.Estoque {
+				<p class="subtitulo">Atendimento registrado com uso do estoque.</p>
+			}
+			@campanhaCampos(d)
+			if d.PodeEditar {
+				<div class="form-acoes">
+					<button type="submit" class="btn btn-primario" data-icone="save">Salvar</button>
+					<button type="submit" class="btn btn-perigo" formaction={ "/zoonose/campanha/" + strconv.FormatInt(d.ID, 10) + "/excluir" } onclick="return confirm('Enviar esta campanha para a lixeira?')" data-icone="trash">Excluir</button>
+				</div>
+			}
+		</form>
+	}
+}

@@ -223,6 +223,26 @@ type BairroResponsavei struct {
 	UsuarioID int64 `json:"usuario_id"`
 }
 
+type Campanha struct {
+	ID           int64              `json:"id"`
+	IDExterno    pgtype.Text        `json:"id_externo"`
+	LocalID      int64              `json:"local_id"`
+	DataHora     pgtype.Timestamptz `json:"data_hora"`
+	Situacao     string             `json:"situacao"`
+	UsarEstoque  bool               `json:"usar_estoque"`
+	VacCachorros int32              `json:"vac_cachorros"`
+	VacGatos     int32              `json:"vac_gatos"`
+	NaoCachorros int32              `json:"nao_cachorros"`
+	NaoGatos     int32              `json:"nao_gatos"`
+	Descricao    string             `json:"descricao"`
+	AplicadorID  pgtype.Int8        `json:"aplicador_id"`
+	CriadoPor    pgtype.Int8        `json:"criado_por"`
+	CriadoEm     pgtype.Timestamptz `json:"criado_em"`
+	AtualizadoEm pgtype.Timestamptz `json:"atualizado_em"`
+	DeletedAt    pgtype.Timestamptz `json:"deleted_at"`
+	DeletedBy    pgtype.Int8        `json:"deleted_by"`
+}
+
 type CasoAnexo struct {
 	ID        int64              `json:"id"`
 	Tipo      string             `json:"tipo"`

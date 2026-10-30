@@ -130,7 +130,7 @@ func (s *handlers) menu(r *http.Request) []views.NavGrupo {
 		}
 		if pr.Pode("campanha_visualizar") || pr.Pode("zoonose_lvc_visualizar") || pr.Pode("zoonose_baap_visualizar") {
 			menu = append(menu, views.NavGrupo{Label: "Zoonose", Icone: "zoonose", Itens: []views.NavItem{
-				{Label: "Campanha Antirrábica", EmBreve: true},
+				campanhaItem(pr),
 				{Label: "Leishmaniose Visceral Canina", EmBreve: true},
 				baapItem(pr),
 			}})
@@ -240,4 +240,12 @@ func baapItem(pr authz.Principal) views.NavItem {
 		return views.NavItem{Label: "Busca Ativa — Animais Peçonhentos", Href: "/zoonose/baap"}
 	}
 	return views.NavItem{Label: "Busca Ativa — Animais Peçonhentos", EmBreve: true}
+}
+
+// campanhaItem: o item da campanha antirrábica só tem tela para quem pode ver; sem a permissão fica "em construção".
+func campanhaItem(pr authz.Principal) views.NavItem {
+	if pr.Pode("campanha_visualizar") {
+		return views.NavItem{Label: "Campanha Antirrábica", Href: "/zoonose/campanha"}
+	}
+	return views.NavItem{Label: "Campanha Antirrábica", EmBreve: true}
 }

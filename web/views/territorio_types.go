@@ -199,6 +199,7 @@ type LocalFormData struct {
 	PodeNovaVisita   bool
 	Ovitrampas, EDLs ArmadilhasFicha
 	Notificacoes     NotificacoesFicha
+	Campanhas        CampanhasFicha
 }
 
 // VisitaDoLocal é uma linha do histórico de visitas na ficha do local.
@@ -290,4 +291,18 @@ type NotificacaoFichaLinha struct {
 type NotificacoesFicha struct {
 	Pode, PodeNova bool
 	Linhas         []NotificacaoFichaLinha
+}
+
+// CampanhasFicha é a seção de campanha antirrábica da ficha do local.
+type CampanhasFicha struct {
+	Pode, PodeNova bool
+	Linhas         []CampanhaFichaLinha
+}
+
+type CampanhaFichaLinha struct {
+	ID                      int64
+	Data, Situacao          string
+	Aplicador               string
+	Vacinados, NaoVacinados int
+	Estoque                 bool
 }
