@@ -1,0 +1,341 @@
+package views
+
+import "strconv"
+
+func seloDoBaap(s string) string {
+	switch s {
+	case "encerrada":
+		return "selo-ok"
+	case "em_atendimento":
+		return "selo-aviso"
+	}
+	return ""
+}
+
+templ Baap(l Layout, d BaapData) {
+	@Base(l) {
+		@PageHeader("Animais peçonhentos (BAAP)", "Busca ativa de acidentes com serpentes, aranhas, escorpiões e outros animais peçonhentos.") {
+			if d.PodeNova {
+				<a class="btn btn-primario" href="/zoonose/baap/nova" data-icone="plus">Nova notificação</a>
+			}
+		}
+		<form
+			method="get"
+			action="/zoonose/baap"
+			class="cartao filtros filtros-vivos"
+			autocomplete="off"
+			hx-get="/zoonose/baap"
+			hx-trigger="input delay:350ms, change delay:60ms, filtrar from:body"
+			hx-sync="this:replace"
+			hx-target="#baap-lista"
+			hx-select="#baap-lista"
+			hx-swap="outerHTML"
+			hx-push-url="true"
+			hx-indicator="#baap-lista"
+		>
+			<input type="hidden" name="ordem" value={ d.Ordem }/>
+			<input type="hidden" name="dir" value={ d.Dir }/>
+			<div class="campo campo-largo">
+				<label for="f-busca">Paciente, mãe, telefone, endereço, espécie, SINAM ou número</label>
+				<input id="f-busca" name="busca" type="search" value={ d.Filtro.Busca } placeholder="Buscar"/>
+			</div>
+			@campoEscolha("f-situacao", "Situação", "situacao", "Todas as situações", d.Situacoes)
+			@campoEscolha("f-animal", "Animal", "animal", "Todos os animais", d.Animais)
+			@campoEscolha("f-bairro", "Bairro", "bairro", "Todos os bairros", d.Bairros)
+			<div class="campo">
+				<label for="f-de">Notificação de</label>
+				<input id="f-de" name="de" type="date" value={ d.Filtro.De } class="filtro-auto"/>
+			</div>
+			<div class="campo">
+				<label for="f-ate">Notificação até</label>
+				<input id="f-ate" name="ate" type="date" value={ d.Filtro.Ate } class="filtro-auto"/>
+			</div>
+			<div class="form-acoes">
+				<a class="btn btn-escuro" href="/zoonose/baap" data-icone="undo">Limpar filtros</a>
+			</div>
+			<noscript><button type="submit" class="btn btn-primario">Filtrar</button></noscript>
+		</form>
+		<div id="baap-lista" class="lista-viva">
+			<section class="cartao">
+				@Paginacao(d.Pag, "/zoonose/baap", d.Query)
+				<div class="tabela-wrap">
+					<table class="tabela">
+						<thead>
+							<tr>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "id") }><a class="ordenar" href="#" data-ordenar="id" data-dir={ proximaDir(d.Ordem, d.Dir, "id") }>Nº<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "id") }</span></a></th>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "situacao") }><a class="ordenar" href="#" data-ordenar="situacao" data-dir={ proximaDir(d.Ordem, d.Dir, "situacao") }>Situação<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "situacao") }</span></a></th>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "paciente") }><a class="ordenar" href="#" data-ordenar="paciente" data-dir={ proximaDir(d.Ordem, d.Dir, "paciente") }>Paciente<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "paciente") }</span></a></th>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "animal") }><a class="ordenar" href="#" data-ordenar="animal" data-dir={ proximaDir(d.Ordem, d.Dir, "animal") }>Animal<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "animal") }</span></a></th>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "data") }><a class="ordenar" href="#" data-ordenar="data" data-dir={ proximaDir(d.Ordem, d.Dir, "data") }>Notificação<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "data") }</span></a></th>
+								<th scope="col">SINAM</th>
+								<th scope="col">Endereço</th>
+								<th scope="col">Bairro</th>
+								<th scope="col">Responsável</th>
+								<th scope="col" data-fixa><span class="sr-only">Ações</span></th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, n := range d.Linhas {
+								<tr>
+									<td data-rotulo="Nº"><strong>{ n.IDTexto }</strong></td>
+									<td data-rotulo="Situação"><span class={ "selo", seloDoBaap(n.Situacao) }>{ n.SituacaoRotulo }</span></td>
+									<td data-rotulo="Paciente">{ n.Paciente }</td>
+									<td data-rotulo="Animal">{ n.Animal }</td>
+									<td data-rotulo="Notificação">{ n.Data }</td>
+									<td data-rotulo="SINAM">{ n.Sinam }</td>
+									<td data-rotulo="Endereço" class="quebra2" title={ n.Endereco }><span class="clamp2">{ n.Endereco }</span></td>
+									<td data-rotulo="Bairro">{ n.Bairro }</td>
+									<td data-rotulo="Responsável">{ n.Responsavel }</td>
+									<td data-rotulo="Ações"><a class="btn" href={ templ.SafeURL("/zoonose/baap/" + strconv.FormatInt(n.ID, 10)) }>Abrir</a></td>
+								</tr>
+							}
+						</tbody>
+					</table>
+					if len(d.Linhas) == 0 {
+						<div class="tabela-vazia">Nenhuma notificação encontrada.</div>
+					}
+				</div>
+				@Paginacao(d.Pag, "/zoonose/baap", d.Query)
+			</section>
+		</div>
+	}
+}
+
+templ dadosDoBaap(d BaapFormData) {
+	<form method="post" class="cartao form-admin" data-sem-gaveta
+		if d.Novo() {
+			action="/zoonose/baap"
+		} else {
+			action={ templ.SafeURL("/zoonose/baap/" + strconv.FormatInt(d.ID, 10)) }
+		}
+	>
+		<input type="hidden" name="csrf" value={ d.CSRF }/>
+		if d.Erro != "" {
+			<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
+		}
+		<h2 class="rel-titulo" data-ico="user">Paciente</h2>
+		<div class="grade-form">
+			<div class="campo campo-largo">
+				<label for="paciente">Paciente</label>
+				<input id="paciente" name="paciente" type="text" value={ d.Paciente } maxlength="150" required/>
+			</div>
+			<div class="campo campo-largo">
+				<label for="nome_mae">Nome da mãe</label>
+				<input id="nome_mae" name="nome_mae" type="text" value={ d.NomeMae } maxlength="150"/>
+			</div>
+			<div class="campo">
+				<label for="nascimento">Data de nascimento</label>
+				<input id="nascimento" name="nascimento" type="date" value={ d.Nascimento }/>
+			</div>
+			<div class="campo">
+				<label for="telefone">Telefone</label>
+				<input id="telefone" name="telefone" type="text" value={ d.Telefone } maxlength="40"/>
+			</div>
+			<div class="campo">
+				<label for="telefone2">Telefone 2</label>
+				<input id="telefone2" name="telefone2" type="text" value={ d.Telefone2 } maxlength="40"/>
+			</div>
+		</div>
+		<h2 class="rel-titulo" data-ico="file">Acidente</h2>
+		<div class="grade-form">
+			<div class="campo">
+				<label for="sinam">Nº SINAM</label>
+				<input id="sinam" name="sinam" type="text" value={ d.Sinam } maxlength="30"/>
+			</div>
+			<div class="campo">
+				<label for="data">Data da notificação</label>
+				<input id="data" name="data" type="date" value={ d.Data } required/>
+			</div>
+			<div class="campo">
+				<label for="animal">Animal</label>
+				<select id="animal" name="animal" required data-sem-busca>
+					<option value="">Escolha o animal</option>
+					@opcoesDe(d.Animais)
+				</select>
+			</div>
+			<div class="campo">
+				<label for="animal_outro">Qual (se for outro)</label>
+				<input id="animal_outro" name="animal_outro" type="text" value={ d.AnimalOutro } maxlength="100"/>
+			</div>
+			<div class="campo">
+				<label for="especie">Espécie</label>
+				<input id="especie" name="especie" type="text" value={ d.Especie } maxlength="100"/>
+			</div>
+			<div class="campo">
+				<label for="local_picada">Local da picada</label>
+				<select id="local_picada" name="local_picada" data-sem-busca>
+					@opcoesDe(d.LocaisPicada)
+				</select>
+			</div>
+		</div>
+		<div class="campo">
+			<label for="situacao_paciente">Situação do paciente</label>
+			<textarea id="situacao_paciente" name="situacao_paciente" rows="2" maxlength="2000">{ d.SituacaoPaciente }</textarea>
+		</div>
+		<div class="campo">
+			<label for="atuacao_vga">Atuação da Vigilância Ambiental</label>
+			<input id="atuacao_vga" name="atuacao_vga" type="text" value={ d.AtuacaoVGA } maxlength="200"/>
+		</div>
+		<div class="campo">
+			<label for="observacao">Observação</label>
+			<textarea id="observacao" name="observacao" rows="3" maxlength="4000">{ d.Observacao }</textarea>
+		</div>
+		<h2 class="rel-titulo" data-ico="pin">Onde</h2>
+		<div class="grade-form">
+			<div class="campo campo-largo">
+				<label for="endereco">Endereço</label>
+				<input id="endereco" name="endereco" type="text" value={ d.Endereco } maxlength="200"/>
+			</div>
+			<div class="campo">
+				<label for="numero">Número</label>
+				<input id="numero" name="numero" type="text" value={ d.Numero } maxlength="20"/>
+			</div>
+			<div class="campo campo-largo">
+				<label for="referencia">Referência</label>
+				<input id="referencia" name="referencia" type="text" value={ d.Referencia } maxlength="200"/>
+			</div>
+			<div class="campo">
+				<label for="bairro">Bairro</label>
+				<select id="bairro" name="bairro">
+					<option value="">Escolha o bairro</option>
+					@opcoesDe(d.Bairros)
+				</select>
+			</div>
+		</div>
+		<div class="form-acoes">
+			<button type="submit" class="btn btn-primario" data-icone="save">Salvar</button>
+			<a class="btn" href="/zoonose/baap">Cancelar</a>
+		</div>
+	</form>
+}
+
+templ BaapNova(l Layout, d BaapFormData) {
+	@Base(l) {
+		@PageHeader("Nova notificação de animal peçonhento", "Registre o acidente; depois vincule o local e a visita.") {
+			<a class="btn" href="/zoonose/baap">Voltar</a>
+		}
+		@dadosDoBaap(d)
+	}
+}
+
+templ BaapFicha(l Layout, d BaapFichaData) {
+	@Base(l) {
+		@PageHeader("BAAP "+d.IDTexto, d.Paciente) {
+			<a class="btn" href="/zoonose/baap">Voltar</a>
+		}
+		@Presenca("baap", strconv.FormatInt(d.ID, 10), modoDaTela(d.PodeEditar))
+		if d.Aviso != "" {
+			<p class="alerta alerta-ok" role="status">{ d.Aviso }</p>
+		}
+		<section class="cartao">
+			<div class="resumo-ficha">
+				<p>
+					<span class={ "selo", seloDoBaap(d.Situacao) }>{ d.SituacaoRotulo }</span>
+					<span class="subtitulo">{ d.Animal } · picada: { d.LocalPicada } · notificado em { d.Data }</span>
+					if d.Responsavel != "" {
+						<span class="subtitulo">Responsável: <strong>{ d.Responsavel }</strong></span>
+					}
+				</p>
+				<p>
+					<strong>{ d.Paciente }</strong>
+					if d.Telefone != "" {
+						<span class="subtitulo"> · { d.Telefone }</span>
+					}
+					if d.Sinam != "" {
+						<span class="subtitulo"> · SINAM { d.Sinam }</span>
+					}
+				</p>
+				<p class="subtitulo">
+					if d.LocalID != 0 {
+						Local: <a href={ templ.SafeURL("/locais/" + strconv.FormatInt(d.LocalID, 10)) }>{ d.LocalEndereco }</a>
+					} else if d.Endereco != "" {
+						Endereço: { d.Endereco }
+					}
+					if d.Bairro != "" {
+						· Bairro { d.Bairro }
+					}
+				</p>
+			</div>
+		</section>
+		@FichaCaso(d.Caso)
+		if !d.Fechada && (d.PodeAtender || d.PodeEncerrar) {
+			<section class="cartao" id="fechar">
+				<h2 class="rel-titulo" data-ico="lock">Andamento</h2>
+				<form method="post" class="form-admin" data-sem-gaveta>
+					<input type="hidden" name="csrf" value={ d.CSRF }/>
+					<div class="campo">
+						<label for="texto-fechar">Observação (opcional)</label>
+						<textarea id="texto-fechar" name="texto" rows="2" maxlength="2000"></textarea>
+					</div>
+					<div class="form-acoes">
+						if d.PodeAtender && d.Situacao == "aguardando" {
+							<button type="submit" class="btn btn-primario" formaction={ "/zoonose/baap/" + strconv.FormatInt(d.ID, 10) + "/atender" } data-icone="check">Atender</button>
+						}
+						if d.PodeEncerrar && d.Situacao == "em_atendimento" {
+							<button type="submit" class="btn btn-sucesso" formaction={ "/zoonose/baap/" + strconv.FormatInt(d.ID, 10) + "/encerrar" } data-icone="lock">Encerrar</button>
+						}
+					</div>
+				</form>
+			</section>
+		}
+		if d.PodeEditar {
+			@dadosDoBaap(d.Dados)
+		}
+		<section class="cartao" id="local">
+			<h2 class="rel-titulo" data-ico="pin">Local do acidente</h2>
+			if d.LocalID != 0 {
+				<p>Vinculada a <a href={ templ.SafeURL("/locais/" + strconv.FormatInt(d.LocalID, 10)) }>{ d.LocalEndereco }</a></p>
+			} else {
+				<p class="subtitulo">Nenhum local cadastrado vinculado.</p>
+			}
+			if d.PodeLocal {
+				<form method="get" action={ templ.SafeURL("/zoonose/baap/" + strconv.FormatInt(d.ID, 10)) } class="form-acoes" data-sem-gaveta>
+					<div class="campo">
+						<label for="busca-local">Buscar local (endereço, número ou bairro)</label>
+						<input id="busca-local" name="busca_local" type="search" value={ d.Busca } maxlength="100"/>
+					</div>
+					<button type="submit" class="btn" data-icone="search">Buscar</button>
+				</form>
+				if d.Buscou && len(d.Locais) == 0 {
+					<p class="subtitulo">Nenhum local encontrado.</p>
+				}
+				for _, lc := range d.Locais {
+					<form method="post" action={ templ.SafeURL("/zoonose/baap/" + strconv.FormatInt(d.ID, 10) + "/local") } class="form-acoes" data-sem-gaveta>
+						<input type="hidden" name="csrf" value={ d.CSRF }/>
+						<input type="hidden" name="local" value={ strconv.FormatInt(lc.ID, 10) }/>
+						<span>{ lc.Endereco } <span class="subtitulo">· { lc.Bairro }</span></span>
+						<button type="submit" class="btn" data-icone="link">Vincular</button>
+					</form>
+				}
+				if d.LocalID != 0 {
+					<form method="post" action={ templ.SafeURL("/zoonose/baap/" + strconv.FormatInt(d.ID, 10) + "/local") } data-sem-gaveta>
+						<input type="hidden" name="csrf" value={ d.CSRF }/>
+						<input type="hidden" name="local" value=""/>
+						<button type="submit" class="btn" data-icone="x">Desvincular local</button>
+					</form>
+				}
+			}
+		</section>
+		<section class="cartao" id="visita">
+			<h2 class="rel-titulo" data-ico="visitas">Visita</h2>
+			if d.VisitaID != 0 {
+				<p>Visita <a href={ templ.SafeURL("/visitas/" + strconv.FormatInt(d.VisitaID, 10)) }>nº { strconv.FormatInt(d.VisitaID, 10) }</a> feita por causa desta notificação.</p>
+			} else {
+				<p class="subtitulo">Nenhuma visita vinculada.</p>
+			}
+			if d.PodeVisita {
+				<form method="post" action={ templ.SafeURL("/zoonose/baap/" + strconv.FormatInt(d.ID, 10) + "/visita") } class="form-acoes" data-sem-gaveta>
+					<input type="hidden" name="csrf" value={ d.CSRF }/>
+					<div class="campo">
+						<label for="visita-id">Número da visita (vazio desvincula)</label>
+						<input id="visita-id" name="visita" type="text" inputmode="numeric" maxlength="12"/>
+					</div>
+					<button type="submit" class="btn" data-icone="link">Salvar vínculo</button>
+					if d.LocalID != 0 {
+						<a class="btn" href={ templ.SafeURL("/visitas/nova?local=" + strconv.FormatInt(d.LocalID, 10)) } data-icone="plus">Nova visita no local</a>
+					}
+				</form>
+			}
+		</section>
+	}
+}

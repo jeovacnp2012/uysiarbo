@@ -249,6 +249,16 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 			} else if c > 0 {
 				itens = append(itens, plural(c, "notificação ativa", "notificações ativas"))
 			}
+			if c, err := q.CountBaapAtivosDoLocal(ctx, pgtype.Int8{Int64: id, Valid: true}); err != nil {
+				return nil, err
+			} else if c > 0 {
+				itens = append(itens, plural(c, "notificação de animal peçonhento ativa", "notificações de animais peçonhentos ativas"))
+			}
+			if c, err := q.CountDronesAtivosDoLocal(ctx, id); err != nil {
+				return nil, err
+			} else if c > 0 {
+				itens = append(itens, plural(c, "solicitação de drone ativa", "solicitações de drone ativas"))
+			}
 			return itens, nil
 		},
 		vinculos: func(ctx context.Context, q *sqlccliente.Queries, id int64) ([]string, error) {
@@ -266,6 +276,16 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 				return nil, err
 			} else if c > 0 {
 				itens = append(itens, plural(c, "notificação", "notificações")+" (contando as excluídas)")
+			}
+			if c, err := q.CountBaapDoLocalQualquer(ctx, pgtype.Int8{Int64: id, Valid: true}); err != nil {
+				return nil, err
+			} else if c > 0 {
+				itens = append(itens, plural(c, "notificação de animal peçonhento", "notificações de animais peçonhentos")+" (contando as excluídas)")
+			}
+			if c, err := q.CountDronesDoLocalQualquer(ctx, id); err != nil {
+				return nil, err
+			} else if c > 0 {
+				itens = append(itens, plural(c, "solicitação de drone", "solicitações de drone")+" (contando as excluídas)")
 			}
 			if c, err := q.CountAutosDoLocalQualquer(ctx, id); err != nil {
 				return nil, err
@@ -574,6 +594,94 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 			return out, err
 		},
 	},
+	"baap": {
+		Chave: "baap", Rotulo: "Animal peçonhento", Plural: "Animais peçonhentos", Genero: "a",
+		soft: func(ctx context.Context, q *sqlccliente.Queries, id int64, por pgtype.Int8) (int64, error) {
+			return q.SoftDeleteBaap(ctx, sqlccliente.SoftDeleteBaapParams{ID: id, Por: por})
+		},
+		restore: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			return q.RestoreBaap(ctx, id)
+		},
+		force: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			// o andamento (eventos e anexos) é só da notificação e sai junto
+			if err := q.ForceDeleteCasoEventos(ctx, sqlccliente.ForceDeleteCasoEventosParams{Tipo: "baap", CasoID: id}); err != nil {
+				return 0, err
+			}
+			if err := q.ForceDeleteCasoAnexos(ctx, sqlccliente.ForceDeleteCasoAnexosParams{Tipo: "baap", CasoID: id}); err != nil {
+				return 0, err
+			}
+			return q.ForceDeleteBaap(ctx, id)
+		},
+		rotulo: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, bool, error) {
+			b, err := q.GetBaapQualquer(ctx, id)
+			return "Animal peçonhento " + strconv.FormatInt(b.ID, 10) + " — " + b.Paciente, b.DeletedAt.Valid, err
+		},
+		filhosAtivos: func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
+		vinculos:     func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
+		paiExcluido: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, error) {
+			b, err := q.GetBaapQualquer(ctx, id)
+			if err != nil || !b.LocalID.Valid {
+				return "", err
+			}
+			l, err := q.GetLocalQualquer(ctx, b.LocalID.Int64)
+			if err == nil && l.DeletedAt.Valid {
+				return "o local " + l.Endereco, nil
+			}
+			return "", err
+		},
+		lixeira: func(ctx context.Context, q *sqlccliente.Queries) ([]views.LixeiraLinha, error) {
+			rows, err := q.ListBaapExcluidos(ctx)
+			out := make([]views.LixeiraLinha, len(rows))
+			for i, r := range rows {
+				out[i] = views.LixeiraLinha{ID: r.ID, Rotulo: "Animal peçonhento " + strconv.FormatInt(r.ID, 10) + " — " + r.Paciente, Contexto: r.Animal, Quando: r.DeletedAt.Time, Por: r.Por}
+			}
+			return out, err
+		},
+	},
+	"drone": {
+		Chave: "drone", Rotulo: "Solicitação de drone", Plural: "Solicitações de drone", Genero: "a",
+		soft: func(ctx context.Context, q *sqlccliente.Queries, id int64, por pgtype.Int8) (int64, error) {
+			return q.SoftDeleteDrone(ctx, sqlccliente.SoftDeleteDroneParams{ID: id, Por: por})
+		},
+		restore: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			return q.RestoreDrone(ctx, id)
+		},
+		force: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			// o andamento (eventos e anexos) é só da solicitação e sai junto
+			if err := q.ForceDeleteCasoEventos(ctx, sqlccliente.ForceDeleteCasoEventosParams{Tipo: "drone", CasoID: id}); err != nil {
+				return 0, err
+			}
+			if err := q.ForceDeleteCasoAnexos(ctx, sqlccliente.ForceDeleteCasoAnexosParams{Tipo: "drone", CasoID: id}); err != nil {
+				return 0, err
+			}
+			return q.ForceDeleteDrone(ctx, id)
+		},
+		rotulo: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, bool, error) {
+			d, err := q.GetDroneQualquer(ctx, id)
+			return "Solicitação de drone " + strconv.FormatInt(d.ID, 10), d.DeletedAt.Valid, err
+		},
+		filhosAtivos: func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
+		vinculos:     func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
+		paiExcluido: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, error) {
+			d, err := q.GetDroneQualquer(ctx, id)
+			if err != nil {
+				return "", err
+			}
+			l, err := q.GetLocalQualquer(ctx, d.LocalID)
+			if err == nil && l.DeletedAt.Valid {
+				return "o local " + l.Endereco, nil
+			}
+			return "", err
+		},
+		lixeira: func(ctx context.Context, q *sqlccliente.Queries) ([]views.LixeiraLinha, error) {
+			rows, err := q.ListDronesExcluidos(ctx)
+			out := make([]views.LixeiraLinha, len(rows))
+			for i, r := range rows {
+				out[i] = views.LixeiraLinha{ID: r.ID, Rotulo: "Solicitação de drone " + strconv.FormatInt(r.ID, 10), Contexto: r.Descricao, Quando: r.DeletedAt.Time, Por: r.Por}
+			}
+			return out, err
+		},
+	},
 	"notificacao": {
 		Chave: "notificacao", Rotulo: "Notificação", Plural: "Notificações", Genero: "a",
 		soft: func(ctx context.Context, q *sqlccliente.Queries, id int64, por pgtype.Int8) (int64, error) {
@@ -845,7 +953,7 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 }
 
 // ordemDaLixeira é a ordem das abas.
-var ordemDaLixeira = []string{"local", "quarteirao", "bairro", "cidade", "ciclo", "lei", "lei_trecho", "visita", "investigacao", "denuncia", "notificacao", "infracao", "amostra", "reconhecimento", "resumosemanal", "grupo", "mapeamento"}
+var ordemDaLixeira = []string{"local", "quarteirao", "bairro", "cidade", "ciclo", "lei", "lei_trecho", "visita", "investigacao", "denuncia", "drone", "baap", "notificacao", "infracao", "amostra", "reconhecimento", "resumosemanal", "grupo", "mapeamento"}
 
 // excluirLogicamente aplica a regra completa: recusa se há filhos ativos; senão marca deleted_at.
 // Devolve os motivos da recusa (vazio = excluído), o nome do registro e o erro de banco, se houve.

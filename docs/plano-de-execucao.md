@@ -148,7 +148,7 @@ Objetivo: migrar dados de outros sistemas e de planilhas, com segurança.
 - [x] 9.2 Investigação (doenças, resultado, vincular local, entrevistas por doença configuráveis)
 - [x] 9.3 Denúncia (inclui cidadão e denúncia anônima)
 - [x] 9.4 Notificação → Auto de infração → pagamento/cancelamento (com leis municipais)
-- [ ] 9.5 Solicitação de drone e BAAP (animais peçonhentos)
+- [x] 9.5 Solicitação de drone e BAAP (animais peçonhentos) — concluída em 2026-10-30 (versão 1.0.052)
 
 ## Etapa 10 — Armadilhas, zoonose e LIRAa
 - [ ] 10.1 Ovitrampa (contagem de ovos) e EDL (manutenção)

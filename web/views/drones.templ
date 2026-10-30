@@ -1,0 +1,225 @@
+package views
+
+import "strconv"
+
+func seloDoDrone(s string) string {
+	switch s {
+	case "encerrada":
+		return "selo-ok"
+	case "em_atendimento":
+		return "selo-aviso"
+	}
+	return ""
+}
+
+templ Drones(l Layout, d DronesData) {
+	@Base(l) {
+		@PageHeader("Solicitações de drone", "Pedidos de sobrevoo de um local: casa fechada, calha, laje ou terreno de difícil acesso.") {
+			if d.PodeNova {
+				<a class="btn btn-primario" href="/drones/nova" data-icone="plus">Nova solicitação</a>
+			}
+		}
+		<form
+			method="get"
+			action="/drones"
+			class="cartao filtros filtros-vivos"
+			autocomplete="off"
+			hx-get="/drones"
+			hx-trigger="input delay:350ms, change delay:60ms, filtrar from:body"
+			hx-sync="this:replace"
+			hx-target="#drones-lista"
+			hx-select="#drones-lista"
+			hx-swap="outerHTML"
+			hx-push-url="true"
+			hx-indicator="#drones-lista"
+		>
+			<input type="hidden" name="ordem" value={ d.Ordem }/>
+			<input type="hidden" name="dir" value={ d.Dir }/>
+			<div class="campo campo-largo">
+				<label for="f-busca">Descrição, endereço, quem abriu ou número</label>
+				<input id="f-busca" name="busca" type="search" value={ d.Filtro.Busca } placeholder="Buscar"/>
+			</div>
+			@campoEscolha("f-situacao", "Situação", "situacao", "Todas as situações", d.Situacoes)
+			@campoEscolha("f-bairro", "Bairro", "bairro", "Todos os bairros", d.Bairros)
+			<div class="campo">
+				<label for="f-de">Abertura de</label>
+				<input id="f-de" name="de" type="date" value={ d.Filtro.De } class="filtro-auto"/>
+			</div>
+			<div class="campo">
+				<label for="f-ate">Abertura até</label>
+				<input id="f-ate" name="ate" type="date" value={ d.Filtro.Ate } class="filtro-auto"/>
+			</div>
+			<div class="form-acoes">
+				<a class="btn btn-escuro" href="/drones" data-icone="undo">Limpar filtros</a>
+			</div>
+			<noscript><button type="submit" class="btn btn-primario">Filtrar</button></noscript>
+		</form>
+		<div id="drones-lista" class="lista-viva">
+			<section class="cartao">
+				@Paginacao(d.Pag, "/drones", d.Query)
+				<div class="tabela-wrap">
+					<table class="tabela">
+						<thead>
+							<tr>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "id") }><a class="ordenar" href="#" data-ordenar="id" data-dir={ proximaDir(d.Ordem, d.Dir, "id") }>Nº<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "id") }</span></a></th>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "situacao") }><a class="ordenar" href="#" data-ordenar="situacao" data-dir={ proximaDir(d.Ordem, d.Dir, "situacao") }>Situação<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "situacao") }</span></a></th>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "data") }><a class="ordenar" href="#" data-ordenar="data" data-dir={ proximaDir(d.Ordem, d.Dir, "data") }>Abertura<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "data") }</span></a></th>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "endereco") }><a class="ordenar" href="#" data-ordenar="endereco" data-dir={ proximaDir(d.Ordem, d.Dir, "endereco") }>Local<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "endereco") }</span></a></th>
+								<th scope="col">Bairro</th>
+								<th scope="col">Descrição</th>
+								<th scope="col">Aberto por</th>
+								<th scope="col">Responsável</th>
+								<th scope="col" data-fixa><span class="sr-only">Ações</span></th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, n := range d.Linhas {
+								<tr>
+									<td data-rotulo="Nº"><strong>{ n.IDTexto }</strong></td>
+									<td data-rotulo="Situação"><span class={ "selo", seloDoDrone(n.Situacao) }>{ n.SituacaoRotulo }</span></td>
+									<td data-rotulo="Abertura">{ n.Data }</td>
+									<td data-rotulo="Local" class="quebra2" title={ n.Endereco }><span class="clamp2">{ n.Endereco }</span></td>
+									<td data-rotulo="Bairro">{ n.Bairro }</td>
+									<td data-rotulo="Descrição" class="quebra2" title={ n.Descricao }><span class="clamp2">{ n.Descricao }</span></td>
+									<td data-rotulo="Aberto por">{ n.AbertoPor }</td>
+									<td data-rotulo="Responsável">{ n.Responsavel }</td>
+									<td data-rotulo="Ações"><a class="btn" href={ templ.SafeURL("/drones/" + strconv.FormatInt(n.ID, 10)) }>Abrir</a></td>
+								</tr>
+							}
+						</tbody>
+					</table>
+					if len(d.Linhas) == 0 {
+						<div class="tabela-vazia">Nenhuma solicitação de drone encontrada.</div>
+					}
+				</div>
+				@Paginacao(d.Pag, "/drones", d.Query)
+			</section>
+		</div>
+	}
+}
+
+templ DroneEscolher(l Layout, d DroneEscolherLocal) {
+	@Base(l) {
+		@PageHeader("Nova solicitação de drone", "Primeiro escolha o local que será sobrevoado.") {
+			<a class="btn" href="/drones">Voltar</a>
+		}
+		<section class="cartao">
+			<form method="get" action="/drones/nova" class="form-acoes" data-sem-gaveta>
+				<div class="campo">
+					<label for="busca-local">Buscar local (endereço, número ou bairro)</label>
+					<input id="busca-local" name="busca_local" type="search" value={ d.Busca } maxlength="100" autofocus/>
+				</div>
+				<button type="submit" class="btn" data-icone="search">Buscar</button>
+			</form>
+			if d.Buscou && len(d.Locais) == 0 {
+				<p class="subtitulo">Nenhum local encontrado.</p>
+			}
+			for _, lc := range d.Locais {
+				<p class="form-acoes">
+					<span>{ lc.Endereco } <span class="subtitulo">· { lc.Bairro }</span></span>
+					<a class="btn btn-primario" href={ templ.SafeURL("/drones/nova?local=" + strconv.FormatInt(lc.ID, 10)) } data-icone="plus">Solicitar para este local</a>
+				</p>
+			}
+		</section>
+	}
+}
+
+templ DroneNova(l Layout, d DroneFormData) {
+	@Base(l) {
+		@PageHeader("Nova solicitação de drone", d.LocalEndereco) {
+			<a class="btn" href="/drones/nova">Trocar o local</a>
+		}
+		<form method="post" action="/drones" class="cartao form-admin" data-sem-gaveta>
+			<input type="hidden" name="csrf" value={ d.CSRF }/>
+			<input type="hidden" name="local" value={ strconv.FormatInt(d.LocalID, 10) }/>
+			if d.Erro != "" {
+				<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
+			}
+			<div class="campo">
+				<label for="data">Data da abertura</label>
+				<input id="data" name="data" type="date" value={ d.Data } required/>
+			</div>
+			<div class="campo">
+				<label for="descricao">Descrição (por que o sobrevoo é necessário)</label>
+				<textarea id="descricao" name="descricao" rows="4" maxlength="2000" required>{ d.Descricao }</textarea>
+			</div>
+			<div class="form-acoes">
+				<button type="submit" class="btn btn-primario" data-icone="save">Registrar</button>
+				<a class="btn" href="/drones">Cancelar</a>
+			</div>
+		</form>
+	}
+}
+
+templ DroneFicha(l Layout, d DroneFichaData) {
+	@Base(l) {
+		@PageHeader("Solicitação de drone "+d.IDTexto, d.LocalEndereco) {
+			<a class="btn" href="/drones">Voltar</a>
+		}
+		@Presenca("drone", strconv.FormatInt(d.ID, 10), modoDaTela(d.PodeAtender))
+		if d.Aviso != "" {
+			<p class="alerta alerta-ok" role="status">{ d.Aviso }</p>
+		}
+		<section class="cartao">
+			<div class="resumo-ficha">
+				<p>
+					<span class={ "selo", seloDoDrone(d.Situacao) }>{ d.SituacaoRotulo }</span>
+					<span class="subtitulo">Aberta em { d.Data } por { d.AbertoPor }</span>
+					if d.Responsavel != "" {
+						<span class="subtitulo">Responsável: <strong>{ d.Responsavel }</strong></span>
+					}
+				</p>
+				<p class="subtitulo">
+					Local: <a href={ templ.SafeURL("/locais/" + strconv.FormatInt(d.LocalID, 10)) }>{ d.LocalEndereco }</a>
+					if d.Bairro != "" {
+						· Bairro { d.Bairro }
+					}
+				</p>
+				<p class="caso-texto">{ d.Descricao }</p>
+			</div>
+		</section>
+		@FichaCaso(d.Caso)
+		if !d.Fechada && (d.PodeAtender || d.PodeEncerrar) {
+			<section class="cartao" id="fechar">
+				<h2 class="rel-titulo" data-ico="lock">Andamento</h2>
+				<form method="post" class="form-admin" data-sem-gaveta>
+					<input type="hidden" name="csrf" value={ d.CSRF }/>
+					<div class="campo">
+						<label for="texto-fechar">Observação (opcional)</label>
+						<textarea id="texto-fechar" name="texto" rows="2" maxlength="2000"></textarea>
+					</div>
+					<div class="form-acoes">
+						if d.PodeAtender && d.Situacao == "aguardando" {
+							<button type="submit" class="btn btn-primario" formaction={ "/drones/" + strconv.FormatInt(d.ID, 10) + "/atender" } data-icone="check">Atender</button>
+						}
+						if d.PodeAtender && d.Situacao == "em_atendimento" {
+							<button type="submit" class="btn btn-primario" formaction={ "/drones/" + strconv.FormatInt(d.ID, 10) + "/finalizar" } data-icone="check">Finalizar atendimento</button>
+						}
+						if d.PodeEncerrar && d.Situacao != "aguardando" {
+							<button type="submit" class="btn btn-sucesso" formaction={ "/drones/" + strconv.FormatInt(d.ID, 10) + "/encerrar" } data-icone="lock">Encerrar</button>
+						}
+					</div>
+				</form>
+			</section>
+		}
+		<section class="cartao" id="visita">
+			<h2 class="rel-titulo" data-ico="visitas">Visita</h2>
+			if d.VisitaID != 0 {
+				<p>Visita <a href={ templ.SafeURL("/visitas/" + strconv.FormatInt(d.VisitaID, 10)) }>nº { strconv.FormatInt(d.VisitaID, 10) }</a> feita por causa desta solicitação.</p>
+			} else {
+				<p class="subtitulo">Nenhuma visita vinculada.</p>
+			}
+			if d.PodeVisita {
+				<form method="post" action={ templ.SafeURL("/drones/" + strconv.FormatInt(d.ID, 10) + "/visita") } class="form-acoes" data-sem-gaveta>
+					<input type="hidden" name="csrf" value={ d.CSRF }/>
+					<div class="campo">
+						<label for="visita-id">Número da visita (vazio desvincula)</label>
+						<input id="visita-id" name="visita" type="text" inputmode="numeric" maxlength="12"/>
+					</div>
+					<button type="submit" class="btn" data-icone="link">Salvar vínculo</button>
+					<a class="btn" href={ templ.SafeURL("/visitas/nova?local=" + strconv.FormatInt(d.LocalID, 10)) } data-icone="plus">Nova visita no local</a>
+				</form>
+			}
+		</section>
+	}
+}

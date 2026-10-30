@@ -3,6 +3,7 @@ package server
 import (
 	"net/http"
 
+	"uysiarbo/internal/authz"
 	"uysiarbo/internal/tenant"
 	"uysiarbo/web/views"
 )
@@ -99,6 +100,9 @@ func (s *handlers) menu(r *http.Request) []views.NavGrupo {
 		if pr.Pode("denuncia_visualizar") {
 			menu = append(menu, views.NavGrupo{Label: "Denúncias", Icone: "denuncia", Href: "/denuncias"})
 		}
+		if pr.Pode("dronesolicitacao_visualizar") {
+			menu = append(menu, views.NavGrupo{Label: "Solicitações de drone", Icone: "drone", Href: "/drones"})
+		}
 		if pr.Pode("notificacao_visualizar") {
 			menu = append(menu, views.NavGrupo{Label: "Notificações", Icone: "notificacao", Href: "/notificacoes"})
 			menu = append(menu, views.NavGrupo{Label: "Autos de infração", Icone: "auto", Href: "/infracoes"})
@@ -113,7 +117,6 @@ func (s *handlers) menu(r *http.Request) []views.NavGrupo {
 		for _, m := range []struct{ perm, rotulo, icone string }{
 			{"ovitrampa_visualizar", "Ovitrampas", "ovitrampa"},
 			{"edl_visualizar", "EDLs", "edl"},
-			{"dronesolicitacao_visualizar", "Solicitações de drone", "drone"},
 			{"comunicacao_visualizar", "Comunicações", "comunicacao"},
 			{"banner_visualizar", "Banners", "banner"},
 		} {
@@ -125,7 +128,7 @@ func (s *handlers) menu(r *http.Request) []views.NavGrupo {
 			menu = append(menu, views.NavGrupo{Label: "Zoonose", Icone: "zoonose", Itens: []views.NavItem{
 				{Label: "Campanha Antirrábica", EmBreve: true},
 				{Label: "Leishmaniose Visceral Canina", EmBreve: true},
-				{Label: "Busca Ativa — Animais Peçonhentos", EmBreve: true},
+				baapItem(pr),
 			}})
 		}
 		if pr.Pode("liraa_agenda_visualizar") || pr.Pode("liraa_grupo") {
@@ -225,4 +228,12 @@ func (s *handlers) menu(r *http.Request) []views.NavGrupo {
 		views.NavGrupo{Label: "Guia do sistema", Icone: "guia", Href: "/guia"},
 		views.NavGrupo{Label: "Novidades", Icone: "novidades", Href: "/novidades"},
 	)
+}
+
+// baapItem: o item de animais peçonhentos só tem tela para quem pode ver; sem a permissão fica "em construção".
+func baapItem(pr authz.Principal) views.NavItem {
+	if pr.Pode("zoonose_baap_visualizar") {
+		return views.NavItem{Label: "Busca Ativa — Animais Peçonhentos", Href: "/zoonose/baap"}
+	}
+	return views.NavItem{Label: "Busca Ativa — Animais Peçonhentos", EmBreve: true}
 }

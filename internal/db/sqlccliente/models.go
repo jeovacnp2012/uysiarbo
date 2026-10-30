@@ -125,6 +125,39 @@ type AutosInfracao struct {
 	DeletedBy     pgtype.Int8        `json:"deleted_by"`
 }
 
+type BaapNotificaco struct {
+	ID               int64              `json:"id"`
+	IDExterno        pgtype.Text        `json:"id_externo"`
+	Sinam            string             `json:"sinam"`
+	DataNotificado   pgtype.Date        `json:"data_notificado"`
+	Paciente         string             `json:"paciente"`
+	NomeMae          string             `json:"nome_mae"`
+	DataNascimento   pgtype.Date        `json:"data_nascimento"`
+	Telefone         string             `json:"telefone"`
+	Telefone2        string             `json:"telefone2"`
+	Animal           string             `json:"animal"`
+	AnimalOutro      string             `json:"animal_outro"`
+	Especie          string             `json:"especie"`
+	LocalPicada      string             `json:"local_picada"`
+	SituacaoPaciente string             `json:"situacao_paciente"`
+	AtuacaoVga       string             `json:"atuacao_vga"`
+	Observacao       string             `json:"observacao"`
+	EnderecoTexto    string             `json:"endereco_texto"`
+	Numero           string             `json:"numero"`
+	Referencia       string             `json:"referencia"`
+	BairroID         pgtype.Int8        `json:"bairro_id"`
+	LocalID          pgtype.Int8        `json:"local_id"`
+	VisitaID         pgtype.Int8        `json:"visita_id"`
+	Situacao         string             `json:"situacao"`
+	ResponsavelID    pgtype.Int8        `json:"responsavel_id"`
+	CriadoPor        pgtype.Int8        `json:"criado_por"`
+	CriadoEm         pgtype.Timestamptz `json:"criado_em"`
+	AtualizadoEm     pgtype.Timestamptz `json:"atualizado_em"`
+	EncerradaEm      pgtype.Timestamptz `json:"encerrada_em"`
+	DeletedAt        pgtype.Timestamptz `json:"deleted_at"`
+	DeletedBy        pgtype.Int8        `json:"deleted_by"`
+}
+
 type Bairro struct {
 	ID              int64              `json:"id"`
 	CidadeID        int64              `json:"cidade_id"`
@@ -266,6 +299,23 @@ type Doenca struct {
 	Ativo        bool               `json:"ativo"`
 	CriadoEm     pgtype.Timestamptz `json:"criado_em"`
 	AtualizadoEm pgtype.Timestamptz `json:"atualizado_em"`
+}
+
+type DroneSolicitaco struct {
+	ID            int64              `json:"id"`
+	IDExterno     pgtype.Text        `json:"id_externo"`
+	LocalID       int64              `json:"local_id"`
+	VisitaID      pgtype.Int8        `json:"visita_id"`
+	Descricao     string             `json:"descricao"`
+	DataAbertura  pgtype.Date        `json:"data_abertura"`
+	Situacao      string             `json:"situacao"`
+	ResponsavelID pgtype.Int8        `json:"responsavel_id"`
+	CriadoPor     pgtype.Int8        `json:"criado_por"`
+	CriadoEm      pgtype.Timestamptz `json:"criado_em"`
+	AtualizadoEm  pgtype.Timestamptz `json:"atualizado_em"`
+	EncerradaEm   pgtype.Timestamptz `json:"encerrada_em"`
+	DeletedAt     pgtype.Timestamptz `json:"deleted_at"`
+	DeletedBy     pgtype.Int8        `json:"deleted_by"`
 }
 
 type EntrevistaGrupo struct {
