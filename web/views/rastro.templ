@@ -62,7 +62,18 @@ templ Rastro(l Layout, d RastroData) {
 			</div>
 		</section>
 		<link rel="stylesheet" href={ asset("/static/vendor/maplibre-gl.css") }/>
-		<script src={ asset("/static/vendor/maplibre-gl.js") }></script>
-		<script src={ asset("/static/js/rastro.js") }></script>
+		<script data-maplibre={ asset("/static/vendor/maplibre-gl.js") } data-js={ asset("/static/js/rastro.js") }>
+			(function () {
+				var eu = document.currentScript;
+				function carregar(src, depois) {
+					var s = document.createElement("script");
+					s.src = src;
+					s.onload = function () { s.remove(); if (depois) depois(); };
+					document.head.appendChild(s);
+				}
+				function iniciar() { carregar(eu.dataset.js); }
+				if (window.maplibregl) iniciar(); else carregar(eu.dataset.maplibre, iniciar);
+			})();
+		</script>
 	}
 }

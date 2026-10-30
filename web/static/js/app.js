@@ -174,3 +174,12 @@ document.addEventListener('DOMContentLoaded', () => {
         try { sessionStorage.setItem('uysi-menu-rolagem', String(lista.scrollTop)); } catch (e) {}
     }, { passive: true });
 });
+
+// Ao trocar o conteúdo sem recarregar a página, libera o mapa que estava aberto (cada mapa usa um contexto WebGL).
+document.addEventListener('htmx:beforeSwap', (e) => {
+    const d = e.detail;
+    if (d.shouldSwap && d.target && d.target.id === 'conteudo' && window.uysiMapa) {
+        try { window.uysiMapa.remove(); } catch (err) {}
+        window.uysiMapa = null;
+    }
+});

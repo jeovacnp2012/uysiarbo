@@ -231,33 +231,33 @@ func Mapa(l Layout, d MapaData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "\"><script src=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "\"><script data-maplibre=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var11 string
-			templ_7745c5c3_Var11, templ_7745c5c3_Err = templruntime.NewAttributeExpression(asset("/static/vendor/maplibre-gl.js")).ResolveURL(ctx)
+			templ_7745c5c3_Var11, templ_7745c5c3_Err = templruntime.NewAttributeExpression(asset("/static/vendor/maplibre-gl.js")).Resolve(ctx)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/mapa.templ`, Line: 86, Col: 54}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/mapa.templ`, Line: 86, Col: 64}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var11)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\"></script> <script src=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\" data-js=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var12 string
-			templ_7745c5c3_Var12, templ_7745c5c3_Err = templruntime.NewAttributeExpression(asset("/static/js/mapa.js")).ResolveURL(ctx)
+			templ_7745c5c3_Var12, templ_7745c5c3_Err = templruntime.NewAttributeExpression(asset("/static/js/mapa.js")).Resolve(ctx)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/mapa.templ`, Line: 87, Col: 43}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/mapa.templ`, Line: 86, Col: 104}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var12)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "\"></script>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "\">\r\n\t\t\t(function () {\r\n\t\t\t\tvar eu = document.currentScript;\r\n\t\t\t\tfunction carregar(src, depois) {\r\n\t\t\t\t\tvar s = document.createElement(\"script\");\r\n\t\t\t\t\ts.src = src;\r\n\t\t\t\t\ts.onload = function () { s.remove(); if (depois) depois(); };\r\n\t\t\t\t\tdocument.head.appendChild(s);\r\n\t\t\t\t}\r\n\t\t\t\tfunction iniciar() { carregar(eu.dataset.js); }\r\n\t\t\t\tif (window.maplibregl) iniciar(); else carregar(eu.dataset.maplibre, iniciar);\r\n\t\t\t})();\r\n\t\t</script>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

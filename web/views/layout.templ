@@ -1,7 +1,5 @@
 package views
 
-import "strings"
-
 import "strconv"
 
 // Base é o layout das páginas internas: menu lateral, barra superior, tema e área de toasts.
@@ -57,7 +55,7 @@ templ Base(l Layout) {
 									<span class="menu-texto">{ g.Label }</span>
 								</span>
 							} else if g.Href != "" {
-								<a class="menu-item" href={ templ.SafeURL(g.Href) } hx-boost={ boostMenu(g.Href) } aria-current?={ g.Href == l.Active }>
+								<a class="menu-item" href={ templ.SafeURL(g.Href) } hx-boost="true" aria-current?={ g.Href == l.Active }>
 									@icone(g.Icone)
 									<span class="menu-texto">{ g.Label }</span>
 									if g.Contagem > 0 {
@@ -79,7 +77,7 @@ templ Base(l Layout) {
 											if item.EmBreve {
 												<span class="menu-subitem menu-subitem-embreve" title="Em construção" aria-disabled="true">{ item.Label }</span>
 											} else {
-												<a class="menu-subitem" href={ templ.SafeURL(item.Href) } hx-boost={ boostMenu(item.Href) } aria-current?={ item.Href == l.Active }>{ item.Label }</a>
+												<a class="menu-subitem" href={ templ.SafeURL(item.Href) } hx-boost="true" aria-current?={ item.Href == l.Active }>{ item.Label }</a>
 											}
 										}
 									</div>
@@ -277,13 +275,4 @@ templ icone(nome string) {
 				<path d="m9 6 6 6-6 6"></path>
 		}
 	</svg>
-}
-
-// boostMenu diz se o link do menu carrega só o conteúdo (HTMX) ou abre a página inteira. O mapa traz scripts
-// próprios que precisam da página completa.
-func boostMenu(href string) string {
-	if strings.HasPrefix(href, "/mapa") {
-		return "false"
-	}
-	return "true"
 }

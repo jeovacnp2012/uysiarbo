@@ -17,6 +17,7 @@
       layers: [{ id: "base", type: "raster", source: "base" }],
     },
   });
+  window.uysiMapa = map; // para o app.js liberar o mapa ao trocar de página sem recarregar
   map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
   map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-left");
 
