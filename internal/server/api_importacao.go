@@ -122,7 +122,7 @@ func (h *handlers) apiImportacaoCriar(w http.ResponseWriter, r *http.Request) {
 	}
 	tipo, ok := importacao.TipoPorCodigo(tipoCod)
 	if !ok {
-		h.apiErroCampo(w, r, "tipo", "use bairros, quarteiroes ou locais")
+		h.apiErroCampo(w, r, "tipo", "use bairros, quarteiroes, locais ou ciclos")
 		return
 	}
 	cred, _ := credencialDe(ctx)

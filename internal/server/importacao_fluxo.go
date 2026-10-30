@@ -245,6 +245,8 @@ type paramsAnalise struct {
 
 func (h *handlers) analisarPlanilha(ctx context.Context, q *sqlccliente.Queries, tipo string, p importacao.Planilha, m importacao.Mapeamento, atualizar bool) ([]linhaAnalisada, error) {
 	switch tipo {
+	case "ciclos":
+		return h.analisarCiclos(ctx, q, p, m, atualizar)
 	case "bairros":
 		return h.analisarBairros(ctx, q, p, m, atualizar)
 	case "quarteiroes":

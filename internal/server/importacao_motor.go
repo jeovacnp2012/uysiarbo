@@ -228,6 +228,8 @@ func textoDoErro(err error, conflito string) string {
 func aplicarLinha(ctx context.Context, q *sqlccliente.Queries, tipo string, ln sqlccliente.ImportacaoLinha, usuarioID int64) resultadoDaLinha {
 	erro := func(msg string) resultadoDaLinha { return resultadoDaLinha{Resultado: "erro", Msg: msg} }
 	switch tipo {
+	case "ciclos":
+		return aplicarCiclo(ctx, q, ln)
 	case "bairros":
 		var c cargaBairro
 		if err := json.Unmarshal(ln.Dados, &c); err != nil {
@@ -403,6 +405,8 @@ func desfazerLinha(ctx context.Context, q *sqlccliente.Queries, tipo string, ln 
 		return err.Error()
 	}
 	switch tipo {
+	case "ciclos":
+		return desfazerCiclo(ctx, q, ln, criado, id, motivo)
 	case "bairros":
 		if criado {
 			return desfazerCriacao(ctx, q, "bairro", id)

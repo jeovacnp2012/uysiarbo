@@ -3,7 +3,9 @@ package importacao
 import (
 	"bytes"
 	"encoding/csv"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/xuri/excelize/v2"
 )
@@ -96,6 +98,20 @@ var Tipos = []Tipo{
 			c("id_externo", "ID de origem", false, "", "Se informado, é usado para achar o local depois."),
 		},
 	},
+	{
+		Codigo: "ciclos", Rotulo: "Ciclos", Descr: "Ciclos de trabalho, com período, situação e atividades.",
+		Colunas: []Coluna{
+			c("nome", "Nome do ciclo", true, "01 Ciclo - 2026", "Único; é por ele que um ciclo já existente é reconhecido.", "ciclo"),
+			c("data_inicio", "Data de início", true, "04/01/2026", "dd/mm/aaaa ou aaaa-mm-dd.", "inicio", "data_de_inicio"),
+			c("data_final", "Data final", true, "28/02/2026", "dd/mm/aaaa ou aaaa-mm-dd.", "final", "fim", "data_fim", "data_de_fim"),
+			c("situacao", "Situação", false, "operando", "operando ou fechado (padrão: operando).", "status"),
+			c("atividades", "Atividades", false, "LIT, LI, PE", "Siglas separadas por vírgula ou ponto e vírgula: LIT, LI, PE, T, DF, PVE, LIRAa, LIA, BRI."),
+			c("permite_fora_periodo", "Permite fora do período", false, "nao", "sim ou não (padrão: não)."),
+			c("painel_publico", "Painel público", false, "nao", "sim ou não (padrão: não)."),
+			c("painel_atividades", "Atividades do painel", false, "LIT", "Siglas; se vazio e o painel for público, vale o conjunto de atividades do ciclo.", "atividades_do_painel"),
+			c("painel_texto", "Nome no painel público", false, "", ""),
+		},
+	},
 }
 
 // TipoPorCodigo acha um tipo pelo código.
@@ -172,6 +188,20 @@ func (m Mapeamento) Valor(linha []string, nome string) string {
 
 // Tem diz se a coluna existe na planilha (mesmo com a célula vazia).
 func (m Mapeamento) Tem(nome string) bool { _, ok := m.Posicao[nome]; return ok }
+
+// Data lê uma data em dd/mm/aaaa, dd/mm/aa, aaaa-mm-dd, dd-mm-aaaa ou como número de série do Excel.
+func Data(s string) (time.Time, bool) {
+	s = strings.TrimSpace(s)
+	for _, f := range []string{"02/01/2006", "2006-01-02", "02-01-2006", "02/01/06", "02-01-06"} {
+		if t, err := time.Parse(f, s); err == nil {
+			return t, true
+		}
+	}
+	if n, err := strconv.Atoi(s); err == nil && n > 20000 && n < 80000 { // serial do Excel (dias desde 30/12/1899)
+		return time.Date(1899, 12, 30, 0, 0, 0, 0, time.UTC).AddDate(0, 0, n), true
+	}
+	return time.Time{}, false
+}
 
 // Booleano lê sim/não, s/n, true/false, 1/0, verdadeiro/falso.
 func Booleano(s string) (valor, ok bool) {

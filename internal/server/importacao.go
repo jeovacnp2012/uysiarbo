@@ -29,8 +29,11 @@ var rotulosDeStatusImp = map[string]string{
 
 // permissaoDoTipo diz qual permissão de edição o tipo de dado exige (além de conf_importacao).
 func permissaoDoTipo(tipo string) string {
-	if tipo == "locais" {
+	switch tipo {
+	case "locais":
 		return "local_adicionar"
+	case "ciclos":
+		return "param_ciclo"
 	}
 	return "bairro_adicionar"
 }

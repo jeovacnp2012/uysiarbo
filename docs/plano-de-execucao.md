@@ -112,7 +112,8 @@ Objetivo: migrar dados de outros sistemas e de planilhas, com segurança.
   - Feito em 2026-10-29 (versão 1.0.019): pacote `internal/epi` (SINAN e ISO, testado em viradas de ano), parâmetro `semana_epidemiologica` em `cliente_info` (padrão SINAN, escolhido na tela Ciclos), semanas mostradas na lista e na ficha do ciclo, e as regras reutilizáveis `cicloAceitaEdicao` (ciclo fechado exige `visita_editar_ciclo_fechado`) e `cicloAceitaData` (período, ou `permite_fora_periodo`) em `internal/server/semana.go`, que as telas de visita da Etapa 6 vão chamar.
 - [x] 5.3 Parâmetros gerais, de mobilidade (app) e Leis Municipais com trechos
   - Feito em 2026-10-29 (versão 1.0.020): registro tipado de parâmetros em `internal/server/parametros.go` (bool, int, CEP, senha; guardados em `cliente_info`), telas `/parametros/geral` e `/parametros/mobilidade`, migração `cliente/00019` (`leis_municipais` e `leis_trechos`, ambas com exclusão lógica e Lixeira), telas `/leis` com trechos, permissões `param_geral`, `param_mobilidade`, `param_leis`.
-- [ ] 5.4 Importador de ciclos; guia e Novidades atualizados
+- [x] 5.4 Importador de ciclos; guia e Novidades atualizados
+  - Feito em 2026-10-29 (versão 1.0.021): tipo `ciclos` no gerenciador de importação (planilha, conectores e API, com prévia, atualização e desfazer), migração `cliente/00020` (a restrição de tipo aceita `ciclos`). **Etapa 5 concluída.**
 
 ## Etapa 6 — Visitas e laboratório (núcleo do negócio)
 - [ ] 6.1 Visita completa: pendência, tipo, depósitos A1–E, amostra, tratamento L1/L2, adulticida, BRI, fotos, assinatura, anotações

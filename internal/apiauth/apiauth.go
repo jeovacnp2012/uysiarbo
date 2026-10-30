@@ -31,6 +31,7 @@ var Recursos = []Recurso{
 	{"bairros", "Bairros"},
 	{"quarteiroes", "Quarteirões"},
 	{"locais", "Locais"},
+	{"ciclos", "Ciclos"},
 	{"importacoes", "Importações de dados"},
 }
 

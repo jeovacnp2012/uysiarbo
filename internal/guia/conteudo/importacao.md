@@ -2,7 +2,7 @@ titulo: Importação de dados
 resumo: Como trazer bairros, quarteirões e locais de uma planilha, com prévia, relatório e desfazer.
 ordem: 11
 permissao: conf_importacao
-palavras: importar, importação, planilha, excel, csv, xlsx, modelo, prévia, desfazer, bairros, quarteirões, locais, migração
+palavras: ciclos, importar, importação, planilha, excel, csv, xlsx, modelo, prévia, desfazer, bairros, quarteirões, locais, migração
 ---
 # Importação de dados
 
@@ -31,6 +31,7 @@ Quando os nomes das colunas da origem não batem com os do sistema (ou quando vo
 - **Bairros**: a **cidade** já cadastrada (e a UF, se houver cidades com o mesmo nome) e o nome do bairro.
 - **Quarteirões**: o **bairro** já cadastrado e o nome do quarteirão. Se houver bairros com o mesmo nome em cidades diferentes, informe a cidade.
 - **Locais**: o **bairro** e o **quarteirão** já cadastrados, tipo, rua, número e lado. Os quarteirões precisam ser importados antes. O **CPF não é importado**.
+- **Ciclos** (exige a permissão de Ciclos): **nome**, **data de início** e **data final** (dd/mm/aaaa ou aaaa-mm-dd); opcionais: situação (operando ou fechado), atividades (siglas separadas por vírgula, como `LIT, LI, PE`), permite fora do período, painel público e as atividades do painel. Um ciclo que já existe é reconhecido pelo nome; célula vazia mantém o valor atual (inclusive a lista de atividades). Desfazer manda os ciclos criados para a Lixeira e restaura os atualizados.
 
 Importe nessa ordem: **bairros → quarteirões → locais**.
 
