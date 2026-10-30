@@ -161,8 +161,8 @@ func (q *Queries) CreateEstoqueLote(ctx context.Context, arg CreateEstoqueLotePa
 
 const createEstoqueMovimentacao = `-- name: CreateEstoqueMovimentacao :exec
 
-INSERT INTO estoque_movimentacoes (lote_id, tipo, quantidade, saldo_apos, usuario_id, descricao, origem)
-VALUES ($1, $2, $3, $4, $5, $6, $7)
+INSERT INTO estoque_movimentacoes (lote_id, tipo, quantidade, saldo_apos, usuario_id, descricao, origem, retirada_id)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 `
 
 type CreateEstoqueMovimentacaoParams struct {
@@ -173,6 +173,7 @@ type CreateEstoqueMovimentacaoParams struct {
 	UsuarioID  pgtype.Int8    `json:"usuario_id"`
 	Descricao  string         `json:"descricao"`
 	Origem     string         `json:"origem"`
+	RetiradaID pgtype.Int8    `json:"retirada_id"`
 }
 
 // ---- movimentações
@@ -185,6 +186,7 @@ func (q *Queries) CreateEstoqueMovimentacao(ctx context.Context, arg CreateEstoq
 		arg.UsuarioID,
 		arg.Descricao,
 		arg.Origem,
+		arg.RetiradaID,
 	)
 	return err
 }

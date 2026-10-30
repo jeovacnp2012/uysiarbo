@@ -445,6 +445,7 @@ type EstoqueMovimentaco struct {
 	Descricao  string             `json:"descricao"`
 	Origem     string             `json:"origem"`
 	CriadoEm   pgtype.Timestamptz `json:"criado_em"`
+	RetiradaID pgtype.Int8        `json:"retirada_id"`
 }
 
 type EstoqueProduto struct {
@@ -465,6 +466,31 @@ type EstoqueProduto struct {
 	CriadoEm           pgtype.Timestamptz `json:"criado_em"`
 	DeletedAt          pgtype.Timestamptz `json:"deleted_at"`
 	DeletedBy          pgtype.Int8        `json:"deleted_by"`
+}
+
+type EstoqueRetirada struct {
+	ID                  int64              `json:"id"`
+	Tipo                string             `json:"tipo"`
+	UsuarioID           int64              `json:"usuario_id"`
+	DataSaida           pgtype.Timestamptz `json:"data_saida"`
+	DataRetornoPrevista pgtype.Date        `json:"data_retorno_prevista"`
+	DataRetornoReal     pgtype.Timestamptz `json:"data_retorno_real"`
+	Status              string             `json:"status"`
+	Observacao          string             `json:"observacao"`
+	CriadoPor           pgtype.Int8        `json:"criado_por"`
+	CriadoEm            pgtype.Timestamptz `json:"criado_em"`
+	DeletedAt           pgtype.Timestamptz `json:"deleted_at"`
+	DeletedBy           pgtype.Int8        `json:"deleted_by"`
+}
+
+type EstoqueRetiradaIten struct {
+	ID         int64          `json:"id"`
+	RetiradaID int64          `json:"retirada_id"`
+	LoteID     int64          `json:"lote_id"`
+	Retirado   pgtype.Numeric `json:"retirado"`
+	Usado      pgtype.Numeric `json:"usado"`
+	Devolvido  pgtype.Numeric `json:"devolvido"`
+	Perda      pgtype.Numeric `json:"perda"`
 }
 
 type EstoqueUnidade struct {

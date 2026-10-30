@@ -782,6 +782,39 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 			return out, err
 		},
 	},
+	"estoque_retirada": {
+		Chave: "estoque_retirada", Rotulo: "Retirada de estoque", Plural: "Retiradas de estoque", Genero: "a",
+		soft: func(ctx context.Context, q *sqlccliente.Queries, id int64, por pgtype.Int8) (int64, error) {
+			return q.SoftDeleteEstoqueRetirada(ctx, sqlccliente.SoftDeleteEstoqueRetiradaParams{ID: id, Por: por})
+		},
+		restore: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			return q.RestoreEstoqueRetirada(ctx, id)
+		},
+		force: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			return q.ForceDeleteEstoqueRetirada(ctx, id)
+		},
+		rotulo: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, bool, error) {
+			x, err := q.GetEstoqueRetiradaQualquer(ctx, id)
+			return "Retirada " + strconv.FormatInt(x.ID, 10), x.DeletedAt.Valid, err
+		},
+		filhosAtivos: func(ctx context.Context, q *sqlccliente.Queries, id int64) ([]string, error) {
+			x, err := q.GetEstoqueRetiradaQualquer(ctx, id)
+			if err != nil || x.Status != "aberta" {
+				return nil, err
+			}
+			return []string{"a retirada está aberta (finalize ou cancele antes)"}, nil
+		},
+		vinculos:    func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
+		paiExcluido: func(context.Context, *sqlccliente.Queries, int64) (string, error) { return "", nil },
+		lixeira: func(ctx context.Context, q *sqlccliente.Queries) ([]views.LixeiraLinha, error) {
+			rows, err := q.ListEstoqueRetiradasExcluidas(ctx)
+			out := make([]views.LixeiraLinha, len(rows))
+			for i, r := range rows {
+				out[i] = views.LixeiraLinha{ID: r.ID, Rotulo: "Retirada " + strconv.FormatInt(r.ID, 10), Contexto: r.Contexto, Quando: r.DeletedAt.Time, Por: r.Por}
+			}
+			return out, err
+		},
+	},
 	"estoque_lote": {
 		Chave: "estoque_lote", Rotulo: "Lote de estoque", Plural: "Lotes de estoque", Genero: "o",
 		soft: func(ctx context.Context, q *sqlccliente.Queries, id int64, por pgtype.Int8) (int64, error) {
@@ -797,8 +830,20 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 			l, err := q.GetEstoqueLoteQualquer(ctx, id)
 			return "Lote " + l.NumeroLote, l.DeletedAt.Valid, err
 		},
-		filhosAtivos: func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
-		vinculos:     func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
+		filhosAtivos: func(ctx context.Context, q *sqlccliente.Queries, id int64) ([]string, error) {
+			n, err := q.CountEstoqueItensDoLote(ctx, id)
+			if err != nil || n.Abertos == 0 {
+				return nil, err
+			}
+			return []string{plural(n.Abertos, "retirada aberta", "retiradas abertas")}, nil
+		},
+		vinculos: func(ctx context.Context, q *sqlccliente.Queries, id int64) ([]string, error) {
+			n, err := q.CountEstoqueItensDoLote(ctx, id)
+			if err != nil || n.Total == 0 {
+				return nil, err
+			}
+			return []string{plural(n.Total, "item de retirada", "itens de retirada") + " (contando os excluídos)"}, nil
+		},
 		paiExcluido: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, error) {
 			l, err := q.GetEstoqueLoteQualquer(ctx, id)
 			if err != nil {
@@ -1301,7 +1346,7 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 }
 
 // ordemDaLixeira é a ordem das abas.
-var ordemDaLixeira = []string{"local", "quarteirao", "bairro", "cidade", "ciclo", "lei", "lei_trecho", "visita", "investigacao", "denuncia", "campanha", "diaria", "lvc", "liraa_agenda", "liraa_grupo", "estoque_lote", "estoque_produto", "estoque_unidade", "drone", "baap", "ovitrampa", "edl", "notificacao", "infracao", "amostra", "reconhecimento", "resumosemanal", "grupo", "mapeamento"}
+var ordemDaLixeira = []string{"local", "quarteirao", "bairro", "cidade", "ciclo", "lei", "lei_trecho", "visita", "investigacao", "denuncia", "campanha", "diaria", "lvc", "liraa_agenda", "liraa_grupo", "estoque_retirada", "estoque_lote", "estoque_produto", "estoque_unidade", "drone", "baap", "ovitrampa", "edl", "notificacao", "infracao", "amostra", "reconhecimento", "resumosemanal", "grupo", "mapeamento"}
 
 // excluirLogicamente aplica a regra completa: recusa se há filhos ativos; senão marca deleted_at.
 // Devolve os motivos da recusa (vazio = excluído), o nome do registro e o erro de banco, se houve.

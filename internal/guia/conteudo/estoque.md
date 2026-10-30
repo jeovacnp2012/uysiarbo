@@ -32,4 +32,14 @@ Toda movimentação exige um motivo e fica no histórico, com quem fez e quando.
 A lista de lotes mostra **(vencido)** e **(vence em breve)**, e tem filtro por situação: com saldo, sem saldo, vence em 30 dias e vencido.
 
 ## Cuidados
-Excluir envia para a **Lixeira**. Um produto só sai enquanto não tiver lotes ativos; a exclusão definitiva é recusada se houver ligação com outro registro. As retiradas (campo e permanente), o balanço físico e o patrimônio chegam nas próximas etapas.
+Excluir envia para a **Lixeira**. Um produto só sai enquanto não tiver lotes ativos; a exclusão definitiva é recusada se houver ligação com outro registro. O patrimônio chega na próxima etapa.
+
+## Retiradas
+Em **Estoque > Retiradas**, uma retirada registra produtos que saem do estoque com um responsável.
+1. **Nova retirada**: escolha o tipo (**campo** para uso em serviço, **permanente** para equipamento), o responsável, a saída e o retorno previsto.
+2. Na ficha, **Adicionar item**: escolha produto/lote e a quantidade. O saldo do lote já diminui. Produto com saída "apenas campo" não entra em retirada permanente, e vice-versa. Enquanto a retirada está aberta, **Remover** devolve a quantidade ao lote.
+3. **Finalizar retirada**: para cada item informe o que foi **usado** (só em campo), o que foi **devolvido** e a **perda**. A soma precisa fechar com o retirado. O devolvido volta ao saldo do lote; uso e perda ficam no histórico do lote.
+4. **Cancelar retirada** devolve tudo ao estoque. Retiradas finalizadas ou canceladas podem ir para a Lixeira. Lote com retirada aberta não pode ser excluído.
+
+## Balanço Físico
+Em **Estoque > Balanço Físico**, cada produto mostra quanto há **em estoque**, quanto está **em retiradas abertas**, o **total** que deveria existir, o saldo **vencido** e o **próximo vencimento**. Filtre por unidade e tipo.

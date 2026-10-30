@@ -174,8 +174,8 @@ WHERE l.deleted_at IS NOT NULL ORDER BY l.deleted_at DESC LIMIT 500;
 -- ---- movimentações
 
 -- name: CreateEstoqueMovimentacao :exec
-INSERT INTO estoque_movimentacoes (lote_id, tipo, quantidade, saldo_apos, usuario_id, descricao, origem)
-VALUES (sqlc.arg(lote_id), sqlc.arg(tipo), sqlc.arg(quantidade), sqlc.arg(saldo_apos), sqlc.narg(usuario_id), sqlc.arg(descricao), sqlc.arg(origem));
+INSERT INTO estoque_movimentacoes (lote_id, tipo, quantidade, saldo_apos, usuario_id, descricao, origem, retirada_id)
+VALUES (sqlc.arg(lote_id), sqlc.arg(tipo), sqlc.arg(quantidade), sqlc.arg(saldo_apos), sqlc.narg(usuario_id), sqlc.arg(descricao), sqlc.arg(origem), sqlc.narg(retirada_id));
 
 -- name: ListEstoqueMovimentacoes :many
 SELECT m.id, m.tipo, m.quantidade, m.saldo_apos, m.descricao, m.origem, m.criado_em, COALESCE(u.nome, '')::text AS por

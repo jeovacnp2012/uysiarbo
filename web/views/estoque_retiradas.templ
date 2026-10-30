@@ -1,0 +1,340 @@
+package views
+
+import "strconv"
+
+templ EstoqueRetiradas(l Layout, d EstoqueRetiradasData) {
+	@Base(l) {
+		@PageHeader("Retiradas", "Saídas de produtos para campo ou uso permanente.") {
+			if d.PodeNova {
+				<a class="btn btn-primario" href="/estoque/retirada/novo" data-icone="plus">Nova retirada</a>
+			}
+		}
+		<form
+			method="get"
+			action="/estoque/retirada"
+			class="cartao filtros filtros-vivos"
+			autocomplete="off"
+			hx-get="/estoque/retirada"
+			hx-trigger="input delay:350ms, change delay:60ms, filtrar from:body"
+			hx-sync="this:replace"
+			hx-target="#retiradas-lista"
+			hx-select="#retiradas-lista"
+			hx-swap="outerHTML"
+			hx-push-url="true"
+			hx-indicator="#retiradas-lista"
+		>
+			<input type="hidden" name="ordem" value={ d.Ordem }/>
+			<input type="hidden" name="dir" value={ d.Dir }/>
+			@campoEscolha("f-status", "Situação", "status", "Todas", d.Status)
+			@campoEscolha("f-tipo", "Tipo", "tipo", "Todos", d.Tipos)
+			@campoEscolha("f-resp", "Responsável", "responsavel", "Todos", d.Responsaveis)
+			<div class="form-acoes">
+				<a class="btn btn-escuro" href="/estoque/retirada" data-icone="undo">Limpar filtros</a>
+			</div>
+			<noscript><button type="submit" class="btn btn-primario">Filtrar</button></noscript>
+		</form>
+		<div id="retiradas-lista" class="lista-viva">
+			<section class="cartao">
+				@Paginacao(d.Pag, "/estoque/retirada", d.Query)
+				<div class="tabela-wrap">
+					<table class="tabela">
+						<thead>
+							<tr>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "id") }><a class="ordenar" href="#" data-ordenar="id" data-dir={ proximaDir(d.Ordem, d.Dir, "id") }>ID<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "id") }</span></a></th>
+								<th scope="col">Tipo</th>
+								<th scope="col">Responsável</th>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "saida") }><a class="ordenar" href="#" data-ordenar="saida" data-dir={ proximaDir(d.Ordem, d.Dir, "saida") }>Saída<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "saida") }</span></a></th>
+								<th scope="col">Retorno previsto</th>
+								<th scope="col">Retorno real</th>
+								<th scope="col">Itens</th>
+								<th scope="col">Situação</th>
+								<th scope="col" data-fixa><span class="sr-only">Ações</span></th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, x := range d.Linhas {
+								<tr>
+									<td data-rotulo="ID"><strong>{ x.IDTexto }</strong></td>
+									<td data-rotulo="Tipo">{ x.Tipo }</td>
+									<td data-rotulo="Responsável">{ x.Responsavel }</td>
+									<td data-rotulo="Saída">{ x.Saida }</td>
+									<td data-rotulo="Retorno previsto">{ x.Previsto }</td>
+									<td data-rotulo="Retorno real">{ x.Retorno }</td>
+									<td data-rotulo="Itens">{ strconv.Itoa(x.Itens) }</td>
+									<td data-rotulo="Situação">{ x.Status }</td>
+									<td data-rotulo="Ações"><a class="btn" href={ templ.SafeURL("/estoque/retirada/" + x.IDTexto) }>Abrir</a></td>
+								</tr>
+							}
+						</tbody>
+					</table>
+					if len(d.Linhas) == 0 {
+						<div class="tabela-vazia">Nenhuma retirada encontrada.</div>
+					}
+				</div>
+				@Paginacao(d.Pag, "/estoque/retirada", d.Query)
+			</section>
+		</div>
+	}
+}
+
+func estoqueRetiradaAcao(id int64) string {
+	if id == 0 {
+		return "/estoque/retirada"
+	}
+	return "/estoque/retirada/" + strconv.FormatInt(id, 10)
+}
+
+templ EstoqueRetiradaFicha(l Layout, d EstoqueRetiradaForm) {
+	@Base(l) {
+		if d.Novo() {
+			@PageHeader("Nova retirada", "") {
+				<a class="btn" href="/estoque/retirada">Voltar</a>
+			}
+		} else {
+			@PageHeader("Retirada "+strconv.FormatInt(d.ID, 10), d.TipoRotulo+" — "+d.StatusRotulo) {
+				<a class="btn" href="/estoque/retirada">Voltar</a>
+			}
+			@Presenca("estoque_retirada", strconv.FormatInt(d.ID, 10), modoDaTela(d.PodeEditar))
+		}
+		if d.Aviso != "" {
+			<p class="alerta alerta-ok" role="status">{ d.Aviso }</p>
+		}
+		if d.Erro != "" {
+			<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
+		}
+		<form method="post" action={ templ.SafeURL(estoqueRetiradaAcao(d.ID)) } class="cartao form-admin" data-sem-gaveta>
+			<input type="hidden" name="csrf" value={ d.CSRF }/>
+			<fieldset class="sem-borda" disabled?={ !d.PodeEditar }>
+				<div class="grade-form">
+					if d.Novo() {
+						<div class="campo">
+							<label for="tipo">Tipo</label>
+							<select id="tipo" name="tipo" required>
+								@opcoesDe(d.Tipos)
+							</select>
+						</div>
+					} else {
+						<div class="campo">
+							<label>Tipo</label>
+							<input type="text" value={ d.TipoRotulo } disabled/>
+						</div>
+					}
+					<div class="campo">
+						<label for="responsavel">Responsável</label>
+						<select id="responsavel" name="responsavel" required>
+							<option value="">—</option>
+							@opcoesDe(d.Responsaveis)
+						</select>
+					</div>
+					if d.Novo() {
+						<div class="campo">
+							<label for="saida">Saída</label>
+							<input id="saida" name="saida" type="datetime-local" value={ d.Saida }/>
+						</div>
+					} else {
+						<div class="campo">
+							<label>Saída</label>
+							<input type="text" value={ d.Saida } disabled/>
+						</div>
+					}
+					<div class="campo">
+						<label for="previsto">Retorno previsto</label>
+						<input id="previsto" name="previsto" type="date" value={ d.Previsto }/>
+					</div>
+					if d.Retorno != "" {
+						<div class="campo">
+							<label>Retorno real</label>
+							<input type="text" value={ d.Retorno } disabled/>
+						</div>
+					}
+					<div class="campo campo-largo">
+						<label for="observacao">Observação</label>
+						<textarea id="observacao" name="observacao" rows="3" maxlength="1000">{ d.Observacao }</textarea>
+					</div>
+				</div>
+			</fieldset>
+			if d.PodeEditar {
+				<div class="form-acoes">
+					<button type="submit" class="btn btn-primario" data-icone="save">Salvar</button>
+					if !d.Novo() && d.PodeCancelar {
+						<button type="submit" class="btn btn-perigo" formaction={ estoqueRetiradaAcao(d.ID) + "/cancelar" } onclick="return confirm('Cancelar a retirada? Os itens voltam ao estoque.')" data-icone="x">Cancelar retirada</button>
+					}
+				</div>
+			}
+		</form>
+		if !d.Novo() {
+			<section class="cartao">
+				<h2>Itens</h2>
+				<div class="tabela-wrap">
+					<table class="tabela">
+						<thead>
+							<tr>
+								<th scope="col">Produto</th>
+								<th scope="col">Lote</th>
+								<th scope="col">Retirado</th>
+								<th scope="col">Usado</th>
+								<th scope="col">Devolvido</th>
+								<th scope="col">Perda</th>
+								<th scope="col" data-fixa><span class="sr-only">Ações</span></th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, i := range d.Itens {
+								<tr>
+									<td data-rotulo="Produto">{ i.Produto }</td>
+									<td data-rotulo="Lote">{ i.Lote }</td>
+									<td data-rotulo="Retirado">{ i.Retirado } { i.Medida }</td>
+									<td data-rotulo="Usado">{ i.Usado }</td>
+									<td data-rotulo="Devolvido">{ i.Devolvido }</td>
+									<td data-rotulo="Perda">{ i.Perda }</td>
+									<td data-rotulo="Ações">
+										if d.Aberta() && d.PodeEditar {
+											<form method="post" action={ templ.SafeURL(estoqueRetiradaAcao(d.ID) + "/itens/" + i.ID + "/remover") } class="form-inline" data-sem-gaveta>
+												<input type="hidden" name="csrf" value={ d.CSRF }/>
+												<button type="submit" class="btn" data-icone="trash">Remover</button>
+											</form>
+										}
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+					if len(d.Itens) == 0 {
+						<div class="tabela-vazia">Nenhum item na retirada.</div>
+					}
+				</div>
+			</section>
+			if d.Aberta() && d.PodeEditar {
+				<form method="post" action={ templ.SafeURL(estoqueRetiradaAcao(d.ID) + "/itens") } class="cartao form-admin" data-sem-gaveta>
+					<input type="hidden" name="csrf" value={ d.CSRF }/>
+					<h2>Adicionar item</h2>
+					<div class="grade-form">
+						<div class="campo campo-largo">
+							<label for="lote">Produto / lote</label>
+							<select id="lote" name="lote" required>
+								<option value="">—</option>
+								@opcoesDe(d.Lotes)
+							</select>
+						</div>
+						<div class="campo">
+							<label for="quantidade">Quantidade</label>
+							<input id="quantidade" name="quantidade" type="text" inputmode="decimal" required/>
+						</div>
+					</div>
+					<div class="form-acoes">
+						<button type="submit" class="btn btn-escuro" data-icone="plus">Adicionar</button>
+					</div>
+				</form>
+			}
+			if d.Aberta() && d.PodeFinalizar && len(d.Itens) > 0 {
+				<form method="post" action={ templ.SafeURL(estoqueRetiradaAcao(d.ID) + "/finalizar") } class="cartao form-admin" data-sem-gaveta>
+					<input type="hidden" name="csrf" value={ d.CSRF }/>
+					<h2>Finalizar retirada</h2>
+					<p class="subtitulo">
+						if d.Campo() {
+							Para cada item, informe o que foi usado, o que voltou e o que se perdeu. A soma deve fechar com o retirado.
+						} else {
+							Para cada item, informe o que foi devolvido e o que se perdeu. A soma deve fechar com o retirado.
+						}
+					</p>
+					for _, i := range d.Itens {
+						<div class="grade-form">
+							<div class="campo campo-largo">
+								<label>{ i.Produto } — lote { i.Lote } (retirado { i.Retirado } { i.Medida })</label>
+							</div>
+							if d.Campo() {
+								<div class="campo">
+									<label for={ "u" + i.ID }>Usado</label>
+									<input id={ "u" + i.ID } name={ "usado_" + i.ID } type="text" inputmode="decimal" value="0" required/>
+								</div>
+							}
+							<div class="campo">
+								<label for={ "d" + i.ID }>Devolvido</label>
+								<input id={ "d" + i.ID } name={ "devolvido_" + i.ID } type="text" inputmode="decimal" value={ i.Retirado } required/>
+							</div>
+							<div class="campo">
+								<label for={ "p" + i.ID }>Perda</label>
+								<input id={ "p" + i.ID } name={ "perda_" + i.ID } type="text" inputmode="decimal" value="0" required/>
+							</div>
+						</div>
+					}
+					<div class="form-acoes">
+						<button type="submit" class="btn btn-sucesso" data-icone="check">Finalizar retirada</button>
+					</div>
+				</form>
+			}
+			if d.PodeCancelar && !d.Aberta() {
+				<form method="post" action={ templ.SafeURL(estoqueRetiradaAcao(d.ID) + "/excluir") } class="form-acoes" data-sem-gaveta>
+					<input type="hidden" name="csrf" value={ d.CSRF }/>
+					<button type="submit" class="btn btn-perigo" onclick="return confirm('Enviar esta retirada para a lixeira?')" data-icone="trash">Excluir</button>
+				</form>
+			}
+		}
+	}
+}
+
+templ EstoqueBalanco(l Layout, d EstoqueBalancoData) {
+	@Base(l) {
+		@PageHeader("Balanço Físico", "O que deveria existir de cada produto: no estoque e em retiradas abertas.") {
+		}
+		<form
+			method="get"
+			action="/estoque/balanco"
+			class="cartao filtros filtros-vivos"
+			autocomplete="off"
+			hx-get="/estoque/balanco"
+			hx-trigger="change delay:60ms, filtrar from:body"
+			hx-sync="this:replace"
+			hx-target="#balanco-lista"
+			hx-select="#balanco-lista"
+			hx-swap="outerHTML"
+			hx-push-url="true"
+			hx-indicator="#balanco-lista"
+		>
+			@campoEscolha("f-unidade", "Unidade", "unidade", "Todas as unidades", d.Unidades)
+			@campoEscolha("f-tipo", "Tipo", "tipo", "Todos os tipos", d.Tipos)
+			<div class="form-acoes">
+				<a class="btn btn-escuro" href="/estoque/balanco" data-icone="undo">Limpar filtros</a>
+			</div>
+		</form>
+		<div id="balanco-lista" class="lista-viva">
+			<section class="cartao">
+				@Paginacao(d.Pag, "/estoque/balanco", d.Query)
+				<div class="tabela-wrap">
+					<table class="tabela">
+						<thead>
+							<tr>
+								<th scope="col">Unidade</th>
+								<th scope="col">Produto</th>
+								<th scope="col">Tipo</th>
+								<th scope="col">Em estoque</th>
+								<th scope="col">Em retirada</th>
+								<th scope="col">Total</th>
+								<th scope="col">Vencido</th>
+								<th scope="col">Próximo vencimento</th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, x := range d.Linhas {
+								<tr>
+									<td data-rotulo="Unidade">{ x.Unidade }</td>
+									<td data-rotulo="Produto">{ x.Produto }</td>
+									<td data-rotulo="Tipo">{ x.Tipo }</td>
+									<td data-rotulo="Em estoque">{ x.EmEstoque } { x.Medida }</td>
+									<td data-rotulo="Em retirada">{ x.EmRetirada } { x.Medida }</td>
+									<td data-rotulo="Total"><strong>{ x.Total } { x.Medida }</strong></td>
+									<td data-rotulo="Vencido">{ x.Vencido }</td>
+									<td data-rotulo="Próximo vencimento">{ x.ProximoVencimento }</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+					if len(d.Linhas) == 0 {
+						<div class="tabela-vazia">Nenhum produto encontrado.</div>
+					}
+				</div>
+				@Paginacao(d.Pag, "/estoque/balanco", d.Query)
+			</section>
+		</div>
+	}
+}

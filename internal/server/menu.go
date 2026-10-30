@@ -184,10 +184,10 @@ func (s *handlers) menu(r *http.Request) []views.NavGrupo {
 
 		if pr.Pode("estoque_balanco_visualizar") || pr.Pode("estoque_produto_visualizar") || pr.Pode("estoque_retirada_visualizar") {
 			menu = append(menu, views.NavGrupo{Label: "Estoque", Icone: "estoque", Itens: []views.NavItem{
-				{Label: "Balanço Físico", EmBreve: true},
+				itemSe(pr.Pode("estoque_balanco_visualizar"), "Balanço Físico", "/estoque/balanco"),
 				itemSe(pr.Pode("estoque_produto_visualizar"), "Produtos", "/estoque/produto"),
 				itemSe(pr.Pode("estoque_entrada_visualizar"), "Entradas / Lotes", "/estoque/lote"),
-				{Label: "Retiradas", EmBreve: true},
+				itemSe(pr.Pode("estoque_retirada_visualizar"), "Retiradas", "/estoque/retirada"),
 				{Label: "Patrimônio", EmBreve: true},
 				itemSe(pr.Pode("estoque_unidade_visualizar"), "Unidades de Estoque", "/estoque/unidade"),
 			}})
