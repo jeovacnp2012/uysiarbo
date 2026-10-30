@@ -197,6 +197,7 @@ var Rotulos = map[string]string{
 	"lei_trecho.excluir_definitivo":     "Excluiu um trecho de lei definitivamente",
 	"parametro.geral":                   "Alterou os parâmetros gerais",
 	"parametro.mobilidade":              "Alterou os parâmetros de mobilidade",
+	"parametro.contaovos":               "Alterou a integração com a Conta Ovos",
 	"ciclo.criar":                       "Cadastrou um ciclo",
 	"ciclo.editar":                      "Editou um ciclo",
 	"ciclo.excluir":                     "Enviou um ciclo para a lixeira",

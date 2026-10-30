@@ -34,3 +34,4 @@ Todas as telas de Parâmetros têm uma barra de abas no topo, como no Geo Contro
 
 - **Semanas epidemiológicas**: o calendário de cada ano (primeiro dia, último dia e quantas semanas), calculado pelo padrão escolhido em **Ciclos**. Clique em **Ver semanas** para listar todas as semanas do ano.
 - **Numeração**: mostra o formato dos números de notificação (`NT-AAAA0000000`) e de auto de infração (`INF-AAAA00000`), o último número usado no ano e o próximo. A contagem recomeça todo ano.
+- **API Conta Ovos**: liga a integração com a Conta Ovos (contagem de ovos das ovitrampas). Informe o tipo (pública ou privada), o estado, o município e, na integração privada, a chave da API. A chave não é mostrada depois de salva; para trocar, digite outra, e para apagar, marque **Remover**. Nas alterações, a auditoria só registra se a chave está definida, nunca o valor.

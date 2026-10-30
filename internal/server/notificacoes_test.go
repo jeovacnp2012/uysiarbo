@@ -181,3 +181,18 @@ func TestSemanasDoAno(t *testing.T) {
 		t.Fatalf("2025 SINAN deveria ter 53 semanas, tem %d", n)
 	}
 }
+
+func TestContaOvos(t *testing.T) {
+	m := novoMundo(t)
+	ana := m.comAna(t)
+	quer(t, ana.get("/parametros/contaovos"), http.StatusOK, "API Conta Ovos", "Chave da API")
+	quer(t, ana.post("/parametros/contaovos", url.Values{"contaovos_ativo": {"1"}, "contaovos_tipo": {"x"}}), http.StatusBadRequest)
+	quer(t, ana.post("/parametros/contaovos", url.Values{"contaovos_tipo": {"privada"}, "contaovos_uf": {"mtx"}}), http.StatusBadRequest)
+	quer(t, ana.post("/parametros/contaovos", url.Values{"contaovos_ativo": {"1"}, "contaovos_tipo": {"privada"}, "contaovos_uf": {"mt"},
+		"contaovos_municipio": {"Nova Mutum"}, "contaovos_chave": {"SEGREDO-123"}}), http.StatusSeeOther)
+	rec := ana.get("/parametros/contaovos?ok=1")
+	quer(t, rec, http.StatusOK, "Nova Mutum", "MT")
+	if strings.Contains(rec.Body.String(), "SEGREDO-123") {
+		t.Fatal("a chave não pode voltar para a tela")
+	}
+}

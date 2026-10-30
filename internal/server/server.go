@@ -265,6 +265,8 @@ func New(d Deps) http.Handler {
 	r.Post("/parametros/geral", h.exigir("param_geral", h.parametrosSalvar(grupoGeral)))
 	r.Get("/parametros/semanas", h.exigir("param_ciclo", h.semanasPagina))
 	r.Get("/parametros/numeracao", h.exigir("param_geral", h.numeracaoPagina))
+	r.Get("/parametros/contaovos", h.exigir("param_geral", h.parametrosForm(grupoContaOvos)))
+	r.Post("/parametros/contaovos", h.exigir("param_geral", h.parametrosSalvar(grupoContaOvos)))
 	r.Get("/parametros/mobilidade", h.exigir("param_mobilidade", h.parametrosForm(grupoMobilidade)))
 	r.Post("/parametros/mobilidade", h.exigir("param_mobilidade", h.parametrosSalvar(grupoMobilidade)))
 	r.Get("/ciclos/{id}", h.exigir("param_ciclo", h.cicloEditarForm))

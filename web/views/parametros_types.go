@@ -10,7 +10,10 @@ type ParametroCampo struct {
 	Marcado  bool // bool
 	Definida bool // senha: já existe uma salva
 	Min, Max int
+	Opcoes   []ParametroOpcao
 }
+
+type ParametroOpcao struct{ Valor, Rotulo string }
 
 type ParametrosData struct {
 	Titulo    string

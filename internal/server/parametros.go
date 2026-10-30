@@ -24,11 +24,13 @@ type parametro struct {
 	Padrao string
 	Min    int
 	Max    int
+	Opcoes [][2]string // tipo "opcao": valor e rótulo
 }
 
 const (
 	grupoGeral      = "geral"
 	grupoMobilidade = "mobilidade"
+	grupoContaOvos  = "contaovos"
 	chaveSenhaApp   = "app_senha_limpar_dados" // guarda só o hash da senha
 )
 
@@ -51,6 +53,13 @@ var parametros = []parametro{
 	{Chave: "app_dias_campanhas", Grupo: grupoMobilidade, Tipo: "int", Padrao: "30", Min: 0, Max: 3650, Rotulo: "Dias de campanhas que o aplicativo baixa"},
 	{Chave: "app_dias_investigacoes", Grupo: grupoMobilidade, Tipo: "int", Padrao: "30", Min: 0, Max: 3650, Rotulo: "Dias de investigações que o aplicativo baixa"},
 	{Chave: "app_dias_anexos", Grupo: grupoMobilidade, Tipo: "int", Padrao: "30", Min: 0, Max: 3650, Rotulo: "Dias de anexos de investigação que o aplicativo baixa"},
+	{Chave: "contaovos_ativo", Grupo: grupoContaOvos, Tipo: "bool", Padrao: "0", Rotulo: "Integração com a Conta Ovos ativa"},
+	{Chave: "contaovos_tipo", Grupo: grupoContaOvos, Tipo: "opcao", Padrao: "publica", Rotulo: "Tipo de integração",
+		Opcoes: [][2]string{{"publica", "Pública"}, {"privada", "Privada"}}},
+	{Chave: "contaovos_uf", Grupo: grupoContaOvos, Tipo: "texto", Rotulo: "Estado (UF)", Max: 2, Ajuda: "Sigla do estado, como MT."},
+	{Chave: "contaovos_municipio", Grupo: grupoContaOvos, Tipo: "texto", Rotulo: "Município", Max: 80},
+	{Chave: "contaovos_chave", Grupo: grupoContaOvos, Tipo: "segredo", Rotulo: "Chave da API (integração privada)",
+		Ajuda: "Fornecida pela Conta Ovos. Não é mostrada depois de salva."},
 	{Chave: chaveSenhaApp, Grupo: grupoMobilidade, Tipo: "senha", Rotulo: "Senha para \"Limpar dados\" no aplicativo",
 		Ajuda: "Só quem souber a senha limpa os dados do aparelho. Ela não é mostrada depois de salva."},
 }
@@ -78,6 +87,7 @@ func parametrosDoGrupo(grupo string) []parametro {
 var textosDoGrupo = map[string]struct{ titulo, rota, descricao string }{
 	grupoGeral:      {"Parâmetros gerais", "/parametros/geral", "Regras que valem para todo o ambiente."},
 	grupoMobilidade: {"Mobilidade (aplicativo)", "/parametros/mobilidade", "Como o aplicativo do tablet se comporta."},
+	grupoContaOvos:  {"API Conta Ovos", "/parametros/contaovos", "Integração com a Conta Ovos (contagem de ovos das ovitrampas)."},
 }
 
 func (h *handlers) parametrosForm(grupo string) http.HandlerFunc {
@@ -103,10 +113,13 @@ func (h *handlers) dadosDeParametros(r *http.Request, q *sqlccliente.Queries, gr
 			valor = v
 		}
 		c := views.ParametroCampo{Chave: p.Chave, Rotulo: p.Rotulo, Ajuda: p.Ajuda, Tipo: p.Tipo, Valor: valor, Min: p.Min, Max: p.Max}
+		for _, o := range p.Opcoes {
+			c.Opcoes = append(c.Opcoes, views.ParametroOpcao{Valor: o[0], Rotulo: o[1]})
+		}
 		switch p.Tipo {
 		case "bool":
 			c.Marcado = valor == "1"
-		case "senha":
+		case "senha", "segredo":
 			c.Valor = ""
 			c.Definida = h.valorDoParametro(r, q, p) != ""
 		}
@@ -155,6 +168,36 @@ func (h *handlers) parametrosSalvar(grupo string) http.HandlerFunc {
 					erro = "O CEP padrão tem 8 dígitos."
 				}
 				novos[p.Chave] = bruto
+			case "texto":
+				if len([]rune(bruto)) > p.Max {
+					erro = fmt.Sprintf("%s: no máximo %d caracteres.", p.Rotulo, p.Max)
+				}
+				if p.Chave == "contaovos_uf" {
+					bruto = strings.ToUpper(bruto)
+					enviados[p.Chave] = bruto
+				}
+				novos[p.Chave] = bruto
+			case "opcao":
+				valido := false
+				for _, o := range p.Opcoes {
+					valido = valido || o[0] == bruto
+				}
+				if !valido {
+					erro = p.Rotulo + ": escolha uma das opções."
+				}
+				novos[p.Chave] = bruto
+			case "segredo":
+				delete(enviados, p.Chave) // nunca devolvida à tela
+				switch {
+				case r.PostFormValue(p.Chave+"_remover") == "1":
+					novos[p.Chave] = ""
+				case bruto != "":
+					if len([]rune(bruto)) > 200 {
+						erro = p.Rotulo + ": no máximo 200 caracteres."
+						break
+					}
+					novos[p.Chave] = bruto
+				}
 			case "senha":
 				delete(enviados, p.Chave) // nunca devolvida à tela
 				switch {
@@ -203,6 +246,10 @@ func (h *handlers) parametrosSalvar(grupo string) http.HandlerFunc {
 				return
 			}
 			// A auditoria mostra o que mudou, mas nunca a senha: só se foi definida ou removida.
+			if p.Tipo == "segredo" {
+				antes["conexao_protegida"], depois["conexao_protegida"] = situacaoDaSenha(atual), situacaoDaSenha(novo)
+				continue
+			}
 			if p.Tipo == "senha" {
 				antes["limpar_dados_protegido"], depois["limpar_dados_protegido"] = situacaoDaSenha(atual), situacaoDaSenha(novo)
 				continue

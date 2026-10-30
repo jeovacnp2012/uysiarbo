@@ -27,6 +27,7 @@ func (h *handlers) abasParametros(r *http.Request, ativa string) []views.AbaPara
 	add(pr.Pode("param_ciclo"), "Semanas epidemiológicas", "/parametros/semanas")
 	add(pr.Pode("param_geral"), "Numeração", "/parametros/numeracao")
 	add(pr.Pode("param_mobilidade"), "Mobilidade", "/parametros/mobilidade")
+	add(pr.Pode("param_geral"), "API Conta Ovos", "/parametros/contaovos")
 	add(pr.Pode("acesso_local"), "Controle de acesso", "/parametros/acesso")
 	add(pr.Pode("param_leis"), "Leis municipais", "/leis")
 	add(pr.Pode("param_doenca"), "Investigação - Grupos", "/entrevistas")

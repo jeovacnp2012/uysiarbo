@@ -26,7 +26,7 @@ templ Parametros(l Layout, d ParametrosData) {
 							if c.Ajuda != "" {
 								<p class="subtitulo">{ c.Ajuda }</p>
 							}
-						case "senha":
+						case "senha", "segredo":
 							<div class="campo">
 								<label for={ "p-" + c.Chave }>{ c.Rotulo }</label>
 								if c.Definida {
@@ -39,6 +39,23 @@ templ Parametros(l Layout, d ParametrosData) {
 										Remover a senha
 									</label>
 								}
+								if c.Ajuda != "" {
+									<p class="subtitulo">{ c.Ajuda }</p>
+								}
+							</div>
+						case "opcao":
+							<div class="campo">
+								<label for={ "p-" + c.Chave }>{ c.Rotulo }</label>
+								<select id={ "p-" + c.Chave } name={ c.Chave }>
+									for _, o := range c.Opcoes {
+										<option value={ o.Valor } selected?={ o.Valor == c.Valor }>{ o.Rotulo }</option>
+									}
+								</select>
+							</div>
+						case "texto":
+							<div class="campo">
+								<label for={ "p-" + c.Chave }>{ c.Rotulo }</label>
+								<input id={ "p-" + c.Chave } name={ c.Chave } type="text" value={ c.Valor } maxlength={ strconv.Itoa(c.Max) }/>
 								if c.Ajuda != "" {
 									<p class="subtitulo">{ c.Ajuda }</p>
 								}
