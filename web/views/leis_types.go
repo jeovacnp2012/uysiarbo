@@ -24,6 +24,9 @@ type LeiFormData struct {
 	Ano        string
 	Nome       string
 	Publicacao string // aaaa-mm-dd
+	Ementa     string
+	Preambulo  string
+	Link       string
 	Ativo      bool
 	Trechos    []LeiTrechoLinha
 	// Trecho em edição ou novo, com o erro (se houver), para repopular o formulário de trecho.

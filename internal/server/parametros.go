@@ -16,15 +16,19 @@ import (
 // Os parâmetros do cliente ficam em cliente_info (chave/valor). Cada um é declarado aqui, com tipo, padrão e
 // limites, e as telas Geral e Mobilidade são montadas a partir desta lista: parâmetro novo = uma linha aqui.
 type parametro struct {
-	Chave  string
-	Grupo  string // "geral" ou "mobilidade"
-	Rotulo string
-	Ajuda  string
-	Tipo   string // "bool", "int", "cep" ou "senha"
-	Padrao string
-	Min    int
-	Max    int
-	Opcoes [][2]string // tipo "opcao": valor e rótulo
+	Chave   string
+	Grupo   string // "geral" ou "mobilidade"
+	Rotulo  string
+	Ajuda   string
+	Tipo    string // "bool", "int", "cep" ou "senha"
+	Padrao  string
+	Min     int
+	Max     int
+	Opcoes  [][2]string // tipo "opcao": valor e rótulo
+	SimNao  [2]string   // bool mostrado como select, com os rótulos de Sim e de Não
+	SoSe    string      // campo só aparece quando todos os "campo=valor" (separados por ;) valem
+	Cartao  bool        // vai para o cartão da direita
+	Unidade string
 }
 
 const (
@@ -35,33 +39,42 @@ const (
 )
 
 var parametros = []parametro{
-	{Chave: "visita_tubito_automatico", Grupo: grupoGeral, Tipo: "bool", Padrao: "1", Rotulo: "Numerar os tubitos automaticamente",
-		Ajuda: "Desmarcado, o número do tubito é digitado em cada amostra."},
-	{Chave: "campanha_estoque", Grupo: grupoGeral, Tipo: "bool", Padrao: "0", Rotulo: "A campanha antirrábica consome o estoque",
-		Ajuda: "Quando marcado, vacinas e seringas usadas na campanha saem do estoque."},
-	{Chave: "cep_padrao", Grupo: grupoGeral, Tipo: "cep", Rotulo: "CEP padrão dos novos locais",
-		Ajuda: "Preenche o CEP ao cadastrar um local (8 dígitos). Deixe vazio para não preencher."},
+	{Chave: "acesso_local", Grupo: grupoGeral, Tipo: "opcao", Padrao: acessoResponsavel, Rotulo: "Método de controle de acesso aos Locais/Bairros/Quarteirões",
+		Opcoes: [][2]string{{acessoResponsavel, "Quando responsável pelo Bairro"}, {acessoParametro, "Pelo Parâmetro — Acesso Local"}}},
+	{Chave: chaveSemana, Grupo: grupoGeral, Tipo: "opcao", Padrao: "sinan", Rotulo: "Padrão das semanas",
+		Opcoes: [][2]string{{"sinan", "SINAN (habilita o menu Semanas SINAN)"}, {"iso", "ISO 8601"}}},
+	{Chave: "visita_tubito_automatico", Grupo: grupoGeral, Tipo: "bool", Padrao: "1", Rotulo: "Tubitos — Numeração Automática",
+		SimNao: [2]string{"Sim", "Não"}, Ajuda: "Não: o número do tubito é digitado em cada amostra."},
+	{Chave: "campanha_estoque", Grupo: grupoGeral, Tipo: "bool", Padrao: "0", Rotulo: "Zoonose - Campanha Antirrábica - Uso obrigatório do Estoque",
+		SimNao: [2]string{"Sim (somente com estoque disponível)", "Não (permite uso sem estoque e opcional do estoque)"}},
 
-	{Chave: "app_aviso_precisao_gps", Grupo: grupoMobilidade, Tipo: "int", Padrao: "20", Min: 1, Max: 1000, Rotulo: "Avisar se a precisão do GPS for pior que (metros)",
-		Ajuda: "O aplicativo avisa o agente quando o GPS está menos preciso que isso."},
-	{Chave: "app_coleta_gps_segundos", Grupo: grupoMobilidade, Tipo: "int", Padrao: "5", Min: 0, Max: 600, Rotulo: "Coletar a posição do agente a cada (segundos)",
+	{Chave: "app_aviso_precisao_gps", Grupo: grupoMobilidade, Tipo: "int", Padrao: "20", Min: 1, Max: 1000, Rotulo: "Aviso de precisão do GPS ao salvar a visita (metros)"},
+	{Chave: "app_digitar_tubito", Grupo: grupoMobilidade, Tipo: "bool", Padrao: "0", Rotulo: "Permitir digitar o número do tubito?",
+		SimNao: [2]string{"Sim", "Não (automático)"}},
+	{Chave: "app_coleta_gps_segundos", Grupo: grupoMobilidade, Tipo: "int", Padrao: "5", Min: 0, Max: 600, Rotulo: "Coletar dados do GPS a cada (segundos)",
 		Ajuda: "0 desliga a coleta do rastro."},
-	{Chave: "app_digitar_tubito", Grupo: grupoMobilidade, Tipo: "bool", Padrao: "0", Rotulo: "Permitir digitar o número do tubito no aplicativo"},
-	{Chave: "app_permite_fechado", Grupo: grupoMobilidade, Tipo: "bool", Padrao: "0", Rotulo: "Permitir DF, PVE e LIRAa com pendência \"fechado\""},
-	{Chave: "app_dashboard_grafico", Grupo: grupoMobilidade, Tipo: "bool", Padrao: "1", Rotulo: "Mostrar os gráficos no painel do aplicativo"},
-	{Chave: "app_dias_visitas", Grupo: grupoMobilidade, Tipo: "int", Padrao: "30", Min: 0, Max: 3650, Rotulo: "Dias de visitas e fotos que o aplicativo baixa"},
-	{Chave: "app_dias_campanhas", Grupo: grupoMobilidade, Tipo: "int", Padrao: "30", Min: 0, Max: 3650, Rotulo: "Dias de campanhas que o aplicativo baixa"},
-	{Chave: "app_dias_investigacoes", Grupo: grupoMobilidade, Tipo: "int", Padrao: "30", Min: 0, Max: 3650, Rotulo: "Dias de investigações que o aplicativo baixa"},
-	{Chave: "app_dias_anexos", Grupo: grupoMobilidade, Tipo: "int", Padrao: "30", Min: 0, Max: 3650, Rotulo: "Dias de anexos de investigação que o aplicativo baixa"},
-	{Chave: "contaovos_ativo", Grupo: grupoContaOvos, Tipo: "bool", Padrao: "0", Rotulo: "Integração com a Conta Ovos ativa"},
-	{Chave: "contaovos_tipo", Grupo: grupoContaOvos, Tipo: "opcao", Padrao: "publica", Rotulo: "Tipo de integração",
-		Opcoes: [][2]string{{"publica", "Pública"}, {"privada", "Privada"}}},
-	{Chave: "contaovos_uf", Grupo: grupoContaOvos, Tipo: "texto", Rotulo: "Estado (UF)", Max: 2, Ajuda: "Sigla do estado, como MT."},
-	{Chave: "contaovos_municipio", Grupo: grupoContaOvos, Tipo: "texto", Rotulo: "Município", Max: 80},
-	{Chave: "contaovos_chave", Grupo: grupoContaOvos, Tipo: "segredo", Rotulo: "Chave da API (integração privada)",
-		Ajuda: "Fornecida pela Conta Ovos. Não é mostrada depois de salva."},
-	{Chave: chaveSenhaApp, Grupo: grupoMobilidade, Tipo: "senha", Rotulo: "Senha para \"Limpar dados\" no aplicativo",
+	{Chave: "app_permite_fechado", Grupo: grupoMobilidade, Tipo: "bool", Padrao: "0", Rotulo: "Permitir visita DF, PVE e LIRAa quando a pendência for \"fechado\"?",
+		SimNao: [2]string{"Sim (Permitir)", "Não (mostra um alerta)"}},
+	{Chave: "cep_padrao", Grupo: grupoMobilidade, Tipo: "cep", Rotulo: "CEP padrão",
+		Ajuda: "Preenche o CEP ao cadastrar um local (8 dígitos). Deixe vazio para não preencher."},
+	{Chave: chaveSenhaApp, Grupo: grupoMobilidade, Tipo: "senha", Rotulo: "Senha solicitada ao \"Limpar dados\"",
 		Ajuda: "Só quem souber a senha limpa os dados do aparelho. Ela não é mostrada depois de salva."},
+	{Chave: "app_dashboard_grafico", Grupo: grupoMobilidade, Tipo: "bool", Padrao: "1", Rotulo: "Mostrar os gráficos do Dashboard do App?",
+		SimNao: [2]string{"Sim (Mostrar)", "Não (Ocultar)"},
+		Ajuda:  "Ao selecionar \"Não\", os gráficos do Dashboard do App serão ocultados, proporcionando uma interface mais limpa e simplificada para os usuários."},
+	{Chave: "app_dias_visitas", Grupo: grupoMobilidade, Tipo: "int", Padrao: "365", Min: 0, Max: 3650, Rotulo: "Fotos das Visitas", Cartao: true, Unidade: "dias"},
+	{Chave: "app_dias_campanhas", Grupo: grupoMobilidade, Tipo: "int", Padrao: "365", Min: 0, Max: 3650, Rotulo: "Campanhas de Vacinação", Cartao: true, Unidade: "dias"},
+	{Chave: "app_dias_investigacoes", Grupo: grupoMobilidade, Tipo: "int", Padrao: "365", Min: 0, Max: 3650, Rotulo: "Investigações", Cartao: true, Unidade: "dias"},
+	{Chave: "app_dias_anexos", Grupo: grupoMobilidade, Tipo: "int", Padrao: "60", Min: 0, Max: 3650, Rotulo: "Anexos das Investigações", Cartao: true, Unidade: "dias",
+		Ajuda: "Pode ser diferente das investigações pois anexos ocupam mais espaço de armazenamento."},
+
+	{Chave: "contaovos_ativo", Grupo: grupoContaOvos, Tipo: "bool", Padrao: "0", Rotulo: "Integração ativa", SimNao: [2]string{"Sim", "Não"}},
+	{Chave: "contaovos_tipo", Grupo: grupoContaOvos, Tipo: "opcao", Padrao: "publica", Rotulo: "Tipo de integração", SoSe: "contaovos_ativo=1",
+		Opcoes: [][2]string{{"publica", "Integração pública"}, {"privada", "Integração privada"}}},
+	{Chave: "contaovos_uf", Grupo: grupoContaOvos, Tipo: "texto", Rotulo: "Estado", Max: 2, SoSe: "contaovos_ativo=1", Ajuda: "Sigla do estado, como MT."},
+	{Chave: "contaovos_municipio", Grupo: grupoContaOvos, Tipo: "texto", Rotulo: "Município", Max: 80, SoSe: "contaovos_ativo=1"},
+	{Chave: "contaovos_chave", Grupo: grupoContaOvos, Tipo: "segredo", Rotulo: "Chave de API (privada)", SoSe: "contaovos_ativo=1;contaovos_tipo=privada",
+		Ajuda: "Fornecida pela Conta Ovos. Não é mostrada depois de salva."},
 }
 
 var reCEPParametro = regexp.MustCompile(`^[0-9]{8}$`)
@@ -106,13 +119,14 @@ func (h *handlers) parametrosForm(grupo string) http.HandlerFunc {
 // dadosDeParametros monta a tela; enviados (quando não nulo) são os valores digitados, em caso de erro.
 func (h *handlers) dadosDeParametros(r *http.Request, q *sqlccliente.Queries, grupo string, enviados map[string]string) views.ParametrosData {
 	t := textosDoGrupo[grupo]
-	d := views.ParametrosData{Titulo: t.titulo, Descricao: t.descricao, Acao: t.rota, CSRF: csrfToken(r.Context()), Abas: h.abasParametros(r, t.rota)}
+	d := views.ParametrosData{Titulo: t.titulo, Descricao: t.descricao, Acao: t.rota, CSRF: csrfToken(r.Context())}
 	for _, p := range parametrosDoGrupo(grupo) {
 		valor := h.valorDoParametro(r, q, p)
 		if v, ok := enviados[p.Chave]; ok {
 			valor = v
 		}
-		c := views.ParametroCampo{Chave: p.Chave, Rotulo: p.Rotulo, Ajuda: p.Ajuda, Tipo: p.Tipo, Valor: valor, Min: p.Min, Max: p.Max}
+		c := views.ParametroCampo{Chave: p.Chave, Rotulo: p.Rotulo, Ajuda: p.Ajuda, Tipo: p.Tipo, Valor: valor, Min: p.Min, Max: p.Max, SimNao: p.SimNao, SoSe: p.SoSe, Cartao: p.Cartao, Unidade: p.Unidade}
+		d.TemCartao = d.TemCartao || p.Cartao
 		for _, o := range p.Opcoes {
 			c.Opcoes = append(c.Opcoes, views.ParametroOpcao{Valor: o[0], Rotulo: o[1]})
 		}
@@ -124,6 +138,9 @@ func (h *handlers) dadosDeParametros(r *http.Request, q *sqlccliente.Queries, gr
 			c.Definida = h.valorDoParametro(r, q, p) != ""
 		}
 		d.Campos = append(d.Campos, c)
+	}
+	if d.TemCartao {
+		d.CartaoTitulo, d.CartaoTexto = "Dias máximos para download (App)", "Define quantos dias para trás o App poderá baixar registros de cada módulo."
 	}
 	return d
 }
@@ -178,6 +195,9 @@ func (h *handlers) parametrosSalvar(grupo string) http.HandlerFunc {
 				}
 				novos[p.Chave] = bruto
 			case "opcao":
+				if _, enviado := r.PostForm[p.Chave]; !enviado {
+					continue
+				}
 				valido := false
 				for _, o := range p.Opcoes {
 					valido = valido || o[0] == bruto

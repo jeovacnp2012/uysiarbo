@@ -26,6 +26,9 @@ var avisosPorCodigo = map[string]string{
 // layout monta o layout da página; no endereço de um cliente, mostra o nome dele no menu.
 func (s *handlers) layout(r *http.Request, title, active string) views.Layout {
 	l := views.Layout{Title: title, Active: active, Nav: s.menu(r), CSRF: csrfToken(r.Context()), Aviso: avisosPorCodigo[r.URL.Query().Get("aviso")]}
+	if abaDeParametros[active] {
+		l.Abas = s.abasParametros(r, active)
+	}
 	if id, versao := s.ultimaVersao(r.Context()); versao != "" {
 		l.Versao = versao
 		if a, ok := authFrom(r.Context()); ok && a.sess != nil {

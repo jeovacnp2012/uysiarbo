@@ -6,7 +6,6 @@ templ Parametros(l Layout, d ParametrosData) {
 	@Base(l) {
 		@PageHeader(d.Titulo, d.Descricao) {
 		}
-		@AbasParametros(d.Abas)
 		<form method="post" action={ templ.SafeURL(d.Acao) } class="cartao form-admin">
 			<input type="hidden" name="csrf" value={ d.CSRF }/>
 			if d.Salvo {
@@ -15,16 +14,180 @@ templ Parametros(l Layout, d ParametrosData) {
 			if d.Erro != "" {
 				<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
 			}
+			<div class={ "param-grade", templ.KV("param-duas", d.TemCartao) }>
+				<fieldset class="sem-borda">
+					for _, c := range d.Campos {
+						if !c.Cartao {
+							@campoParametro(c)
+						}
+					}
+				</fieldset>
+				if d.TemCartao {
+					<div class="param-cartao">
+						<h3>{ d.CartaoTitulo }</h3>
+						<p class="subtitulo">{ d.CartaoTexto }</p>
+						for _, c := range d.Campos {
+							if c.Cartao {
+								@campoParametro(c)
+							}
+						}
+					</div>
+				}
+			</div>
+			<div class="form-acoes">
+				<button type="submit" class="btn btn-primario">Salvar</button>
+			</div>
+		</form>
+	}
+}
+
+templ AbasParametros(abas []AbaParam) {
+	if len(abas) > 0 {
+		<nav class="abas" aria-label="Parâmetros">
+			for _, a := range abas {
+				<a href={ templ.SafeURL(a.Href) } class={ "aba", templ.KV("aba-ativa", a.Ativa) }>{ a.Rotulo }</a>
+			}
+		</nav>
+	}
+}
+
+templ ParametrosSemanas(l Layout, d SemanasData) {
+	@Base(l) {
+		@PageHeader("Calendário de Semanas SINAN", "Anos cadastrados. As semanas de cada ano seguem o padrão: "+d.Tipo+".")
+		if d.Erro != "" {
+			<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
+		}
+		<div class="cartao">
+			<table class="tabela">
+				<thead><tr><th>Ano</th><th>Primeiro dia</th><th>Último dia</th><th>Semanas</th><th>Ações</th></tr></thead>
+				<tbody>
+					for _, a := range d.Anos {
+						<tr>
+							<td><strong>{ strconv.Itoa(a.Ano) }</strong></td><td>{ a.Primeiro }</td><td>{ a.Ultimo }</td><td>{ strconv.Itoa(a.Semanas) }</td>
+							<td class="acoes">
+								<a class="btn" href={ templ.SafeURL("/parametros/semanas?ano=" + strconv.Itoa(a.Ano)) } title="Ver as semanas">Ver semanas</a>
+								<a class="btn" href={ templ.SafeURL("/parametros/semanas/" + strconv.Itoa(a.Ano)) } title="Editar">Editar</a>
+								<form method="post" action={ templ.SafeURL("/parametros/semanas/" + strconv.Itoa(a.Ano) + "/excluir") } class="em-linha" onsubmit={ templ.JSFuncCall("return confirm", "Deseja realmente excluir o ano "+strconv.Itoa(a.Ano)+"?") }>
+									<input type="hidden" name="csrf" value={ d.CSRF }/>
+									<button type="submit" class="btn btn-perigo" title="Excluir">Excluir</button>
+								</form>
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+		<form method="post" action={ templ.SafeURL(semanasAcao(d)) } class="cartao form-admin">
+			<input type="hidden" name="csrf" value={ d.CSRF }/>
+			if d.Editando {
+				<h2>Editar ano SINAN</h2>
+			} else {
+				<h2>Adicionar ano SINAN</h2>
+			}
 			<fieldset class="sem-borda">
-				for _, c := range d.Campos {
-					switch c.Tipo {
+				<div class="campo">
+					<label for="s-ano">Ano *</label>
+					if d.Editando {
+						<input id="s-ano" name="ano" type="number" value={ d.FAno } readonly/>
+						<p class="subtitulo">O ano não pode ser alterado.</p>
+					} else {
+						<input id="s-ano" name="ano" type="number" value={ d.FAno } min="1990" max="2100" placeholder="Ex: 2028" required/>
+					}
+				</div>
+				<div class="campo">
+					<label for="s-pri">Primeiro dia *</label>
+					<input id="s-pri" name="primeiro_dia" type="date" value={ d.FPrimeiro } required/>
+					<p class="subtitulo">Geralmente um domingo.</p>
+				</div>
+				<div class="campo">
+					<label for="s-ult">Último dia *</label>
+					<input id="s-ult" name="ultimo_dia" type="date" value={ d.FUltimo } required/>
+					<p class="subtitulo">Geralmente um sábado.</p>
+				</div>
+				<div class="campo">
+					<label for="s-sem">Total de semanas *</label>
+					<select id="s-sem" name="semanas">
+						<option value="52" selected?={ d.FSemanas != "53" }>52 semanas</option>
+						<option value="53" selected?={ d.FSemanas == "53" }>53 semanas</option>
+					</select>
+				</div>
+			</fieldset>
+			<div class="form-acoes">
+				<button type="submit" class="btn btn-primario">
+					if d.Editando {
+						Salvar
+					} else {
+						Adicionar
+					}
+				</button>
+				if d.Editando {
+					<a class="btn" href="/parametros/semanas">Cancelar</a>
+				}
+			</div>
+		</form>
+		if len(d.Detalhe) > 0 {
+			<div class="cartao">
+				<h2>Semanas de { strconv.Itoa(d.Ano) }</h2>
+				<table class="tabela">
+					<thead><tr><th>Semana</th><th>Início</th><th>Fim</th></tr></thead>
+					<tbody>
+						for _, s := range d.Detalhe {
+							<tr><td>{ strconv.Itoa(s.Numero) }</td><td>{ s.Inicio }</td><td>{ s.Fim }</td></tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		}
+		<p class="subtitulo">O padrão (SINAN ou ISO) é escolhido na aba Geral.</p>
+	}
+}
+
+func semanasAcao(d SemanasData) string {
+	if d.Editando {
+		return "/parametros/semanas/" + d.FAno
+	}
+	return "/parametros/semanas"
+}
+
+templ ParametrosNumeracao(l Layout, d NumeracaoData) {
+	@Base(l) {
+		@PageHeader("Padrão de Numerações", "Como os números de notificações e autos de infração são formados. A contagem recomeça todo ano; a alteração do padrão é feita pelo suporte.")
+		<div class="cartao">
+			<table class="tabela">
+				<thead><tr><th>Tipo</th><th>Prefixo</th><th>Formato</th><th>Reset anual</th><th>Contador ({ strconv.Itoa(d.Ano) })</th><th>Próximo</th></tr></thead>
+				<tbody>
+					for _, n := range d.Linhas {
+						<tr><td>{ n.Tipo }</td><td>{ n.Prefixo }</td><td><code>{ n.Formato }</code></td><td>{ n.ResetAnual }</td><td>{ n.Ultimo }</td><td>{ n.Proximo }</td></tr>
+					}
+				</tbody>
+			</table>
+		</div>
+	}
+}
+
+templ campoParametro(c ParametroCampo) {
+	<div data-so-se={ c.SoSe }>
+		switch c.Tipo {
 						case "bool":
+							if c.SimNao[0] != "" {
+								<div class="campo">
+									<label for={ "p-" + c.Chave }>{ c.Rotulo }</label>
+									<select id={ "p-" + c.Chave } name={ c.Chave }>
+										<option value="1" selected?={ c.Marcado }>{ c.SimNao[0] }</option>
+										<option value="0" selected?={ !c.Marcado }>{ c.SimNao[1] }</option>
+									</select>
+									if c.Ajuda != "" {
+										<p class="subtitulo">{ c.Ajuda }</p>
+									}
+								</div>
+							} else {
 							<label class="marcar">
 								<input type="checkbox" name={ c.Chave } value="1" checked?={ c.Marcado }/>
 								{ c.Rotulo }
 							</label>
 							if c.Ajuda != "" {
 								<p class="subtitulo">{ c.Ajuda }</p>
+							}
 							}
 						case "senha", "segredo":
 							<div class="campo">
@@ -64,6 +227,9 @@ templ Parametros(l Layout, d ParametrosData) {
 							<div class="campo">
 								<label for={ "p-" + c.Chave }>{ c.Rotulo }</label>
 								<input id={ "p-" + c.Chave } name={ c.Chave } type="number" value={ c.Valor } min={ strconv.Itoa(c.Min) } max={ strconv.Itoa(c.Max) } required/>
+								if c.Unidade != "" {
+									<span class="subtitulo">{ c.Unidade }</span>
+								}
 								if c.Ajuda != "" {
 									<p class="subtitulo">{ c.Ajuda }</p>
 								}
@@ -76,75 +242,6 @@ templ Parametros(l Layout, d ParametrosData) {
 									<p class="subtitulo">{ c.Ajuda }</p>
 								}
 							</div>
-					}
-				}
-			</fieldset>
-			<div class="form-acoes">
-				<button type="submit" class="btn btn-primario">Salvar</button>
-			</div>
-		</form>
-	}
-}
-
-templ AbasParametros(abas []AbaParam) {
-	if len(abas) > 0 {
-		<nav class="abas" aria-label="Parâmetros">
-			for _, a := range abas {
-				<a href={ templ.SafeURL(a.Href) } class={ "aba", templ.KV("aba-ativa", a.Ativa) }>{ a.Rotulo }</a>
-			}
-		</nav>
-	}
-}
-
-templ ParametrosSemanas(l Layout, d SemanasData) {
-	@Base(l) {
-		@PageHeader("Semanas epidemiológicas", "Calendário calculado pelo padrão escolhido: "+d.Tipo+".")
-		@AbasParametros(d.Abas)
-		<div class="cartao">
-			<table class="tabela">
-				<thead><tr><th>Ano</th><th>Primeiro dia</th><th>Último dia</th><th>Semanas</th><th></th></tr></thead>
-				<tbody>
-					for _, a := range d.Anos {
-						<tr>
-							<td>{ strconv.Itoa(a.Ano) }</td><td>{ a.Primeiro }</td><td>{ a.Ultimo }</td><td>{ strconv.Itoa(a.Semanas) }</td>
-							<td><a href={ templ.SafeURL("/parametros/semanas?ano=" + strconv.Itoa(a.Ano)) }>Ver semanas</a></td>
-						</tr>
-					}
-				</tbody>
-			</table>
-		</div>
-		if len(d.Detalhe) > 0 {
-			<div class="cartao">
-				<h2>Semanas de { strconv.Itoa(d.Ano) }</h2>
-				<table class="tabela">
-					<thead><tr><th>Semana</th><th>Início</th><th>Fim</th></tr></thead>
-					<tbody>
-						for _, s := range d.Detalhe {
-							<tr><td>{ strconv.Itoa(s.Numero) }</td><td>{ s.Inicio }</td><td>{ s.Fim }</td></tr>
-						}
-					</tbody>
-				</table>
-			</div>
 		}
-		if d.Pode {
-			<p class="subtitulo">O padrão (SINAN ou ISO) é escolhido em <a href="/ciclos">Ciclos</a>.</p>
-		}
-	}
-}
-
-templ ParametrosNumeracao(l Layout, d NumeracaoData) {
-	@Base(l) {
-		@PageHeader("Numeração", "Como os números de notificações e autos de infração são formados. Recomeçam todo ano.")
-		@AbasParametros(d.Abas)
-		<div class="cartao">
-			<table class="tabela">
-				<thead><tr><th>Tipo</th><th>Formato</th><th>Último de { strconv.Itoa(d.Ano) }</th><th>Próximo</th></tr></thead>
-				<tbody>
-					for _, n := range d.Linhas {
-						<tr><td>{ n.Tipo }</td><td>{ n.Formato }</td><td>{ n.Ultimo }</td><td>{ n.Proximo }</td></tr>
-					}
-				</tbody>
-			</table>
-		</div>
-	}
+	</div>
 }

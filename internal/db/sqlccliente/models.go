@@ -371,6 +371,9 @@ type LeisMunicipai struct {
 	AtualizadoEm pgtype.Timestamptz `json:"atualizado_em"`
 	DeletedAt    pgtype.Timestamptz `json:"deleted_at"`
 	DeletedBy    pgtype.Int8        `json:"deleted_by"`
+	Ementa       string             `json:"ementa"`
+	Preambulo    string             `json:"preambulo"`
+	LinkDownload string             `json:"link_download"`
 }
 
 type LeisTrecho struct {
@@ -539,6 +542,15 @@ type ResumosSemanai struct {
 	GeradoEm    pgtype.Timestamptz `json:"gerado_em"`
 	DeletedAt   pgtype.Timestamptz `json:"deleted_at"`
 	DeletedBy   pgtype.Int8        `json:"deleted_by"`
+}
+
+type SemanasAno struct {
+	Ano          int16              `json:"ano"`
+	PrimeiroDia  pgtype.Date        `json:"primeiro_dia"`
+	UltimoDia    pgtype.Date        `json:"ultimo_dia"`
+	Semanas      int16              `json:"semanas"`
+	CriadoEm     pgtype.Timestamptz `json:"criado_em"`
+	AtualizadoEm pgtype.Timestamptz `json:"atualizado_em"`
 }
 
 type Sesso struct {

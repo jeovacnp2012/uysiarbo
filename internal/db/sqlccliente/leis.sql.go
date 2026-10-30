@@ -28,15 +28,18 @@ func (q *Queries) ContarTrechosDaLei(ctx context.Context, leiID int64) (ContarTr
 }
 
 const createLei = `-- name: CreateLei :one
-INSERT INTO leis_municipais (numero, ano, nome, publicacao, ativo) VALUES ($1, $2, $3, $4, $5) RETURNING id, numero, ano, nome, publicacao, ativo, criado_em, atualizado_em, deleted_at, deleted_by
+INSERT INTO leis_municipais (numero, ano, nome, publicacao, ativo, ementa, preambulo, link_download) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, numero, ano, nome, publicacao, ativo, criado_em, atualizado_em, deleted_at, deleted_by, ementa, preambulo, link_download
 `
 
 type CreateLeiParams struct {
-	Numero     string      `json:"numero"`
-	Ano        int16       `json:"ano"`
-	Nome       string      `json:"nome"`
-	Publicacao pgtype.Date `json:"publicacao"`
-	Ativo      bool        `json:"ativo"`
+	Numero       string      `json:"numero"`
+	Ano          int16       `json:"ano"`
+	Nome         string      `json:"nome"`
+	Publicacao   pgtype.Date `json:"publicacao"`
+	Ativo        bool        `json:"ativo"`
+	Ementa       string      `json:"ementa"`
+	Preambulo    string      `json:"preambulo"`
+	LinkDownload string      `json:"link_download"`
 }
 
 func (q *Queries) CreateLei(ctx context.Context, arg CreateLeiParams) (LeisMunicipai, error) {
@@ -46,6 +49,9 @@ func (q *Queries) CreateLei(ctx context.Context, arg CreateLeiParams) (LeisMunic
 		arg.Nome,
 		arg.Publicacao,
 		arg.Ativo,
+		arg.Ementa,
+		arg.Preambulo,
+		arg.LinkDownload,
 	)
 	var i LeisMunicipai
 	err := row.Scan(
@@ -59,6 +65,9 @@ func (q *Queries) CreateLei(ctx context.Context, arg CreateLeiParams) (LeisMunic
 		&i.AtualizadoEm,
 		&i.DeletedAt,
 		&i.DeletedBy,
+		&i.Ementa,
+		&i.Preambulo,
+		&i.LinkDownload,
 	)
 	return i, err
 }
@@ -114,7 +123,7 @@ func (q *Queries) ForceDeleteTrecho(ctx context.Context, id int64) (int64, error
 }
 
 const getLei = `-- name: GetLei :one
-SELECT id, numero, ano, nome, publicacao, ativo, criado_em, atualizado_em, deleted_at, deleted_by FROM leis_municipais WHERE id = $1 AND deleted_at IS NULL
+SELECT id, numero, ano, nome, publicacao, ativo, criado_em, atualizado_em, deleted_at, deleted_by, ementa, preambulo, link_download FROM leis_municipais WHERE id = $1 AND deleted_at IS NULL
 `
 
 func (q *Queries) GetLei(ctx context.Context, id int64) (LeisMunicipai, error) {
@@ -131,12 +140,15 @@ func (q *Queries) GetLei(ctx context.Context, id int64) (LeisMunicipai, error) {
 		&i.AtualizadoEm,
 		&i.DeletedAt,
 		&i.DeletedBy,
+		&i.Ementa,
+		&i.Preambulo,
+		&i.LinkDownload,
 	)
 	return i, err
 }
 
 const getLeiQualquer = `-- name: GetLeiQualquer :one
-SELECT id, numero, ano, nome, publicacao, ativo, criado_em, atualizado_em, deleted_at, deleted_by FROM leis_municipais WHERE id = $1
+SELECT id, numero, ano, nome, publicacao, ativo, criado_em, atualizado_em, deleted_at, deleted_by, ementa, preambulo, link_download FROM leis_municipais WHERE id = $1
 `
 
 func (q *Queries) GetLeiQualquer(ctx context.Context, id int64) (LeisMunicipai, error) {
@@ -153,6 +165,9 @@ func (q *Queries) GetLeiQualquer(ctx context.Context, id int64) (LeisMunicipai, 
 		&i.AtualizadoEm,
 		&i.DeletedAt,
 		&i.DeletedBy,
+		&i.Ementa,
+		&i.Preambulo,
+		&i.LinkDownload,
 	)
 	return i, err
 }
@@ -204,7 +219,7 @@ func (q *Queries) GetTrechoQualquer(ctx context.Context, id int64) (LeisTrecho, 
 
 const listLeis = `-- name: ListLeis :many
 
-SELECT l.id, l.numero, l.ano, l.nome, l.publicacao, l.ativo, l.criado_em, l.atualizado_em, l.deleted_at, l.deleted_by, (SELECT count(*) FROM leis_trechos t WHERE t.lei_id = l.id AND t.deleted_at IS NULL)::int AS total_trechos
+SELECT l.id, l.numero, l.ano, l.nome, l.publicacao, l.ativo, l.criado_em, l.atualizado_em, l.deleted_at, l.deleted_by, l.ementa, l.preambulo, l.link_download, (SELECT count(*) FROM leis_trechos t WHERE t.lei_id = l.id AND t.deleted_at IS NULL)::int AS total_trechos
 FROM leis_municipais l
 WHERE l.deleted_at IS NULL
 ORDER BY l.ano DESC, lower(l.numero)
@@ -221,6 +236,9 @@ type ListLeisRow struct {
 	AtualizadoEm pgtype.Timestamptz `json:"atualizado_em"`
 	DeletedAt    pgtype.Timestamptz `json:"deleted_at"`
 	DeletedBy    pgtype.Int8        `json:"deleted_by"`
+	Ementa       string             `json:"ementa"`
+	Preambulo    string             `json:"preambulo"`
+	LinkDownload string             `json:"link_download"`
 	TotalTrechos int32              `json:"total_trechos"`
 }
 
@@ -245,6 +263,9 @@ func (q *Queries) ListLeis(ctx context.Context) ([]ListLeisRow, error) {
 			&i.AtualizadoEm,
 			&i.DeletedAt,
 			&i.DeletedBy,
+			&i.Ementa,
+			&i.Preambulo,
+			&i.LinkDownload,
 			&i.TotalTrechos,
 		); err != nil {
 			return nil, err
@@ -434,18 +455,21 @@ func (q *Queries) SoftDeleteTrecho(ctx context.Context, arg SoftDeleteTrechoPara
 }
 
 const updateLei = `-- name: UpdateLei :one
-UPDATE leis_municipais SET numero = $2, ano = $3, nome = $4, publicacao = $5, ativo = $6, atualizado_em = now()
+UPDATE leis_municipais SET numero = $2, ano = $3, nome = $4, publicacao = $5, ativo = $6, ementa = $7, preambulo = $8, link_download = $9, atualizado_em = now()
 WHERE id = $1 AND deleted_at IS NULL
-RETURNING id, numero, ano, nome, publicacao, ativo, criado_em, atualizado_em, deleted_at, deleted_by
+RETURNING id, numero, ano, nome, publicacao, ativo, criado_em, atualizado_em, deleted_at, deleted_by, ementa, preambulo, link_download
 `
 
 type UpdateLeiParams struct {
-	ID         int64       `json:"id"`
-	Numero     string      `json:"numero"`
-	Ano        int16       `json:"ano"`
-	Nome       string      `json:"nome"`
-	Publicacao pgtype.Date `json:"publicacao"`
-	Ativo      bool        `json:"ativo"`
+	ID           int64       `json:"id"`
+	Numero       string      `json:"numero"`
+	Ano          int16       `json:"ano"`
+	Nome         string      `json:"nome"`
+	Publicacao   pgtype.Date `json:"publicacao"`
+	Ativo        bool        `json:"ativo"`
+	Ementa       string      `json:"ementa"`
+	Preambulo    string      `json:"preambulo"`
+	LinkDownload string      `json:"link_download"`
 }
 
 func (q *Queries) UpdateLei(ctx context.Context, arg UpdateLeiParams) (LeisMunicipai, error) {
@@ -456,6 +480,9 @@ func (q *Queries) UpdateLei(ctx context.Context, arg UpdateLeiParams) (LeisMunic
 		arg.Nome,
 		arg.Publicacao,
 		arg.Ativo,
+		arg.Ementa,
+		arg.Preambulo,
+		arg.LinkDownload,
 	)
 	var i LeisMunicipai
 	err := row.Scan(
@@ -469,6 +496,9 @@ func (q *Queries) UpdateLei(ctx context.Context, arg UpdateLeiParams) (LeisMunic
 		&i.AtualizadoEm,
 		&i.DeletedAt,
 		&i.DeletedBy,
+		&i.Ementa,
+		&i.Preambulo,
+		&i.LinkDownload,
 	)
 	return i, err
 }

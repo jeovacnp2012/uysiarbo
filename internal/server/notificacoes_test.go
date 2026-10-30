@@ -166,10 +166,10 @@ func parseIDDoCaminho(caminho string) (int64, error) {
 func TestAbasDeParametros(t *testing.T) {
 	m := novoMundo(t)
 	ana := m.comAna(t)
-	quer(t, ana.get("/parametros/geral"), http.StatusOK, "Semanas epidemiológicas", "Numeração")
+	quer(t, ana.get("/parametros/geral"), http.StatusOK, "Semanas SINAN", "Numeração")
 	ano := strconv.Itoa(time.Now().UTC().Year())
 	quer(t, ana.get("/parametros/semanas?ano="+ano), http.StatusOK, "Semanas de "+ano)
-	quer(t, ana.get("/parametros/numeracao"), http.StatusOK, "NT-AAAA", "INF-AAAA")
+	quer(t, ana.get("/parametros/numeracao"), http.StatusOK, "{PREFIXO}-{ANO:4}{NUMERO:7}", "{PREFIXO}-{ANO:4}{NUMERO:5}", "Reset anual")
 }
 
 func TestSemanasDoAno(t *testing.T) {
@@ -185,7 +185,7 @@ func TestSemanasDoAno(t *testing.T) {
 func TestContaOvos(t *testing.T) {
 	m := novoMundo(t)
 	ana := m.comAna(t)
-	quer(t, ana.get("/parametros/contaovos"), http.StatusOK, "API Conta Ovos", "Chave da API")
+	quer(t, ana.get("/parametros/contaovos"), http.StatusOK, "API Conta Ovos", "Chave de API")
 	quer(t, ana.post("/parametros/contaovos", url.Values{"contaovos_ativo": {"1"}, "contaovos_tipo": {"x"}}), http.StatusBadRequest)
 	quer(t, ana.post("/parametros/contaovos", url.Values{"contaovos_tipo": {"privada"}, "contaovos_uf": {"mtx"}}), http.StatusBadRequest)
 	quer(t, ana.post("/parametros/contaovos", url.Values{"contaovos_ativo": {"1"}, "contaovos_tipo": {"privada"}, "contaovos_uf": {"mt"},
@@ -195,4 +195,23 @@ func TestContaOvos(t *testing.T) {
 	if strings.Contains(rec.Body.String(), "SEGREDO-123") {
 		t.Fatal("a chave não pode voltar para a tela")
 	}
+}
+
+func TestCadastroDeAnosDeSemanas(t *testing.T) {
+	m := novoMundo(t)
+	ana := m.comAna(t)
+	quer(t, ana.get("/parametros/semanas"), http.StatusOK, "Calendário de Semanas SINAN", "02/01/2027", "2028")
+	quer(t, ana.get("/parametros/semanas/2026"), http.StatusOK, "Editar ano SINAN", "O ano não pode ser alterado")
+	quer(t, ana.get("/parametros/semanas/1999"), http.StatusNotFound)
+	f := func(ano, pri, ult, sem string) url.Values {
+		return url.Values{"ano": {ano}, "primeiro_dia": {pri}, "ultimo_dia": {ult}, "semanas": {sem}}
+	}
+	quer(t, ana.post("/parametros/semanas", f("2028", "2028-01-02", "2028-12-29", "52")), http.StatusBadRequest, "pedem 364 dias")
+	quer(t, ana.post("/parametros/semanas", f("2026", "2026-01-04", "2027-01-02", "52")), http.StatusConflict, "já está cadastrado")
+	quer(t, ana.post("/parametros/semanas", f("2028", "2028-01-02", "2029-01-06", "53")), http.StatusSeeOther)
+	quer(t, ana.get("/parametros/semanas"), http.StatusOK, "06/01/2029")
+	quer(t, ana.post("/parametros/semanas/2028", f("2028", "2028-01-02", "2029-01-06", "52")), http.StatusBadRequest)
+	quer(t, ana.post("/parametros/semanas/2028", f("2028", "2028-01-02", "2028-12-30", "52")), http.StatusSeeOther)
+	quer(t, ana.post("/parametros/semanas/2028/excluir", url.Values{}), http.StatusSeeOther)
+	quer(t, ana.post("/parametros/semanas/2028/excluir", url.Values{}), http.StatusNotFound)
 }

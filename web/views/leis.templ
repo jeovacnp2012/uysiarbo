@@ -92,8 +92,23 @@ templ LeiForm(l Layout, d LeiFormData) {
 					</div>
 				</div>
 				<div class="campo">
-					<label for="nome">Nome / ementa</label>
-					<input id="nome" name="nome" type="text" value={ d.Nome } maxlength="200" required/>
+					<label for="nome">Nome da lei</label>
+					<input id="nome" name="nome" type="text" value={ d.Nome } maxlength="200" placeholder="Ex: Lei Municipal nº 2.159/2017" required/>
+				</div>
+				<div class="campo">
+					<label for="link">Link para download (PDF)</label>
+					<input id="link" name="link" type="url" value={ d.Link } maxlength="500" placeholder="https://..."/>
+					if d.Link != "" {
+						<p class="subtitulo"><a href={ templ.SafeURL(d.Link) } target="_blank" rel="noopener noreferrer" data-icone="download">Baixar PDF</a></p>
+					}
+				</div>
+				<div class="campo">
+					<label for="ementa">Ementa (resumo do objeto da lei)</label>
+					<textarea id="ementa" name="ementa" rows="3" maxlength="2000" placeholder="Dá nova redação à Lei Municipal nº...">{ d.Ementa }</textarea>
+				</div>
+				<div class="campo">
+					<label for="preambulo">Preâmbulo (parte protocolar, opcional)</label>
+					<textarea id="preambulo" name="preambulo" rows="4" maxlength="4000" placeholder="O Sr. Fulano de Tal, Prefeito Municipal de...">{ d.Preambulo }</textarea>
 				</div>
 				if !d.Novo() {
 					<label class="marcar">

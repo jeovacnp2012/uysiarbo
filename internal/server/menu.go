@@ -197,7 +197,7 @@ func (s *handlers) menu(r *http.Request) []views.NavGrupo {
 
 		add(pr.Pode("param_ciclo"), "Ciclos", "/ciclos")
 		add(pr.Pode("param_geral"), "Geral", "/parametros/geral")
-		add(pr.Pode("param_ciclo"), "Semanas epidemiológicas", "/parametros/semanas")
+		add(pr.Pode("param_ciclo"), "Semanas SINAN", "/parametros/semanas")
 		add(pr.Pode("param_geral"), "Numeração", "/parametros/numeracao")
 		add(pr.Pode("param_mobilidade"), "Mobilidade (aplicativo)", "/parametros/mobilidade")
 		add(pr.Pode("acesso_local"), "Controle de acesso", "/parametros/acesso")

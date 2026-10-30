@@ -43,7 +43,7 @@ func Base(l Layout) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, " · UYSI ARBO</title><script>\n\t\t\t\t(function () {\n\t\t\t\t\ttry {\n\t\t\t\t\t\tvar t = localStorage.getItem('uysi-tema');\n\t\t\t\t\t\tif (t === 'escuro' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {\n\t\t\t\t\t\t\tdocument.documentElement.dataset.tema = 'escuro';\n\t\t\t\t\t\t}\n\t\t\t\t\t\tif (localStorage.getItem('uysi-menu') === 'recolhido') {\n\t\t\t\t\t\t\tdocument.documentElement.dataset.menu = 'recolhido';\n\t\t\t\t\t\t}\n\t\t\t\t\t} catch (e) {}\n\t\t\t\t})();\n\t\t\t</script><link rel=\"icon\" href=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, " · UYSI ARBO</title><script>\r\n\t\t\t\t(function () {\r\n\t\t\t\t\ttry {\r\n\t\t\t\t\t\tvar t = localStorage.getItem('uysi-tema');\r\n\t\t\t\t\t\tif (t === 'escuro' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {\r\n\t\t\t\t\t\t\tdocument.documentElement.dataset.tema = 'escuro';\r\n\t\t\t\t\t\t}\r\n\t\t\t\t\t\tif (localStorage.getItem('uysi-menu') === 'recolhido') {\r\n\t\t\t\t\t\t\tdocument.documentElement.dataset.menu = 'recolhido';\r\n\t\t\t\t\t\t}\r\n\t\t\t\t\t} catch (e) {}\r\n\t\t\t\t})();\r\n\t\t\t</script><link rel=\"icon\" href=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -530,6 +530,10 @@ func Base(l Layout) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
+		templ_7745c5c3_Err = AbasParametros(l.Abas).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
 		if l.Aviso != "" {
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "<p class=\"alerta alerta-ok\" role=\"status\">")
 			if templ_7745c5c3_Err != nil {
@@ -538,7 +542,7 @@ func Base(l Layout) templ.Component {
 			var templ_7745c5c3_Var28 string
 			templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(l.Aviso)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/layout.templ`, Line: 118, Col: 58}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `web/views/layout.templ`, Line: 119, Col: 58}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 			if templ_7745c5c3_Err != nil {

@@ -92,3 +92,24 @@ window.addEventListener('pagehide', () => {
         navigator.sendBeacon('/presenca/sair', dados);
     });
 });
+
+// Parâmetros: campo com data-so-se="campo=valor;outro=valor" só aparece quando todas as condições valem.
+document.addEventListener('DOMContentLoaded', () => {
+    const els = [...document.querySelectorAll('[data-so-se]')].filter((el) => el.dataset.soSe);
+    if (!els.length) return;
+    const aplicar = () => {
+        els.forEach((el) => {
+            const ok = el.dataset.soSe.split(';').every((c) => {
+                const [nome, valor] = c.split('=');
+                const f = document.querySelector('[name="' + nome + '"]');
+                return f && f.value === valor;
+            });
+            el.style.display = ok ? '' : 'none';
+        });
+    };
+    els.forEach((el) => el.dataset.soSe.split(';').forEach((c) => {
+        const f = document.querySelector('[name="' + c.split('=')[0] + '"]');
+        if (f) f.addEventListener('change', aplicar);
+    }));
+    aplicar();
+});

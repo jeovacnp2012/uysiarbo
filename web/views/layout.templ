@@ -114,6 +114,7 @@ templ Base(l Layout) {
 						}
 					</header>
 					<main class="pagina">
+						@AbasParametros(l.Abas)
 						if l.Aviso != "" {
 							<p class="alerta alerta-ok" role="status">{ l.Aviso }</p>
 						}

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -49,7 +50,7 @@ func (h *handlers) dadosDaLei(ctx context.Context, r *http.Request, q *sqlcclien
 		return views.LeiFormData{}, err
 	}
 	d := views.LeiFormData{
-		ID: l.ID, Numero: l.Numero, Ano: strconv.Itoa(int(l.Ano)), Nome: l.Nome, Publicacao: dataISO(l.Publicacao),
+		ID: l.ID, Numero: l.Numero, Ano: strconv.Itoa(int(l.Ano)), Nome: l.Nome, Publicacao: dataISO(l.Publicacao), Ementa: l.Ementa, Preambulo: l.Preambulo, Link: l.LinkDownload,
 		Ativo: l.Ativo, CSRF: csrfToken(r.Context()),
 	}
 	for _, t := range ts {
@@ -115,12 +116,13 @@ func (h *handlers) leiSalvar(w http.ResponseWriter, r *http.Request) {
 	}
 	numero, anoTxt := strings.TrimSpace(r.PostFormValue("numero")), strings.TrimSpace(r.PostFormValue("ano"))
 	nome, pubTxt := strings.TrimSpace(r.PostFormValue("nome")), strings.TrimSpace(r.PostFormValue("publicacao"))
+	ementa, preambulo, link := strings.TrimSpace(r.PostFormValue("ementa")), strings.TrimSpace(r.PostFormValue("preambulo")), strings.TrimSpace(r.PostFormValue("link"))
 	ativo := r.PostFormValue("ativo") == "1"
 	if id == 0 {
 		ativo = true
 	}
 	falha := func(msg string) {
-		d := views.LeiFormData{ID: id, Numero: numero, Ano: anoTxt, Nome: nome, Publicacao: pubTxt, Ativo: ativo, Erro: msg, CSRF: csrfToken(r.Context())}
+		d := views.LeiFormData{ID: id, Numero: numero, Ano: anoTxt, Nome: nome, Publicacao: pubTxt, Ementa: ementa, Preambulo: preambulo, Link: link, Ativo: ativo, Erro: msg, CSRF: csrfToken(r.Context())}
 		if id != 0 {
 			if base, err := h.dadosDaLei(r.Context(), r, q, antes); err == nil {
 				d.Trechos = base.Trechos
@@ -148,6 +150,12 @@ func (h *handlers) leiSalvar(w http.ResponseWriter, r *http.Request) {
 	case len([]rune(nome)) < 2 || len([]rune(nome)) > 200:
 		falha("Informe o nome da lei (de 2 a 200 caracteres).")
 		return
+	case len([]rune(ementa)) > 2000 || len([]rune(preambulo)) > 4000:
+		falha("A ementa pode ter até 2000 caracteres e o preâmbulo até 4000.")
+		return
+	case link != "" && !linkValido(link):
+		falha("O link do PDF deve começar com https:// (ou http://) e ter até 500 caracteres.")
+		return
 	}
 
 	tx, err := pool.Begin(r.Context())
@@ -159,9 +167,9 @@ func (h *handlers) leiSalvar(w http.ResponseWriter, r *http.Request) {
 	qt := sqlccliente.New(tx)
 	rotulo := "Lei " + numero + "/" + strconv.Itoa(ano)
 	ev := audit.Evento{Entidade: "lei", Rotulo: rotulo}
-	novo := map[string]any{"numero": numero, "ano": ano, "nome": nome, "publicacao": pubTxt, "ativo": ativo}
+	novo := map[string]any{"numero": numero, "ano": ano, "nome": nome, "publicacao": pubTxt, "ativo": ativo, "ementa": ementa, "preambulo": preambulo, "link": link}
 	if id == 0 {
-		l, err := qt.CreateLei(r.Context(), sqlccliente.CreateLeiParams{Numero: numero, Ano: int16(ano), Nome: nome, Publicacao: pub, Ativo: true})
+		l, err := qt.CreateLei(r.Context(), sqlccliente.CreateLeiParams{Numero: numero, Ano: int16(ano), Nome: nome, Publicacao: pub, Ativo: true, Ementa: ementa, Preambulo: preambulo, LinkDownload: link})
 		if violacaoUnica(err) {
 			falha("Já existe uma lei com esse número e ano.")
 			return
@@ -178,7 +186,7 @@ func (h *handlers) leiSalvar(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, fmt.Sprintf("/leis/%d", l.ID), http.StatusSeeOther)
 		return
 	}
-	if _, err := qt.UpdateLei(r.Context(), sqlccliente.UpdateLeiParams{ID: id, Numero: numero, Ano: int16(ano), Nome: nome, Publicacao: pub, Ativo: ativo}); violacaoUnica(err) {
+	if _, err := qt.UpdateLei(r.Context(), sqlccliente.UpdateLeiParams{ID: id, Numero: numero, Ano: int16(ano), Nome: nome, Publicacao: pub, Ativo: ativo, Ementa: ementa, Preambulo: preambulo, LinkDownload: link}); violacaoUnica(err) {
 		falha("Já existe uma lei com esse número e ano.")
 		return
 	} else if err != nil {
@@ -186,7 +194,7 @@ func (h *handlers) leiSalvar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	a, d := audit.Diferenca(map[string]any{
-		"numero": antes.Numero, "ano": int(antes.Ano), "nome": antes.Nome, "publicacao": dataISO(antes.Publicacao), "ativo": antes.Ativo,
+		"numero": antes.Numero, "ano": int(antes.Ano), "nome": antes.Nome, "publicacao": dataISO(antes.Publicacao), "ativo": antes.Ativo, "ementa": antes.Ementa, "preambulo": antes.Preambulo, "link": antes.LinkDownload,
 	}, novo)
 	if len(a)+len(d) == 0 {
 		naoAuditar(r)
@@ -339,4 +347,13 @@ func (h *handlers) trechoExcluir(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.excluirRegistro(w, r, "lei_trecho", tid, fmt.Sprintf("/leis/%d#trechos", leiID), fmt.Sprintf("/leis/%d", leiID))
+}
+
+// linkValido aceita só endereços http(s) com até 500 caracteres (o link do PDF da lei).
+func linkValido(l string) bool {
+	if len(l) > 500 {
+		return false
+	}
+	u, err := url.Parse(l)
+	return err == nil && (u.Scheme == "https" || u.Scheme == "http") && u.Host != ""
 }

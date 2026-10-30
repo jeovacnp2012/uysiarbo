@@ -57,6 +57,8 @@ type Layout struct {
 	Versao       string // versão atual do sistema (rodapé do menu)
 	NovidadeNova bool   // há uma versão nas Novidades que a pessoa ainda não viu
 
+	Abas []AbaParam // abas de Parâmetros, nas telas dessa área
+
 	Aviso string // mensagem de sucesso no topo da página (vem de ?aviso=<código>)
 }
 

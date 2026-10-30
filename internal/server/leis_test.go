@@ -11,12 +11,28 @@ func formLei(numero, ano, nome string) url.Values {
 	return url.Values{"numero": {numero}, "ano": {ano}, "nome": {nome}}
 }
 
+func TestLeiComLinkEEmenta(t *testing.T) {
+	m := novoMundo(t)
+	ana := m.comAna(t)
+	base := url.Values{"numero": {"2159"}, "ano": {"2017"}, "nome": {"Lei municipal 2159"}, "ementa": {"Programa de controle"}, "preambulo": {"O Prefeito faz saber"}}
+	ruim := url.Values{}
+	for k, v := range base {
+		ruim[k] = v
+	}
+	ruim.Set("link", "javascript:alert(1)")
+	quer(t, ana.post("/leis", ruim), http.StatusBadRequest, "O link do PDF")
+	base.Set("link", "https://exemplo.gov.br/lei.pdf")
+	rec := ana.post("/leis", base)
+	quer(t, rec, http.StatusSeeOther)
+	quer(t, ana.get(local(rec)), http.StatusOK, "Baixar PDF", "https://exemplo.gov.br/lei.pdf", "Programa de controle", "O Prefeito faz saber")
+}
+
 func TestLeisMunicipaisETrechos(t *testing.T) {
 	m := novoMundo(t)
 	ana := m.comAna(t)
 
 	quer(t, ana.get("/leis"), http.StatusOK, "Nenhuma lei cadastrada", "Nova lei")
-	quer(t, ana.get("/leis/nova"), http.StatusOK, "Nome / ementa")
+	quer(t, ana.get("/leis/nova"), http.StatusOK, "Nome da lei")
 	quer(t, ana.post("/leis", formLei("", "2010", "Código Sanitário")), http.StatusBadRequest, "número da lei")
 	quer(t, ana.post("/leis", formLei("12", "1800", "Código Sanitário")), http.StatusBadRequest, "ano da lei")
 	quer(t, ana.post("/leis", formLei("12", "2010", "C")), http.StatusBadRequest, "nome da lei")
@@ -100,23 +116,27 @@ func TestParametrosGeralEMobilidade(t *testing.T) {
 	ana := m.comAna(t)
 
 	// Padrões.
-	quer(t, ana.get("/parametros/geral"), http.StatusOK, "Numerar os tubitos automaticamente", "CEP padrão")
+	quer(t, ana.get("/parametros/geral"), http.StatusOK, "Tubitos — Numeração Automática", "Padrão das semanas")
 	quer(t, ana.get("/parametros/mobilidade"), http.StatusOK, "precisão do GPS", `value="20"`, `value="5"`, "Limpar dados")
 
 	// Erros: nada é gravado.
 	quer(t, ana.post("/parametros/mobilidade", url.Values{"app_aviso_precisao_gps": {"0"}, "app_coleta_gps_segundos": {"5"}, "app_dias_visitas": {"30"}, "app_dias_campanhas": {"30"}, "app_dias_investigacoes": {"30"}, "app_dias_anexos": {"30"}}), http.StatusBadRequest, "informe um número de 1 a 1000")
-	quer(t, ana.post("/parametros/geral", url.Values{"cep_padrao": {"123"}}), http.StatusBadRequest, "8 dígitos")
+	quer(t, ana.post("/parametros/mobilidade", url.Values{"app_aviso_precisao_gps": {"20"}, "app_coleta_gps_segundos": {"5"}, "app_dias_visitas": {"30"}, "app_dias_campanhas": {"30"}, "app_dias_investigacoes": {"30"}, "app_dias_anexos": {"30"}, "cep_padrao": {"123"}}), http.StatusBadRequest, "8 dígitos")
+	quer(t, ana.post("/parametros/geral", url.Values{"acesso_local": {"x"}}), http.StatusBadRequest, "escolha uma das opções")
 
 	// Salvar o geral: o checkbox desmarcado vira "0"; o CEP aceita traço.
-	quer(t, ana.post("/parametros/geral", url.Values{"campanha_estoque": {"1"}, "cep_padrao": {"78450-000"}}), http.StatusSeeOther)
-	quer(t, ana.get("/parametros/geral?ok=1"), http.StatusOK, "Parâmetros salvos", `value="78450000"`)
+	quer(t, ana.post("/parametros/geral", url.Values{"campanha_estoque": {"1"}, "acesso_local": {"parametro"}, "semana_epidemiologica": {"iso"}}), http.StatusSeeOther)
+	quer(t, ana.get("/parametros/geral?ok=1"), http.StatusOK, "Parâmetros salvos")
+	if v, _ := m.cliQ.GetClienteInfo(t.Context(), "acesso_local"); v.Valor != "parametro" {
+		t.Errorf("acesso_local = %q", v.Valor)
+	}
 	if v, _ := m.cliQ.GetClienteInfo(t.Context(), "visita_tubito_automatico"); v.Valor != "0" {
 		t.Errorf("tubito automático = %q", v.Valor)
 	}
 
 	// Mobilidade com senha: o hash vai para o banco, nunca para a tela nem para a auditoria.
 	mob := func(extra url.Values) url.Values {
-		v := url.Values{"app_aviso_precisao_gps": {"15"}, "app_coleta_gps_segundos": {"10"}, "app_dias_visitas": {"45"}, "app_dias_campanhas": {"30"}, "app_dias_investigacoes": {"30"}, "app_dias_anexos": {"30"}}
+		v := url.Values{"app_aviso_precisao_gps": {"15"}, "app_coleta_gps_segundos": {"10"}, "app_dias_visitas": {"45"}, "app_dias_campanhas": {"30"}, "app_dias_investigacoes": {"30"}, "app_dias_anexos": {"30"}, "cep_padrao": {"78450-000"}}
 		for k, vs := range extra {
 			v[k] = vs
 		}

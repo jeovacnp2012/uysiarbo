@@ -35,3 +35,11 @@ Todas as telas de Parâmetros têm uma barra de abas no topo, como no Geo Contro
 - **Semanas epidemiológicas**: o calendário de cada ano (primeiro dia, último dia e quantas semanas), calculado pelo padrão escolhido em **Ciclos**. Clique em **Ver semanas** para listar todas as semanas do ano.
 - **Numeração**: mostra o formato dos números de notificação (`NT-AAAA0000000`) e de auto de infração (`INF-AAAA00000`), o último número usado no ano e o próximo. A contagem recomeça todo ano.
 - **API Conta Ovos**: liga a integração com a Conta Ovos (contagem de ovos das ovitrampas). Informe o tipo (pública ou privada), o estado, o município e, na integração privada, a chave da API. A chave não é mostrada depois de salva; para trocar, digite outra, e para apagar, marque **Remover**. Nas alterações, a auditoria só registra se a chave está definida, nunca o valor.
+
+## Como ficaram as abas (versão 1.0.049)
+- **Geral**: método de controle de acesso aos locais, padrão das semanas (SINAN ou ISO), numeração automática dos tubitos e uso obrigatório do estoque na campanha antirrábica.
+- **Semanas SINAN**: cadastro de anos. Use **Adicionar** (o formulário já vem com o próximo ano calculado), **Editar** (o ano não muda) e **Excluir**. Do primeiro ao último dia precisam caber 52 ou 53 semanas de 7 dias. **Ver semanas** lista cada semana do ano.
+- **Numeração**: prefixo, formato (`{PREFIXO}-{ANO:4}{NUMERO:5}`), reset anual, contador do ano e próximo número. A alteração do padrão é feita pelo suporte.
+- **Mobilidade**: campos Sim/Não, CEP padrão, senha do "Limpar dados" e os dias máximos de download do aplicativo.
+- **Leis municipais**: além do nome, número, ano e publicação, informe o link do PDF, a ementa e o preâmbulo. Com o link, a ficha mostra **Baixar PDF**.
+- **API Conta Ovos**: ative a integração para ver o tipo, o estado e o município; a chave aparece só na integração privada.

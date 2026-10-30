@@ -2184,3 +2184,9 @@ select.sb-nativo {
 /* Botões da paginação: só o ícone (a dica mostra o texto) */
 .paginacao-botoes .btn-so-icone{display:inline-flex;align-items:center;justify-content:center;min-width:2.5rem;padding-left:.6rem;padding-right:.6rem}
 .paginacao-botoes .btn-so-icone .ico{width:1.1rem;height:1.1rem}
+
+/* Parâmetros em duas colunas (Mobilidade): campos à esquerda, cartão à direita */
+.param-grade.param-duas { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.5rem; align-items: start; }
+.param-cartao { border: 1px solid var(--borda, #cbd5e1); border-radius: .5rem; padding: 1rem; }
+.param-cartao h3 { margin: 0 0 .25rem; font-size: 1rem; }
+@media (max-width: 800px) { .param-grade.param-duas { grid-template-columns: 1fr; } }

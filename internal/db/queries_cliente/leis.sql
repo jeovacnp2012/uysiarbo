@@ -10,10 +10,10 @@ ORDER BY l.ano DESC, lower(l.numero);
 SELECT * FROM leis_municipais WHERE id = $1 AND deleted_at IS NULL;
 
 -- name: CreateLei :one
-INSERT INTO leis_municipais (numero, ano, nome, publicacao, ativo) VALUES ($1, $2, $3, $4, $5) RETURNING *;
+INSERT INTO leis_municipais (numero, ano, nome, publicacao, ativo, ementa, preambulo, link_download) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *;
 
 -- name: UpdateLei :one
-UPDATE leis_municipais SET numero = $2, ano = $3, nome = $4, publicacao = $5, ativo = $6, atualizado_em = now()
+UPDATE leis_municipais SET numero = $2, ano = $3, nome = $4, publicacao = $5, ativo = $6, ementa = $7, preambulo = $8, link_download = $9, atualizado_em = now()
 WHERE id = $1 AND deleted_at IS NULL
 RETURNING *;
 
