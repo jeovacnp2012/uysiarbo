@@ -64,7 +64,14 @@ WHERE a.deleted_at IS NULL AND v.deleted_at IS NULL
   AND (sqlc.narg(agente_id)::bigint IS NULL OR v.agente_id = sqlc.narg(agente_id)::bigint)
   AND (sqlc.narg(data_de)::date IS NULL OR v.data >= sqlc.narg(data_de)::date)
   AND (sqlc.narg(data_ate)::date IS NULL OR v.data <= sqlc.narg(data_ate)::date)
-  AND (sqlc.arg(endereco)::text = '' OR position(lower(sqlc.arg(endereco)::text) in lower(l.endereco)) > 0);
+  AND (sqlc.arg(endereco)::text = '' OR position(lower(sqlc.arg(endereco)::text) in lower(l.endereco)) > 0)
+  AND (sqlc.arg(numero)::text = '' OR position(lower(sqlc.arg(numero)::text) in lower(l.numero)) > 0)
+  AND (sqlc.narg(bairro_id)::bigint IS NULL OR l.bairro_id = sqlc.narg(bairro_id)::bigint)
+  AND (sqlc.narg(quarteirao_id)::bigint IS NULL OR l.quarteirao_id = sqlc.narg(quarteirao_id)::bigint)
+  AND (sqlc.arg(lado)::text = '' OR lower(l.lado) = lower(sqlc.arg(lado)::text))
+  AND (sqlc.arg(id_texto)::text = '' OR v.id::text = sqlc.arg(id_texto)::text OR v.id_externo = sqlc.arg(id_texto)::text)
+  AND (sqlc.narg(atividade_id)::bigint IS NULL OR v.atividade_id = sqlc.narg(atividade_id)::bigint)
+  AND (sqlc.narg(semana)::int IS NULL OR v.semana = sqlc.narg(semana)::int);
 
 -- name: ListAmostras :many
 SELECT a.id, a.visita_id, a.numero_tubito, a.deposito, a.larvas, a.pupas, a.status, a.total_aegypti, a.total_albopictus, a.total_negativo,
@@ -83,6 +90,13 @@ WHERE a.deleted_at IS NULL AND v.deleted_at IS NULL
   AND (sqlc.narg(data_de)::date IS NULL OR v.data >= sqlc.narg(data_de)::date)
   AND (sqlc.narg(data_ate)::date IS NULL OR v.data <= sqlc.narg(data_ate)::date)
   AND (sqlc.arg(endereco)::text = '' OR position(lower(sqlc.arg(endereco)::text) in lower(l.endereco)) > 0)
+  AND (sqlc.arg(numero)::text = '' OR position(lower(sqlc.arg(numero)::text) in lower(l.numero)) > 0)
+  AND (sqlc.narg(bairro_id)::bigint IS NULL OR l.bairro_id = sqlc.narg(bairro_id)::bigint)
+  AND (sqlc.narg(quarteirao_id)::bigint IS NULL OR l.quarteirao_id = sqlc.narg(quarteirao_id)::bigint)
+  AND (sqlc.arg(lado)::text = '' OR lower(l.lado) = lower(sqlc.arg(lado)::text))
+  AND (sqlc.arg(id_texto)::text = '' OR v.id::text = sqlc.arg(id_texto)::text OR v.id_externo = sqlc.arg(id_texto)::text)
+  AND (sqlc.narg(atividade_id)::bigint IS NULL OR v.atividade_id = sqlc.narg(atividade_id)::bigint)
+  AND (sqlc.narg(semana)::int IS NULL OR v.semana = sqlc.narg(semana)::int)
 ORDER BY v.data DESC, a.id DESC
 LIMIT sqlc.arg(limite)::int OFFSET sqlc.arg(deslocamento)::int;
 

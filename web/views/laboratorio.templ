@@ -17,14 +17,35 @@ templ Laboratorio(l Layout, d LaboratorioData) {
 			hx-push-url="true"
 			hx-indicator="#laboratorio-lista"
 		>
-			@campoTexto("f-tubito", "Tubito", "tubito", d.Filtro.Tubito, "")
 			<div class="campo campo-largo">
 				<label for="f-endereco">Endereço</label>
 				<input id="f-endereco" name="endereco" type="search" value={ d.Filtro.Endereco } placeholder="Endereço"/>
 			</div>
-			@campoEscolha("f-status", "Status", "status", "Todos", d.Situacoes)
+			@campoTexto("f-numero", "Número", "numero", d.Filtro.Numero, "")
+			<div class="campo">
+				<label for="f-bairro">Bairro</label>
+				<select
+					id="f-bairro"
+					name="bairro"
+					hx-get="/locais/quarteiroes?filtro=1"
+					hx-include="this"
+					hx-target="#f-quarteirao"
+					hx-swap="innerHTML"
+					hx-trigger="change"
+				>
+					<option value="">Todos os bairros</option>
+					@opcoesDe(d.Bairros)
+				</select>
+			</div>
+			@campoEscolha("f-quarteirao", "Quarteirão", "quarteirao", "Todos os quarteirões", d.Quarteiroes)
+			@campoTexto("f-lado", "Lado", "lado", d.Filtro.Lado, "")
+			@campoTexto("f-visita", "ID da visita", "visita", d.Filtro.Visita, "numeric")
+			@campoTexto("f-tubito", "Tubito", "tubito", d.Filtro.Tubito, "")
+			@campoEscolha("f-status", "Status", "status", "Todos os status", d.Situacoes)
 			@campoEscolha("f-ciclo", "Ciclo", "ciclo", "Todos os ciclos", d.Ciclos)
 			@campoEscolha("f-agente", "Agente", "agente", "Todos os agentes", d.Agentes)
+			@campoEscolha("f-atividade", "Atividade", "atividade", "Todas as atividades", d.Atividades)
+			@campoTexto("f-semana", "Semana", "semana", d.Filtro.Semana, "numeric")
 			<div class="campo">
 				<label for="f-de">De</label>
 				<input id="f-de" name="de" type="date" value={ d.Filtro.De } class="filtro-auto"/>

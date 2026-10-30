@@ -5,6 +5,7 @@ import (
 
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"testing"
 	"uysiarbo/internal/db/sqlccliente"
@@ -111,4 +112,41 @@ func TestLaboratorioTubitoDigitadoECicloFechado(t *testing.T) {
 
 func listarAmostras() sqlccliente.ListAmostrasParams {
 	return sqlccliente.ListAmostrasParams{Limite: 100}
+}
+
+func TestLaboratorioFiltrosComoNoGeoControle(t *testing.T) {
+	m := novoMundo(t)
+	ana := m.comAna(t)
+	c := m.cenarioVisita(t, ana)
+	agente := m.idUsuario(t, emailAna)
+
+	quer(t, ana.post("/visitas", c.form(agente, "amostra", "1")), http.StatusSeeOther)
+	vs, _ := m.cliQ.ListVisitasRecentes(t.Context(), listarVisitas())
+	vid := s64(vs[0].ID)
+	quer(t, ana.post("/visitas/"+vid+"/amostras", url.Values{"deposito": {"A1"}, "larvas": {"2"}}), http.StatusSeeOther)
+	loc, _ := m.cliQ.GetLocalQualquer(t.Context(), c.local)
+	visita, _ := m.cliQ.GetVisita(t.Context(), vs[0].ID)
+
+	acha := "/visitas/" + vid + "#amostras"
+	casos := []struct {
+		filtro string
+		acha   bool
+	}{
+		{"", true},
+		{"numero=" + loc.Numero, true}, {"numero=99999", false},
+		{"bairro=" + s64(loc.BairroID), true}, {"bairro=" + s64(loc.BairroID+1000), false},
+		{"quarteirao=" + s64(loc.QuarteiraoID), true}, {"quarteirao=" + s64(loc.QuarteiraoID+1000), false},
+		{"lado=" + loc.Lado, true}, {"lado=ZZ", false},
+		{"visita=" + vid, true}, {"visita=987654", false},
+		{"atividade=1", true}, {"atividade=3", false},
+		{"semana=" + strconv.Itoa(int(visita.Semana.Int16)), true}, {"semana=" + strconv.Itoa(int(visita.Semana.Int16)%52+1), false},
+		{"bairro=" + s64(loc.BairroID) + "&numero=" + loc.Numero + "&atividade=1&visita=" + vid, true},
+	}
+	for _, k := range casos {
+		corpo := ana.get("/laboratorio?" + k.filtro).Body.String()
+		if strings.Contains(corpo, acha) != k.acha {
+			t.Errorf("filtro %q: deveria achar = %v", k.filtro, k.acha)
+		}
+	}
+	quer(t, ana.get("/laboratorio"), http.StatusOK, "Número", "Bairro", "Quarteirão", "Lado", "ID da visita", "Atividade", "Semana")
 }

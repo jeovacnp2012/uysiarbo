@@ -22,7 +22,7 @@ Cada tubito tem o **status** (Em análise ou Concluído) e os totais de ***Aedes
 Ao lado de **Laboratório**, no menu, um selo mostra quantos tubitos ainda estão **em análise**. Quem vê só as próprias visitas conta só os próprios tubitos.
 
 ## Listagem do laboratório
-O menu **Laboratório** lista os tubitos de todas as visitas, com filtros que pesquisam na hora: tubito, endereço, status, ciclo, agente e período. **Abrir visita** leva à ficha, onde se altera o resultado. Quem vê só as próprias visitas vê só os próprios tubitos.
+O menu **Laboratório** lista os tubitos de todas as visitas, com filtros que pesquisam na hora: **endereço, número, bairro, quarteirão** (a lista muda conforme o bairro), **lado, ID da visita, tubito, status, ciclo, agente, atividade, semana** e período. O botão **Limpar filtros** volta tudo ao início. **Abrir visita** leva à ficha, onde se altera o resultado. Quem vê só as próprias visitas vê só os próprios tubitos.
 
 ## Excluir
 **Excluir tubito** envia para a **Lixeira** (dá para restaurar). Uma visita só vai para a Lixeira depois que os tubitos ativos dela forem excluídos.

@@ -136,6 +136,8 @@ type AmostraListaLinha struct {
 // LaboratorioFiltro são os filtros da listagem do laboratório.
 type LaboratorioFiltro struct {
 	Tubito, Status, Ciclo, Agente, De, Ate, Endereco string
+	Numero, Bairro, Quarteirao, Lado                 string
+	Visita, Atividade, Semana                        string // Visita = ID da visita
 }
 
 // MobilidadeFiltro são as escolhas da tela de histórico de mobilidade.
@@ -161,11 +163,14 @@ type MobilidadeData struct {
 }
 
 type LaboratorioData struct {
-	Linhas    []AmostraListaLinha
-	Filtro    LaboratorioFiltro
-	Pag       Pagination
-	Query     url.Values
-	Ciclos    []CidadeOpcao
-	Agentes   []CidadeOpcao
-	Situacoes []CidadeOpcao
+	Linhas      []AmostraListaLinha
+	Filtro      LaboratorioFiltro
+	Pag         Pagination
+	Query       url.Values
+	Ciclos      []CidadeOpcao
+	Agentes     []CidadeOpcao
+	Situacoes   []CidadeOpcao
+	Bairros     []CidadeOpcao
+	Quarteiroes []CidadeOpcao
+	Atividades  []CidadeOpcao
 }

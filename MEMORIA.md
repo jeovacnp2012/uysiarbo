@@ -145,7 +145,7 @@ Observação: a maioria dessas telas ainda não existe no UYSI ARBO (estoque, LI
 - 16 investigação e 17 laboratório (decisão do usuário: capturar já): **listas completas capturadas em bruto** (`gc/investigacao.txt`: 13.495 linhas com id, status, local, paciente, doença/data; `gc/laboratorio.txt`: 7.765 linhas com id da visita, endereço, status, data/agente, ciclo, semana, atividade, tubetes, totais). **Fichas completas não vieram** (`/investigacao/{id}` com paciente e atividades; `/local/visita/{id}` com depósitos, amostras e resultados): capturar na etapa 6.3 (laboratório) e 9 (investigação), junto com as visitas.
 
 ## Pedidos anotados (a fazer)
-- **Laboratório: todos os filtros do Geo Controle (2026-10-30)**: Endereço, Número, Bairro, Quarteirão, Lado, ID da visita, Status, Ciclo, Agente, Atividade, Semana + Limpar filtros (plano 6.3b). Fazer depois da 6.7.
+- (nenhum aberto) **Laboratório com todos os filtros do Geo Controle: feito em 2026-10-30 (versão 1.0.033, plano 6.3b).**
 
 ## Pendências de decisão do usuário
 Chaves do reCAPTCHA; domínio; provedor de geocodificação (etapa 3); WhatsApp/e-mail (12); formato SINAN/e-SUS (12); conectores de outros sistemas (4); fórmulas IIP/Breteau (7–8); modelo comercial (1 ou 14).

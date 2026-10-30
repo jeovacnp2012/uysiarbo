@@ -3,7 +3,10 @@ package server
 import (
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
+
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"uysiarbo/internal/db/sqlccliente"
 	"uysiarbo/web/views"
@@ -22,6 +25,12 @@ func (h *handlers) laboratorioLista(w http.ResponseWriter, r *http.Request) {
 	f := views.LaboratorioFiltro{
 		Tubito: txt("tubito"), Status: qs.Get("status"), Ciclo: qs.Get("ciclo"), Agente: qs.Get("agente"),
 		De: txt("de"), Ate: txt("ate"), Endereco: txt("endereco"),
+		Numero: txt("numero"), Bairro: qs.Get("bairro"), Quarteirao: qs.Get("quarteirao"), Lado: txt("lado"),
+		Visita: txt("visita"), Atividade: qs.Get("atividade"), Semana: txt("semana"),
+	}
+	semana := pgtype.Int4{}
+	if n, err := strconv.Atoi(f.Semana); err == nil && n >= 1 && n <= 53 {
+		semana = pgtype.Int4{Int32: int32(n), Valid: true}
 	}
 	if !validoEm(rotulosStatusAmostra, f.Status) {
 		f.Status = ""
@@ -29,6 +38,8 @@ func (h *handlers) laboratorioLista(w http.ResponseWriter, r *http.Request) {
 	count := sqlccliente.CountAmostrasParams{
 		SomenteAgente: h.escopoVisitas(r), Tubito: f.Tubito, Status: f.Status, CicloID: idOpcional(f.Ciclo), AgenteID: idOpcional(f.Agente),
 		DataDe: dataOpcional(f.De), DataAte: dataOpcional(f.Ate), Endereco: f.Endereco,
+		Numero: f.Numero, BairroID: idOpcional(f.Bairro), QuarteiraoID: idOpcional(f.Quarteirao), Lado: f.Lado,
+		IDTexto: f.Visita, AtividadeID: idOpcional(f.Atividade), Semana: semana,
 	}
 	pag := paginaDe(r)
 	total, err := q.CountAmostras(ctx, count)
@@ -43,6 +54,8 @@ func (h *handlers) laboratorioLista(w http.ResponseWriter, r *http.Request) {
 	rows, err := q.ListAmostras(ctx, sqlccliente.ListAmostrasParams{
 		SomenteAgente: count.SomenteAgente, Tubito: count.Tubito, Status: count.Status, CicloID: count.CicloID, AgenteID: count.AgenteID,
 		DataDe: count.DataDe, DataAte: count.DataAte, Endereco: count.Endereco,
+		Numero: count.Numero, BairroID: count.BairroID, QuarteiraoID: count.QuarteiraoID, Lado: count.Lado,
+		IDTexto: count.IDTexto, AtividadeID: count.AtividadeID, Semana: count.Semana,
 		Limite: int32(pag.PerPage), Deslocamento: int32((pag.Page - 1) * pag.PerPage),
 	})
 	if err != nil {
@@ -73,8 +86,38 @@ func (h *handlers) laboratorioLista(w http.ResponseWriter, r *http.Request) {
 	for _, u := range us {
 		d.Agentes = append(d.Agentes, views.CidadeOpcao{ID: u.ID, Rotulo: u.Nome, Selecionada: u.ID == count.AgenteID.Int64})
 	}
+	atividades, err := q.ListAtividades(ctx)
+	if err != nil {
+		h.falhaInterna(w, r, "listar atividades", err)
+		return
+	}
+	for _, a := range atividades {
+		d.Atividades = append(d.Atividades, views.CidadeOpcao{ID: int64(a.ID), Rotulo: a.Sigla + " — " + a.Nome, Selecionada: int64(a.ID) == count.AtividadeID.Int64})
+	}
+	somente, _ := h.escopoLocais(r)
+	bairros, err := q.ListBairrosAtivosParaLocal(ctx, somente)
+	if err != nil {
+		h.falhaInterna(w, r, "listar bairros", err)
+		return
+	}
+	for _, b := range bairros {
+		d.Bairros = append(d.Bairros, views.CidadeOpcao{ID: b.ID, Rotulo: b.Nome, Selecionada: b.ID == count.BairroID.Int64})
+	}
+	if count.BairroID.Valid {
+		qts, err := q.ListQuarteiroesAtivosDoBairro(ctx, sqlccliente.ListQuarteiroesAtivosDoBairroParams{BairroID: count.BairroID.Int64, SomenteUsuario: somente})
+		if err != nil {
+			h.falhaInterna(w, r, "listar quarteirões", err)
+			return
+		}
+		for _, x := range qts {
+			d.Quarteiroes = append(d.Quarteiroes, views.CidadeOpcao{ID: x.ID, Rotulo: x.Nome, Selecionada: x.ID == count.QuarteiraoID.Int64})
+		}
+	}
 	d.Query = url.Values{}
-	for k, v := range map[string]string{"tubito": f.Tubito, "status": f.Status, "ciclo": f.Ciclo, "agente": f.Agente, "de": f.De, "ate": f.Ate, "endereco": f.Endereco} {
+	for k, v := range map[string]string{
+		"tubito": f.Tubito, "status": f.Status, "ciclo": f.Ciclo, "agente": f.Agente, "de": f.De, "ate": f.Ate, "endereco": f.Endereco,
+		"numero": f.Numero, "bairro": f.Bairro, "quarteirao": f.Quarteirao, "lado": f.Lado, "visita": f.Visita, "atividade": f.Atividade, "semana": f.Semana,
+	} {
 		if v != "" {
 			d.Query.Set(k, v)
 		}

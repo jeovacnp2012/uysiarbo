@@ -43,6 +43,13 @@ WHERE a.deleted_at IS NULL AND v.deleted_at IS NULL
   AND ($6::date IS NULL OR v.data >= $6::date)
   AND ($7::date IS NULL OR v.data <= $7::date)
   AND ($8::text = '' OR position(lower($8::text) in lower(l.endereco)) > 0)
+  AND ($9::text = '' OR position(lower($9::text) in lower(l.numero)) > 0)
+  AND ($10::bigint IS NULL OR l.bairro_id = $10::bigint)
+  AND ($11::bigint IS NULL OR l.quarteirao_id = $11::bigint)
+  AND ($12::text = '' OR lower(l.lado) = lower($12::text))
+  AND ($13::text = '' OR v.id::text = $13::text OR v.id_externo = $13::text)
+  AND ($14::bigint IS NULL OR v.atividade_id = $14::bigint)
+  AND ($15::int IS NULL OR v.semana = $15::int)
 `
 
 type CountAmostrasParams struct {
@@ -54,6 +61,13 @@ type CountAmostrasParams struct {
 	DataDe        pgtype.Date `json:"data_de"`
 	DataAte       pgtype.Date `json:"data_ate"`
 	Endereco      string      `json:"endereco"`
+	Numero        string      `json:"numero"`
+	BairroID      pgtype.Int8 `json:"bairro_id"`
+	QuarteiraoID  pgtype.Int8 `json:"quarteirao_id"`
+	Lado          string      `json:"lado"`
+	IDTexto       string      `json:"id_texto"`
+	AtividadeID   pgtype.Int8 `json:"atividade_id"`
+	Semana        pgtype.Int4 `json:"semana"`
 }
 
 // ---------------------------------------------------------------- Listagem do laboratório
@@ -67,6 +81,13 @@ func (q *Queries) CountAmostras(ctx context.Context, arg CountAmostrasParams) (i
 		arg.DataDe,
 		arg.DataAte,
 		arg.Endereco,
+		arg.Numero,
+		arg.BairroID,
+		arg.QuarteiraoID,
+		arg.Lado,
+		arg.IDTexto,
+		arg.AtividadeID,
+		arg.Semana,
 	)
 	var column_1 int32
 	err := row.Scan(&column_1)
@@ -231,8 +252,15 @@ WHERE a.deleted_at IS NULL AND v.deleted_at IS NULL
   AND ($6::date IS NULL OR v.data >= $6::date)
   AND ($7::date IS NULL OR v.data <= $7::date)
   AND ($8::text = '' OR position(lower($8::text) in lower(l.endereco)) > 0)
+  AND ($9::text = '' OR position(lower($9::text) in lower(l.numero)) > 0)
+  AND ($10::bigint IS NULL OR l.bairro_id = $10::bigint)
+  AND ($11::bigint IS NULL OR l.quarteirao_id = $11::bigint)
+  AND ($12::text = '' OR lower(l.lado) = lower($12::text))
+  AND ($13::text = '' OR v.id::text = $13::text OR v.id_externo = $13::text)
+  AND ($14::bigint IS NULL OR v.atividade_id = $14::bigint)
+  AND ($15::int IS NULL OR v.semana = $15::int)
 ORDER BY v.data DESC, a.id DESC
-LIMIT $10::int OFFSET $9::int
+LIMIT $17::int OFFSET $16::int
 `
 
 type ListAmostrasParams struct {
@@ -244,6 +272,13 @@ type ListAmostrasParams struct {
 	DataDe        pgtype.Date `json:"data_de"`
 	DataAte       pgtype.Date `json:"data_ate"`
 	Endereco      string      `json:"endereco"`
+	Numero        string      `json:"numero"`
+	BairroID      pgtype.Int8 `json:"bairro_id"`
+	QuarteiraoID  pgtype.Int8 `json:"quarteirao_id"`
+	Lado          string      `json:"lado"`
+	IDTexto       string      `json:"id_texto"`
+	AtividadeID   pgtype.Int8 `json:"atividade_id"`
+	Semana        pgtype.Int4 `json:"semana"`
 	Deslocamento  int32       `json:"deslocamento"`
 	Limite        int32       `json:"limite"`
 }
@@ -276,6 +311,13 @@ func (q *Queries) ListAmostras(ctx context.Context, arg ListAmostrasParams) ([]L
 		arg.DataDe,
 		arg.DataAte,
 		arg.Endereco,
+		arg.Numero,
+		arg.BairroID,
+		arg.QuarteiraoID,
+		arg.Lado,
+		arg.IDTexto,
+		arg.AtividadeID,
+		arg.Semana,
 		arg.Deslocamento,
 		arg.Limite,
 	)
