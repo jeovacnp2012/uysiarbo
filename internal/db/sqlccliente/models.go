@@ -356,6 +356,50 @@ type Quarteiro struct {
 	DeletedBy    pgtype.Int8        `json:"deleted_by"`
 }
 
+type Reconhecimento struct {
+	ID                  int64              `json:"id"`
+	BairroID            int64              `json:"bairro_id"`
+	CicloID             int64              `json:"ciclo_id"`
+	DataInicio          pgtype.Date        `json:"data_inicio"`
+	DataFim             pgtype.Date        `json:"data_fim"`
+	ImoveisResidenciais pgtype.Int4        `json:"imoveis_residenciais"`
+	ImoveisComerciais   pgtype.Int4        `json:"imoveis_comerciais"`
+	ImoveisOutros       pgtype.Int4        `json:"imoveis_outros"`
+	Habitantes          pgtype.Int4        `json:"habitantes"`
+	Quarteiroes         pgtype.Int4        `json:"quarteiroes"`
+	PontosEstrategicos  pgtype.Int4        `json:"pontos_estrategicos"`
+	Armadilhas          pgtype.Int4        `json:"armadilhas"`
+	TerrenosBaldios     pgtype.Int4        `json:"terrenos_baldios"`
+	Caes                pgtype.Int4        `json:"caes"`
+	Gatos               pgtype.Int4        `json:"gatos"`
+	Roedores            pgtype.Int4        `json:"roedores"`
+	Latitude            pgtype.Float8      `json:"latitude"`
+	Longitude           pgtype.Float8      `json:"longitude"`
+	Altitude            pgtype.Float8      `json:"altitude"`
+	DistanciaCentro     pgtype.Float8      `json:"distancia_centro"`
+	Infraestrutura      []byte             `json:"infraestrutura"`
+	Riscos              []byte             `json:"riscos"`
+	Observacao          string             `json:"observacao"`
+	CriadoPor           pgtype.Int8        `json:"criado_por"`
+	CriadoEm            pgtype.Timestamptz `json:"criado_em"`
+	AtualizadoEm        pgtype.Timestamptz `json:"atualizado_em"`
+	DeletedAt           pgtype.Timestamptz `json:"deleted_at"`
+	DeletedBy           pgtype.Int8        `json:"deleted_by"`
+}
+
+type ResumosSemanai struct {
+	ID          int64              `json:"id"`
+	CicloID     int64              `json:"ciclo_id"`
+	Semana      int16              `json:"semana"`
+	BairroID    pgtype.Int8        `json:"bairro_id"`
+	AtividadeID pgtype.Int2        `json:"atividade_id"`
+	Dados       []byte             `json:"dados"`
+	GeradoPor   pgtype.Int8        `json:"gerado_por"`
+	GeradoEm    pgtype.Timestamptz `json:"gerado_em"`
+	DeletedAt   pgtype.Timestamptz `json:"deleted_at"`
+	DeletedBy   pgtype.Int8        `json:"deleted_by"`
+}
+
 type Sesso struct {
 	TokenHash []byte             `json:"token_hash"`
 	UsuarioID pgtype.Int8        `json:"usuario_id"`

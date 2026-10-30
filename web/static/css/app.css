@@ -1699,3 +1699,4 @@ form.inline {
 .dash-barra { display: block; height: 100%; background: var(--marca); opacity: 0.55; border-radius: 0.25rem; }
 .dash-destaque { display: block; height: 100%; background: var(--marca); opacity: 1; border-radius: 0.25rem; }
 .dash-valor { text-align: right; font-variant-numeric: tabular-nums; }
+.menu-item-embreve { opacity: 0.45; cursor: not-allowed; }

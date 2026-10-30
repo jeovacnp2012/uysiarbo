@@ -1,0 +1,207 @@
+package views
+
+import "strconv"
+
+type ReconhecimentoLinha struct {
+	ID                      int64
+	Bairro, Ciclo           string
+	Inicio, Fim             string
+	Imoveis, Habitantes     int
+}
+
+type ReconhecimentosData struct {
+	Linhas        []ReconhecimentoLinha
+	Ciclos        []CidadeOpcao
+	Bairros       []CidadeOpcao
+	PodeAdicionar bool
+	Aviso         string
+}
+
+type CampoNumero struct{ Nome, Rotulo, Valor string }
+
+type ItemSimNao struct {
+	Chave, Rotulo string
+	Opcoes        []CidadeOpcao
+}
+
+type ReconhecimentoForm struct {
+	ID                         int64
+	Fixo                       bool // bairro e ciclo não mudam depois de criado
+	PodeEditar                 bool
+	Ciclos, Bairros            []CidadeOpcao
+	Inicio, Fim                string
+	Numeros                    []CampoNumero
+	Latitude, Longitude        string
+	Altitude, Distancia        string
+	Infraestrutura, Riscos     []ItemSimNao
+	Observacao                 string
+	Aviso, Erro, CSRF          string
+}
+
+templ Reconhecimentos(l Layout, d ReconhecimentosData) {
+	@Base(l) {
+		@PageHeader("Reconhecimento geográfico", "A ficha de cada bairro em cada ciclo: imóveis, habitantes, infraestrutura, riscos e animais.") {
+			if d.PodeAdicionar {
+				<a class="btn btn-primario" href="/reconhecimentos/novo">Novo reconhecimento</a>
+			}
+		}
+		if d.Aviso != "" {
+			<p class="alerta alerta-ok" role="status">{ d.Aviso }</p>
+		}
+		<form method="get" action="/reconhecimentos" class="cartao filtros">
+			<div class="campo">
+				<label for="rc-ciclo">Ciclo</label>
+				<select id="rc-ciclo" name="ciclo" onchange="this.form.submit()">
+					<option value="">Todos</option>
+					@opcoesDe(d.Ciclos)
+				</select>
+			</div>
+			<div class="campo">
+				<label for="rc-bairro">Bairro</label>
+				<select id="rc-bairro" name="bairro" onchange="this.form.submit()">
+					<option value="">Todos</option>
+					@opcoesDe(d.Bairros)
+				</select>
+			</div>
+		</form>
+		@PaginacaoDoLayout(l)
+		<div class="cartao tabela-rolavel">
+			<table class="tabela">
+				<thead>
+					<tr><th>Bairro</th><th>Ciclo</th><th>Início</th><th>Fim</th><th>Imóveis</th><th>Habitantes</th><th></th></tr>
+				</thead>
+				<tbody>
+					if len(d.Linhas) == 0 {
+						<tr><td colspan="7">Nenhum reconhecimento encontrado.</td></tr>
+					}
+					for _, x := range d.Linhas {
+						<tr>
+							<td>{ x.Bairro }</td>
+							<td>{ x.Ciclo }</td>
+							<td>{ x.Inicio }</td>
+							<td>{ x.Fim }</td>
+							<td>{ strconv.Itoa(x.Imoveis) }</td>
+							<td>{ strconv.Itoa(x.Habitantes) }</td>
+							<td><a class="btn" href={ templ.SafeURL("/reconhecimentos/" + strconv.FormatInt(x.ID, 10)) }>Abrir</a></td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+		@PaginacaoDoLayout(l)
+	}
+}
+
+templ ReconhecimentoFicha(l Layout, d ReconhecimentoForm) {
+	@Base(l) {
+		@PageHeader("Reconhecimento geográfico", "Ficha do bairro no ciclo.")
+		if d.ID != 0 {
+			@Presenca("reconhecimento", strconv.FormatInt(d.ID, 10), modoDaTela(d.PodeEditar))
+		}
+		if d.Aviso != "" {
+			<p class="alerta alerta-ok" role="status">{ d.Aviso }</p>
+		}
+		if d.Erro != "" {
+			<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
+		}
+		<form method="post" action={ templ.SafeURL(reconhecimentoAcao(d.ID)) } class="cartao grade-form">
+			<input type="hidden" name="csrf" value={ d.CSRF }/>
+			<div class="campo">
+				<label for="rf-bairro">Bairro</label>
+				<select id="rf-bairro" name="bairro_id" disabled?={ d.Fixo }>
+					<option value="">Escolha</option>
+					@opcoesDe(d.Bairros)
+				</select>
+			</div>
+			<div class="campo">
+				<label for="rf-ciclo">Ciclo</label>
+				<select id="rf-ciclo" name="ciclo_id" disabled?={ d.Fixo }>
+					<option value="">Escolha</option>
+					@opcoesDe(d.Ciclos)
+				</select>
+			</div>
+			<div class="campo">
+				<label for="rf-inicio">Início</label>
+				<input id="rf-inicio" type="date" name="data_inicio" value={ d.Inicio } disabled?={ !d.PodeEditar }/>
+			</div>
+			<div class="campo">
+				<label for="rf-fim">Fim</label>
+				<input id="rf-fim" type="date" name="data_fim" value={ d.Fim } disabled?={ !d.PodeEditar }/>
+			</div>
+			for _, c := range d.Numeros {
+				<div class="campo">
+					<label for={ "rf-" + c.Nome }>{ c.Rotulo }</label>
+					<input id={ "rf-" + c.Nome } type="number" min="0" name={ c.Nome } value={ c.Valor } disabled?={ !d.PodeEditar }/>
+				</div>
+			}
+			<div class="campo">
+				<label for="rf-lat">Latitude</label>
+				<input id="rf-lat" type="text" inputmode="decimal" name="latitude" value={ d.Latitude } disabled?={ !d.PodeEditar }/>
+			</div>
+			<div class="campo">
+				<label for="rf-lon">Longitude</label>
+				<input id="rf-lon" type="text" inputmode="decimal" name="longitude" value={ d.Longitude } disabled?={ !d.PodeEditar }/>
+			</div>
+			<div class="campo">
+				<label for="rf-alt">Altitude (m)</label>
+				<input id="rf-alt" type="text" inputmode="decimal" name="altitude" value={ d.Altitude } disabled?={ !d.PodeEditar }/>
+			</div>
+			<div class="campo">
+				<label for="rf-dist">Distância do centro (km)</label>
+				<input id="rf-dist" type="text" inputmode="decimal" name="distancia_centro" value={ d.Distancia } disabled?={ !d.PodeEditar }/>
+			</div>
+			<fieldset class="campo-largo">
+				<legend>Infraestrutura</legend>
+				<div class="grade-form">
+					for _, it := range d.Infraestrutura {
+						<div class="campo">
+							<label for={ "rf-i-" + it.Chave }>{ it.Rotulo }</label>
+							<select id={ "rf-i-" + it.Chave } name={ "infra_" + it.Chave } data-sem-busca disabled?={ !d.PodeEditar }>
+								@opcoesDe(it.Opcoes)
+							</select>
+						</div>
+					}
+				</div>
+			</fieldset>
+			<fieldset class="campo-largo">
+				<legend>Ocorrência ou risco de ocorrência</legend>
+				<div class="grade-form">
+					for _, it := range d.Riscos {
+						<div class="campo">
+							<label for={ "rf-r-" + it.Chave }>{ it.Rotulo }</label>
+							<select id={ "rf-r-" + it.Chave } name={ "risco_" + it.Chave } data-sem-busca disabled?={ !d.PodeEditar }>
+								@opcoesDe(it.Opcoes)
+							</select>
+						</div>
+					}
+				</div>
+			</fieldset>
+			<div class="campo campo-largo">
+				<label for="rf-obs">Observações</label>
+				<textarea id="rf-obs" name="observacao" rows="3" disabled?={ !d.PodeEditar }>{ d.Observacao }</textarea>
+			</div>
+			if d.PodeEditar {
+				<div class="form-acoes campo-largo">
+					<button type="submit" class="btn btn-primario">Salvar</button>
+					<a class="btn" href="/reconhecimentos">Voltar</a>
+				</div>
+			} else {
+				<div class="form-acoes campo-largo"><a class="btn" href="/reconhecimentos">Voltar</a></div>
+			}
+		</form>
+		if d.ID != 0 && d.PodeEditar {
+			<form method="post" action={ templ.SafeURL("/reconhecimentos/" + strconv.FormatInt(d.ID, 10) + "/excluir") } class="cartao">
+				<input type="hidden" name="csrf" value={ d.CSRF }/>
+				<p class="subtitulo">Nada é apagado de verdade: o reconhecimento vai para a Lixeira e dá para restaurar.</p>
+				<button type="submit" class="btn btn-perigo">Excluir</button>
+			</form>
+		}
+	}
+}
+
+func reconhecimentoAcao(id int64) string {
+	if id == 0 {
+		return "/reconhecimentos"
+	}
+	return "/reconhecimentos/" + strconv.FormatInt(id, 10)
+}

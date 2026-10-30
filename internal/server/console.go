@@ -648,14 +648,16 @@ func (h *handlers) masterResetarSenha(w http.ResponseWriter, r *http.Request) {
 // modulosProntos são os blocos do catálogo que já têm tela. Cada etapa nova acrescenta o seu aqui
 // (o painel inicial mostra "disponível" e leva à tela, em vez de "em construção").
 var modulosProntos = map[string]struct{ href, permissao string }{
-	"Bairros":      {"/bairros", "bairro_visualizar"},
-	"Locais":       {"/locais", "local_visualizar"},
-	"Mapa":         {"/mapa", "bairro_visualizar"},
-	"Visitas":      {"/visitas", "visita_visualizar"},
-	"Laboratório":  {"/laboratorio", "visita_laboratorio_visualizar"},
-	"B.I.":         {"/bi", "bi_visualizar"},
-	"Mobilidade":   {"/mobilidade/historico", "historico_mobilidade"},
-	"Auditoria":    {"/auditoria", "auditoria_sistema"},
-	"Parâmetros":   {"/ciclos", "param_ciclo"},
-	"Configuração": {"/usuarios", "conf_usuario"},
+	"Bairros":        {"/bairros", "bairro_visualizar"},
+	"Locais":         {"/locais", "local_visualizar"},
+	"Mapa":           {"/mapa", "bairro_visualizar"},
+	"Visitas":        {"/visitas", "visita_visualizar"},
+	"Laboratório":    {"/laboratorio", "visita_laboratorio_visualizar"},
+	"B.I.":           {"/bi", "bi_visualizar"},
+	"Reconhecimento": {"/reconhecimentos", "reconhecimento_visualizar"},
+	"Resumo semanal": {"/resumosemanal", "resumosemanal_visualizar"},
+	"Mobilidade":     {"/mobilidade/historico", "historico_mobilidade"},
+	"Auditoria":      {"/auditoria", "auditoria_sistema"},
+	"Parâmetros":     {"/ciclos", "param_ciclo"},
+	"Configuração":   {"/usuarios", "conf_usuario"},
 }

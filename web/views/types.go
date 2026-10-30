@@ -27,6 +27,8 @@ type NavGrupo struct {
 	Itens []NavItem
 	// Contagem aparece como um selo ao lado do nome (0 = sem selo).
 	Contagem int
+	// EmBreve mostra o item apagado, sem link (a tela ainda não existe).
+	EmBreve bool
 }
 
 // Contem diz se o grupo é (ou tem dentro dele) a página ativa.

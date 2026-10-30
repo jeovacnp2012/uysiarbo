@@ -141,6 +141,16 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 			if len(itens) > 0 {
 				itens[len(itens)-1] += " (contando os excluídos)"
 			}
+			f, err := q.ContarFichasDoBairro(ctx, id)
+			if err != nil {
+				return nil, err
+			}
+			if f.Reconhecimentos > 0 {
+				itens = append(itens, plural(f.Reconhecimentos, "reconhecimento geográfico", "reconhecimentos geográficos"))
+			}
+			if f.Resumos > 0 {
+				itens = append(itens, plural(f.Resumos, "resumo semanal", "resumos semanais"))
+			}
 			return juntar(itens), nil
 		},
 		paiExcluido: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, error) {
@@ -329,6 +339,16 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 				return nil, err
 			} else if v.Total > 0 {
 				itens = append(itens, plural(v.Total, "visita", "visitas")+" (contando as excluídas)")
+			}
+			f, err := q.ContarFichasDoCiclo(ctx, id)
+			if err != nil {
+				return nil, err
+			}
+			if f.Reconhecimentos > 0 {
+				itens = append(itens, plural(f.Reconhecimentos, "reconhecimento geográfico", "reconhecimentos geográficos"))
+			}
+			if f.Resumos > 0 {
+				itens = append(itens, plural(f.Resumos, "resumo semanal", "resumos semanais"))
 			}
 			n, err := q.ContarVinculosDoCiclo(ctx, id)
 			if err != nil {
@@ -545,10 +565,64 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 			return out, err
 		},
 	},
+	"reconhecimento": {
+		Chave: "reconhecimento", Rotulo: "Reconhecimento geográfico", Plural: "Reconhecimentos geográficos", Genero: "o",
+		soft: func(ctx context.Context, q *sqlccliente.Queries, id int64, por pgtype.Int8) (int64, error) {
+			return q.SoftDeleteReconhecimento(ctx, sqlccliente.SoftDeleteReconhecimentoParams{ID: id, Por: por})
+		},
+		restore: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			return q.RestoreReconhecimento(ctx, id)
+		},
+		force: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			return q.ForceDeleteReconhecimento(ctx, id)
+		},
+		rotulo: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, bool, error) {
+			x, err := q.GetReconhecimentoQualquer(ctx, id)
+			return "Reconhecimento " + x.BairroNome + " — " + x.CicloNome, x.DeletedAt.Valid, err
+		},
+		filhosAtivos: func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
+		vinculos:     func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
+		paiExcluido:  func(context.Context, *sqlccliente.Queries, int64) (string, error) { return "", nil },
+		lixeira: func(ctx context.Context, q *sqlccliente.Queries) ([]views.LixeiraLinha, error) {
+			rows, err := q.ListReconhecimentosExcluidos(ctx)
+			out := make([]views.LixeiraLinha, len(rows))
+			for i, r := range rows {
+				out[i] = views.LixeiraLinha{ID: r.ID, Rotulo: r.Rotulo, Contexto: r.Contexto, Quando: r.DeletedAt.Time, Por: r.ExcluidoPor}
+			}
+			return out, err
+		},
+	},
+	"resumosemanal": {
+		Chave: "resumosemanal", Rotulo: "Resumo semanal", Plural: "Resumos semanais", Genero: "o",
+		soft: func(ctx context.Context, q *sqlccliente.Queries, id int64, por pgtype.Int8) (int64, error) {
+			return q.SoftDeleteResumoSemanal(ctx, sqlccliente.SoftDeleteResumoSemanalParams{ID: id, Por: por})
+		},
+		restore: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			return q.RestoreResumoSemanal(ctx, id)
+		},
+		force: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			return q.ForceDeleteResumoSemanal(ctx, id)
+		},
+		rotulo: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, bool, error) {
+			x, err := q.GetResumoSemanalQualquer(ctx, id)
+			return "Resumo semanal — semana " + strconv.Itoa(int(x.Semana)) + " (" + x.CicloNome + ")", x.DeletedAt.Valid, err
+		},
+		filhosAtivos: func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
+		vinculos:     func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
+		paiExcluido:  func(context.Context, *sqlccliente.Queries, int64) (string, error) { return "", nil },
+		lixeira: func(ctx context.Context, q *sqlccliente.Queries) ([]views.LixeiraLinha, error) {
+			rows, err := q.ListResumosSemanaisExcluidos(ctx)
+			out := make([]views.LixeiraLinha, len(rows))
+			for i, r := range rows {
+				out[i] = views.LixeiraLinha{ID: r.ID, Rotulo: r.Rotulo, Contexto: r.Contexto, Quando: r.DeletedAt.Time, Por: r.ExcluidoPor}
+			}
+			return out, err
+		},
+	},
 }
 
 // ordemDaLixeira é a ordem das abas.
-var ordemDaLixeira = []string{"local", "quarteirao", "bairro", "cidade", "ciclo", "lei", "lei_trecho", "visita", "amostra", "grupo", "mapeamento"}
+var ordemDaLixeira = []string{"local", "quarteirao", "bairro", "cidade", "ciclo", "lei", "lei_trecho", "visita", "amostra", "reconhecimento", "resumosemanal", "grupo", "mapeamento"}
 
 // excluirLogicamente aplica a regra completa: recusa se há filhos ativos; senão marca deleted_at.
 // Devolve os motivos da recusa (vazio = excluído), o nome do registro e o erro de banco, se houve.

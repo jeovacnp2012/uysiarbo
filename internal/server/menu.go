@@ -25,6 +25,19 @@ func (s *handlers) menu(r *http.Request) []views.NavGrupo {
 	pr := a.sess.Principal
 	_, emCliente := tenant.FromContext(r.Context())
 
+	// Painéis primeiro, logo depois de Início: Dashboard, B.I. e B.I. Epidemiológico (este ainda sem tela).
+	if emCliente {
+		if pr.Pode("visita_visualizar") {
+			menu = append(menu, views.NavGrupo{Label: "Dashboard", Icone: "dashboard", Href: "/dashboard"})
+		}
+		if pr.Pode("bi_visualizar") {
+			menu = append(menu, views.NavGrupo{Label: "B.I.", Icone: "bi", Href: "/bi"})
+		}
+		if pr.Pode("bi_epi_visualizar") {
+			menu = append(menu, views.NavGrupo{Label: "B.I. Epidemiológico", Icone: "bi", EmBreve: true})
+		}
+	}
+
 	var itens []views.NavItem
 	add := func(permitido bool, label, href string) {
 		if permitido {
@@ -43,6 +56,7 @@ func (s *handlers) menu(r *http.Request) []views.NavGrupo {
 		add(pode, "Bairros", "/bairros")
 		add(pode, "Cidades", "/cidades")
 		add(pr.Pode("local_visualizar"), "Locais", "/locais")
+		add(pr.Pode("reconhecimento_visualizar"), "Reconhecimento geográfico", "/reconhecimentos")
 		incluir("Território", "territorio")
 
 		if pr.Pode("bairro_visualizar") || pr.Pode("local_visualizar") {
@@ -62,16 +76,15 @@ func (s *handlers) menu(r *http.Request) []views.NavGrupo {
 			}})
 		}
 
+		if pr.Pode("resumosemanal_visualizar") {
+			menu = append(menu, views.NavGrupo{Label: "Resumo semanal", Icone: "bi", Href: "/resumosemanal"})
+		}
+
 		if relatoriosPermitidos(pr.Pode) {
 			menu = append(menu, views.NavGrupo{Label: "Relatórios", Icone: "visitas", Href: "/relatorios"})
 		}
 
-		if pr.Pode("bi_visualizar") {
-			menu = append(menu, views.NavGrupo{Label: "B.I.", Icone: "mapa", Href: "/bi"})
-		}
-
 		if pr.Pode("visita_visualizar") {
-			menu = append(menu, views.NavGrupo{Label: "Dashboard", Icone: "inicio", Href: "/dashboard"})
 			menu = append(menu, views.NavGrupo{Label: "Visitas", Icone: "visitas", Href: "/visitas"})
 		}
 

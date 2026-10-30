@@ -22,15 +22,16 @@ type recursoPresenca struct {
 }
 
 var recursosPresenca = map[string]recursoPresenca{
-	"bairro":  {ver: "bairro_visualizar", editar: "bairro_adicionar", noCliente: true},
-	"grupo":   {ver: "local_grupo_visualizar", editar: "local_grupo_gerenciar", noCliente: true},
-	"local":   {ver: "local_visualizar", editar: "local_adicionar", noCliente: true},
-	"cidade":  {ver: "bairro_visualizar", editar: "bairro_adicionar", noCliente: true},
-	"ciclo":   {ver: "param_ciclo", editar: "param_ciclo", noCliente: true},
-	"visita":  {ver: "visita_visualizar", editar: "visita_editar", noCliente: true},
-	"lei":     {ver: "param_leis", editar: "param_leis", noCliente: true},
-	"usuario": {ver: "conf_usuario", editar: "conf_usuario", noCliente: true},
-	"papel":   {ver: "conf_papel", editar: "conf_papel", noCliente: true},
+	"bairro":         {ver: "bairro_visualizar", editar: "bairro_adicionar", noCliente: true},
+	"grupo":          {ver: "local_grupo_visualizar", editar: "local_grupo_gerenciar", noCliente: true},
+	"local":          {ver: "local_visualizar", editar: "local_adicionar", noCliente: true},
+	"cidade":         {ver: "bairro_visualizar", editar: "bairro_adicionar", noCliente: true},
+	"ciclo":          {ver: "param_ciclo", editar: "param_ciclo", noCliente: true},
+	"visita":         {ver: "visita_visualizar", editar: "visita_editar", noCliente: true},
+	"reconhecimento": {ver: "reconhecimento_visualizar", editar: "reconhecimento_adicionar", noCliente: true},
+	"lei":            {ver: "param_leis", editar: "param_leis", noCliente: true},
+	"usuario":        {ver: "conf_usuario", editar: "conf_usuario", noCliente: true},
+	"papel":          {ver: "conf_papel", editar: "conf_papel", noCliente: true},
 }
 
 var (
