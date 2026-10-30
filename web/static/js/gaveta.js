@@ -111,6 +111,9 @@
         botao.addEventListener('click', function () { abrir(form); });
         form._gavetaBotao = botao;
         form.parentNode.insertBefore(barra, form);
+        // O painel vai para o <body>, no mesmo nível do fundo escurecido: dentro de um contêiner da página o fundo
+        // ficaria por cima dele e engoliria a roda do mouse e os cliques.
+        document.body.appendChild(form);
 
         form.addEventListener('input', function () { atualizarContagem(form); });
         form.addEventListener('change', function () { atualizarContagem(form); });
