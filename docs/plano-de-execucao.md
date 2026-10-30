@@ -172,7 +172,7 @@ Objetivo: migrar dados de outros sistemas e de planilhas, com segurança.
 ## Etapa 13 — Produção, segurança e LGPD
 - [ ] 13.1 Deploy na VPS (Nginx, serviço systemd, Postgres, TLS) e script de atualização sem queda
 - [ ] 13.2 Backups e restauração testada, por schema de cliente
-- [~] 13.3 LGPD: (a) CPF cifrado com DADOS_CHAVE e comando `dados cifrar` e (b) registro de acesso a fichas com dados pessoais: feitos na 1.0.068; faltam (c) anonimização a pedido do titular e (d) retenção/exclusão por prazo; telefones seguem em texto (decisão: são pesquisados e usados nas mensagens)
+- [~] 13.3 LGPD: (a) CPF cifrado com DADOS_CHAVE e comando `dados cifrar` e (b) registro de acesso a fichas com dados pessoais: feitos na 1.0.068; (c) anonimização a pedido do titular feita na 1.0.070 (`/lgpd/anonimizar`); falta (d) retenção/exclusão por prazo; telefones seguem em texto (decisão: são pesquisados e usados nas mensagens)
 - [ ] 13.4 Observabilidade (logs, métricas, alertas) e testes de carga
 
 ## Etapa 14 — Aplicativo do tablet (Flutter) — **última etapa do projeto**

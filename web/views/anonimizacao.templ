@@ -1,0 +1,83 @@
+package views
+
+import "strconv"
+
+type AnonimizarAchado struct {
+	Rotulo string
+	Total  int
+}
+
+type AnonimizarData struct {
+	Tipo, Valor, Erro, CSRF string
+	Buscou, Feito           bool
+	Total                   int
+	Achados                 []AnonimizarAchado
+}
+
+templ Anonimizar(l Layout, d AnonimizarData) {
+	@Base(l) {
+		@PageHeader("Anonimização (LGPD)", "Atende o pedido de um titular: apaga os dados pessoais dele nos registros e mantém o restante (datas, endereço, resultados).") {
+		}
+		if d.Erro != "" {
+			<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
+		}
+		if d.Feito {
+			<p class="alerta alerta-ok" role="status">Pronto: { strconv.Itoa(d.Total) } registro(s) anonimizado(s).</p>
+		}
+		<form method="post" action="/lgpd/anonimizar/buscar" class="cartao" autocomplete="off" hx-boost="false">
+			<input type="hidden" name="csrf" value={ d.CSRF }/>
+			<div class="campo">
+				<label for="an-tipo">Identificador do titular</label>
+				<select id="an-tipo" name="tipo" data-sem-busca>
+					<option value="cpf" selected?={ d.Tipo == "cpf" }>CPF</option>
+					<option value="telefone" selected?={ d.Tipo == "telefone" }>Telefone</option>
+					<option value="email" selected?={ d.Tipo == "email" }>E-mail</option>
+				</select>
+			</div>
+			<div class="campo">
+				<label for="an-valor">Valor</label>
+				<input id="an-valor" name="valor" type="text" required maxlength="150"/>
+			</div>
+			<div class="form-acoes">
+				<button type="submit" class="btn btn-primario" data-icone="search">Buscar registros</button>
+			</div>
+		</form>
+		if d.Buscou && !d.Feito {
+			<section class="cartao">
+				if len(d.Achados) == 0 {
+					<p>Nenhum registro encontrado com esse identificador.</p>
+				} else {
+					<h2>Registros encontrados</h2>
+					<ul>
+						for _, a := range d.Achados {
+							<li>{ a.Rotulo }: <strong>{ strconv.Itoa(a.Total) }</strong></li>
+						}
+					</ul>
+					<form method="post" action="/lgpd/anonimizar/confirmar" hx-boost="false">
+						<input type="hidden" name="csrf" value={ d.CSRF }/>
+						<input type="hidden" name="tipo" value={ d.Tipo }/>
+						<input type="hidden" name="valor" value={ d.Valor }/>
+						<div class="campo">
+							<label for="an-motivo">Motivo (ex.: número do pedido do titular)</label>
+							<input id="an-motivo" name="motivo" type="text" required minlength="5" maxlength="300"/>
+						</div>
+						<label><input type="checkbox" name="confirmo" value="1"/> Confirmo: os dados pessoais desses registros serão apagados e isso não tem volta.</label>
+						<div class="form-acoes">
+							<button type="submit" class="btn btn-perigo" data-icone="trash">Anonimizar</button>
+						</div>
+					</form>
+				}
+			</section>
+		}
+		if d.Feito {
+			<section class="cartao">
+				<h2>Registros anonimizados</h2>
+				<ul>
+					for _, a := range d.Achados {
+						<li>{ a.Rotulo }: <strong>{ strconv.Itoa(a.Total) }</strong></li>
+					}
+				</ul>
+			</section>
+		}
+	}
+}

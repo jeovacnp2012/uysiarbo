@@ -153,6 +153,7 @@ var Rotulos = map[string]string{
 	"senha.recuperar_pedido":              "Pediu recuperação de senha por e-mail",
 	"senha.recuperar":                     "Criou nova senha pelo link do e-mail",
 	"dados_pessoais.ver":                  "Abriu ficha com dados pessoais",
+	"lgpd.anonimizar":                     "Anonimizou dados pessoais de um titular",
 	"usuario.criar":                       "Criou um usuário",
 	"usuario.editar":                      "Editou um usuário",
 	"usuario.resetar_senha":               "Resetou a senha de um usuário",

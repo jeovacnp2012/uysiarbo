@@ -435,6 +435,9 @@ func New(d Deps) http.Handler {
 	r.Get("/mapa/locais.geojson", h.exigir("local_visualizar", h.mapaLocais))
 
 	r.Get("/lixeira", h.exigir("conf_lixeira", h.lixeiraPagina))
+	r.Get("/lgpd/anonimizar", h.exigir("conf_exclusao_definitiva", h.anonimizarPagina))
+	r.Post("/lgpd/anonimizar/buscar", h.exigir("conf_exclusao_definitiva", h.anonimizarBuscar))
+	r.Post("/lgpd/anonimizar/confirmar", h.exigir("conf_exclusao_definitiva", h.anonimizarConfirmar))
 	r.Post("/lixeira/{tipo}/{id}/restaurar", h.exigir("conf_lixeira", h.lixeiraRestaurar))
 	r.Post("/lixeira/{tipo}/{id}/excluir-definitivo", h.exigir("conf_exclusao_definitiva", h.lixeiraExcluirDefinitivo))
 	r.Post("/cidades/{id}/excluir", h.exigir("bairro_adicionar", h.cidadeExcluir))

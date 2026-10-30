@@ -18,5 +18,8 @@ O CPF de proprietários (Locais e LVC) e de denunciantes é guardado **cifrado**
 ## Quem abriu a ficha
 Toda vez que alguém abre a ficha de um **local, LVC, denúncia, investigação ou BAAP** (registros com dados pessoais), a Auditoria registra a ação **"Abriu ficha com dados pessoais"**, com quem foi e quando. Filtre por essa ação para responder "quem viu os dados desta pessoa?".
 
+## Anonimização a pedido do titular
+Em **Configuração > Anonimização (LGPD)** (exige a permissão de exclusão definitiva) escolha o identificador da pessoa (CPF, telefone ou e-mail) e clique em **Buscar registros**. O sistema mostra quantos registros há em Locais, Denúncias, LVC, Investigações e BAAP. Informe o **motivo** (por exemplo, o número do pedido), marque a confirmação e clique em **Anonimizar**: nome, CPF, telefone, e-mail e mãe/inquilino são apagados (o paciente vira "ANONIMIZADO"); endereço, datas e resultados ficam. **Não tem volta.** A Auditoria guarda quem fez, o motivo e as quantidades, mas não o dado da pessoa.
+
 ## O que ainda não está coberto
-Telefones, nomes e e-mails ficam em texto (precisam ser pesquisados e usados nas mensagens); são protegidos pelas permissões e pelo registro de acesso. Anonimização a pedido do titular e prazos de retenção ainda serão feitos.
+Telefones, nomes e e-mails ficam em texto (precisam ser pesquisados e usados nas mensagens); são protegidos pelas permissões e pelo registro de acesso. A anonimização não alcança o texto livre (observações, entrevistas) nem as mensagens já enviadas em Comunicações. Prazos de retenção ainda serão feitos.
