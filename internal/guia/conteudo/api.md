@@ -48,6 +48,13 @@ Um sistema externo pode **empurrar** bairros, quarteirões e locais pelo mesmo c
 
 A credencial precisa do escopo **`importacoes:write`** (e **`importacoes:read`** para acompanhar) **e** do escopo de gravação do tipo (por exemplo, `locais:write`). Importe na ordem **bairros → quarteirões → locais**. O que a API importa aparece na tela Importação de dados, com o relatório e a opção de desfazer, e na Auditoria com o nome da credencial.
 
+## Sincronizar visitas (tablet)
+- **Enviar**: `POST /api/v1/sync` com `{"dispositivo": "...", "visitas": [ {...} ]}` (até 100 visitas por lote, escopo `visitas:write`). Cada visita leva o seu **`id_externo`** e, se houver coleta, as `amostras` (tubitos), cada uma com `id_externo`. A atividade vai pela sigla (`LIT`, `LI`, `PE`...), o local por `local_id` ou `local_id_externo`.
+- **Resposta**: um resultado por visita: `criada`, `existente` (já tinha, reenvio seguro), `conflito` (o servidor já tem a visita com dados diferentes: **o servidor vence**, nada é alterado, e `campos_divergentes` mostra quais) ou `rejeitada` (com os motivos em `erros`: ciclo fechado, pendência, depósito fora da faixa etc.). Uma visita com erro não impede as outras do lote.
+- **Tubitos**: o número é gerado pelo servidor (ou digitado, conforme o parâmetro); a semana epidemiológica também é calculada pelo servidor.
+- **Baixar**: `GET /api/v1/visitas` (escopo `visitas:read`) com `ciclo_id`, `local_id`, `agente_id`, `id_externo` e `updated_since`, por cursor; traz as amostras junto.
+- Cada envio fica registrado no histórico de sincronismos (quando, de qual aparelho, quantas visitas).
+
 ## Regras que valem para todas as chamadas
 - **Erros** sempre no mesmo formato: `{"error": {"code": "...", "message": "...", "request_id": "..."}}`. Códigos comuns: `invalid_token` (401), `insufficient_scope` (403), `not_found` (404), `conflict` (409), `validation_error` (422), `rate_limited` (429).
 - **Limite de uso**: ao passar do limite por minuto, a API responde `429` com `Retry-After` (segundos); os cabeçalhos `X-RateLimit-Limit` e `X-RateLimit-Remaining` mostram o saldo.

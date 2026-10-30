@@ -122,7 +122,7 @@ Objetivo: migrar dados de outros sistemas e de planilhas, com segurança.
   - Feito em 2026-10-30 (versão 1.0.027): `internal/server/visitas_lista.go` (`CountVisitas`/`ListVisitas` com os filtros, ao vivo por HTMX como em Locais), `POST /visitas/{id}/ativo` e `POST /visitas/lote` (desativar/reativar, permissão `visita_desativar`, auditoria `visita.desativar|reativar`), botão Imprimir (CSS `@media print`). Excluir (Lixeira) continua em `visita_desativar`.
 - [x] 6.3 Laboratório: amostras/tubitos (numeração automática ou digitada), resultados, status, permissões por ciclo fechado
   - Feito em 2026-10-30 (versão 1.0.028): migração `cliente/00023` (`amostras`: tubito único entre as não excluídas, depósito, larvas, pupas, status em_analise|concluido, totais aegypti/albopictus/negativo, quem e quando registrou, exclusão lógica), `internal/server/laboratorio.go` (criar com numeração automática `ProximoNumeroTubito` ou digitada conforme `visita_tubito_automatico`, corrigir coleta, resultado com `visita_laboratorio_adicionar` e `visita_laboratorio_ciclo_fechado`, excluir para a Lixeira), seção "Amostras (tubitos)" na ficha da visita, tela `/laboratorio` com filtros ao vivo e menu Laboratório. Visita com tubito ativo não vai para a Lixeira.
-- [ ] 6.4 **API de sincronização em lote** (`POST /sync`) para o tablet: idempotente, com resolução de conflito
+- [x] 6.4 **API de sincronização em lote** (`POST /sync`) para o tablet: idempotente, com resolução de conflito (servidor vence; `GET /visitas` para baixar; histórico em `sincronismos`)
 - [ ] 6.5 Reincidência (12 meses) e histórico na ficha do local
 - [ ] 6.6 Auditoria de visita/local e histórico de mobilidade (sincronismos)
 - [ ] 6.7 Importador de visitas e laboratório

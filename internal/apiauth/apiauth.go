@@ -33,6 +33,7 @@ var Recursos = []Recurso{
 	{"locais", "Locais"},
 	{"ciclos", "Ciclos"},
 	{"importacoes", "Importações de dados"},
+	{"visitas", "Visitas e amostras (sincronização do tablet)"},
 }
 
 // Escopo monta o texto do escopo, ex.: Escopo("cidades", true) = "cidades:write".

@@ -77,7 +77,7 @@ const createAmostra = `-- name: CreateAmostra :one
 
 INSERT INTO amostras (visita_id, numero_tubito, deposito, larvas, pupas, observacao, criado_por)
 VALUES ($1, $2, $3, $4, $5, $6, $7)
-RETURNING id, visita_id, numero_tubito, deposito, larvas, pupas, status, total_aegypti, total_albopictus, total_negativo, resultado_por, resultado_em, observacao, criado_por, criado_em, atualizado_em, deleted_at, deleted_by
+RETURNING id, visita_id, numero_tubito, deposito, larvas, pupas, status, total_aegypti, total_albopictus, total_negativo, resultado_por, resultado_em, observacao, criado_por, criado_em, atualizado_em, deleted_at, deleted_by, id_externo
 `
 
 type CreateAmostraParams struct {
@@ -121,6 +121,7 @@ func (q *Queries) CreateAmostra(ctx context.Context, arg CreateAmostraParams) (A
 		&i.AtualizadoEm,
 		&i.DeletedAt,
 		&i.DeletedBy,
+		&i.IDExterno,
 	)
 	return i, err
 }
@@ -138,7 +139,7 @@ func (q *Queries) ForceDeleteAmostra(ctx context.Context, id int64) (int64, erro
 }
 
 const getAmostra = `-- name: GetAmostra :one
-SELECT id, visita_id, numero_tubito, deposito, larvas, pupas, status, total_aegypti, total_albopictus, total_negativo, resultado_por, resultado_em, observacao, criado_por, criado_em, atualizado_em, deleted_at, deleted_by FROM amostras WHERE id = $1 AND deleted_at IS NULL
+SELECT id, visita_id, numero_tubito, deposito, larvas, pupas, status, total_aegypti, total_albopictus, total_negativo, resultado_por, resultado_em, observacao, criado_por, criado_em, atualizado_em, deleted_at, deleted_by, id_externo FROM amostras WHERE id = $1 AND deleted_at IS NULL
 `
 
 func (q *Queries) GetAmostra(ctx context.Context, id int64) (Amostra, error) {
@@ -163,12 +164,13 @@ func (q *Queries) GetAmostra(ctx context.Context, id int64) (Amostra, error) {
 		&i.AtualizadoEm,
 		&i.DeletedAt,
 		&i.DeletedBy,
+		&i.IDExterno,
 	)
 	return i, err
 }
 
 const getAmostraQualquer = `-- name: GetAmostraQualquer :one
-SELECT id, visita_id, numero_tubito, deposito, larvas, pupas, status, total_aegypti, total_albopictus, total_negativo, resultado_por, resultado_em, observacao, criado_por, criado_em, atualizado_em, deleted_at, deleted_by FROM amostras WHERE id = $1
+SELECT id, visita_id, numero_tubito, deposito, larvas, pupas, status, total_aegypti, total_albopictus, total_negativo, resultado_por, resultado_em, observacao, criado_por, criado_em, atualizado_em, deleted_at, deleted_by, id_externo FROM amostras WHERE id = $1
 `
 
 func (q *Queries) GetAmostraQualquer(ctx context.Context, id int64) (Amostra, error) {
@@ -193,6 +195,7 @@ func (q *Queries) GetAmostraQualquer(ctx context.Context, id int64) (Amostra, er
 		&i.AtualizadoEm,
 		&i.DeletedAt,
 		&i.DeletedBy,
+		&i.IDExterno,
 	)
 	return i, err
 }
@@ -297,7 +300,7 @@ func (q *Queries) ListAmostras(ctx context.Context, arg ListAmostrasParams) ([]L
 }
 
 const listAmostrasDaVisita = `-- name: ListAmostrasDaVisita :many
-SELECT id, visita_id, numero_tubito, deposito, larvas, pupas, status, total_aegypti, total_albopictus, total_negativo, resultado_por, resultado_em, observacao, criado_por, criado_em, atualizado_em, deleted_at, deleted_by FROM amostras WHERE visita_id = $1 AND deleted_at IS NULL ORDER BY id
+SELECT id, visita_id, numero_tubito, deposito, larvas, pupas, status, total_aegypti, total_albopictus, total_negativo, resultado_por, resultado_em, observacao, criado_por, criado_em, atualizado_em, deleted_at, deleted_by, id_externo FROM amostras WHERE visita_id = $1 AND deleted_at IS NULL ORDER BY id
 `
 
 func (q *Queries) ListAmostrasDaVisita(ctx context.Context, visitaID int64) ([]Amostra, error) {
@@ -328,6 +331,7 @@ func (q *Queries) ListAmostrasDaVisita(ctx context.Context, visitaID int64) ([]A
 			&i.AtualizadoEm,
 			&i.DeletedAt,
 			&i.DeletedBy,
+			&i.IDExterno,
 		); err != nil {
 			return nil, err
 		}
@@ -425,7 +429,7 @@ func (q *Queries) SoftDeleteAmostra(ctx context.Context, arg SoftDeleteAmostraPa
 const updateAmostraColeta = `-- name: UpdateAmostraColeta :one
 UPDATE amostras SET deposito = $2, larvas = $3, pupas = $4, observacao = $5, atualizado_em = now()
 WHERE id = $1 AND deleted_at IS NULL
-RETURNING id, visita_id, numero_tubito, deposito, larvas, pupas, status, total_aegypti, total_albopictus, total_negativo, resultado_por, resultado_em, observacao, criado_por, criado_em, atualizado_em, deleted_at, deleted_by
+RETURNING id, visita_id, numero_tubito, deposito, larvas, pupas, status, total_aegypti, total_albopictus, total_negativo, resultado_por, resultado_em, observacao, criado_por, criado_em, atualizado_em, deleted_at, deleted_by, id_externo
 `
 
 type UpdateAmostraColetaParams struct {
@@ -464,6 +468,7 @@ func (q *Queries) UpdateAmostraColeta(ctx context.Context, arg UpdateAmostraCole
 		&i.AtualizadoEm,
 		&i.DeletedAt,
 		&i.DeletedBy,
+		&i.IDExterno,
 	)
 	return i, err
 }
@@ -472,7 +477,7 @@ const updateAmostraResultado = `-- name: UpdateAmostraResultado :one
 UPDATE amostras SET status = $2, total_aegypti = $3, total_albopictus = $4, total_negativo = $5,
     resultado_por = $6, resultado_em = now(), atualizado_em = now()
 WHERE id = $1 AND deleted_at IS NULL
-RETURNING id, visita_id, numero_tubito, deposito, larvas, pupas, status, total_aegypti, total_albopictus, total_negativo, resultado_por, resultado_em, observacao, criado_por, criado_em, atualizado_em, deleted_at, deleted_by
+RETURNING id, visita_id, numero_tubito, deposito, larvas, pupas, status, total_aegypti, total_albopictus, total_negativo, resultado_por, resultado_em, observacao, criado_por, criado_em, atualizado_em, deleted_at, deleted_by, id_externo
 `
 
 type UpdateAmostraResultadoParams struct {
@@ -513,6 +518,7 @@ func (q *Queries) UpdateAmostraResultado(ctx context.Context, arg UpdateAmostraR
 		&i.AtualizadoEm,
 		&i.DeletedAt,
 		&i.DeletedBy,
+		&i.IDExterno,
 	)
 	return i, err
 }

@@ -16,6 +16,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"uysiarbo/internal/audit"
+	"uysiarbo/internal/authz"
 	"uysiarbo/internal/db/sqlccliente"
 	"uysiarbo/internal/epi"
 	"uysiarbo/web/views"
@@ -400,10 +401,9 @@ type visitaValidada struct {
 }
 
 // validarVisita confere o formulário contra as regras do negócio. atual é nil numa visita nova.
-func (h *handlers) validarVisita(ctx context.Context, r *http.Request, q *sqlccliente.Queries, c views.VisitaCampos, atual *sqlccliente.Visita) (visitaValidada, string) {
+func (h *handlers) validarVisita(ctx context.Context, r *http.Request, q *sqlccliente.Queries, pr authz.Principal, c views.VisitaCampos, atual *sqlccliente.Visita) (visitaValidada, string) {
 	var out visitaValidada
 	p := &out.create
-	pr := h.principal(r)
 
 	cicloID, err := strconv.ParseInt(c.Ciclo, 10, 64)
 	if err != nil {
@@ -647,7 +647,7 @@ func (h *handlers) visitaSalvar(w http.ResponseWriter, r *http.Request) {
 	if atual != nil && !h.principal(r).Pode("visita_editar_pendencia") {
 		campos.Pendencia = atual.Pendencia
 	}
-	val, msg := h.validarVisita(r.Context(), r, q, campos, atual)
+	val, msg := h.validarVisita(r.Context(), r, q, h.principal(r), campos, atual)
 	if msg != "" {
 		falha(msg, http.StatusBadRequest)
 		return

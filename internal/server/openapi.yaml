@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: UYSI ARBO — API para sistemas externos
-  version: "1.2.0"
+  version: "1.3.0"
   description: |
     API de leitura e gravação do UYSI ARBO. Cada cliente (prefeitura) tem a sua, no próprio endereço:
     `https://<subdominio-do-cliente>/api/v1/...`.
@@ -487,6 +487,59 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Importacao" }
         "409": { $ref: "#/components/responses/Erro" }
+  /sync:
+    post:
+      summary: Envia um lote de visitas (com amostras) do tablet
+      description: |
+        Escopo: `visitas:write`. Até **100 visitas** por lote. Cada visita é independente: as que passam nas
+        regras são gravadas e as outras voltam como `rejeitada`, com os motivos em `erros`. A chave de idempotência é o
+        **`id_externo`** da visita (gerado no aparelho): repetir o envio é seguro e devolve `existente`. Se o servidor já tem a
+        visita e algum campo difere do que o aparelho mandou, o resultado é `conflito` e **o servidor vence** (nada é alterado);
+        `campos_divergentes` lista quais. As amostras também têm `id_externo` próprio, e as que faltam são completadas num reenvio.
+        O número do tubito é gerado pelo servidor quando o parâmetro "Numerar os tubitos automaticamente" está ligado; se estiver
+        desligado, `numero_tubito` é obrigatório e não pode se repetir. A atividade vai pela **sigla** (LIT, LI, PE, T, DF, PVE, LIRAa, LIA, BRI).
+        Visitas em ciclo fechado são rejeitadas. A semana epidemiológica é calculada pelo servidor.
+        Cada envio fica no histórico de sincronismos.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SyncPedido" }
+      responses:
+        "200":
+          description: Resultado de cada visita
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SyncResposta" }
+        "400": { $ref: "#/components/responses/Erro" }
+        "403": { $ref: "#/components/responses/Erro" }
+        "422": { $ref: "#/components/responses/Erro" }
+  /visitas:
+    get:
+      summary: Lista as visitas, com as amostras, por cursor
+      description: |
+        Escopo: `visitas:read`. Filtros: `ciclo_id`, `local_id`, `agente_id`, `id_externo` e `updated_since` (RFC 3339; com ele,
+        as visitas excluídas também vêm, com `excluido_em`).
+      parameters:
+        - { name: ciclo_id, in: query, schema: { type: integer } }
+        - { name: local_id, in: query, schema: { type: integer } }
+        - { name: agente_id, in: query, schema: { type: integer } }
+        - { name: id_externo, in: query, schema: { type: string } }
+        - { name: updated_since, in: query, schema: { type: string, format: date-time } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 200 } }
+        - { name: cursor, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: Página de visitas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: "#/components/schemas/Visita" } }
+                  next_cursor: { type: string, nullable: true }
+        "400": { $ref: "#/components/responses/Erro" }
+        "403": { $ref: "#/components/responses/Erro" }
 components:
   securitySchemes:
     bearer:
@@ -515,6 +568,112 @@ components:
                   message: { type: string }
                   request_id: { type: string }
   schemas:
+    SyncAmostra:
+      type: object
+      properties:
+        id_externo: { type: string, maxLength: 64 }
+        numero_tubito: { type: string, maxLength: 30 }
+        deposito: { type: string, enum: ["", A1, A2, B, C, D1, D2, E] }
+        larvas: { type: integer, minimum: 0, maximum: 9999 }
+        pupas: { type: integer, minimum: 0, maximum: 9999 }
+        observacao: { type: string, maxLength: 1000 }
+    SyncVisita:
+      type: object
+      required: [id_externo, ciclo_id, atividade, agente_id, data]
+      description: Os campos de depósitos, tratamento e GPS seguem os nomes da visita (ver `Visita`).
+      properties:
+        id_externo: { type: string, maxLength: 64, description: "Chave de idempotência, gerada no aparelho." }
+        local_id: { type: integer, format: int64 }
+        local_id_externo: { type: string, description: "Alternativa ao local_id." }
+        ciclo_id: { type: integer, format: int64 }
+        atividade: { type: string, example: LIT }
+        agente_id: { type: integer, format: int64 }
+        data: { type: string, format: date }
+        tipo_visita: { type: string }
+        pendencia: { type: string, enum: [nenhuma, fechado, recusado, tentativa] }
+        anotacao: { type: string }
+        achou_deposito: { type: boolean }
+        depositos: { type: object, additionalProperties: true }
+        total_eliminado: { type: integer }
+        coletou_amostra: { type: boolean }
+        fez_tratamento: { type: boolean }
+        latitude: { type: number }
+        longitude: { type: number }
+        data_tablet: { type: string, format: date-time, description: "Relógio do aparelho quando a visita foi feita." }
+        amostras:
+          type: array
+          items: { $ref: "#/components/schemas/SyncAmostra" }
+    SyncPedido:
+      type: object
+      required: [visitas]
+      properties:
+        dispositivo: { type: string, maxLength: 80 }
+        visitas:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items: { $ref: "#/components/schemas/SyncVisita" }
+    SyncResposta:
+      type: object
+      properties:
+        sincronismo_id: { type: integer, format: int64 }
+        servidor_em: { type: string, format: date-time }
+        criadas: { type: integer }
+        existentes: { type: integer }
+        conflitos: { type: integer }
+        rejeitadas: { type: integer }
+        resultados:
+          type: array
+          items:
+            type: object
+            properties:
+              id_externo: { type: string }
+              status: { type: string, enum: [criada, existente, conflito, rejeitada] }
+              id: { type: integer, format: int64 }
+              amostras_criadas: { type: integer }
+              erros: { type: array, items: { type: string } }
+              campos_divergentes: { type: array, items: { type: string } }
+    Visita:
+      type: object
+      properties:
+        id: { type: integer, format: int64 }
+        id_externo: { type: string, nullable: true }
+        local_id: { type: integer }
+        ciclo_id: { type: integer }
+        atividade_id: { type: integer }
+        agente_id: { type: integer }
+        data: { type: string, format: date }
+        tipo_visita: { type: string }
+        pendencia: { type: string }
+        semana: { type: integer, nullable: true }
+        achou_deposito: { type: boolean }
+        depositos: { type: object, additionalProperties: true }
+        total_eliminado: { type: integer, nullable: true }
+        coletou_amostra: { type: boolean }
+        fez_tratamento: { type: boolean }
+        latitude: { type: number, nullable: true }
+        longitude: { type: number, nullable: true }
+        ativo: { type: boolean }
+        data_tablet: { type: string, format: date-time, nullable: true }
+        data_sincronismo: { type: string, format: date-time, nullable: true }
+        atualizado_em: { type: string, format: date-time }
+        excluido_em: { type: string, format: date-time, nullable: true }
+        amostras:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: integer }
+              id_externo: { type: string, nullable: true }
+              numero_tubito: { type: string }
+              deposito: { type: string }
+              larvas: { type: integer }
+              pupas: { type: integer }
+              status: { type: string }
+              total_aegypti: { type: integer }
+              total_albopictus: { type: integer }
+              total_negativo: { type: integer }
+              observacao: { type: string }
     Importacao:
       type: object
       properties:

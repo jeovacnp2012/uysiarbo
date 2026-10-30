@@ -124,6 +124,8 @@ func New(d Deps) http.Handler {
 		r.Get("/api/v1/importacoes/{id}/linhas", h.apiAuth("importacoes:read", h.apiImportacaoLinhas))
 		r.Post("/api/v1/importacoes/{id}/executar", h.apiAuth("importacoes:write", h.idempotente(h.apiImportacaoExecutar)))
 		r.Post("/api/v1/importacoes/{id}/descartar", h.apiAuth("importacoes:write", h.idempotente(h.apiImportacaoDescartar)))
+		r.Post("/api/v1/sync", h.apiAuth("visitas:write", h.apiSync))
+		r.Get("/api/v1/visitas", h.apiAuth("visitas:read", h.apiVisitasLista))
 		r.Get("/api/v1/cidades", h.apiAuth("cidades:read", h.apiCidadesLista))
 		r.Get("/api/v1/cidades/{id}", h.apiAuth("cidades:read", h.apiCidadeObter))
 		r.Post("/api/v1/cidades", h.apiAuth("cidades:write", h.idempotente(h.apiCidadeCriar)))

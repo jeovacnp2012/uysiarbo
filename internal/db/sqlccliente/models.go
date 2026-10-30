@@ -37,6 +37,7 @@ type Amostra struct {
 	AtualizadoEm    pgtype.Timestamptz `json:"atualizado_em"`
 	DeletedAt       pgtype.Timestamptz `json:"deleted_at"`
 	DeletedBy       pgtype.Int8        `json:"deleted_by"`
+	IDExterno       pgtype.Text        `json:"id_externo"`
 }
 
 type ApiChamada struct {
@@ -364,6 +365,20 @@ type Sesso struct {
 	UltimoUso pgtype.Timestamptz `json:"ultimo_uso"`
 	Ip        string             `json:"ip"`
 	UserAgent string             `json:"user_agent"`
+}
+
+type Sincronismo struct {
+	ID           int64              `json:"id"`
+	CredencialID pgtype.Int8        `json:"credencial_id"`
+	Dispositivo  string             `json:"dispositivo"`
+	EnviadoEm    pgtype.Timestamptz `json:"enviado_em"`
+	RecebidoEm   pgtype.Timestamptz `json:"recebido_em"`
+	Visitas      int32              `json:"visitas"`
+	Criadas      int32              `json:"criadas"`
+	Existentes   int32              `json:"existentes"`
+	Conflitos    int32              `json:"conflitos"`
+	Rejeitadas   int32              `json:"rejeitadas"`
+	Amostras     int32              `json:"amostras"`
 }
 
 type Usuario struct {
