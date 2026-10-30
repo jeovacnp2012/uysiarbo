@@ -164,14 +164,22 @@ func (s *Service) Entrar(ctx context.Context, email, senha, ip, userAgent string
 	email = strings.TrimSpace(email)
 	var conta Conta
 	var loja ContaStore
+	// O mesmo e-mail pode existir na plataforma e num cliente (ex.: usuário importado sem senha):
+	// vale a primeira conta cuja senha confere; se nenhuma conferir, a falha vai para a primeira encontrada.
 	for _, l := range s.Contas {
 		c, err := l.PorEmail(ctx, email)
-		if err == nil {
+		if errors.Is(err, ErrNaoEncontrada) {
+			continue
+		}
+		if err != nil {
+			return "", nil, err
+		}
+		if loja == nil {
+			conta, loja = c, l
+		}
+		if ok, err := Confere(senha, c.SenhaHash); err == nil && ok && c.Ativo {
 			conta, loja = c, l
 			break
-		}
-		if !errors.Is(err, ErrNaoEncontrada) {
-			return "", nil, err
 		}
 	}
 	if loja == nil {
@@ -184,7 +192,7 @@ func (s *Service) Entrar(ctx context.Context, email, senha, ip, userAgent string
 		return "", nil, ErrBloqueada{Ate: conta.BloqueadoAte, Conta: conta}
 	}
 	ok, err := Confere(senha, conta.SenhaHash)
-	if err != nil {
+	if err != nil && !errors.Is(err, ErrHashInvalido) {
 		return "", nil, err
 	}
 	if !ok || !conta.Ativo {
