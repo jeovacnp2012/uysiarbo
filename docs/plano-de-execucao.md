@@ -32,6 +32,7 @@ for concluindo. Base de referência: `engenharia-reversa-geocontrole.md`, `engen
 4. **Nova versão cadastrada em Novidades** (`1.0.001`, `1.0.002`...), com o que mudou em linguagem simples.
 5. Migrações aplicáveis em todos os schemas de clientes existentes.
 6. Você aprova antes de passarmos para a próxima etapa.
+7. **Toda lista nova segue o padrão de tabelas** (MEMORIA.md, regra transversal 10): ícones, gaveta de filtros, colunas visíveis, ordenação pelo título, exportar PDF/planilha, reticências e paginação.
 
 ---
 
