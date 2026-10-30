@@ -50,6 +50,10 @@ func (s *handlers) menu(r *http.Request) []views.NavGrupo {
 			menu = append(menu, views.NavGrupo{Label: "Mapa", Icone: "mapa", Href: "/mapa"})
 		}
 
+		if pr.Pode("visita_visualizar") {
+			menu = append(menu, views.NavGrupo{Label: "Visitas", Icone: "visitas", Href: "/visitas"})
+		}
+
 		add(pr.Pode("conf_usuario"), "Usuários", "/usuarios")
 		add(pr.Pode("conf_papel"), "Papéis", "/papeis")
 		add(pr.Pode("param_ciclo"), "Ciclos", "/ciclos")

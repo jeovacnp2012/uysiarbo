@@ -23,8 +23,17 @@ var secoesDaFicha = []views.SecaoFicha{
 
 // completarFichaDoLocal acrescenta à ficha o que não é do formulário: seções reservadas, grupos e histórico.
 func (h *handlers) completarFichaDoLocal(ctx context.Context, r *http.Request, q *sqlccliente.Queries, l sqlccliente.Locai, form *views.LocalFormData) error {
-	form.Secoes = secoesDaFicha
 	pr := h.principal(r)
+	form.Secoes = make([]views.SecaoFicha, len(secoesDaFicha))
+	copy(form.Secoes, secoesDaFicha)
+	if pr.Pode("visita_visualizar") {
+		id := strconv.FormatInt(l.ID, 10)
+		links := []views.SecaoLink{{Rotulo: "Ver visitas", Href: "/visitas?local=" + id}}
+		if pr.Pode("visita_adicionar") {
+			links = append(links, views.SecaoLink{Rotulo: "Registrar visita", Href: "/visitas/nova?local=" + id})
+		}
+		form.Secoes[0].Links = links
+	}
 	if form.PodeGrupos = pr.Pode("local_grupo_visualizar"); form.PodeGrupos {
 		do, err := q.ListGruposDoLocal(ctx, l.ID)
 		if err != nil {

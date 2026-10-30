@@ -206,6 +206,12 @@ type SecaoFicha struct {
 	Titulo    string
 	Descricao string
 	Etapa     string
+	Links     []SecaoLink // seção já pronta: em vez do aviso de "chega na etapa", mostra estes atalhos
+}
+
+type SecaoLink struct {
+	Rotulo string
+	Href   string
 }
 
 func (d LocalFormData) Novo() bool { return d.ID == 0 }

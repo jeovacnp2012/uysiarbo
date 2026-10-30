@@ -401,7 +401,13 @@ templ LocalForm(l Layout, d LocalFormData) {
 						<div class="secao-ficha">
 							<strong>{ s.Titulo }</strong>
 							<p class="subtitulo">{ s.Descricao }</p>
-							<span class="selo selo-aviso">chega na { s.Etapa }</span>
+							if len(s.Links) > 0 {
+								for _, a := range s.Links {
+									<a class="btn" href={ templ.SafeURL(a.Href) }>{ a.Rotulo }</a>
+								}
+							} else {
+								<span class="selo selo-aviso">chega na { s.Etapa }</span>
+							}
 						</div>
 					}
 				</div>

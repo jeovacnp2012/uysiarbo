@@ -1,0 +1,330 @@
+package views
+
+import "strconv"
+
+// ---- Visitas ----
+
+templ Visitas(l Layout, d VisitasData) {
+	@Base(l) {
+		@PageHeader("Visitas", "As visitas registradas pelos agentes. A listagem completa, com filtros, chega na próxima etapa.") {
+			if d.PodeNova && d.LocalID != 0 {
+				<a class="btn btn-primario" href={ templ.SafeURL("/visitas/nova?local=" + strconv.FormatInt(d.LocalID, 10)) }>Registrar visita</a>
+			}
+		}
+		if d.Local != "" {
+			<p class="subtitulo">Mostrando as visitas do local <strong>{ d.Local }</strong>. <a href="/visitas">Ver todas</a></p>
+		}
+		<section class="cartao">
+			<div class="tabela-wrap">
+				<table class="tabela">
+					<thead>
+						<tr>
+							<th scope="col">ID</th>
+							<th scope="col">Endereço</th>
+							<th scope="col">Data / agente</th>
+							<th scope="col">Ciclo</th>
+							<th scope="col">Sem.</th>
+							<th scope="col">Atividade</th>
+							<th scope="col">Pendência</th>
+							<th scope="col">Dep.</th>
+							<th scope="col">Amostra</th>
+							<th scope="col">Trat.</th>
+							<th scope="col"><span class="sr-only">Ações</span></th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, v := range d.Linhas {
+							<tr>
+								<td data-rotulo="ID">{ strconv.FormatInt(v.ID, 10) }</td>
+								<td data-rotulo="Endereço">{ v.Endereco }</td>
+								<td data-rotulo="Data / agente">{ v.Data } — { v.Agente }</td>
+								<td data-rotulo="Ciclo">{ v.Ciclo }</td>
+								<td data-rotulo="Sem.">{ v.Semana }</td>
+								<td data-rotulo="Atividade">{ v.Atividade }</td>
+								<td data-rotulo="Pendência">{ v.Pendencia }</td>
+								<td data-rotulo="Dep.">{ simNao(v.Deposito) }</td>
+								<td data-rotulo="Amostra">{ simNao(v.Amostra) }</td>
+								<td data-rotulo="Trat.">{ simNao(v.Tratou) }</td>
+								<td data-rotulo="Ações">
+									<a class="btn" href={ templ.SafeURL("/visitas/" + strconv.FormatInt(v.ID, 10)) }>Abrir</a>
+									if !v.Ativo {
+										<span class="selo selo-aviso">Desativada</span>
+									}
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+				if len(d.Linhas) == 0 {
+					<div class="tabela-vazia">Nenhuma visita registrada.</div>
+				}
+			</div>
+		</section>
+	}
+}
+
+func simNao(b bool) string {
+	if b {
+		return "Sim"
+	}
+	return "Não"
+}
+
+templ numeroVisita(id, rotulo, nome, valor string, max string, passo string) {
+	<div class="campo">
+		<label for={ id }>{ rotulo }</label>
+		<input id={ id } name={ nome } type="number" inputmode="decimal" min="0" max={ max } step={ passo } value={ valor }/>
+	</div>
+}
+
+templ VisitaForm(l Layout, d VisitaFormData) {
+	@Base(l) {
+		if d.Novo() {
+			@PageHeader("Registrar visita", d.Local) {
+				<a class="btn" href={ templ.SafeURL("/visitas?local=" + strconv.FormatInt(d.LocalID, 10)) }>Voltar</a>
+			}
+		} else {
+			@PageHeader("Visita "+strconv.FormatInt(d.ID, 10), d.Local) {
+				<a class="btn" href={ templ.SafeURL("/visitas?local=" + strconv.FormatInt(d.LocalID, 10)) }>Voltar</a>
+				<a class="btn" href={ templ.SafeURL("/locais/" + strconv.FormatInt(d.LocalID, 10)) }>Ficha do local</a>
+			}
+			@Presenca("visita", strconv.FormatInt(d.ID, 10), modoDaTela(d.PodeEditar))
+			if !d.Ativo {
+				<p class="alerta alerta-aviso" role="status">Esta visita está desativada.</p>
+			}
+		}
+		if d.Aviso != "" {
+			<p class="alerta alerta-ok" role="status">{ d.Aviso }</p>
+		}
+		<form
+			method="post"
+			if d.Novo() {
+				action="/visitas"
+			} else {
+				action={ templ.SafeURL("/visitas/" + strconv.FormatInt(d.ID, 10)) }
+			}
+			class="cartao form-admin"
+			x-data={ "{ achou: " + strconv.FormatBool(d.Campos.Achou) + ", trat: " + strconv.FormatBool(d.Campos.Tratamento) + ", pend: '" + d.Campos.Pendencia + "' }" }
+		>
+			<input type="hidden" name="csrf" value={ d.CSRF }/>
+			if d.Novo() {
+				<input type="hidden" name="local" value={ strconv.FormatInt(d.LocalID, 10) }/>
+			}
+			if d.Erro != "" {
+				<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
+			}
+			<fieldset class="sem-borda" disabled?={ !d.PodeEditar && !d.Novo() }>
+				<h2>Dados da visita</h2>
+				<div class="grade-form">
+					<div class="campo">
+						<label for="data">Data</label>
+						<input id="data" name="data" type="date" value={ d.Campos.Data } required/>
+					</div>
+					<div class="campo">
+						<label for="hora">Hora de entrada</label>
+						<input id="hora" name="hora" type="time" value={ d.Campos.Hora }/>
+					</div>
+					<div class="campo">
+						<label for="ciclo">Ciclo</label>
+						<select id="ciclo" name="ciclo" required>
+							for _, o := range d.Ciclos {
+								<option value={ strconv.FormatInt(o.ID, 10) } selected?={ o.Selecionada }>{ o.Rotulo }</option>
+							}
+						</select>
+					</div>
+					<div class="campo">
+						<label for="atividade">Atividade</label>
+						<select id="atividade" name="atividade" required>
+							for _, o := range d.Atividade {
+								<option value={ strconv.FormatInt(o.ID, 10) } selected?={ o.Selecionada }>{ o.Rotulo }</option>
+							}
+						</select>
+					</div>
+					<div class="campo">
+						<label for="agente">Agente</label>
+						<select id="agente" name="agente" required>
+							for _, o := range d.Agentes {
+								<option value={ strconv.FormatInt(o.ID, 10) } selected?={ o.Selecionada }>{ o.Rotulo }</option>
+							}
+						</select>
+					</div>
+					<div class="campo">
+						<label for="tipo">Tipo de visita</label>
+						<select id="tipo" name="tipo">
+							for _, o := range d.Tipos {
+								<option value={ o.Valor } selected?={ o.Selecionada }>{ o.Rotulo }</option>
+							}
+						</select>
+					</div>
+					<div class="campo">
+						<label for="pendencia">Pendência</label>
+						<select id="pendencia" name="pendencia" x-model="pend" disabled?={ !d.PodeEditarPendencia && !d.Novo() }>
+							for _, o := range d.Pendencias {
+								<option value={ o.Valor } selected?={ o.Selecionada }>{ o.Rotulo }</option>
+							}
+						</select>
+						if !d.PodeEditarPendencia && !d.Novo() {
+							<input type="hidden" name="pendencia" value={ d.Campos.Pendencia }/>
+						}
+					</div>
+					if d.Semana != "" {
+						<div class="campo">
+							<label>Semana epidemiológica</label>
+							<p class="subtitulo">{ d.Semana }</p>
+						</div>
+					}
+				</div>
+				<p class="subtitulo" x-show="pend !== 'nenhuma'" x-cloak>Visita com pendência (imóvel fechado, recusa ou tentativa): não tem depósitos, amostra nem tratamento.</p>
+
+				<div x-show="pend === 'nenhuma'">
+					<h2>Depósitos</h2>
+					<label class="marcar">
+						<input type="checkbox" name="achou" value="1" x-model="achou" checked?={ d.Campos.Achou }/>
+						Encontrou depósitos
+					</label>
+					<div class="grade-form" x-show="achou" x-cloak>
+						@numeroVisita("a1", "A1", "a1", d.Campos.A1, "9999", "1")
+						@numeroVisita("a2", "A2", "a2", d.Campos.A2, "9999", "1")
+						@numeroVisita("b", "B", "b", d.Campos.B, "9999", "1")
+						@numeroVisita("c", "C", "c", d.Campos.C, "9999", "1")
+						@numeroVisita("d1", "D1", "d1", d.Campos.D1, "9999", "1")
+						@numeroVisita("d2", "D2", "d2", d.Campos.D2, "9999", "1")
+						@numeroVisita("e", "E", "e", d.Campos.E, "9999", "1")
+						@numeroVisita("total-eliminado", "Total eliminado", "total_eliminado", d.Campos.TotalEliminado, "9999", "1")
+					</div>
+
+					<h2>Amostra</h2>
+					<label class="marcar">
+						<input type="checkbox" name="amostra" value="1" checked?={ d.Campos.Amostra }/>
+						Coletou amostra (os tubitos e o resultado ficam no Laboratório)
+					</label>
+
+					<h2>Tratamento</h2>
+					<label class="marcar">
+						<input type="checkbox" name="tratamento" value="1" x-model="trat" checked?={ d.Campos.Tratamento }/>
+						Fez tratamento
+					</label>
+					<div class="grade-form" x-show="trat" x-cloak>
+						@numeroVisita("l1-gramas", "Larvicida L1 (gramas)", "l1_gramas", d.Campos.L1Gramas, "99999", "0.01")
+						@numeroVisita("l1-tratados", "L1: depósitos tratados", "l1_tratados", d.Campos.L1Tratados, "9999", "1")
+						@numeroVisita("l2-gramas", "Larvicida L2 (gramas)", "l2_gramas", d.Campos.L2Gramas, "99999", "0.01")
+						@numeroVisita("l2-tratados", "L2: depósitos tratados", "l2_tratados", d.Campos.L2Tratados, "9999", "1")
+						<div class="campo">
+							<label for="adulticida-tipo">Adulticida (tipo)</label>
+							<input id="adulticida-tipo" name="adulticida_tipo" type="text" maxlength="40" value={ d.Campos.AdulticidaTipo }/>
+						</div>
+						@numeroVisita("adulticida-cargas", "Adulticida (cargas)", "adulticida_cargas", d.Campos.AdulticidaCargas, "9999", "1")
+						@numeroVisita("trat-eliminados", "Depósitos eliminados no tratamento", "trat_eliminados", d.Campos.TratEliminados, "9999", "1")
+						@numeroVisita("bri", "BRI: volume aplicado", "bri_volume", d.Campos.Bri, "99999", "0.01")
+					</div>
+				</div>
+
+				<h2>Posição e anotação</h2>
+				<div class="grade-form">
+					<div class="campo">
+						<label for="lat">Latitude</label>
+						<input id="lat" name="lat" type="text" inputmode="decimal" value={ d.Campos.Lat }/>
+					</div>
+					<div class="campo">
+						<label for="lon">Longitude</label>
+						<input id="lon" name="lon" type="text" inputmode="decimal" value={ d.Campos.Lon }/>
+					</div>
+					<div class="campo">
+						<label for="precisao">Precisão do GPS (m)</label>
+						<input id="precisao" name="precisao" type="text" inputmode="decimal" value={ d.Campos.Precisao }/>
+					</div>
+				</div>
+				<div class="campo">
+					<label for="anotacao">Anotação do agente</label>
+					<textarea id="anotacao" name="anotacao" rows="3" maxlength="4000">{ d.Campos.Anotacao }</textarea>
+				</div>
+				<div class="campo">
+					<label for="assinatura">Assinatura do morador (imagem em base64, enviada pelo aplicativo)</label>
+					<textarea id="assinatura" name="assinatura" rows="2" spellcheck="false">{ d.Campos.Assinatura }</textarea>
+				</div>
+			</fieldset>
+			if d.PodeEditar || d.Novo() {
+				<div class="form-acoes">
+					<button type="submit" class="btn btn-primario">Salvar</button>
+					<a class="btn" href={ templ.SafeURL("/visitas?local=" + strconv.FormatInt(d.LocalID, 10)) }>Cancelar</a>
+				</div>
+			}
+		</form>
+		if !d.Novo() {
+			if d.Campos.Assinatura != "" {
+				<section class="cartao" id="assinatura-imagem">
+					<h2>Assinatura</h2>
+					<img src={ templ.URL(d.Campos.Assinatura) } alt="Assinatura do morador" width="320"/>
+				</section>
+			}
+			<section class="cartao form-admin" id="fotos">
+				<h2>Fotos</h2>
+				if d.ErroFoto != "" {
+					<p class="alerta alerta-erro" role="alert">{ d.ErroFoto }</p>
+				}
+				if len(d.Fotos) == 0 {
+					<p class="subtitulo">Nenhuma foto.</p>
+				}
+				<div class="grade-secoes">
+					for _, f := range d.Fotos {
+						<div class="secao-ficha">
+							<a href={ templ.SafeURL("/visitas/" + strconv.FormatInt(d.ID, 10) + "/fotos/" + strconv.FormatInt(f.ID, 10)) } target="_blank" rel="noopener">
+								<img src={ "/visitas/" + strconv.FormatInt(d.ID, 10) + "/fotos/" + strconv.FormatInt(f.ID, 10) } alt={ "Foto " + f.Nome } loading="lazy" width="200"/>
+							</a>
+							<span class="subtitulo">{ f.Nome } ({ f.Tamanho })</span>
+							if d.PodeEditar {
+								<form method="post" action={ templ.SafeURL("/visitas/" + strconv.FormatInt(d.ID, 10) + "/fotos/" + strconv.FormatInt(f.ID, 10) + "/excluir") } class="inline" onsubmit="return confirm('Enviar a foto para a lixeira?')">
+									<input type="hidden" name="csrf" value={ d.CSRF }/>
+									<button type="submit" class="btn">Excluir foto</button>
+								</form>
+							}
+						</div>
+					}
+				</div>
+				if d.PodeEditar {
+					<form method="post" action={ templ.SafeURL("/visitas/" + strconv.FormatInt(d.ID, 10) + "/fotos") } enctype="multipart/form-data" class="form-admin">
+						<input type="hidden" name="csrf" value={ d.CSRF }/>
+						<div class="campo">
+							<label for="foto">Adicionar fotos (JPEG, PNG ou WebP, até 5 MB cada)</label>
+							<input id="foto" name="foto" type="file" accept="image/jpeg,image/png,image/webp" multiple required/>
+						</div>
+						<div class="form-acoes">
+							<button type="submit" class="btn">Enviar fotos</button>
+						</div>
+					</form>
+				}
+			</section>
+			<section class="cartao form-admin" id="anotacoes">
+				<h2>Anotações internas</h2>
+				if len(d.Anotacoes) == 0 {
+					<p class="subtitulo">Nenhuma anotação.</p>
+				}
+				for _, a := range d.Anotacoes {
+					<p><strong>{ a.Autor }</strong> <span class="subtitulo">{ a.Quando.In(d.Fuso).Format("02/01/2006 15:04") }</span><br/>{ a.Texto }</p>
+				}
+				if d.PodeAnotar {
+					<form method="post" action={ templ.SafeURL("/visitas/" + strconv.FormatInt(d.ID, 10) + "/anotacoes") } class="form-admin">
+						<input type="hidden" name="csrf" value={ d.CSRF }/>
+						<div class="campo">
+							<label for="nova-anotacao">Nova anotação</label>
+							<textarea id="nova-anotacao" name="texto" rows="2" maxlength="2000" required></textarea>
+						</div>
+						<div class="form-acoes">
+							<button type="submit" class="btn">Adicionar anotação</button>
+						</div>
+					</form>
+				}
+			</section>
+			if d.PodeExcluir {
+				<section class="cartao form-admin" id="excluir">
+					<h2>Excluir visita</h2>
+					<p class="subtitulo">Nada é apagado de verdade: a visita vai para a Lixeira e dá para restaurar.</p>
+					<form method="post" action={ templ.SafeURL("/visitas/" + strconv.FormatInt(d.ID, 10) + "/excluir") } class="inline" onsubmit="return confirm('Enviar a visita para a lixeira?')">
+						<input type="hidden" name="csrf" value={ d.CSRF }/>
+						<button type="submit" class="btn">Excluir visita</button>
+					</form>
+				</section>
+			}
+		}
+	}
+}

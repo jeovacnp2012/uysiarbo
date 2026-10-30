@@ -362,3 +362,70 @@ type Usuario struct {
 	BloqueadoAte     pgtype.Timestamptz `json:"bloqueado_ate"`
 	NovidadeVistaID  int64              `json:"novidade_vista_id"`
 }
+
+type Visita struct {
+	ID                   int64              `json:"id"`
+	IDExterno            pgtype.Text        `json:"id_externo"`
+	LocalID              int64              `json:"local_id"`
+	CicloID              int64              `json:"ciclo_id"`
+	AtividadeID          int16              `json:"atividade_id"`
+	AgenteID             int64              `json:"agente_id"`
+	Data                 pgtype.Date        `json:"data"`
+	HoraEntrada          pgtype.Time        `json:"hora_entrada"`
+	TipoVisita           string             `json:"tipo_visita"`
+	Pendencia            string             `json:"pendencia"`
+	Semana               pgtype.Int2        `json:"semana"`
+	SemanaAno            pgtype.Int2        `json:"semana_ano"`
+	Anotacao             string             `json:"anotacao"`
+	Assinatura           string             `json:"assinatura"`
+	AchouDeposito        bool               `json:"achou_deposito"`
+	DepA1                pgtype.Int4        `json:"dep_a1"`
+	DepA2                pgtype.Int4        `json:"dep_a2"`
+	DepB                 pgtype.Int4        `json:"dep_b"`
+	DepC                 pgtype.Int4        `json:"dep_c"`
+	DepD1                pgtype.Int4        `json:"dep_d1"`
+	DepD2                pgtype.Int4        `json:"dep_d2"`
+	DepE                 pgtype.Int4        `json:"dep_e"`
+	TotalEliminado       pgtype.Int4        `json:"total_eliminado"`
+	ColetouAmostra       bool               `json:"coletou_amostra"`
+	FezTratamento        bool               `json:"fez_tratamento"`
+	L1Gramas             pgtype.Numeric     `json:"l1_gramas"`
+	L1Tratados           pgtype.Int4        `json:"l1_tratados"`
+	L2Gramas             pgtype.Numeric     `json:"l2_gramas"`
+	L2Tratados           pgtype.Int4        `json:"l2_tratados"`
+	AdulticidaTipo       string             `json:"adulticida_tipo"`
+	AdulticidaCargas     pgtype.Int4        `json:"adulticida_cargas"`
+	TratamentoEliminados pgtype.Int4        `json:"tratamento_eliminados"`
+	BriVolume            pgtype.Numeric     `json:"bri_volume"`
+	Latitude             pgtype.Float8      `json:"latitude"`
+	Longitude            pgtype.Float8      `json:"longitude"`
+	PrecisaoGps          pgtype.Float8      `json:"precisao_gps"`
+	Ativo                bool               `json:"ativo"`
+	DataTablet           pgtype.Timestamptz `json:"data_tablet"`
+	DataSincronismo      pgtype.Timestamptz `json:"data_sincronismo"`
+	CriadoPor            pgtype.Int8        `json:"criado_por"`
+	CriadoEm             pgtype.Timestamptz `json:"criado_em"`
+	AtualizadoEm         pgtype.Timestamptz `json:"atualizado_em"`
+	DeletedAt            pgtype.Timestamptz `json:"deleted_at"`
+	DeletedBy            pgtype.Int8        `json:"deleted_by"`
+}
+
+type VisitaAnotaco struct {
+	ID        int64              `json:"id"`
+	VisitaID  int64              `json:"visita_id"`
+	UsuarioID pgtype.Int8        `json:"usuario_id"`
+	Texto     string             `json:"texto"`
+	CriadoEm  pgtype.Timestamptz `json:"criado_em"`
+}
+
+type VisitaFoto struct {
+	ID        int64              `json:"id"`
+	VisitaID  int64              `json:"visita_id"`
+	Nome      string             `json:"nome"`
+	TipoMidia string             `json:"tipo_midia"`
+	Conteudo  []byte             `json:"conteudo"`
+	CriadoPor pgtype.Int8        `json:"criado_por"`
+	CriadoEm  pgtype.Timestamptz `json:"criado_em"`
+	DeletedAt pgtype.Timestamptz `json:"deleted_at"`
+	DeletedBy pgtype.Int8        `json:"deleted_by"`
+}

@@ -225,13 +225,24 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 			l, err := q.GetLocalQualquer(ctx, id)
 			return enderecoCompleto(l.Endereco, l.Numero), l.DeletedAt.Valid, err
 		},
-		filhosAtivos: func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
+		filhosAtivos: func(ctx context.Context, q *sqlccliente.Queries, id int64) ([]string, error) {
+			n, err := q.ContarVisitasDoLocal(ctx, id)
+			if err != nil || n.Ativas == 0 {
+				return nil, err
+			}
+			return []string{plural(n.Ativas, "visita ativa", "visitas ativas")}, nil
+		},
 		vinculos: func(ctx context.Context, q *sqlccliente.Queries, id int64) ([]string, error) {
 			n, err := q.ContarVinculosDoLocal(ctx, id)
 			if err != nil {
 				return nil, err
 			}
 			var itens []string
+			if v, err := q.ContarVisitasDoLocal(ctx, id); err != nil {
+				return nil, err
+			} else if v.Total > 0 {
+				itens = append(itens, plural(v.Total, "visita", "visitas")+" (contando as excluídas)")
+			}
 			if n.Grupos > 0 {
 				itens = append(itens, plural(n.Grupos, "grupo de locais", "grupos de locais"))
 			}
@@ -304,14 +315,29 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 			c, err := q.GetCicloQualquer(ctx, id)
 			return c.Nome, c.DeletedAt.Valid, err
 		},
-		// As visitas e demais registros do ciclo entram aqui quando as suas etapas existirem.
-		filhosAtivos: func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
-		vinculos: func(ctx context.Context, q *sqlccliente.Queries, id int64) ([]string, error) {
-			n, err := q.ContarVinculosDoCiclo(ctx, id)
-			if err != nil || n == 0 {
+		// As demais atividades do ciclo (notificações, ovitrampas...) entram aqui quando as suas etapas existirem.
+		filhosAtivos: func(ctx context.Context, q *sqlccliente.Queries, id int64) ([]string, error) {
+			n, err := q.ContarVisitasDoCiclo(ctx, id)
+			if err != nil || n.Ativas == 0 {
 				return nil, err
 			}
-			return []string{plural(n, "ciclo sincronizado com este", "ciclos sincronizados com este")}, nil
+			return []string{plural(n.Ativas, "visita ativa", "visitas ativas")}, nil
+		},
+		vinculos: func(ctx context.Context, q *sqlccliente.Queries, id int64) ([]string, error) {
+			var itens []string
+			if v, err := q.ContarVisitasDoCiclo(ctx, id); err != nil {
+				return nil, err
+			} else if v.Total > 0 {
+				itens = append(itens, plural(v.Total, "visita", "visitas")+" (contando as excluídas)")
+			}
+			n, err := q.ContarVinculosDoCiclo(ctx, id)
+			if err != nil {
+				return nil, err
+			}
+			if n > 0 {
+				itens = append(itens, plural(n, "ciclo sincronizado com este", "ciclos sincronizados com este"))
+			}
+			return juntar(itens), nil
 		},
 		paiExcluido: func(context.Context, *sqlccliente.Queries, int64) (string, error) { return "", nil },
 		lixeira: func(ctx context.Context, q *sqlccliente.Queries) ([]views.LixeiraLinha, error) {
@@ -403,6 +429,46 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 			return out, err
 		},
 	},
+	"visita": {
+		Chave: "visita", Rotulo: "Visita", Plural: "Visitas", Genero: "a",
+		soft: func(ctx context.Context, q *sqlccliente.Queries, id int64, por pgtype.Int8) (int64, error) {
+			return q.SoftDeleteVisita(ctx, sqlccliente.SoftDeleteVisitaParams{ID: id, Por: por})
+		},
+		restore: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			return q.RestoreVisita(ctx, id)
+		},
+		force: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			return q.ForceDeleteVisita(ctx, id)
+		},
+		rotulo: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, bool, error) {
+			v, err := q.GetVisitaQualquer(ctx, id)
+			return "Visita " + strconv.FormatInt(v.ID, 10), v.DeletedAt.Valid, err
+		},
+		// As amostras, notificações e demais registros da visita entram aqui quando as suas etapas existirem.
+		filhosAtivos: func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
+		vinculos:     func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
+		paiExcluido: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, error) {
+			v, err := q.GetVisitaQualquer(ctx, id)
+			if err != nil {
+				return "", err
+			}
+			if l, err := q.GetLocalQualquer(ctx, v.LocalID); err == nil && l.DeletedAt.Valid {
+				return "o local " + enderecoCompleto(l.Endereco, l.Numero), nil
+			}
+			if c, err := q.GetCicloQualquer(ctx, v.CicloID); err == nil && c.DeletedAt.Valid {
+				return "o ciclo " + c.Nome, nil
+			}
+			return "", nil
+		},
+		lixeira: func(ctx context.Context, q *sqlccliente.Queries) ([]views.LixeiraLinha, error) {
+			rows, err := q.ListVisitasExcluidas(ctx)
+			out := make([]views.LixeiraLinha, len(rows))
+			for i, r := range rows {
+				out[i] = views.LixeiraLinha{ID: r.ID, Rotulo: r.Rotulo, Contexto: r.Contexto, Quando: r.DeletedAt.Time, Por: r.ExcluidoPor}
+			}
+			return out, err
+		},
+	},
 	"grupo": {
 		Chave: "grupo", Rotulo: "Grupo de locais", Plural: "Grupos de locais", Genero: "o",
 		soft: func(ctx context.Context, q *sqlccliente.Queries, id int64, por pgtype.Int8) (int64, error) {
@@ -434,7 +500,7 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 }
 
 // ordemDaLixeira é a ordem das abas.
-var ordemDaLixeira = []string{"local", "quarteirao", "bairro", "cidade", "ciclo", "lei", "lei_trecho", "grupo", "mapeamento"}
+var ordemDaLixeira = []string{"local", "quarteirao", "bairro", "cidade", "ciclo", "lei", "lei_trecho", "visita", "grupo", "mapeamento"}
 
 // excluirLogicamente aplica a regra completa: recusa se há filhos ativos; senão marca deleted_at.
 // Devolve os motivos da recusa (vazio = excluído), o nome do registro e o erro de banco, se houve.
