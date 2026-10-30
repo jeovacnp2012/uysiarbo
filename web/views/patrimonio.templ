@@ -1,0 +1,228 @@
+package views
+
+import "strconv"
+
+templ Patrimonios(l Layout, d PatrimoniosData) {
+	@Base(l) {
+		@PageHeader("Patrimônio", "Bens permanentes, com responsável e histórico.") {
+			if d.PodeNovo {
+				<a class="btn btn-primario" href="/estoque/patrimonio/novo" data-icone="plus">Novo bem</a>
+			}
+		}
+		<form
+			method="get"
+			action="/estoque/patrimonio"
+			class="cartao filtros filtros-vivos"
+			autocomplete="off"
+			hx-get="/estoque/patrimonio"
+			hx-trigger="input delay:350ms, change delay:60ms, filtrar from:body"
+			hx-sync="this:replace"
+			hx-target="#patrimonio-lista"
+			hx-select="#patrimonio-lista"
+			hx-swap="outerHTML"
+			hx-push-url="true"
+			hx-indicator="#patrimonio-lista"
+		>
+			<input type="hidden" name="ordem" value={ d.Ordem }/>
+			<input type="hidden" name="dir" value={ d.Dir }/>
+			<div class="campo">
+				<label for="f-busca">Nº de patrimônio, nome ou série</label>
+				<input id="f-busca" name="busca" type="search" value={ d.Filtro.Busca }/>
+			</div>
+			@campoEscolha("f-status", "Situação", "status", "Todas", d.Status)
+			@campoEscolha("f-resp", "Responsável", "responsavel", "Todos", d.Responsaveis)
+			<div class="form-acoes">
+				<a class="btn btn-escuro" href="/estoque/patrimonio" data-icone="undo">Limpar filtros</a>
+			</div>
+			<noscript><button type="submit" class="btn btn-primario">Filtrar</button></noscript>
+		</form>
+		<div id="patrimonio-lista" class="lista-viva">
+			<section class="cartao">
+				@Paginacao(d.Pag, "/estoque/patrimonio", d.Query)
+				<div class="tabela-wrap">
+					<table class="tabela">
+						<thead>
+							<tr>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "id") }><a class="ordenar" href="#" data-ordenar="id" data-dir={ proximaDir(d.Ordem, d.Dir, "id") }>ID<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "id") }</span></a></th>
+								<th scope="col">Nº patrimônio</th>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "nome") }><a class="ordenar" href="#" data-ordenar="nome" data-dir={ proximaDir(d.Ordem, d.Dir, "nome") }>Bem<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "nome") }</span></a></th>
+								<th scope="col">Série</th>
+								<th scope="col">Responsável</th>
+								<th scope="col">Entrada</th>
+								<th scope="col">Situação</th>
+								<th scope="col" data-fixa><span class="sr-only">Ações</span></th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, x := range d.Linhas {
+								<tr>
+									<td data-rotulo="ID"><strong>{ x.IDTexto }</strong></td>
+									<td data-rotulo="Nº patrimônio">{ x.Numero }</td>
+									<td data-rotulo="Bem" class="quebra2">{ x.Nome }</td>
+									<td data-rotulo="Série">{ x.Serie }</td>
+									<td data-rotulo="Responsável">{ x.Responsavel }</td>
+									<td data-rotulo="Entrada">{ x.Entrada }</td>
+									<td data-rotulo="Situação">{ x.Status }</td>
+									<td data-rotulo="Ações"><a class="btn" href={ templ.SafeURL("/estoque/patrimonio/" + x.IDTexto) }>Abrir</a></td>
+								</tr>
+							}
+						</tbody>
+					</table>
+					if len(d.Linhas) == 0 {
+						<div class="tabela-vazia">Nenhum bem encontrado.</div>
+					}
+				</div>
+				@Paginacao(d.Pag, "/estoque/patrimonio", d.Query)
+			</section>
+		</div>
+	}
+}
+
+func patrimonioAcao(id int64) string {
+	if id == 0 {
+		return "/estoque/patrimonio"
+	}
+	return "/estoque/patrimonio/" + strconv.FormatInt(id, 10)
+}
+
+templ patrimonioMini(d PatrimonioForm, caminho, titulo, rotuloCampo, botao string, comResponsavel, descricaoObrigatoria bool) {
+	<form method="post" action={ templ.SafeURL(patrimonioAcao(d.ID) + "/" + caminho) } class="cartao form-admin" data-sem-gaveta>
+		<input type="hidden" name="csrf" value={ d.CSRF }/>
+		<h2>{ titulo }</h2>
+		<div class="grade-form">
+			if comResponsavel {
+				<div class="campo">
+					<label for={ "r-" + caminho }>Novo responsável</label>
+					<select id={ "r-" + caminho } name="responsavel" required>
+						<option value="">—</option>
+						@opcoesDe(d.Responsaveis)
+					</select>
+				</div>
+			}
+			<div class="campo campo-largo">
+				<label for={ "t-" + caminho }>{ rotuloCampo }</label>
+				<input id={ "t-" + caminho } name="descricao" type="text" maxlength="500" required?={ descricaoObrigatoria }/>
+			</div>
+		</div>
+		<div class="form-acoes">
+			<button type="submit" class="btn btn-escuro">{ botao }</button>
+		</div>
+	</form>
+}
+
+templ PatrimonioFicha(l Layout, d PatrimonioForm) {
+	@Base(l) {
+		if d.Novo() {
+			@PageHeader("Novo bem patrimonial", "") {
+				<a class="btn" href="/estoque/patrimonio">Voltar</a>
+			}
+		} else {
+			@PageHeader(d.Nome, "Patrimônio "+d.Numero+" — "+d.StatusRotulo+" — responsável: "+d.Responsavel) {
+				<a class="btn" href="/estoque/patrimonio">Voltar</a>
+			}
+			@Presenca("patrimonio", strconv.FormatInt(d.ID, 10), modoDaTela(d.PodeEditar))
+		}
+		if d.Aviso != "" {
+			<p class="alerta alerta-ok" role="status">{ d.Aviso }</p>
+		}
+		if d.Erro != "" {
+			<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
+		}
+		<form method="post" action={ templ.SafeURL(patrimonioAcao(d.ID)) } class="cartao form-admin" data-sem-gaveta>
+			<input type="hidden" name="csrf" value={ d.CSRF }/>
+			<fieldset class="sem-borda" disabled?={ !d.PodeEditar }>
+				<div class="grade-form">
+					<div class="campo">
+						<label for="numero">Nº de patrimônio</label>
+						<input id="numero" name="numero" type="text" value={ d.Numero } maxlength="40" required/>
+					</div>
+					<div class="campo">
+						<label for="nome">Nome do bem</label>
+						<input id="nome" name="nome" type="text" value={ d.Nome } maxlength="150" required/>
+					</div>
+					<div class="campo">
+						<label for="serie">Nº de série</label>
+						<input id="serie" name="serie" type="text" value={ d.Serie } maxlength="60"/>
+					</div>
+					<div class="campo">
+						<label for="entrada">Data de entrada</label>
+						<input id="entrada" name="entrada" type="date" value={ d.Entrada }/>
+					</div>
+					<div class="campo">
+						<label for="lote">Lote de origem (equipamento do estoque)</label>
+						<select id="lote" name="lote">
+							<option value="">—</option>
+							@opcoesDe(d.Lotes)
+						</select>
+					</div>
+					if d.Novo() {
+						<div class="campo">
+							<label for="responsavel">Responsável</label>
+							<select id="responsavel" name="responsavel">
+								<option value="">—</option>
+								@opcoesDe(d.Responsaveis)
+							</select>
+						</div>
+					}
+					<div class="campo campo-largo">
+						<label for="observacao">Observação</label>
+						<textarea id="observacao" name="observacao" rows="3" maxlength="1000">{ d.Observacao }</textarea>
+					</div>
+				</div>
+			</fieldset>
+			if d.PodeEditar {
+				<div class="form-acoes">
+					<button type="submit" class="btn btn-primario" data-icone="save">Salvar</button>
+					if !d.Novo() && d.PodeExcluir {
+						<button type="submit" class="btn btn-perigo" formaction={ patrimonioAcao(d.ID) + "/excluir" } onclick="return confirm('Enviar este bem para a lixeira?')" data-icone="trash">Excluir</button>
+					}
+				</div>
+			}
+		</form>
+		if !d.Novo() {
+			if d.PodeAtribuir && d.Status == "ativo" {
+				@patrimonioMini(d, "atribuir", "Atribuir / transferir", "Motivo (opcional)", "Atribuir", true, false)
+			}
+			if d.PodeManutencao && d.Status == "ativo" {
+				@patrimonioMini(d, "manutencao", "Enviar para manutenção", "Descrição", "Enviar para manutenção", false, true)
+			}
+			if d.PodeManutencao && d.Status == "manutencao" {
+				@patrimonioMini(d, "retorno", "Retorno da manutenção", "Descrição", "Registrar retorno", false, false)
+			}
+			if d.PodeAnotar {
+				@patrimonioMini(d, "anotacao", "Anotação", "Texto da anotação", "Registrar anotação", false, true)
+			}
+			if d.PodeBaixa && d.Status != "baixado" {
+				@patrimonioMini(d, "baixa", "Baixa do bem", "Motivo da baixa", "Dar baixa", false, true)
+			}
+			if d.PodeReativar && d.Status == "baixado" {
+				@patrimonioMini(d, "reativar", "Reativar o bem", "Descrição", "Reativar", false, false)
+			}
+			<section class="cartao">
+				<h2>Histórico</h2>
+				<div class="tabela-wrap">
+					<table class="tabela">
+						<thead>
+							<tr>
+								<th scope="col">Quando</th>
+								<th scope="col">Evento</th>
+								<th scope="col">Descrição</th>
+								<th scope="col">Por</th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, e := range d.Eventos {
+								<tr>
+									<td data-rotulo="Quando">{ e.Quando }</td>
+									<td data-rotulo="Evento">{ e.Tipo }</td>
+									<td data-rotulo="Descrição" class="quebra2">{ e.Descricao }</td>
+									<td data-rotulo="Por">{ e.Por }</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+			</section>
+		}
+	}
+}

@@ -768,6 +768,30 @@ type PapelPermisso struct {
 	Permissao string `json:"permissao"`
 }
 
+type Patrimonio struct {
+	ID               int64              `json:"id"`
+	LoteID           pgtype.Int8        `json:"lote_id"`
+	NumeroPatrimonio string             `json:"numero_patrimonio"`
+	NumeroSerie      string             `json:"numero_serie"`
+	Nome             string             `json:"nome"`
+	ResponsavelID    pgtype.Int8        `json:"responsavel_id"`
+	DataEntrada      pgtype.Date        `json:"data_entrada"`
+	Status           string             `json:"status"`
+	Observacao       string             `json:"observacao"`
+	CriadoEm         pgtype.Timestamptz `json:"criado_em"`
+	DeletedAt        pgtype.Timestamptz `json:"deleted_at"`
+	DeletedBy        pgtype.Int8        `json:"deleted_by"`
+}
+
+type PatrimonioEvento struct {
+	ID           int64              `json:"id"`
+	PatrimonioID int64              `json:"patrimonio_id"`
+	Tipo         string             `json:"tipo"`
+	Descricao    string             `json:"descricao"`
+	UsuarioID    pgtype.Int8        `json:"usuario_id"`
+	CriadoEm     pgtype.Timestamptz `json:"criado_em"`
+}
+
 type QuarteiraoGeometria struct {
 	QuarteiraoID int64              `json:"quarteirao_id"`
 	Geom         interface{}        `json:"geom"`

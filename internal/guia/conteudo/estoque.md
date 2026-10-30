@@ -32,7 +32,7 @@ Toda movimentação exige um motivo e fica no histórico, com quem fez e quando.
 A lista de lotes mostra **(vencido)** e **(vence em breve)**, e tem filtro por situação: com saldo, sem saldo, vence em 30 dias e vencido.
 
 ## Cuidados
-Excluir envia para a **Lixeira**. Um produto só sai enquanto não tiver lotes ativos; a exclusão definitiva é recusada se houver ligação com outro registro. O patrimônio chega na próxima etapa.
+Excluir envia para a **Lixeira**. Um produto só sai enquanto não tiver lotes ativos; a exclusão definitiva é recusada se houver ligação com outro registro.
 
 ## Retiradas
 Em **Estoque > Retiradas**, uma retirada registra produtos que saem do estoque com um responsável.
@@ -43,3 +43,12 @@ Em **Estoque > Retiradas**, uma retirada registra produtos que saem do estoque c
 
 ## Balanço Físico
 Em **Estoque > Balanço Físico**, cada produto mostra quanto há **em estoque**, quanto está **em retiradas abertas**, o **total** que deveria existir, o saldo **vencido** e o **próximo vencimento**. Filtre por unidade e tipo.
+
+## Patrimônio
+Em **Estoque > Patrimônio**, cadastre bens permanentes (bomba costal, notebook...): número de patrimônio (único), nome, número de série, data de entrada, lote de origem (opcional, para equipamentos do estoque) e responsável.
+Na ficha do bem:
+- **Atribuir / transferir** troca o responsável (com motivo opcional).
+- **Enviar para manutenção** e **Registrar retorno** controlam a situação "Em manutenção".
+- **Anotação** registra uma observação no histórico.
+- **Dar baixa** retira o bem de uso (exige o motivo); bem baixado não pode ser alterado até ser **reativado**.
+Tudo fica no **Histórico** do bem, com quem fez e quando. Excluir envia o bem para a Lixeira.

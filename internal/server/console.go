@@ -664,6 +664,7 @@ var modulosProntos = map[string]struct{ href, permissao string }{
 	"Entrada":                            {"/estoque/lote", "estoque_entrada_visualizar"},
 	"Retirada":                           {"/estoque/retirada", "estoque_retirada_visualizar"},
 	"Balanço físico":                     {"/estoque/balanco", "estoque_balanco_visualizar"},
+	"Patrimônio":                         {"/estoque/patrimonio", "patrimonio_visualizar"},
 	"Leishmaniose visceral canina (LVC)": {"/zoonose/lvc", "zoonose_lvc_visualizar"},
 	"Campanha antirrábica: diária de trabalho": {"/zoonose/campanha/diaria", "campanha_diaria_visualizar"},
 	"EDL: estação de monitoramento de Aedes":   {"/edls", "edl_visualizar"},

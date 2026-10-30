@@ -188,7 +188,7 @@ func (s *handlers) menu(r *http.Request) []views.NavGrupo {
 				itemSe(pr.Pode("estoque_produto_visualizar"), "Produtos", "/estoque/produto"),
 				itemSe(pr.Pode("estoque_entrada_visualizar"), "Entradas / Lotes", "/estoque/lote"),
 				itemSe(pr.Pode("estoque_retirada_visualizar"), "Retiradas", "/estoque/retirada"),
-				{Label: "Patrimônio", EmBreve: true},
+				itemSe(pr.Pode("patrimonio_visualizar"), "Patrimônio", "/estoque/patrimonio"),
 				itemSe(pr.Pode("estoque_unidade_visualizar"), "Unidades de Estoque", "/estoque/unidade"),
 			}})
 		}

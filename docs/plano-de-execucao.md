@@ -160,7 +160,7 @@ Objetivo: migrar dados de outros sistemas e de planilhas, com segurança.
 ## Etapa 11 — Estoque e patrimônio
 - [x] 11.1 Unidades, produtos (fracionáveis), lotes e movimentação
 - [x] 11.2 Retiradas (campo e permanente), balanço físico
-- [ ] 11.3 Patrimônio (atribuir, manutenção, baixa)
+- [x] 11.3 Patrimônio (atribuir, manutenção, baixa)
 - [ ] 11.4 Integração com a campanha antirrábica (a diária consome vacina e seringa)
 
 ## Etapa 12 — Comunicação e integrações externas

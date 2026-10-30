@@ -815,6 +815,33 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 			return out, err
 		},
 	},
+	"patrimonio": {
+		Chave: "patrimonio", Rotulo: "Bem patrimonial", Plural: "Bens patrimoniais", Genero: "o",
+		soft: func(ctx context.Context, q *sqlccliente.Queries, id int64, por pgtype.Int8) (int64, error) {
+			return q.SoftDeletePatrimonio(ctx, sqlccliente.SoftDeletePatrimonioParams{ID: id, Por: por})
+		},
+		restore: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			return q.RestorePatrimonio(ctx, id)
+		},
+		force: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			return q.ForceDeletePatrimonio(ctx, id)
+		},
+		rotulo: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, bool, error) {
+			x, err := q.GetPatrimonioQualquer(ctx, id)
+			return x.NumeroPatrimonio + " — " + x.Nome, x.DeletedAt.Valid, err
+		},
+		filhosAtivos: func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
+		vinculos:     func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
+		paiExcluido:  func(context.Context, *sqlccliente.Queries, int64) (string, error) { return "", nil },
+		lixeira: func(ctx context.Context, q *sqlccliente.Queries) ([]views.LixeiraLinha, error) {
+			rows, err := q.ListPatrimoniosExcluidos(ctx)
+			out := make([]views.LixeiraLinha, len(rows))
+			for i, r := range rows {
+				out[i] = views.LixeiraLinha{ID: r.ID, Rotulo: r.Nome, Contexto: "Estoque — patrimônio", Quando: r.DeletedAt.Time, Por: r.Por}
+			}
+			return out, err
+		},
+	},
 	"estoque_lote": {
 		Chave: "estoque_lote", Rotulo: "Lote de estoque", Plural: "Lotes de estoque", Genero: "o",
 		soft: func(ctx context.Context, q *sqlccliente.Queries, id int64, por pgtype.Int8) (int64, error) {
@@ -839,10 +866,19 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 		},
 		vinculos: func(ctx context.Context, q *sqlccliente.Queries, id int64) ([]string, error) {
 			n, err := q.CountEstoqueItensDoLote(ctx, id)
-			if err != nil || n.Total == 0 {
+			if err != nil {
 				return nil, err
 			}
-			return []string{plural(n.Total, "item de retirada", "itens de retirada") + " (contando os excluídos)"}, nil
+			var itens []string
+			if n.Total > 0 {
+				itens = append(itens, plural(n.Total, "item de retirada", "itens de retirada")+" (contando os excluídos)")
+			}
+			if p, err := q.CountPatrimoniosDoLote(ctx, pgtype.Int8{Int64: id, Valid: true}); err != nil {
+				return nil, err
+			} else if p > 0 {
+				itens = append(itens, plural(p, "bem patrimonial", "bens patrimoniais"))
+			}
+			return itens, nil
 		},
 		paiExcluido: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, error) {
 			l, err := q.GetEstoqueLoteQualquer(ctx, id)
@@ -1346,7 +1382,7 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 }
 
 // ordemDaLixeira é a ordem das abas.
-var ordemDaLixeira = []string{"local", "quarteirao", "bairro", "cidade", "ciclo", "lei", "lei_trecho", "visita", "investigacao", "denuncia", "campanha", "diaria", "lvc", "liraa_agenda", "liraa_grupo", "estoque_retirada", "estoque_lote", "estoque_produto", "estoque_unidade", "drone", "baap", "ovitrampa", "edl", "notificacao", "infracao", "amostra", "reconhecimento", "resumosemanal", "grupo", "mapeamento"}
+var ordemDaLixeira = []string{"local", "quarteirao", "bairro", "cidade", "ciclo", "lei", "lei_trecho", "visita", "investigacao", "denuncia", "campanha", "diaria", "lvc", "liraa_agenda", "liraa_grupo", "patrimonio", "estoque_retirada", "estoque_lote", "estoque_produto", "estoque_unidade", "drone", "baap", "ovitrampa", "edl", "notificacao", "infracao", "amostra", "reconhecimento", "resumosemanal", "grupo", "mapeamento"}
 
 // excluirLogicamente aplica a regra completa: recusa se há filhos ativos; senão marca deleted_at.
 // Devolve os motivos da recusa (vazio = excluído), o nome do registro e o erro de banco, se houve.
