@@ -23,6 +23,29 @@ type RelatorioTela struct {
 	Query                string
 }
 
+// iconeDoCampo escolhe o ícone do rótulo de um filtro pelo tipo dele.
+func iconeDoCampo(tipo string) string {
+	switch tipo {
+	case "ciclo":
+		return "repeat"
+	case "atividade":
+		return "activity"
+	case "agente":
+		return "user"
+	case "bairro":
+		return "building"
+	case "data":
+		return "calendar"
+	case "pendencia":
+		return "alert"
+	case "simnao":
+		return "droplet"
+	case "tipolocal":
+		return "pin"
+	}
+	return "sliders"
+}
+
 func valorOpcao(o CidadeOpcao) string {
 	if o.Valor != "" {
 		return o.Valor
@@ -38,8 +61,8 @@ templ Relatorios(l Layout, d RelatoriosIndice) {
 		}
 		<div class="grade-cartoes">
 			for _, i := range d.Itens {
-				<a class="cartao" href={ templ.SafeURL("/relatorios/" + i.Slug) }>
-					<strong>{ i.Titulo }</strong>
+				<a class="cartao rel-cartao" href={ templ.SafeURL("/relatorios/" + i.Slug) }>
+					<strong data-ico="chart">{ i.Titulo }</strong>
 					<p class="subtitulo">{ i.Resumo }</p>
 				</a>
 			}
@@ -50,10 +73,12 @@ templ Relatorios(l Layout, d RelatoriosIndice) {
 templ RelatorioPagina(l Layout, d RelatorioTela) {
 	@Base(l) {
 		@PageHeader(d.Titulo, d.Resumo)
-		<form method="get" action={ templ.SafeURL("/relatorios/" + d.Slug) } class="cartao filtros">
+		<form method="get" action={ templ.SafeURL("/relatorios/" + d.Slug) } class="cartao rel-form">
+			<h2 class="rel-titulo" data-ico="sliders">Filtros</h2>
+			<div class="rel-campos">
 			for _, c := range d.Campos {
 				<div class="campo">
-					<label for={ "rel-" + c.Nome }>{ c.Rotulo }</label>
+					<label for={ "rel-" + c.Nome } data-ico={ iconeDoCampo(c.Tipo) }>{ c.Rotulo }</label>
 					if c.Tipo == "data" {
 						<input id={ "rel-" + c.Nome } type="date" name={ c.Nome } value={ c.Valor }/>
 					} else {
@@ -66,16 +91,20 @@ templ RelatorioPagina(l Layout, d RelatorioTela) {
 					}
 				</div>
 			}
-			<div class="form-acoes">
-				<button type="submit" name="gerar" value="1" class="btn btn-primario">Gerar relatório</button>
-				<button type="submit" name="formato" value="pdf" class="btn">Baixar PDF</button>
-				<button type="submit" name="formato" value="xlsx" class="btn">Baixar planilha</button>
-				<button type="submit" name="formato" value="csv" class="btn">Baixar CSV</button>
-				<a class="btn" href={ templ.SafeURL("/relatorios/" + d.Slug) }>Limpar</a>
+			</div>
+			<div class="rel-acoes">
+				<button type="submit" name="gerar" value="1" class="btn btn-primario" data-icone="play">Gerar relatório</button>
+				<span class="rel-baixar">
+					<button type="submit" name="formato" value="pdf" class="btn" data-icone="file">Baixar PDF</button>
+					<button type="submit" name="formato" value="xlsx" class="btn" data-icone="sheet">Baixar planilha</button>
+					<button type="submit" name="formato" value="csv" class="btn" data-icone="table">Baixar CSV</button>
+				</span>
+				<a class="btn rel-limpar" href={ templ.SafeURL("/relatorios/" + d.Slug) }>Limpar</a>
 			</div>
 		</form>
 		if d.Gerado {
-			<div class="cartao tabela-rolavel">
+			<div class="cartao tabela-rolavel rel-resultado">
+				<h2 class="rel-titulo" data-ico="table">Resultado <span class="selo">{ strconv.Itoa(d.Total) } linhas</span></h2>
 				if d.Cortado {
 					<p class="alerta">O relatório passou do limite e foi cortado: estreite os filtros para ver o restante.</p>
 				}
