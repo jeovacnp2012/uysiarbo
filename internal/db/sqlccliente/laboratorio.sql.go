@@ -108,6 +108,77 @@ func (q *Queries) CountAmostrasEmAnalise(ctx context.Context, somenteAgente pgty
 	return column_1, err
 }
 
+const countLaboratorio = `-- name: CountLaboratorio :one
+SELECT count(*)::int
+FROM visitas v
+JOIN locais l ON l.id = v.local_id
+JOIN LATERAL (
+  SELECT count(*) AS n,
+         bool_or(position(lower($1::text) in lower(a.numero_tubito)) > 0) AS casa_tubito,
+         bool_or(a.status <> 'concluido') AS pendente,
+         bool_or(a.status = $2::text) AS tem_status
+  FROM amostras a WHERE a.visita_id = v.id AND a.deleted_at IS NULL
+) ag ON ag.n > 0
+WHERE v.deleted_at IS NULL
+  AND ag.casa_tubito
+  AND ($2::text = '' OR ($2::text = 'concluido' AND NOT ag.pendente) OR ($2::text <> 'concluido' AND ag.tem_status))
+  AND ($3::bigint IS NULL OR v.agente_id = $3::bigint)
+  AND ($4::bigint IS NULL OR v.ciclo_id = $4::bigint)
+  AND ($5::bigint IS NULL OR v.agente_id = $5::bigint)
+  AND ($6::date IS NULL OR v.data >= $6::date)
+  AND ($7::date IS NULL OR v.data <= $7::date)
+  AND ($8::text = '' OR position(lower($8::text) in lower(l.endereco)) > 0)
+  AND ($9::text = '' OR position(lower($9::text) in lower(l.numero)) > 0)
+  AND ($10::bigint IS NULL OR l.bairro_id = $10::bigint)
+  AND ($11::bigint IS NULL OR l.quarteirao_id = $11::bigint)
+  AND ($12::text = '' OR lower(l.lado) = lower($12::text))
+  AND ($13::text = '' OR v.id::text = $13::text OR v.id_externo = $13::text)
+  AND ($14::bigint IS NULL OR v.atividade_id = $14::bigint)
+  AND ($15::int IS NULL OR v.semana = $15::int)
+`
+
+type CountLaboratorioParams struct {
+	Tubito        string      `json:"tubito"`
+	Status        string      `json:"status"`
+	SomenteAgente pgtype.Int8 `json:"somente_agente"`
+	CicloID       pgtype.Int8 `json:"ciclo_id"`
+	AgenteID      pgtype.Int8 `json:"agente_id"`
+	DataDe        pgtype.Date `json:"data_de"`
+	DataAte       pgtype.Date `json:"data_ate"`
+	Endereco      string      `json:"endereco"`
+	Numero        string      `json:"numero"`
+	BairroID      pgtype.Int8 `json:"bairro_id"`
+	QuarteiraoID  pgtype.Int8 `json:"quarteirao_id"`
+	Lado          string      `json:"lado"`
+	IDTexto       string      `json:"id_texto"`
+	AtividadeID   pgtype.Int8 `json:"atividade_id"`
+	Semana        pgtype.Int4 `json:"semana"`
+}
+
+// Lista do laboratório no modelo do Geo Controle: uma linha por visita com tubitos, com a quantidade de tubetes e os totais.
+func (q *Queries) CountLaboratorio(ctx context.Context, arg CountLaboratorioParams) (int32, error) {
+	row := q.db.QueryRow(ctx, countLaboratorio,
+		arg.Tubito,
+		arg.Status,
+		arg.SomenteAgente,
+		arg.CicloID,
+		arg.AgenteID,
+		arg.DataDe,
+		arg.DataAte,
+		arg.Endereco,
+		arg.Numero,
+		arg.BairroID,
+		arg.QuarteiraoID,
+		arg.Lado,
+		arg.IDTexto,
+		arg.AtividadeID,
+		arg.Semana,
+	)
+	var column_1 int32
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
 const createAmostra = `-- name: CreateAmostra :one
 
 INSERT INTO amostras (visita_id, numero_tubito, deposito, larvas, pupas, observacao, criado_por)
@@ -429,6 +500,180 @@ func (q *Queries) ListAmostrasExcluidas(ctx context.Context) ([]ListAmostrasExcl
 			&i.Contexto,
 			&i.DeletedAt,
 			&i.ExcluidoPor,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listLaboratorio = `-- name: ListLaboratorio :many
+SELECT v.id, COALESCE(v.id_externo, '')::text AS id_externo, v.data, v.hora_entrada, v.semana,
+       l.endereco, l.numero, l.lado, COALESCE(q.nome, '')::text AS quarteirao, COALESCE(b.nome, '')::text AS bairro,
+       c.nome AS ciclo_nome, u.nome AS agente_nome, at.sigla AS atividade_sigla, at.nome AS atividade_nome,
+       ag.n::int AS tubetes, ag.numeros::text AS numeros, ag.pendente AS pendente,
+       ag.aegypti::int AS total_aegypti, ag.albopictus::int AS total_albopictus, ag.negativo::int AS total_negativo
+FROM visitas v
+JOIN locais l ON l.id = v.local_id
+LEFT JOIN quarteiroes q ON q.id = l.quarteirao_id
+LEFT JOIN bairros b ON b.id = l.bairro_id
+JOIN ciclos c ON c.id = v.ciclo_id
+JOIN usuarios u ON u.id = v.agente_id
+JOIN atividades at ON at.id = v.atividade_id
+JOIN LATERAL (
+  SELECT count(*) AS n,
+         COALESCE(string_agg(a.numero_tubito, ', ' ORDER BY a.id), '') AS numeros,
+         bool_or(position(lower($1::text) in lower(a.numero_tubito)) > 0) AS casa_tubito,
+         bool_or(a.status <> 'concluido') AS pendente,
+         bool_or(a.status = $2::text) AS tem_status,
+         COALESCE(sum(a.total_aegypti), 0) AS aegypti, COALESCE(sum(a.total_albopictus), 0) AS albopictus,
+         COALESCE(sum(a.total_negativo), 0) AS negativo
+  FROM amostras a WHERE a.visita_id = v.id AND a.deleted_at IS NULL
+) ag ON ag.n > 0
+WHERE v.deleted_at IS NULL
+  AND ag.casa_tubito
+  AND ($2::text = '' OR ($2::text = 'concluido' AND NOT ag.pendente) OR ($2::text <> 'concluido' AND ag.tem_status))
+  AND ($3::bigint IS NULL OR v.agente_id = $3::bigint)
+  AND ($4::bigint IS NULL OR v.ciclo_id = $4::bigint)
+  AND ($5::bigint IS NULL OR v.agente_id = $5::bigint)
+  AND ($6::date IS NULL OR v.data >= $6::date)
+  AND ($7::date IS NULL OR v.data <= $7::date)
+  AND ($8::text = '' OR position(lower($8::text) in lower(l.endereco)) > 0)
+  AND ($9::text = '' OR position(lower($9::text) in lower(l.numero)) > 0)
+  AND ($10::bigint IS NULL OR l.bairro_id = $10::bigint)
+  AND ($11::bigint IS NULL OR l.quarteirao_id = $11::bigint)
+  AND ($12::text = '' OR lower(l.lado) = lower($12::text))
+  AND ($13::text = '' OR v.id::text = $13::text OR v.id_externo = $13::text)
+  AND ($14::bigint IS NULL OR v.atividade_id = $14::bigint)
+  AND ($15::int IS NULL OR v.semana = $15::int)
+ORDER BY
+  CASE WHEN $16::text = 'id' AND $17::text = 'asc' THEN COALESCE(v.id_externo, v.id::text) END ASC,
+  CASE WHEN $16::text = 'id' AND $17::text = 'desc' THEN COALESCE(v.id_externo, v.id::text) END DESC,
+  CASE WHEN $16::text = 'endereco' AND $17::text = 'asc' THEN lower(l.endereco || ' ' || l.numero) END ASC,
+  CASE WHEN $16::text = 'endereco' AND $17::text = 'desc' THEN lower(l.endereco || ' ' || l.numero) END DESC,
+  CASE WHEN $16::text = 'ciclo' AND $17::text = 'asc' THEN c.nome END ASC,
+  CASE WHEN $16::text = 'ciclo' AND $17::text = 'desc' THEN c.nome END DESC,
+  CASE WHEN $16::text = 'atividade' AND $17::text = 'asc' THEN at.nome END ASC,
+  CASE WHEN $16::text = 'atividade' AND $17::text = 'desc' THEN at.nome END DESC,
+  CASE WHEN $16::text = 'status' AND $17::text = 'asc' THEN ag.pendente::int END ASC,
+  CASE WHEN $16::text = 'status' AND $17::text = 'desc' THEN ag.pendente::int END DESC,
+  CASE WHEN $16::text = 'semana' AND $17::text = 'asc' THEN v.semana::int END ASC,
+  CASE WHEN $16::text = 'semana' AND $17::text = 'desc' THEN v.semana::int END DESC,
+  CASE WHEN $16::text = 'tubetes' AND $17::text = 'asc' THEN ag.n::int END ASC,
+  CASE WHEN $16::text = 'tubetes' AND $17::text = 'desc' THEN ag.n::int END DESC,
+  CASE WHEN $16::text = 'aegypti' AND $17::text = 'asc' THEN ag.aegypti::int END ASC,
+  CASE WHEN $16::text = 'aegypti' AND $17::text = 'desc' THEN ag.aegypti::int END DESC,
+  CASE WHEN $16::text = 'albopictus' AND $17::text = 'asc' THEN ag.albopictus::int END ASC,
+  CASE WHEN $16::text = 'albopictus' AND $17::text = 'desc' THEN ag.albopictus::int END DESC,
+  CASE WHEN $16::text = 'negativo' AND $17::text = 'asc' THEN ag.negativo::int END ASC,
+  CASE WHEN $16::text = 'negativo' AND $17::text = 'desc' THEN ag.negativo::int END DESC,
+  CASE WHEN $16::text = 'data' AND $17::text = 'asc' THEN v.data END ASC,
+  CASE WHEN $16::text = 'data' AND $17::text = 'desc' THEN v.data END DESC,
+  CASE WHEN $16::text = 'data' AND $17::text = 'asc' THEN v.hora_entrada END ASC,
+  CASE WHEN $16::text = 'data' AND $17::text = 'desc' THEN v.hora_entrada END DESC,
+  v.data DESC, v.hora_entrada DESC NULLS LAST, v.id DESC
+LIMIT $19::int OFFSET $18::int
+`
+
+type ListLaboratorioParams struct {
+	Tubito        string      `json:"tubito"`
+	Status        string      `json:"status"`
+	SomenteAgente pgtype.Int8 `json:"somente_agente"`
+	CicloID       pgtype.Int8 `json:"ciclo_id"`
+	AgenteID      pgtype.Int8 `json:"agente_id"`
+	DataDe        pgtype.Date `json:"data_de"`
+	DataAte       pgtype.Date `json:"data_ate"`
+	Endereco      string      `json:"endereco"`
+	Numero        string      `json:"numero"`
+	BairroID      pgtype.Int8 `json:"bairro_id"`
+	QuarteiraoID  pgtype.Int8 `json:"quarteirao_id"`
+	Lado          string      `json:"lado"`
+	IDTexto       string      `json:"id_texto"`
+	AtividadeID   pgtype.Int8 `json:"atividade_id"`
+	Semana        pgtype.Int4 `json:"semana"`
+	Ordem         string      `json:"ordem"`
+	Dir           string      `json:"dir"`
+	Deslocamento  int32       `json:"deslocamento"`
+	Limite        int32       `json:"limite"`
+}
+
+type ListLaboratorioRow struct {
+	ID              int64       `json:"id"`
+	IDExterno       string      `json:"id_externo"`
+	Data            pgtype.Date `json:"data"`
+	HoraEntrada     pgtype.Time `json:"hora_entrada"`
+	Semana          pgtype.Int2 `json:"semana"`
+	Endereco        string      `json:"endereco"`
+	Numero          string      `json:"numero"`
+	Lado            string      `json:"lado"`
+	Quarteirao      string      `json:"quarteirao"`
+	Bairro          string      `json:"bairro"`
+	CicloNome       string      `json:"ciclo_nome"`
+	AgenteNome      string      `json:"agente_nome"`
+	AtividadeSigla  string      `json:"atividade_sigla"`
+	AtividadeNome   string      `json:"atividade_nome"`
+	Tubetes         int32       `json:"tubetes"`
+	Numeros         string      `json:"numeros"`
+	Pendente        bool        `json:"pendente"`
+	TotalAegypti    int32       `json:"total_aegypti"`
+	TotalAlbopictus int32       `json:"total_albopictus"`
+	TotalNegativo   int32       `json:"total_negativo"`
+}
+
+func (q *Queries) ListLaboratorio(ctx context.Context, arg ListLaboratorioParams) ([]ListLaboratorioRow, error) {
+	rows, err := q.db.Query(ctx, listLaboratorio,
+		arg.Tubito,
+		arg.Status,
+		arg.SomenteAgente,
+		arg.CicloID,
+		arg.AgenteID,
+		arg.DataDe,
+		arg.DataAte,
+		arg.Endereco,
+		arg.Numero,
+		arg.BairroID,
+		arg.QuarteiraoID,
+		arg.Lado,
+		arg.IDTexto,
+		arg.AtividadeID,
+		arg.Semana,
+		arg.Ordem,
+		arg.Dir,
+		arg.Deslocamento,
+		arg.Limite,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListLaboratorioRow
+	for rows.Next() {
+		var i ListLaboratorioRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.IDExterno,
+			&i.Data,
+			&i.HoraEntrada,
+			&i.Semana,
+			&i.Endereco,
+			&i.Numero,
+			&i.Lado,
+			&i.Quarteirao,
+			&i.Bairro,
+			&i.CicloNome,
+			&i.AgenteNome,
+			&i.AtividadeSigla,
+			&i.AtividadeNome,
+			&i.Tubetes,
+			&i.Numeros,
+			&i.Pendente,
+			&i.TotalAegypti,
+			&i.TotalAlbopictus,
+			&i.TotalNegativo,
 		); err != nil {
 			return nil, err
 		}

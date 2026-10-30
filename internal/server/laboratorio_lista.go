@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -28,6 +29,7 @@ func (h *handlers) laboratorioLista(w http.ResponseWriter, r *http.Request) {
 		Numero: txt("numero"), Bairro: qs.Get("bairro"), Quarteirao: qs.Get("quarteirao"), Lado: txt("lado"),
 		Visita: txt("visita"), Atividade: qs.Get("atividade"), Semana: txt("semana"),
 	}
+	ordem, dir := ordemDoLaboratorio(qs.Get("ordem"), qs.Get("dir"))
 	semana := pgtype.Int4{}
 	if n, err := strconv.Atoi(f.Semana); err == nil && n >= 1 && n <= 53 {
 		semana = pgtype.Int4{Int32: int32(n), Valid: true}
@@ -35,40 +37,36 @@ func (h *handlers) laboratorioLista(w http.ResponseWriter, r *http.Request) {
 	if !validoEm(rotulosStatusAmostra, f.Status) {
 		f.Status = ""
 	}
-	count := sqlccliente.CountAmostrasParams{
+	count := sqlccliente.CountLaboratorioParams{
 		SomenteAgente: h.escopoVisitas(r), Tubito: f.Tubito, Status: f.Status, CicloID: idOpcional(f.Ciclo), AgenteID: idOpcional(f.Agente),
 		DataDe: dataOpcional(f.De), DataAte: dataOpcional(f.Ate), Endereco: f.Endereco,
 		Numero: f.Numero, BairroID: idOpcional(f.Bairro), QuarteiraoID: idOpcional(f.Quarteirao), Lado: f.Lado,
 		IDTexto: f.Visita, AtividadeID: idOpcional(f.Atividade), Semana: semana,
 	}
 	pag := paginaDe(r)
-	total, err := q.CountAmostras(ctx, count)
+	total, err := q.CountLaboratorio(ctx, count)
 	if err != nil {
-		h.falhaInterna(w, r, "contar amostras", err)
+		h.falhaInterna(w, r, "contar laboratório", err)
 		return
 	}
 	pag.Total = int(total)
 	if pag.Page > pag.Pages() {
 		pag.Page = pag.Pages()
 	}
-	rows, err := q.ListAmostras(ctx, sqlccliente.ListAmostrasParams{
+	rows, err := q.ListLaboratorio(ctx, sqlccliente.ListLaboratorioParams{
 		SomenteAgente: count.SomenteAgente, Tubito: count.Tubito, Status: count.Status, CicloID: count.CicloID, AgenteID: count.AgenteID,
 		DataDe: count.DataDe, DataAte: count.DataAte, Endereco: count.Endereco,
 		Numero: count.Numero, BairroID: count.BairroID, QuarteiraoID: count.QuarteiraoID, Lado: count.Lado,
-		IDTexto: count.IDTexto, AtividadeID: count.AtividadeID, Semana: count.Semana,
+		IDTexto: count.IDTexto, AtividadeID: count.AtividadeID, Semana: count.Semana, Ordem: ordem, Dir: dir,
 		Limite: int32(pag.PerPage), Deslocamento: int32((pag.Page - 1) * pag.PerPage),
 	})
 	if err != nil {
-		h.falhaInterna(w, r, "listar amostras", err)
+		h.falhaInterna(w, r, "listar laboratório", err)
 		return
 	}
-	d := views.LaboratorioData{Filtro: f, Pag: pag, Situacoes: marcarOpcao(rotulosStatusAmostra, f.Status)}
+	d := views.LaboratorioData{Filtro: f, Pag: pag, Situacoes: marcarOpcao(rotulosStatusAmostra, f.Status), Ordem: ordem, Dir: dir}
 	for _, a := range rows {
-		d.Linhas = append(d.Linhas, views.AmostraListaLinha{
-			ID: a.ID, VisitaID: a.VisitaID, Tubito: a.NumeroTubito, Deposito: a.Deposito, Endereco: enderecoCompleto(a.Endereco, a.Numero),
-			Data: dataBR(a.Data), Ciclo: a.CicloNome, Agente: a.AgenteNome, Status: a.Status, StatusRotulo: rotuloDe(rotulosStatusAmostra, a.Status),
-			Larvas: int(a.Larvas), Pupas: int(a.Pupas), Aegypti: int(a.TotalAegypti), Albopictus: int(a.TotalAlbopictus), Negativo: int(a.TotalNegativo),
-		})
+		d.Linhas = append(d.Linhas, linhaDoLaboratorio(a))
 	}
 	ciclos, err := q.ListCiclos(ctx)
 	if err != nil {
@@ -114,6 +112,10 @@ func (h *handlers) laboratorioLista(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	d.Query = url.Values{}
+	if ordem != "" {
+		d.Query.Set("ordem", ordem)
+		d.Query.Set("dir", dir)
+	}
 	for k, v := range map[string]string{
 		"tubito": f.Tubito, "status": f.Status, "ciclo": f.Ciclo, "agente": f.Agente, "de": f.De, "ate": f.Ate, "endereco": f.Endereco,
 		"numero": f.Numero, "bairro": f.Bairro, "quarteirao": f.Quarteirao, "lado": f.Lado, "visita": f.Visita, "atividade": f.Atividade, "semana": f.Semana,
@@ -123,4 +125,59 @@ func (h *handlers) laboratorioLista(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	render(w, r, views.Laboratorio(h.layout(r, "Laboratório", "/laboratorio"), d))
+}
+
+// linhaDoLaboratorio monta a linha no formato do Geo Controle: ID, endereço com QT e Lado, status da visita,
+// data e hora com o agente, atividade com a sigla e "Nº de tubetes" como "2 (124, 125)".
+func linhaDoLaboratorio(a sqlccliente.ListLaboratorioRow) views.LaboratorioLinha {
+	id := a.IDExterno
+	if id == "" {
+		id = strconv.FormatInt(a.ID, 10)
+	}
+	endereco := enderecoCompleto(a.Endereco, a.Numero)
+	if a.Quarteirao != "" {
+		endereco += " QT: " + a.Quarteirao
+	}
+	if a.Lado != "" {
+		endereco += " Lado: " + a.Lado
+	}
+	if a.Bairro != "" {
+		endereco += " " + a.Bairro
+	}
+	quando := dataBR(a.Data)
+	if a.HoraEntrada.Valid {
+		min := a.HoraEntrada.Microseconds / 60_000_000
+		quando += fmt.Sprintf(" %02d:%02d", min/60, min%60)
+	}
+	semana := ""
+	if a.Semana.Valid {
+		semana = strconv.Itoa(int(a.Semana.Int16))
+	}
+	status, rotulo := "concluido", "Concluído"
+	if a.Pendente {
+		status, rotulo = "em_analise", "Em análise"
+	}
+	return views.LaboratorioLinha{
+		VisitaID: a.ID, ID: id, Endereco: endereco, Status: status, StatusRotulo: rotulo, EmAnalise: a.Pendente,
+		DataAgente: quando + " " + a.AgenteNome, Ciclo: a.CicloNome, Semana: semana, Atividade: a.AtividadeNome + " " + a.AtividadeSigla,
+		Tubetes: strconv.Itoa(int(a.Tubetes)) + " (" + a.Numeros + ")",
+		Aegypti: int(a.TotalAegypti), Albopictus: int(a.TotalAlbopictus), Negativo: int(a.TotalNegativo),
+	}
+}
+
+// colunasOrdenaveisLaboratorio são as colunas do laboratório que fazem sentido ordenar (as chaves do SQL).
+var colunasOrdenaveisLaboratorio = map[string]bool{
+	"id": true, "endereco": true, "status": true, "data": true, "ciclo": true, "semana": true, "atividade": true,
+	"tubetes": true, "aegypti": true, "albopictus": true, "negativo": true,
+}
+
+// ordemDoLaboratorio valida a coluna e o sentido pedidos; sem pedido (ou inválido), a ordem padrão (mais recentes primeiro).
+func ordemDoLaboratorio(ordem, dir string) (string, string) {
+	if !colunasOrdenaveisLaboratorio[ordem] {
+		return "", ""
+	}
+	if dir != "desc" {
+		dir = "asc"
+	}
+	return ordem, dir
 }

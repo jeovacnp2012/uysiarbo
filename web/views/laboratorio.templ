@@ -2,6 +2,34 @@ package views
 
 import "strconv"
 
+// proximaDir é o sentido que o clique no título da coluna vai pedir (alterna; começa em crescente).
+func proximaDir(ordem, dir, chave string) string {
+	if ordem == chave && dir == "asc" {
+		return "desc"
+	}
+	return "asc"
+}
+
+func setaOrdem(ordem, dir, chave string) string {
+	if ordem != chave {
+		return ""
+	}
+	if dir == "desc" {
+		return " ▼"
+	}
+	return " ▲"
+}
+
+func ariaOrdem(ordem, dir, chave string) string {
+	if ordem != chave {
+		return "none"
+	}
+	if dir == "desc" {
+		return "descending"
+	}
+	return "ascending"
+}
+
 templ Laboratorio(l Layout, d LaboratorioData) {
 	@Base(l) {
 		@PageHeader("Laboratório", "Tubitos coletados nas visitas e o resultado da análise. Para alterar um resultado, abra a visita.")
@@ -56,6 +84,8 @@ templ Laboratorio(l Layout, d LaboratorioData) {
 				<label for="f-ate">Até</label>
 				<input id="f-ate" name="ate" type="date" value={ d.Filtro.Ate } class="filtro-auto"/>
 			</div>
+			<input type="hidden" name="ordem" value={ d.Ordem }/>
+			<input type="hidden" name="dir" value={ d.Dir }/>
 			<div class="form-acoes">
 				<a class="btn btn-escuro" href="/laboratorio" data-icone="undo">Limpar filtros</a>
 			</div>
@@ -64,46 +94,49 @@ templ Laboratorio(l Layout, d LaboratorioData) {
 		<div id="laboratorio-lista" class="lista-viva">
 			<section class="cartao">
 				@Paginacao(d.Pag, "/laboratorio", d.Query)
+				<details class="colunas-menu" data-colunas-menu="laboratorio"><summary class="btn" data-icone="table">Colunas</summary><div class="colunas-lista"></div></details>
 				<div class="tabela-wrap">
-					<table class="tabela">
+					<table class="tabela" data-colunas="laboratorio">
 						<thead>
-							<tr>
-								<th scope="col">Tubito</th>
-								<th scope="col">Endereço</th>
-								<th scope="col">Data / agente</th>
-								<th scope="col">Ciclo</th>
-								<th scope="col">Dep.</th>
-								<th scope="col">Larvas / pupas</th>
-								<th scope="col">Status</th>
-								<th scope="col">Aegypti</th>
-								<th scope="col">Albopictus</th>
-								<th scope="col">Negativo</th>
-								<th scope="col"><span class="sr-only">Ações</span></th>
-							</tr>
-						</thead>
-						<tbody>
-							for _, a := range d.Linhas {
 								<tr>
-									<td data-rotulo="Tubito"><strong>{ a.Tubito }</strong></td>
-									<td data-rotulo="Endereço">{ a.Endereco }</td>
-									<td data-rotulo="Data / agente">{ a.Data } — { a.Agente }</td>
-									<td data-rotulo="Ciclo">{ a.Ciclo }</td>
-									<td data-rotulo="Dep.">{ a.Deposito }</td>
-									<td data-rotulo="Larvas / pupas">{ strconv.Itoa(a.Larvas) } / { strconv.Itoa(a.Pupas) }</td>
-									<td data-rotulo="Status">
-										if a.Status == "concluido" {
-											<span class="selo selo-ok">{ a.StatusRotulo }</span>
-										} else {
-											<span class="selo selo-aviso">{ a.StatusRotulo }</span>
-										}
-									</td>
-									<td data-rotulo="Aegypti">{ strconv.Itoa(a.Aegypti) }</td>
-									<td data-rotulo="Albopictus">{ strconv.Itoa(a.Albopictus) }</td>
-									<td data-rotulo="Negativo">{ strconv.Itoa(a.Negativo) }</td>
-									<td data-rotulo="Ações"><a class="btn" href={ templ.SafeURL("/visitas/" + strconv.FormatInt(a.VisitaID, 10) + "#amostras") }>Abrir visita</a></td>
+									<th scope="col" data-col="id" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "id") }><a class="ordenar" href="#" data-ordenar="id" data-dir={ proximaDir(d.Ordem, d.Dir, "id") }>ID<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "id") }</span></a></th>
+									<th scope="col" data-col="endereco" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "endereco") }><a class="ordenar" href="#" data-ordenar="endereco" data-dir={ proximaDir(d.Ordem, d.Dir, "endereco") }>Endereço<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "endereco") }</span></a></th>
+									<th scope="col" data-col="status" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "status") }><a class="ordenar" href="#" data-ordenar="status" data-dir={ proximaDir(d.Ordem, d.Dir, "status") }>Status<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "status") }</span></a></th>
+									<th scope="col" data-col="data" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "data") }><a class="ordenar" href="#" data-ordenar="data" data-dir={ proximaDir(d.Ordem, d.Dir, "data") }>Data / agente<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "data") }</span></a></th>
+									<th scope="col" data-col="ciclo" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "ciclo") }><a class="ordenar" href="#" data-ordenar="ciclo" data-dir={ proximaDir(d.Ordem, d.Dir, "ciclo") }>Ciclo<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "ciclo") }</span></a></th>
+									<th scope="col" data-col="semana" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "semana") }><a class="ordenar" href="#" data-ordenar="semana" data-dir={ proximaDir(d.Ordem, d.Dir, "semana") }>Sem.<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "semana") }</span></a></th>
+									<th scope="col" data-col="atividade" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "atividade") }><a class="ordenar" href="#" data-ordenar="atividade" data-dir={ proximaDir(d.Ordem, d.Dir, "atividade") }>Atividade<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "atividade") }</span></a></th>
+									<th scope="col" data-col="tubetes" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "tubetes") }><a class="ordenar" href="#" data-ordenar="tubetes" data-dir={ proximaDir(d.Ordem, d.Dir, "tubetes") }>Nº de tubetes<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "tubetes") }</span></a></th>
+									<th scope="col" data-col="aegypti" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "aegypti") }><a class="ordenar" href="#" data-ordenar="aegypti" data-dir={ proximaDir(d.Ordem, d.Dir, "aegypti") }>Total de A. Aegypti<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "aegypti") }</span></a></th>
+									<th scope="col" data-col="albopictus" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "albopictus") }><a class="ordenar" href="#" data-ordenar="albopictus" data-dir={ proximaDir(d.Ordem, d.Dir, "albopictus") }>Total de A. Albopictus<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "albopictus") }</span></a></th>
+									<th scope="col" data-col="negativo" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "negativo") }><a class="ordenar" href="#" data-ordenar="negativo" data-dir={ proximaDir(d.Ordem, d.Dir, "negativo") }>Total negativo<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "negativo") }</span></a></th>
+									<th scope="col" data-fixa>Ações</th>
 								</tr>
-							}
-						</tbody>
+							</thead>
+							<tbody>
+								for _, a := range d.Linhas {
+									<tr>
+										<td data-col="id" data-rotulo="ID"><strong>{ a.ID }</strong></td>
+										<td data-col="endereco" data-rotulo="Endereço" class="quebra2" title={ a.Endereco }><span class="clamp2">{ a.Endereco }</span></td>
+										<td data-col="status" data-rotulo="Status">
+											if a.EmAnalise {
+												<span class="selo selo-aviso">{ a.StatusRotulo }</span>
+											} else {
+												<span class="selo selo-ok">{ a.StatusRotulo }</span>
+											}
+										</td>
+										<td data-col="data" data-rotulo="Data / agente" class="quebra2" title={ a.DataAgente }><span class="clamp2">{ a.DataAgente }</span></td>
+										<td data-col="ciclo" data-rotulo="Ciclo">{ a.Ciclo }</td>
+										<td data-col="semana" data-rotulo="Sem.">{ a.Semana }</td>
+										<td data-col="atividade" data-rotulo="Atividade">{ a.Atividade }</td>
+										<td data-col="tubetes" data-rotulo="Nº de tubetes">{ a.Tubetes }</td>
+										<td data-col="aegypti" data-rotulo="Total de A. Aegypti">{ strconv.Itoa(a.Aegypti) }</td>
+										<td data-col="albopictus" data-rotulo="Total de A. Albopictus">{ strconv.Itoa(a.Albopictus) }</td>
+										<td data-col="negativo" data-rotulo="Total negativo">{ strconv.Itoa(a.Negativo) }</td>
+										<td data-rotulo="Ações" data-fixa><a class="btn" href={ templ.SafeURL("/visitas/" + strconv.FormatInt(a.VisitaID, 10) + "#amostras") }>Abrir visita</a></td>
+									</tr>
+								}
+							</tbody>
 					</table>
 					if len(d.Linhas) == 0 {
 						<div class="tabela-vazia">Nenhuma amostra encontrada.</div>

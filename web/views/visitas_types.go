@@ -133,6 +133,16 @@ type AmostraListaLinha struct {
 	Aegypti, Albopictus, Negativo       int
 }
 
+// LaboratorioLinha é uma visita com tubitos na listagem do laboratório (modelo do Geo Controle).
+type LaboratorioLinha struct {
+	VisitaID                                  int64
+	ID, Endereco, Status, DataAgente, Ciclo   string
+	Semana, Atividade, Tubetes, TubetesTitulo string
+	EmAnalise                                 bool
+	StatusRotulo                              string
+	Aegypti, Albopictus, Negativo             int
+}
+
 // LaboratorioFiltro são os filtros da listagem do laboratório.
 type LaboratorioFiltro struct {
 	Tubito, Status, Ciclo, Agente, De, Ate, Endereco string
@@ -163,7 +173,8 @@ type MobilidadeData struct {
 }
 
 type LaboratorioData struct {
-	Linhas      []AmostraListaLinha
+	Linhas      []LaboratorioLinha
+	Ordem, Dir  string
 	Filtro      LaboratorioFiltro
 	Pag         Pagination
 	Query       url.Values

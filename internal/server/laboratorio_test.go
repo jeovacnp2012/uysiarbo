@@ -160,5 +160,6 @@ func TestLaboratorioFiltrosComoNoGeoControle(t *testing.T) {
 			t.Errorf("filtro %q: deveria achar = %v", k.filtro, k.acha)
 		}
 	}
-	quer(t, ana.get("/laboratorio"), http.StatusOK, "Número", "Bairro", "Quarteirão", "Lado", "ID da visita", "Atividade", "Semana")
+	quer(t, ana.get("/laboratorio"), http.StatusOK, "Número", "Bairro", "Quarteirão", "Lado", "ID da visita", "Atividade", "Semana",
+		"Nº de tubetes", "Total de A. Aegypti", "Total de A. Albopictus", "Total negativo", "Data / agente", "QT:", "Lado:")
 }
