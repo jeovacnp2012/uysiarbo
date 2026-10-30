@@ -53,7 +53,7 @@ func TestMenuPorCategoriaComGruposRecolhidos(t *testing.T) {
 
 	// Itens simples (sem grupo) e o item ativo marcado.
 	corpo := ana.get("/guia").Body.String()
-	for _, quer := range []string{`class="menu-item" href="/"`, `class="menu-item" href="/guia" aria-current`, `class="menu-item" href="/novidades"`, `class="menu-item" href="/bairros"`, `class="menu-item" href="/auditoria"`, `class="menu-subitem" href="/ciclos"`} {
+	for _, quer := range []string{`class="menu-item" href="/"`, `class="menu-item" href="/guia" hx-boost="true" aria-current`, `class="menu-item" href="/novidades"`, `class="menu-item" href="/bairros"`, `class="menu-item" href="/auditoria"`, `class="menu-subitem" href="/ciclos"`} {
 		if !strings.Contains(corpo, quer) {
 			t.Errorf("o menu deveria conter %q", quer)
 		}

@@ -123,9 +123,9 @@ document.addEventListener('htmx:load', (e) => uysiSoSe(e.target));
 // navegação normal; erros de validação (400, 409...) com a área também são mostrados dentro da aba.
 document.addEventListener('htmx:beforeSwap', (e) => {
     const d = e.detail;
-    if (!d.target || d.target.id !== 'aba-area') return;
+    if (!d.target || (d.target.id !== 'aba-area' && d.target.id !== 'conteudo')) return;
     const txt = d.serverResponse || '';
-    if (txt.indexOf('id="aba-area"') < 0) {
+    if (txt.indexOf('id="' + d.target.id + '"') < 0) {
         d.shouldSwap = false;
         if (d.requestConfig && d.requestConfig.verb === 'get' && d.pathInfo) window.location.href = d.pathInfo.requestPath;
         return;
@@ -134,4 +134,43 @@ document.addEventListener('htmx:beforeSwap', (e) => {
         d.shouldSwap = true;
         d.isError = false;
     }
+});
+
+// Menu lateral parado: clicar num item carrega só o conteúdo (#conteudo) e o menu não rola. Depois de cada troca, marca
+// o item da página (data-menu-ativo, vindo do servidor), abre o grupo e atualiza o título da barra.
+function uysiSincronizarMenu() {
+    const c = document.getElementById('conteudo');
+    if (!c) return;
+    const els = c.querySelectorAll('[data-menu-ativo]');
+    const el = els.length ? els[els.length - 1] : c;
+    const ativo = el.dataset.menuAtivo;
+    const titulo = el.dataset.titulo;
+    document.querySelectorAll('#menu-lista a[aria-current]').forEach((a) => a.removeAttribute('aria-current'));
+    const alvo = ativo ? document.querySelector('#menu-lista a[href="' + ativo + '"]') : null;
+    if (alvo) {
+        alvo.setAttribute('aria-current', 'page');
+        const grupo = alvo.closest('details');
+        if (grupo) grupo.open = true;
+    }
+    if (titulo) {
+        const t = document.querySelector('.barra-titulo');
+        if (t) t.textContent = titulo;
+    }
+    if (window.Alpine) {
+        try { window.Alpine.$data(document.body).menu = false; } catch (e) {}
+    }
+}
+document.addEventListener('htmx:afterSettle', uysiSincronizarMenu);
+
+// Em carregamentos de página inteira, o menu volta para onde estava.
+document.addEventListener('DOMContentLoaded', () => {
+    const lista = document.getElementById('menu-lista');
+    if (!lista) return;
+    try {
+        const v = sessionStorage.getItem('uysi-menu-rolagem');
+        if (v) lista.scrollTop = parseInt(v, 10) || 0;
+    } catch (e) {}
+    lista.addEventListener('scroll', () => {
+        try { sessionStorage.setItem('uysi-menu-rolagem', String(lista.scrollTop)); } catch (e) {}
+    }, { passive: true });
 });

@@ -183,7 +183,7 @@ h3 {
     background: var(--marca-fraca);
 }
 
-.menu-item[aria-current='page'] {
+.menu-item[aria-current] {
     background: var(--marca-fraca);
     color: var(--marca);
     font-weight: 600;
@@ -1047,7 +1047,7 @@ form.inline {
     color: var(--texto);
 }
 
-.menu-item[aria-current='page'] {
+.menu-item[aria-current] {
     background: var(--marca-fraca);
     color: var(--marca);
     font-weight: 600;
@@ -1121,7 +1121,7 @@ form.inline {
     cursor: not-allowed;
 }
 
-.menu-subitem[aria-current='page'] {
+.menu-subitem[aria-current] {
     background: var(--marca-fraca);
     color: var(--marca);
     font-weight: 600;
