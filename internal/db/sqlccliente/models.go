@@ -57,6 +57,13 @@ type ApiIdempotencium struct {
 	CriadoEm     pgtype.Timestamptz `json:"criado_em"`
 }
 
+type Atividade struct {
+	ID        int16  `json:"id"`
+	Sigla     string `json:"sigla"`
+	Nome      string `json:"nome"`
+	Descricao string `json:"descricao"`
+}
+
 type Auditorium struct {
 	ID         int64              `json:"id"`
 	Quando     pgtype.Timestamptz `json:"quando"`
@@ -107,6 +114,36 @@ type BairroGeometria struct {
 type BairroResponsavei struct {
 	BairroID  int64 `json:"bairro_id"`
 	UsuarioID int64 `json:"usuario_id"`
+}
+
+type Ciclo struct {
+	ID                 int64              `json:"id"`
+	Nome               string             `json:"nome"`
+	DataInicio         pgtype.Date        `json:"data_inicio"`
+	DataFinal          pgtype.Date        `json:"data_final"`
+	Situacao           string             `json:"situacao"`
+	PermiteForaPeriodo bool               `json:"permite_fora_periodo"`
+	PainelPublico      bool               `json:"painel_publico"`
+	PainelPublicoTexto string             `json:"painel_publico_texto"`
+	CriadoEm           pgtype.Timestamptz `json:"criado_em"`
+	AtualizadoEm       pgtype.Timestamptz `json:"atualizado_em"`
+	DeletedAt          pgtype.Timestamptz `json:"deleted_at"`
+	DeletedBy          pgtype.Int8        `json:"deleted_by"`
+}
+
+type CicloAtividade struct {
+	CicloID     int64 `json:"ciclo_id"`
+	AtividadeID int16 `json:"atividade_id"`
+}
+
+type CicloPainelAtividade struct {
+	CicloID     int64 `json:"ciclo_id"`
+	AtividadeID int16 `json:"atividade_id"`
+}
+
+type CicloSincronizar struct {
+	CicloID        int64 `json:"ciclo_id"`
+	CicloDestinoID int64 `json:"ciclo_destino_id"`
 }
 
 type Cidade struct {

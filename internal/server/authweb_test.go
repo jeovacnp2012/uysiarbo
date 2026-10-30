@@ -8,7 +8,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -58,16 +60,29 @@ type mundo struct {
 
 // novoMundo sobe o servidor completo (com login) sobre um banco temporário, com dois clientes, dois
 // usuários no primeiro (Ana, normal; Bruno, com troca de senha obrigatória) e um master.
-func novoMundo(t *testing.T) *mundo {
-	t.Helper()
+var (
+	modeloUma    sync.Once
+	modeloBanco  *testutil.Compartilhado
+	modeloMaster string
+	modeloErro   error
+)
+
+// TestMain apaga o banco-modelo dos testes no fim.
+func TestMain(m *testing.M) {
+	code := m.Run()
+	modeloBanco.Apagar()
+	os.Exit(code)
+}
+
+// montarModelo prepara, uma única vez, o banco com o catálogo, dois clientes, o master e os usuários Ana e Bruno;
+// cada teste começa com o banco restaurado a esse estado (criar um banco por teste leva ~3 s no Windows).
+func montarModelo(url string) (string, error) {
 	ctx := context.Background()
-	url := testutil.NewDatabase(t)
 	pool, err := db.Connect(ctx, url)
 	if err != nil {
-		t.Fatal(err)
+		return "", err
 	}
-	t.Cleanup(pool.Close)
-
+	defer pool.Close()
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 	svc := &tenant.Service{Pool: pool, URL: url, Log: log, Auditoria: audit.Plataforma{Q: sqlc.New(pool)}}
 	for _, in := range []tenant.Input{
@@ -75,21 +90,23 @@ func novoMundo(t *testing.T) *mundo {
 		{Nome: "Prefeitura de Sinop", Slug: "sinop", Subdominio: "uysiarbosn", Cidade: "Sinop", UF: "SP"}, // SP de propósito: fuso diferente do de MT
 	} {
 		if _, err := svc.Provision(ctx, in); err != nil {
-			t.Fatal(err)
+			return "", err
 		}
 	}
 	_, masterPw, err := svc.CriarMaster(ctx, "Mestre", "mestre@plataforma.com")
 	if err != nil {
-		t.Fatal(err)
+		return "", err
 	}
-
 	pools := &tenant.Pools{URL: url}
-	t.Cleanup(pools.Close)
-	cp, _ := pools.Get(ctx, "c_novamutum")
+	defer pools.Close()
+	cp, err := pools.Get(ctx, "c_novamutum")
+	if err != nil {
+		return "", err
+	}
 	q := sqlccliente.New(cp)
 	papel, err := q.GetPapelByNome(ctx, tenant.NomePapelAdministrador)
 	if err != nil {
-		t.Fatal(err)
+		return "", err
 	}
 	for _, u := range []struct {
 		nome, email, senha string
@@ -99,9 +116,41 @@ func novoMundo(t *testing.T) *mundo {
 		if _, err := q.CreateUsuario(ctx, sqlccliente.CreateUsuarioParams{
 			Nome: u.nome, Email: u.email, SenhaHash: hash, PapelID: papel.ID, LoginWeb: true, DeveTrocarSenha: u.trocar,
 		}); err != nil {
-			t.Fatal(err)
+			return "", err
 		}
 	}
+	return masterPw, nil
+}
+
+// novoMundo sobe o servidor completo (com login) sobre um banco temporário, com dois clientes, dois
+// usuários no primeiro (Ana, normal; Bruno, com troca de senha obrigatória) e um master.
+func novoMundo(t *testing.T) *mundo {
+	t.Helper()
+	ctx := context.Background()
+	modeloUma.Do(func() {
+		modeloBanco, modeloErro = testutil.NovoCompartilhado(func(url string) error {
+			var err error
+			modeloMaster, err = montarModelo(url)
+			return err
+		})
+	})
+	if modeloErro != nil {
+		t.Fatalf("montar o banco-modelo dos testes: %v", modeloErro)
+	}
+	url := modeloBanco.Reiniciar(t)
+	masterPw := modeloMaster
+	pool, err := db.Connect(ctx, url)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(pool.Close)
+
+	log := slog.New(slog.NewTextHandler(io.Discard, nil))
+	svc := &tenant.Service{Pool: pool, URL: url, Log: log, Auditoria: audit.Plataforma{Q: sqlc.New(pool)}}
+	pools := &tenant.Pools{URL: url}
+	t.Cleanup(pools.Close)
+	cp, _ := pools.Get(ctx, "c_novamutum")
+	q := sqlccliente.New(cp)
 
 	cap := &captchaFalso{ok: true}
 	gf := &geocodeFalso{}

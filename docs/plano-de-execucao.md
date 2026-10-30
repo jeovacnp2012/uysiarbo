@@ -106,7 +106,8 @@ Objetivo: migrar dados de outros sistemas e de planilhas, com segurança.
 **Entrega:** importar bairros e locais de uma planilha e do Geo Controle, com prévia e relatório. **✅ Etapa 4 concluída em 2026-10-29 (versões 1.0.016 e 1.0.017); o conector "Geo Controle (API)" fica pronto mas só vale quando o Geo Controle oferecer API (a exportação em planilha já funciona).** (Os demais tipos de dado ganham importadores nas etapas em que forem criados.)
 
 ## Etapa 5 — Ciclos, atividades e parâmetros
-- [ ] 5.1 Ciclos (datas, situação, atividades, sincronização, painel público) e catálogo de atividades (LIT, LI, PE, T, DF, PVE, LIRAa, LIA, BRI)
+- [x] 5.1 Ciclos (datas, situação, atividades, sincronização, painel público) e catálogo de atividades (LIT, LI, PE, T, DF, PVE, LIRAa, LIA, BRI)
+  - Feito em 2026-10-29 (versão 1.0.018): migração `cliente/00018` (`atividades` fixa com as 9 siglas, `ciclos` com exclusão lógica, `ciclo_atividades`, `ciclo_painel_atividades`, `ciclo_sincronizar`), tela `/ciclos` (permissão `param_ciclo`), aviso (não bloqueio) de períodos que se cruzam. O bloqueio por ciclo fechado e a semana epidemiológica ficam na 5.2.
 - [ ] 5.2 Semana epidemiológica (ISO ou SINAN) e regra de ciclo fechado bloqueando edição
 - [ ] 5.3 Parâmetros gerais, de mobilidade (app) e Leis Municipais com trechos
 - [ ] 5.4 Importador de ciclos; guia e Novidades atualizados

@@ -34,7 +34,7 @@ if ($LASTEXITCODE -ne 0) { Falhar "go vet" }
 
 Write-Host "==> testes"
 $ErrorActionPreference = "Continue"  # o stderr do go (ex.: "unlinkat") não deve abortar o script
-$saida = go test -count=1 ./... 2>&1 | Out-String
+$saida = go test -count=1 -timeout 30m ./... 2>&1 | Out-String
 $codigo = $LASTEXITCODE
 $ErrorActionPreference = "Stop"
 Write-Host $saida

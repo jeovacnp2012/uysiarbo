@@ -289,6 +289,40 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 			return out, err
 		},
 	},
+	"ciclo": {
+		Chave: "ciclo", Rotulo: "Ciclo", Plural: "Ciclos", Genero: "o",
+		soft: func(ctx context.Context, q *sqlccliente.Queries, id int64, por pgtype.Int8) (int64, error) {
+			return q.SoftDeleteCiclo(ctx, sqlccliente.SoftDeleteCicloParams{ID: id, Por: por})
+		},
+		restore: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			return q.RestoreCiclo(ctx, id)
+		},
+		force: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			return q.ForceDeleteCiclo(ctx, id)
+		},
+		rotulo: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, bool, error) {
+			c, err := q.GetCicloQualquer(ctx, id)
+			return c.Nome, c.DeletedAt.Valid, err
+		},
+		// As visitas e demais registros do ciclo entram aqui quando as suas etapas existirem.
+		filhosAtivos: func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
+		vinculos: func(ctx context.Context, q *sqlccliente.Queries, id int64) ([]string, error) {
+			n, err := q.ContarVinculosDoCiclo(ctx, id)
+			if err != nil || n == 0 {
+				return nil, err
+			}
+			return []string{plural(n, "ciclo sincronizado com este", "ciclos sincronizados com este")}, nil
+		},
+		paiExcluido: func(context.Context, *sqlccliente.Queries, int64) (string, error) { return "", nil },
+		lixeira: func(ctx context.Context, q *sqlccliente.Queries) ([]views.LixeiraLinha, error) {
+			rows, err := q.ListCiclosExcluidos(ctx)
+			out := make([]views.LixeiraLinha, len(rows))
+			for i, r := range rows {
+				out[i] = views.LixeiraLinha{ID: r.ID, Rotulo: r.Rotulo, Contexto: r.Contexto, Quando: r.DeletedAt.Time, Por: r.ExcluidoPor}
+			}
+			return out, err
+		},
+	},
 	"grupo": {
 		Chave: "grupo", Rotulo: "Grupo de locais", Plural: "Grupos de locais", Genero: "o",
 		soft: func(ctx context.Context, q *sqlccliente.Queries, id int64, por pgtype.Int8) (int64, error) {
@@ -320,7 +354,7 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 }
 
 // ordemDaLixeira é a ordem das abas.
-var ordemDaLixeira = []string{"local", "quarteirao", "bairro", "cidade", "grupo", "mapeamento"}
+var ordemDaLixeira = []string{"local", "quarteirao", "bairro", "cidade", "ciclo", "grupo", "mapeamento"}
 
 // excluirLogicamente aplica a regra completa: recusa se há filhos ativos; senão marca deleted_at.
 // Devolve os motivos da recusa (vazio = excluído), o nome do registro e o erro de banco, se houve.

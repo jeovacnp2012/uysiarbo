@@ -52,6 +52,7 @@ func (s *handlers) menu(r *http.Request) []views.NavGrupo {
 
 		add(pr.Pode("conf_usuario"), "Usuários", "/usuarios")
 		add(pr.Pode("conf_papel"), "Papéis", "/papeis")
+		add(pr.Pode("param_ciclo"), "Ciclos", "/ciclos")
 		add(pr.Pode("acesso_local"), "Controle de acesso", "/parametros/acesso")
 		add(pr.Pode("conf_importacao"), "Importação de dados", "/importacoes")
 		add(pr.Pode("conf_lixeira"), "Lixeira", "/lixeira")

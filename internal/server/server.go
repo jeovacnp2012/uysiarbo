@@ -158,6 +158,12 @@ func New(d Deps) http.Handler {
 	r.Get("/presenca", h.presencaSinal)
 	r.Post("/presenca/sair", h.presencaSair)
 
+	r.Get("/ciclos", h.exigir("param_ciclo", h.ciclosLista))
+	r.Get("/ciclos/novo", h.exigir("param_ciclo", h.cicloNovoForm))
+	r.Post("/ciclos", h.exigir("param_ciclo", h.cicloSalvar))
+	r.Get("/ciclos/{id}", h.exigir("param_ciclo", h.cicloEditarForm))
+	r.Post("/ciclos/{id}", h.exigir("param_ciclo", h.cicloSalvar))
+	r.Post("/ciclos/{id}/excluir", h.exigir("param_ciclo", h.cicloExcluir))
 	r.Get("/cidades", h.exigir("bairro_visualizar", h.cidadesLista))
 	r.Get("/cidades/nova", h.exigir("bairro_adicionar", h.cidadeNovaForm))
 	r.Post("/cidades", h.exigir("bairro_adicionar", h.cidadeSalvar))

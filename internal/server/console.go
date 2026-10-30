@@ -648,5 +648,6 @@ var modulosProntos = map[string]struct{ href, permissao string }{
 	"Locais":       {"/locais", "local_visualizar"},
 	"Mapa":         {"/mapa", "bairro_visualizar"},
 	"Auditoria":    {"/auditoria", "auditoria_sistema"},
+	"Parâmetros":   {"/ciclos", "param_ciclo"},
 	"Configuração": {"/usuarios", "conf_usuario"},
 }
