@@ -38,6 +38,8 @@ func permissaoDoTipo(tipo string) string {
 		return "visita_adicionar"
 	case "amostras":
 		return "visita_laboratorio_adicionar"
+	case "investigacoes":
+		return "investigacao_importar"
 	}
 	return "bairro_adicionar"
 }

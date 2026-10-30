@@ -1,0 +1,331 @@
+package views
+
+import "strconv"
+
+func seloDaDenuncia(s string) string {
+	switch s {
+	case "encerrada":
+		return "selo-ok"
+	case "em_atendimento":
+		return "selo-aviso"
+	case "cancelada":
+		return "selo-erro"
+	}
+	return ""
+}
+
+templ Denuncias(l Layout, d DenunciasData) {
+	@Base(l) {
+		@PageHeader("Denúncias", "Pedidos de cidadãos para a vigilância verificar um problema num endereço.") {
+			if d.PodeNova {
+				<a class="btn btn-primario" href="/denuncias/nova" data-icone="plus">Nova denúncia</a>
+			}
+		}
+		<form
+			method="get"
+			action="/denuncias"
+			class="cartao filtros filtros-vivos"
+			autocomplete="off"
+			hx-get="/denuncias"
+			hx-trigger="input delay:350ms, change delay:60ms, filtrar from:body"
+			hx-sync="this:replace"
+			hx-target="#denuncias-lista"
+			hx-select="#denuncias-lista"
+			hx-swap="outerHTML"
+			hx-push-url="true"
+			hx-indicator="#denuncias-lista"
+		>
+			<input type="hidden" name="ordem" value={ d.Ordem }/>
+			<input type="hidden" name="dir" value={ d.Dir }/>
+			<div class="campo campo-largo">
+				<label for="f-busca">Título, cidadão, telefone, endereço ou número</label>
+				<input id="f-busca" name="busca" type="search" value={ d.Filtro.Busca } placeholder="Buscar"/>
+			</div>
+			@campoEscolha("f-tipo", "Tipo", "tipo", "Todos os tipos", d.Tipos)
+			@campoEscolha("f-situacao", "Situação", "situacao", "Todas as situações", d.Situacoes)
+			@campoEscolha("f-origem", "Origem", "origem", "Todas as origens", d.Origens)
+			@campoEscolha("f-anonima", "Identificação", "anonima", "Anônimas e identificadas", d.Anonimas)
+			@campoEscolha("f-bairro", "Bairro", "bairro", "Todos os bairros", d.Bairros)
+			<div class="campo">
+				<label for="f-de">Data de</label>
+				<input id="f-de" name="de" type="date" value={ d.Filtro.De } class="filtro-auto"/>
+			</div>
+			<div class="campo">
+				<label for="f-ate">Data até</label>
+				<input id="f-ate" name="ate" type="date" value={ d.Filtro.Ate } class="filtro-auto"/>
+			</div>
+			<div class="form-acoes">
+				<a class="btn btn-escuro" href="/denuncias" data-icone="undo">Limpar filtros</a>
+			</div>
+			<noscript><button type="submit" class="btn btn-primario">Filtrar</button></noscript>
+		</form>
+		<div id="denuncias-lista" class="lista-viva">
+			<section class="cartao">
+				@Paginacao(d.Pag, "/denuncias", d.Query)
+				<div class="tabela-wrap">
+					<table class="tabela">
+						<thead>
+							<tr>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "id") }><a class="ordenar" href="#" data-ordenar="id" data-dir={ proximaDir(d.Ordem, d.Dir, "id") }>Nº<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "id") }</span></a></th>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "titulo") }><a class="ordenar" href="#" data-ordenar="titulo" data-dir={ proximaDir(d.Ordem, d.Dir, "titulo") }>Título<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "titulo") }</span></a></th>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "tipo") }><a class="ordenar" href="#" data-ordenar="tipo" data-dir={ proximaDir(d.Ordem, d.Dir, "tipo") }>Tipo<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "tipo") }</span></a></th>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "data") }><a class="ordenar" href="#" data-ordenar="data" data-dir={ proximaDir(d.Ordem, d.Dir, "data") }>Data<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "data") }</span></a></th>
+								<th scope="col">Cidadão</th>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "endereco") }><a class="ordenar" href="#" data-ordenar="endereco" data-dir={ proximaDir(d.Ordem, d.Dir, "endereco") }>Endereço<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "endereco") }</span></a></th>
+								<th scope="col">Bairro</th>
+								<th scope="col">Origem</th>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "situacao") }><a class="ordenar" href="#" data-ordenar="situacao" data-dir={ proximaDir(d.Ordem, d.Dir, "situacao") }>Situação<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "situacao") }</span></a></th>
+								<th scope="col">Responsável</th>
+								<th scope="col" data-fixa><span class="sr-only">Ações</span></th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, n := range d.Linhas {
+								<tr>
+									<td data-rotulo="Nº"><strong>{ n.IDTexto }</strong></td>
+									<td data-rotulo="Título" class="quebra2" title={ n.Titulo }><span class="clamp2">{ n.Titulo }</span></td>
+									<td data-rotulo="Tipo">{ n.Tipo }</td>
+									<td data-rotulo="Data">{ n.Data }</td>
+									<td data-rotulo="Cidadão">{ n.Cidadao }</td>
+									<td data-rotulo="Endereço" class="quebra2" title={ n.Endereco }><span class="clamp2">{ n.Endereco }</span></td>
+									<td data-rotulo="Bairro">{ n.Bairro }</td>
+									<td data-rotulo="Origem">{ n.Origem }</td>
+									<td data-rotulo="Situação"><span class={ "selo", seloDaDenuncia(n.Situacao) }>{ n.SituacaoRotulo }</span></td>
+									<td data-rotulo="Responsável">{ n.Responsavel }</td>
+									<td data-rotulo="Ações"><a class="btn" href={ templ.SafeURL("/denuncias/" + strconv.FormatInt(n.ID, 10)) }>Abrir</a></td>
+								</tr>
+							}
+						</tbody>
+					</table>
+					if len(d.Linhas) == 0 {
+						<div class="tabela-vazia">Nenhuma denúncia encontrada.</div>
+					}
+				</div>
+				@Paginacao(d.Pag, "/denuncias", d.Query)
+			</section>
+		</div>
+	}
+}
+
+templ dadosDaDenuncia(d DenunciaFormData) {
+	<form method="post" class="cartao form-admin" data-sem-gaveta x-data="{ anonima: false }" x-init={ "anonima = " + strconv.FormatBool(d.Anonima) }
+		if d.Novo() {
+			action="/denuncias"
+		} else {
+			action={ templ.SafeURL("/denuncias/" + strconv.FormatInt(d.ID, 10)) }
+		}
+	>
+		<input type="hidden" name="csrf" value={ d.CSRF }/>
+		if d.Erro != "" {
+			<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
+		}
+		<h2 class="rel-titulo" data-ico="user">Cidadão</h2>
+		<label class="marcar">
+			<input type="checkbox" name="anonima" value="1" x-model="anonima"/>
+			Denúncia anônima (não guarda nome, telefone nem CPF)
+		</label>
+		<div class="grade-form" x-show="!anonima">
+			<div class="campo">
+				<label for="telefone">Telefone</label>
+				<input id="telefone" name="telefone" type="text" value={ d.Telefone } maxlength="40" x-bind:disabled="anonima"/>
+			</div>
+			<div class="campo">
+				<label for="nome">Nome</label>
+				<input id="nome" name="nome" type="text" value={ d.Nome } maxlength="150" x-bind:disabled="anonima"/>
+			</div>
+			<div class="campo">
+				<label for="cpf">CPF (opcional)</label>
+				<input id="cpf" name="cpf" type="text" value={ d.CPF } maxlength="14" inputmode="numeric" x-bind:disabled="anonima"/>
+			</div>
+		</div>
+		if len(d.Anteriores) > 0 {
+			<div class="alerta" role="status">
+				<strong>Denúncias anteriores deste telefone:</strong>
+				<ul>
+					for _, a := range d.Anteriores {
+						<li><a href={ templ.SafeURL("/denuncias/" + strconv.FormatInt(a.ID, 10)) }>{ strconv.FormatInt(a.ID, 10) } — { a.Titulo }</a> <span class="subtitulo">{ a.Data } · { a.Situacao }</span></li>
+					}
+				</ul>
+			</div>
+		}
+		<h2 class="rel-titulo" data-ico="file">Denúncia</h2>
+		<div class="grade-form">
+			<div class="campo">
+				<label for="tipo">Tipo</label>
+				<select id="tipo" name="tipo" required data-sem-busca>
+					<option value="">Escolha o tipo</option>
+					@opcoesDe(d.Tipos)
+				</select>
+			</div>
+			<div class="campo">
+				<label for="origem">Origem</label>
+				<select id="origem" name="origem" required data-sem-busca>
+					@opcoesDe(d.Origens)
+				</select>
+			</div>
+			<div class="campo">
+				<label for="data">Data</label>
+				<input id="data" name="data" type="date" value={ d.Data } required/>
+			</div>
+		</div>
+		<div class="campo">
+			<label for="titulo">Título</label>
+			<input id="titulo" name="titulo" type="text" value={ d.Titulo } maxlength="150" required/>
+		</div>
+		<div class="campo">
+			<label for="descricao">Descrição</label>
+			<textarea id="descricao" name="descricao" rows="4" maxlength="4000">{ d.Descricao }</textarea>
+		</div>
+		<h2 class="rel-titulo" data-ico="pin">Onde</h2>
+		<div class="grade-form">
+			<div class="campo">
+				<label for="bairro">Bairro</label>
+				<select id="bairro" name="bairro">
+					<option value="">Escolha o bairro</option>
+					@opcoesDe(d.Bairros)
+				</select>
+			</div>
+			<div class="campo campo-largo">
+				<label for="endereco">Endereço (rua, número, referência)</label>
+				<input id="endereco" name="endereco" type="text" value={ d.Endereco } maxlength="300"/>
+			</div>
+		</div>
+		<div class="form-acoes">
+			<button type="submit" class="btn btn-primario" data-icone="save">Salvar</button>
+			<a class="btn" href="/denuncias">Cancelar</a>
+		</div>
+	</form>
+}
+
+templ DenunciaNova(l Layout, d DenunciaFormData) {
+	@Base(l) {
+		@PageHeader("Nova denúncia", "Registre o pedido; depois vincule o local e a visita.") {
+			<a class="btn" href="/denuncias">Voltar</a>
+		}
+		@dadosDaDenuncia(d)
+	}
+}
+
+templ DenunciaFicha(l Layout, d DenunciaFichaData) {
+	@Base(l) {
+		@PageHeader("Denúncia "+d.IDTexto, d.Titulo) {
+			<a class="btn" href="/denuncias">Voltar</a>
+		}
+		@Presenca("denuncia", strconv.FormatInt(d.ID, 10), modoDaTela(d.PodeEditar))
+		if d.Aviso != "" {
+			<p class="alerta alerta-ok" role="status">{ d.Aviso }</p>
+		}
+		<section class="cartao">
+			<div class="resumo-ficha">
+				<p>
+					<span class={ "selo", seloDaDenuncia(d.Situacao) }>{ d.SituacaoRotulo }</span>
+					<span class="subtitulo">{ d.Tipo } · { d.Origem } · { d.Data }</span>
+					if d.Responsavel != "" {
+						<span class="subtitulo">Responsável: <strong>{ d.Responsavel }</strong></span>
+					}
+				</p>
+				<p>
+					if d.Anonima {
+						<strong>Denúncia anônima</strong>
+					} else if d.Cidadao != "" || d.Telefone != "" {
+						<strong>{ d.Cidadao }</strong>
+						if d.Telefone != "" {
+							<span class="subtitulo"> · { d.Telefone }</span>
+						}
+					}
+				</p>
+				<p class="subtitulo">
+					if d.LocalID != 0 {
+						Local: <a href={ templ.SafeURL("/locais/" + strconv.FormatInt(d.LocalID, 10)) }>{ d.LocalEndereco }</a>
+					} else if d.Endereco != "" {
+						Endereço: { d.Endereco }
+					}
+					if d.Bairro != "" {
+						· Bairro { d.Bairro }
+					}
+				</p>
+				if d.Descricao != "" {
+					<p class="caso-texto">{ d.Descricao }</p>
+				}
+			</div>
+		</section>
+		@FichaCaso(d.Caso)
+		if d.PodeEditar || d.PodeVisita {
+			if !d.Fechada && d.Caso.PodeEditar {
+				<section class="cartao" id="fechar">
+					<h2 class="rel-titulo" data-ico="lock">Encerrar ou cancelar</h2>
+					<form method="post" class="form-admin" data-sem-gaveta>
+						<input type="hidden" name="csrf" value={ d.CSRF }/>
+						<div class="campo">
+							<label for="texto-fechar">Conclusão (encerrar) ou motivo (cancelar, obrigatório)</label>
+							<textarea id="texto-fechar" name="texto" rows="2" maxlength="2000"></textarea>
+						</div>
+						<div class="form-acoes">
+							<button type="submit" class="btn btn-sucesso" formaction={ "/denuncias/" + strconv.FormatInt(d.ID, 10) + "/encerrar" } data-icone="check">Encerrar</button>
+							<button type="submit" class="btn btn-perigo" formaction={ "/denuncias/" + strconv.FormatInt(d.ID, 10) + "/cancelar" } data-icone="x">Cancelar denúncia</button>
+						</div>
+					</form>
+				</section>
+			}
+		}
+		if d.PodeEditar {
+			@dadosDaDenuncia(d.Dados)
+		}
+		<section class="cartao" id="local">
+			<h2 class="rel-titulo" data-ico="pin">Local da denúncia</h2>
+			if d.LocalID != 0 {
+				<p>Vinculada a <a href={ templ.SafeURL("/locais/" + strconv.FormatInt(d.LocalID, 10)) }>{ d.LocalEndereco }</a></p>
+			} else {
+				<p class="subtitulo">Nenhum local cadastrado vinculado.</p>
+			}
+			if d.PodeLocal {
+				<form method="get" action={ templ.SafeURL("/denuncias/" + strconv.FormatInt(d.ID, 10)) } class="form-acoes" data-sem-gaveta>
+					<div class="campo">
+						<label for="busca-local">Buscar local (endereço, número ou bairro)</label>
+						<input id="busca-local" name="busca_local" type="search" value={ d.Busca } maxlength="100"/>
+					</div>
+					<button type="submit" class="btn" data-icone="search">Buscar</button>
+				</form>
+				if d.Buscou && len(d.Locais) == 0 {
+					<p class="subtitulo">Nenhum local encontrado.</p>
+				}
+				for _, lc := range d.Locais {
+					<form method="post" action={ templ.SafeURL("/denuncias/" + strconv.FormatInt(d.ID, 10) + "/local") } class="form-acoes" data-sem-gaveta>
+						<input type="hidden" name="csrf" value={ d.CSRF }/>
+						<input type="hidden" name="local" value={ strconv.FormatInt(lc.ID, 10) }/>
+						<span>{ lc.Endereco } <span class="subtitulo">· { lc.Bairro }</span></span>
+						<button type="submit" class="btn" data-icone="link">Vincular</button>
+					</form>
+				}
+				if d.LocalID != 0 {
+					<form method="post" action={ templ.SafeURL("/denuncias/" + strconv.FormatInt(d.ID, 10) + "/local") } data-sem-gaveta>
+						<input type="hidden" name="csrf" value={ d.CSRF }/>
+						<input type="hidden" name="local" value=""/>
+						<button type="submit" class="btn" data-icone="x">Desvincular local</button>
+					</form>
+				}
+			}
+		</section>
+		<section class="cartao" id="visita">
+			<h2 class="rel-titulo" data-ico="visitas">Visita</h2>
+			if d.VisitaID != 0 {
+				<p>Visita <a href={ templ.SafeURL("/visitas/" + strconv.FormatInt(d.VisitaID, 10)) }>nº { strconv.FormatInt(d.VisitaID, 10) }</a> feita por causa desta denúncia.</p>
+			} else {
+				<p class="subtitulo">Nenhuma visita vinculada.</p>
+			}
+			if d.PodeVisita {
+				<form method="post" action={ templ.SafeURL("/denuncias/" + strconv.FormatInt(d.ID, 10) + "/visita") } class="form-acoes" data-sem-gaveta>
+					<input type="hidden" name="csrf" value={ d.CSRF }/>
+					<div class="campo">
+						<label for="visita-id">Número da visita (vazio desvincula)</label>
+						<input id="visita-id" name="visita" type="text" inputmode="numeric" maxlength="12"/>
+					</div>
+					<button type="submit" class="btn" data-icone="link">Salvar vínculo</button>
+					if d.LocalID != 0 {
+						<a class="btn" href={ templ.SafeURL("/visitas/nova?local=" + strconv.FormatInt(d.LocalID, 10)) } data-icone="plus">Nova visita no local</a>
+					}
+				</form>
+			}
+		</section>
+	}
+}

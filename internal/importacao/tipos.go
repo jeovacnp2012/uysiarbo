@@ -149,6 +149,22 @@ var Tipos = []Tipo{
 		},
 	},
 	{
+		Codigo: "investigacoes", Rotulo: "Investigações", Descr: "Casos suspeitos e confirmados, com a doença já cadastrada. Só cria: investigação que já existe (mesmo ID de origem) é ignorada.",
+		Colunas: []Coluna{
+			c("id_externo", "ID de origem", false, "13495", "Identificador no sistema de origem (até 64 caracteres). É o que impede duplicar numa nova importação.", "id", "id_investigacao", "id_de_origem"),
+			c("doenca", "Doença / agravo", true, "Dengue", "Nome de uma doença já cadastrada em Doenças e agravos.", "agravo", "doenca_agravo"),
+			c("paciente", "Paciente", true, "Maria Souza", "Até 150 caracteres.", "nome", "nome_paciente"),
+			c("telefone", "Telefone", false, "(65) 99999-0000", "Até 40 caracteres."),
+			c("data_inicio", "Data de início", false, "28/10/2026", "dd/mm/aaaa ou aaaa-mm-dd.", "data", "data_de_inicio"),
+			c("endereco", "Endereço", false, "Rua das Acácias, 120", "Texto livre, até 300 caracteres.", "endereco_texto"),
+			c("local", "Local (ID de origem)", false, "678", "O ID de origem do local, já cadastrado (opcional).", "local_id_externo", "id_local"),
+			c("situacao", "Situação", false, "encerrada", "aguardando, em atendimento ou encerrada (padrão: aguardando)."),
+			c("resultado", "Resultado", false, "negativo", "aguardando, positivo, negativo ou inconclusivo (padrão: aguardando)."),
+			c("responsavel", "Responsável", false, "Maria da Silva", "Nome ou e-mail de um usuário já cadastrado (opcional)."),
+			c("observacao", "Observação", false, "", "Até 2000 caracteres."),
+		},
+	},
+	{
 		Codigo: "amostras", Rotulo: "Laboratório (tubitos)", Descr: "Tubitos das visitas já importadas, com o resultado da análise. Só cria: tubito que já existe é ignorado.",
 		Colunas: []Coluna{
 			c("visita", "Visita (ID de origem)", true, "12345", "O ID de origem da visita, já cadastrada com \"coletou amostra\".", "id_visita", "visita_id_externo", "id_da_visita"),

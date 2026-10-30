@@ -224,6 +224,73 @@ func (q *Queries) CreateInvestigacao(ctx context.Context, arg CreateInvestigacao
 	return i, err
 }
 
+const createInvestigacaoImportada = `-- name: CreateInvestigacaoImportada :one
+INSERT INTO investigacoes (id_externo, doenca_id, local_id, endereco_texto, paciente, telefone, data_inicio, situacao, resultado,
+                           responsavel_id, observacao, grupo_id, criado_por, encerrada_em)
+VALUES ($1, $2, $3, $4, $5, $6,
+        $7, $8::text, $9::text, $10, $11,
+        $12, $13, CASE WHEN $8::text = 'encerrada' THEN now() END)
+RETURNING id, id_externo, doenca_id, local_id, endereco_texto, paciente, telefone, data_inicio, situacao, resultado, responsavel_id, observacao, grupo_id, entrevista, criado_por, criado_em, atualizado_em, encerrada_em, deleted_at, deleted_by
+`
+
+type CreateInvestigacaoImportadaParams struct {
+	IDExterno     pgtype.Text `json:"id_externo"`
+	DoencaID      int64       `json:"doenca_id"`
+	LocalID       pgtype.Int8 `json:"local_id"`
+	EnderecoTexto string      `json:"endereco_texto"`
+	Paciente      string      `json:"paciente"`
+	Telefone      string      `json:"telefone"`
+	DataInicio    pgtype.Date `json:"data_inicio"`
+	Situacao      string      `json:"situacao"`
+	Resultado     string      `json:"resultado"`
+	ResponsavelID pgtype.Int8 `json:"responsavel_id"`
+	Observacao    string      `json:"observacao"`
+	GrupoID       pgtype.Int8 `json:"grupo_id"`
+	CriadoPor     pgtype.Int8 `json:"criado_por"`
+}
+
+func (q *Queries) CreateInvestigacaoImportada(ctx context.Context, arg CreateInvestigacaoImportadaParams) (Investigaco, error) {
+	row := q.db.QueryRow(ctx, createInvestigacaoImportada,
+		arg.IDExterno,
+		arg.DoencaID,
+		arg.LocalID,
+		arg.EnderecoTexto,
+		arg.Paciente,
+		arg.Telefone,
+		arg.DataInicio,
+		arg.Situacao,
+		arg.Resultado,
+		arg.ResponsavelID,
+		arg.Observacao,
+		arg.GrupoID,
+		arg.CriadoPor,
+	)
+	var i Investigaco
+	err := row.Scan(
+		&i.ID,
+		&i.IDExterno,
+		&i.DoencaID,
+		&i.LocalID,
+		&i.EnderecoTexto,
+		&i.Paciente,
+		&i.Telefone,
+		&i.DataInicio,
+		&i.Situacao,
+		&i.Resultado,
+		&i.ResponsavelID,
+		&i.Observacao,
+		&i.GrupoID,
+		&i.Entrevista,
+		&i.CriadoPor,
+		&i.CriadoEm,
+		&i.AtualizadoEm,
+		&i.EncerradaEm,
+		&i.DeletedAt,
+		&i.DeletedBy,
+	)
+	return i, err
+}
+
 const forceDeleteInvestigacao = `-- name: ForceDeleteInvestigacao :execrows
 DELETE FROM investigacoes WHERE id = $1 AND deleted_at IS NOT NULL
 `
@@ -279,6 +346,40 @@ SELECT id, id_externo, doenca_id, local_id, endereco_texto, paciente, telefone, 
 
 func (q *Queries) GetInvestigacao(ctx context.Context, id int64) (Investigaco, error) {
 	row := q.db.QueryRow(ctx, getInvestigacao, id)
+	var i Investigaco
+	err := row.Scan(
+		&i.ID,
+		&i.IDExterno,
+		&i.DoencaID,
+		&i.LocalID,
+		&i.EnderecoTexto,
+		&i.Paciente,
+		&i.Telefone,
+		&i.DataInicio,
+		&i.Situacao,
+		&i.Resultado,
+		&i.ResponsavelID,
+		&i.Observacao,
+		&i.GrupoID,
+		&i.Entrevista,
+		&i.CriadoPor,
+		&i.CriadoEm,
+		&i.AtualizadoEm,
+		&i.EncerradaEm,
+		&i.DeletedAt,
+		&i.DeletedBy,
+	)
+	return i, err
+}
+
+const getInvestigacaoPorIDExterno = `-- name: GetInvestigacaoPorIDExterno :one
+
+SELECT id, id_externo, doenca_id, local_id, endereco_texto, paciente, telefone, data_inicio, situacao, resultado, responsavel_id, observacao, grupo_id, entrevista, criado_por, criado_em, atualizado_em, encerrada_em, deleted_at, deleted_by FROM investigacoes WHERE id_externo = $1
+`
+
+// ---- importação
+func (q *Queries) GetInvestigacaoPorIDExterno(ctx context.Context, idExterno pgtype.Text) (Investigaco, error) {
+	row := q.db.QueryRow(ctx, getInvestigacaoPorIDExterno, idExterno)
 	var i Investigaco
 	err := row.Scan(
 		&i.ID,

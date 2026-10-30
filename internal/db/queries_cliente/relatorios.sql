@@ -130,3 +130,19 @@ WHERE l.deleted_at IS NULL AND l.ativo
   AND (sqlc.narg(somente_usuario)::bigint IS NULL OR usuario_ve_local(sqlc.narg(somente_usuario)::bigint, l.id, l.bairro_id, l.quarteirao_id))
 ORDER BY b.nome, q.nome, l.endereco, l.numero
 LIMIT 20001;
+
+-- name: RelInvestigacaoTotal :many
+SELECT d.nome AS doenca, count(*)::int AS total,
+       count(*) FILTER (WHERE i.situacao = 'aguardando')::int AS aguardando,
+       count(*) FILTER (WHERE i.situacao = 'em_atendimento')::int AS em_atendimento,
+       count(*) FILTER (WHERE i.situacao = 'encerrada')::int AS encerradas,
+       count(*) FILTER (WHERE i.resultado = 'positivo')::int AS positivos,
+       count(*) FILTER (WHERE i.resultado = 'negativo')::int AS negativos,
+       count(*) FILTER (WHERE i.resultado = 'inconclusivo')::int AS inconclusivos,
+       count(*) FILTER (WHERE i.resultado = 'aguardando')::int AS sem_resultado
+FROM investigacoes i JOIN doencas d ON d.id = i.doenca_id
+WHERE i.deleted_at IS NULL
+  AND (sqlc.narg(data_de)::date IS NULL OR COALESCE(i.data_inicio, i.criado_em::date) >= sqlc.narg(data_de)::date)
+  AND (sqlc.narg(data_ate)::date IS NULL OR COALESCE(i.data_inicio, i.criado_em::date) <= sqlc.narg(data_ate)::date)
+  AND (sqlc.narg(somente_usuario)::bigint IS NULL OR i.criado_por = sqlc.narg(somente_usuario)::bigint OR i.responsavel_id = sqlc.narg(somente_usuario)::bigint)
+GROUP BY d.id, d.nome ORDER BY count(*) DESC, d.nome;

@@ -106,7 +106,7 @@ func (s *handlers) menu(r *http.Request) []views.NavGrupo {
 			emBreve("Locais por Criticidade"),
 			emBreve("LIRAa - Bol. de Campo"),
 			rel("Visita por Dia Trab.", "dia-trabalhado"),
-			emBreve("Investigação totais"),
+			rel("Investigação totais", "investigacao-total"),
 			rel("Laboratório totais", "laboratorio-total"),
 			rel("Animais", "animais"),
 			rel("Borrifação Residual Intradomiciliar (BRI)", "bri"),
@@ -138,6 +138,10 @@ func (s *handlers) menu(r *http.Request) []views.NavGrupo {
 
 		if pr.Pode("investigacao_visualizar") {
 			menu = append(menu, views.NavGrupo{Label: "Investigações", Icone: "visitas", Href: "/investigacoes"})
+		}
+
+		if pr.Pode("denuncia_visualizar") {
+			menu = append(menu, views.NavGrupo{Label: "Denúncias", Icone: "visitas", Href: "/denuncias"})
 		}
 
 		add(pr.Pode("conf_usuario"), "Usuários", "/usuarios")

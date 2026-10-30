@@ -654,6 +654,7 @@ var modulosProntos = map[string]struct{ href, permissao string }{
 	"Visitas":        {"/visitas", "visita_visualizar"},
 	"Laboratório":    {"/laboratorio", "visita_laboratorio_visualizar"},
 	"Investigação":   {"/investigacoes", "investigacao_visualizar"},
+	"Denúncia":       {"/denuncias", "denuncia_visualizar"},
 	"B.I.":           {"/bi", "bi_visualizar"},
 	"Reconhecimento": {"/reconhecimentos", "reconhecimento_visualizar"},
 	"Resumo semanal": {"/resumosemanal", "resumosemanal_visualizar"},

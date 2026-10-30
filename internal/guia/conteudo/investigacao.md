@@ -32,3 +32,10 @@ Cada doença usa uma entrevista. As perguntas marcadas como obrigatórias precis
 
 ## Excluir
 Excluir envia a investigação para a **Lixeira**, de onde pode ser restaurada.
+
+## Importar investigações
+Em **Importação de dados**, escolha **Investigações** e envie uma planilha (CSV ou Excel). As colunas são: ID de origem, doença (já cadastrada), paciente, telefone, data de início, endereço, local (ID de origem, opcional), situação, resultado, responsável e observação. Só cria: se o ID de origem já existe, a linha é ignorada, então dá para repetir a importação sem duplicar. Antes de importar, o sistema mostra uma prévia com os erros de cada linha.
+
+## Relatório de totais
+Em **Relatórios**, o item **Investigação totais** mostra, por doença, quantas investigações existem, a situação de cada uma e o resultado (positivas, negativas e inconclusivas). O período vale para a data de início.
+

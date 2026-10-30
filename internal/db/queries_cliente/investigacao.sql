@@ -136,3 +136,16 @@ WHERE i.deleted_at IS NOT NULL ORDER BY i.deleted_at DESC LIMIT 500;
 
 -- name: ContarDoencasDoGrupo :one
 SELECT count(*)::int FROM doencas WHERE grupo_id = $1;
+
+-- ---- importação
+
+-- name: GetInvestigacaoPorIDExterno :one
+SELECT * FROM investigacoes WHERE id_externo = $1;
+
+-- name: CreateInvestigacaoImportada :one
+INSERT INTO investigacoes (id_externo, doenca_id, local_id, endereco_texto, paciente, telefone, data_inicio, situacao, resultado,
+                           responsavel_id, observacao, grupo_id, criado_por, encerrada_em)
+VALUES (sqlc.narg(id_externo), sqlc.arg(doenca_id), sqlc.narg(local_id), sqlc.arg(endereco_texto), sqlc.arg(paciente), sqlc.arg(telefone),
+        sqlc.narg(data_inicio), sqlc.arg(situacao)::text, sqlc.arg(resultado)::text, sqlc.narg(responsavel_id), sqlc.arg(observacao),
+        sqlc.narg(grupo_id), sqlc.narg(criado_por), CASE WHEN sqlc.arg(situacao)::text = 'encerrada' THEN now() END)
+RETURNING *;

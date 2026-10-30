@@ -251,6 +251,8 @@ func (h *handlers) analisarPlanilha(ctx context.Context, r *http.Request, q *sql
 		return h.analisarVisitas(ctx, r, q, p, m)
 	case "amostras":
 		return h.analisarAmostras(ctx, r, q, p, m)
+	case "investigacoes":
+		return h.analisarInvestigacoes(ctx, r, q, p, m)
 	case "bairros":
 		return h.analisarBairros(ctx, q, p, m, atualizar)
 	case "quarteiroes":

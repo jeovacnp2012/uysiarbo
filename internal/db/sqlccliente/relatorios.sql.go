@@ -274,6 +274,71 @@ func (q *Queries) RelDiaTrabalhado(ctx context.Context, arg RelDiaTrabalhadoPara
 	return items, nil
 }
 
+const relInvestigacaoTotal = `-- name: RelInvestigacaoTotal :many
+SELECT d.nome AS doenca, count(*)::int AS total,
+       count(*) FILTER (WHERE i.situacao = 'aguardando')::int AS aguardando,
+       count(*) FILTER (WHERE i.situacao = 'em_atendimento')::int AS em_atendimento,
+       count(*) FILTER (WHERE i.situacao = 'encerrada')::int AS encerradas,
+       count(*) FILTER (WHERE i.resultado = 'positivo')::int AS positivos,
+       count(*) FILTER (WHERE i.resultado = 'negativo')::int AS negativos,
+       count(*) FILTER (WHERE i.resultado = 'inconclusivo')::int AS inconclusivos,
+       count(*) FILTER (WHERE i.resultado = 'aguardando')::int AS sem_resultado
+FROM investigacoes i JOIN doencas d ON d.id = i.doenca_id
+WHERE i.deleted_at IS NULL
+  AND ($1::date IS NULL OR COALESCE(i.data_inicio, i.criado_em::date) >= $1::date)
+  AND ($2::date IS NULL OR COALESCE(i.data_inicio, i.criado_em::date) <= $2::date)
+  AND ($3::bigint IS NULL OR i.criado_por = $3::bigint OR i.responsavel_id = $3::bigint)
+GROUP BY d.id, d.nome ORDER BY count(*) DESC, d.nome
+`
+
+type RelInvestigacaoTotalParams struct {
+	DataDe         pgtype.Date `json:"data_de"`
+	DataAte        pgtype.Date `json:"data_ate"`
+	SomenteUsuario pgtype.Int8 `json:"somente_usuario"`
+}
+
+type RelInvestigacaoTotalRow struct {
+	Doenca        string `json:"doenca"`
+	Total         int32  `json:"total"`
+	Aguardando    int32  `json:"aguardando"`
+	EmAtendimento int32  `json:"em_atendimento"`
+	Encerradas    int32  `json:"encerradas"`
+	Positivos     int32  `json:"positivos"`
+	Negativos     int32  `json:"negativos"`
+	Inconclusivos int32  `json:"inconclusivos"`
+	SemResultado  int32  `json:"sem_resultado"`
+}
+
+func (q *Queries) RelInvestigacaoTotal(ctx context.Context, arg RelInvestigacaoTotalParams) ([]RelInvestigacaoTotalRow, error) {
+	rows, err := q.db.Query(ctx, relInvestigacaoTotal, arg.DataDe, arg.DataAte, arg.SomenteUsuario)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []RelInvestigacaoTotalRow
+	for rows.Next() {
+		var i RelInvestigacaoTotalRow
+		if err := rows.Scan(
+			&i.Doenca,
+			&i.Total,
+			&i.Aguardando,
+			&i.EmAtendimento,
+			&i.Encerradas,
+			&i.Positivos,
+			&i.Negativos,
+			&i.Inconclusivos,
+			&i.SemResultado,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const relLaboratorioTotal = `-- name: RelLaboratorioTotal :many
 SELECT b.nome AS bairro, count(*)::int AS tubitos,
        count(*) FILTER (WHERE a.status = 'em_analise')::int AS em_analise,

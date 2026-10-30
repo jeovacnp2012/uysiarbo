@@ -54,6 +54,12 @@ func init() {
 			Gerar:  (*handlers).relatorioLaboratorioTotal,
 		},
 		definicaoRelatorio{
+			Slug: "investigacao-total", Titulo: "Investigação: totais", Permissao: "relatorio_investigacao_total",
+			Resumo: "Por doença: investigações, situação e resultado (positivo, negativo, inconclusivo).",
+			Campos: periodo,
+			Gerar:  (*handlers).relatorioInvestigacaoTotal,
+		},
+		definicaoRelatorio{
 			Slug: "animais", Titulo: "Animais: totais", Permissao: "relatorio_animais",
 			Resumo: "Por bairro: locais, moradores, cães, gatos e roedores cadastrados.",
 			Campos: []campoRelatorio{{"bairro", "Bairro", "bairro"}},
@@ -260,5 +266,22 @@ func (h *handlers) relatorioLocalIncompleto(ctx context.Context, r *http.Request
 	}
 	doc.Totais = make([]string, len(doc.Colunas))
 	doc.Totais[0] = fmt.Sprintf("Total: %d locais", len(rows))
+	return doc, nil
+}
+
+func (h *handlers) relatorioInvestigacaoTotal(ctx context.Context, r *http.Request, q *sqlccliente.Queries, f filtrosRelatorio) (relatorio.Doc, error) {
+	rows, err := q.RelInvestigacaoTotal(ctx, sqlccliente.RelInvestigacaoTotalParams{DataDe: f.data("de"), DataAte: f.data("ate"), SomenteUsuario: h.escopoInvestigacoes(r)})
+	if err != nil {
+		return relatorio.Doc{}, err
+	}
+	doc := relatorio.Doc{Titulo: "Investigação: totais por doença", Colunas: []relatorio.Coluna{
+		col("Doença", 4, false), col("Total", 1, true), col("Aguardando", 1.3, true), col("Em atendimento", 1.6, true), col("Encerradas", 1.3, true),
+		col("Positivos", 1.2, true), col("Negativos", 1.2, true), col("Inconclusivos", 1.5, true), col("Sem resultado", 1.5, true)}}
+	for _, v := range rows {
+		doc.Linhas = append(doc.Linhas, []string{v.Doenca, num(v.Total), num(v.Aguardando), num(v.EmAtendimento), num(v.Encerradas),
+			num(v.Positivos), num(v.Negativos), num(v.Inconclusivos), num(v.SemResultado)})
+	}
+	totalizar(&doc, "Total", 1, 2, 3, 4, 5, 6, 7, 8)
+	doc.Observar = "O período vale para a data de início da investigação (na falta dela, a data do registro)."
 	return doc, nil
 }

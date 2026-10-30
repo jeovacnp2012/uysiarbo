@@ -47,14 +47,15 @@ func TestRelatoriosDoSistemaGeram(t *testing.T) {
 	quer(t, ana.post("/visitas", c.form(agente, "pendencia", "recusado")), http.StatusSeeOther)
 
 	esperado := map[string]string{
-		"local-visita":      "Total: 1 locais",
-		"producao":          "Total",
-		"antivetorial":      "Total",
-		"dia-trabalhado":    "1 dias trabalhados",
-		"laboratorio-total": "Nenhum registro",
-		"animais":           "Total",
-		"bri":               "Nenhum registro",
-		"local-incompleto":  "Total:",
+		"local-visita":       "Total: 1 locais",
+		"producao":           "Total",
+		"antivetorial":       "Total",
+		"dia-trabalhado":     "1 dias trabalhados",
+		"laboratorio-total":  "Nenhum registro",
+		"investigacao-total": "Nenhum registro",
+		"animais":            "Total",
+		"bri":                "Nenhum registro",
+		"local-incompleto":   "Total:",
 	}
 	for slug, texto := range esperado {
 		quer(t, ana.get("/relatorios/"+slug), http.StatusOK, "Gerar relatório")

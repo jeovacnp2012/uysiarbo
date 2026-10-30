@@ -212,6 +212,33 @@ type ClienteInfo struct {
 	CriadoEm pgtype.Timestamptz `json:"criado_em"`
 }
 
+type Denuncia struct {
+	ID              int64              `json:"id"`
+	IDExterno       pgtype.Text        `json:"id_externo"`
+	Anonima         bool               `json:"anonima"`
+	CidadaoNome     string             `json:"cidadao_nome"`
+	CidadaoTelefone string             `json:"cidadao_telefone"`
+	CidadaoCpf      string             `json:"cidadao_cpf"`
+	Tipo            string             `json:"tipo"`
+	Titulo          string             `json:"titulo"`
+	Descricao       string             `json:"descricao"`
+	DataDenuncia    pgtype.Date        `json:"data_denuncia"`
+	Origem          string             `json:"origem"`
+	EnderecoTexto   string             `json:"endereco_texto"`
+	BairroID        pgtype.Int8        `json:"bairro_id"`
+	QuarteiraoID    pgtype.Int8        `json:"quarteirao_id"`
+	LocalID         pgtype.Int8        `json:"local_id"`
+	VisitaID        pgtype.Int8        `json:"visita_id"`
+	Situacao        string             `json:"situacao"`
+	ResponsavelID   pgtype.Int8        `json:"responsavel_id"`
+	CriadoPor       pgtype.Int8        `json:"criado_por"`
+	CriadoEm        pgtype.Timestamptz `json:"criado_em"`
+	AtualizadoEm    pgtype.Timestamptz `json:"atualizado_em"`
+	EncerradaEm     pgtype.Timestamptz `json:"encerrada_em"`
+	DeletedAt       pgtype.Timestamptz `json:"deleted_at"`
+	DeletedBy       pgtype.Int8        `json:"deleted_by"`
+}
+
 type Doenca struct {
 	ID           int64              `json:"id"`
 	Nome         string             `json:"nome"`
