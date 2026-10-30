@@ -1,0 +1,101 @@
+package views
+
+import "strconv"
+
+type BiLinha struct {
+	Bairro                                       string
+	Locais, Pesquisados, Positivos, Recipientes int
+}
+
+// IIP, Breteau e Cobertura em décimos de ponto percentual, formatados com uma casa.
+func (b BiLinha) IIP() string       { return razao(b.Positivos, b.Pesquisados) }
+func (b BiLinha) Breteau() string   { return razao(b.Recipientes, b.Pesquisados) }
+func (b BiLinha) Cobertura() string { return razao(b.Pesquisados, b.Locais) }
+
+func razao(parte, total int) string {
+	if total <= 0 {
+		return "—"
+	}
+	return strconv.FormatFloat(float64(parte)*100/float64(total), 'f', 1, 64) + "%"
+}
+
+type BiData struct {
+	Ciclos, Atividades, Agentes []CidadeOpcao
+	Todos                       bool
+	Linhas                      []BiLinha
+	Total                       BiLinha
+}
+
+templ Bi(l Layout, d BiData) {
+	@Base(l) {
+		@PageHeader("B.I.", "Índices de infestação e cobertura por bairro, a partir das visitas e do laboratório.")
+		<form method="get" action="/bi" class="cartao filtros">
+			<label class="campo">
+				<span>Ciclo</span>
+				<select name="ciclo" onchange="this.form.submit()">
+					<option value="todos" selected?={ d.Todos }>Todos os ciclos</option>
+					for _, c := range d.Ciclos {
+						<option value={ strconv.FormatInt(c.ID, 10) } selected?={ c.Selecionada }>{ c.Rotulo }</option>
+					}
+				</select>
+			</label>
+			<label class="campo">
+				<span>Atividade</span>
+				<select name="atividade" onchange="this.form.submit()">
+					<option value="">Todas</option>
+					for _, a := range d.Atividades {
+						<option value={ strconv.FormatInt(a.ID, 10) } selected?={ a.Selecionada }>{ a.Rotulo }</option>
+					}
+				</select>
+			</label>
+			<label class="campo">
+				<span>Agente</span>
+				<select name="agente" onchange="this.form.submit()">
+					<option value="">Todos</option>
+					for _, a := range d.Agentes {
+						<option value={ strconv.FormatInt(a.ID, 10) } selected?={ a.Selecionada }>{ a.Rotulo }</option>
+					}
+				</select>
+			</label>
+		</form>
+		<div class="grade-cartoes">
+			@dashNumero("IIP", d.Total.Positivos, d.Total.IIP()+" dos imóveis pesquisados")
+			@dashNumero("Recipientes positivos", d.Total.Recipientes, "Breteau "+d.Total.Breteau())
+			@dashNumero("Imóveis pesquisados", d.Total.Pesquisados, "Cobertura "+d.Total.Cobertura()+" dos locais ativos")
+		</div>
+		<div class="cartao tabela-rolavel">
+			<table class="tabela">
+				<thead>
+					<tr>
+						<th>Bairro</th>
+						<th>Locais ativos</th>
+						<th>Pesquisados</th>
+						<th>Positivos</th>
+						<th>Recipientes +</th>
+						<th>IIP</th>
+						<th>Breteau</th>
+						<th>Cobertura</th>
+					</tr>
+				</thead>
+				<tbody>
+					if len(d.Linhas) == 0 {
+						<tr><td colspan="8">Nenhuma visita sem pendência no período.</td></tr>
+					}
+					for _, b := range d.Linhas {
+						<tr>
+							<td>{ b.Bairro }</td>
+							<td>{ strconv.Itoa(b.Locais) }</td>
+							<td>{ strconv.Itoa(b.Pesquisados) }</td>
+							<td>{ strconv.Itoa(b.Positivos) }</td>
+							<td>{ strconv.Itoa(b.Recipientes) }</td>
+							<td>{ b.IIP() }</td>
+							<td>{ b.Breteau() }</td>
+							<td>{ b.Cobertura() }</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+		<p class="subtitulo">IIP = imóveis positivos ÷ pesquisados. Breteau = recipientes positivos ÷ imóveis pesquisados (x 100). Cobertura = pesquisados ÷ locais ativos do bairro. Positivo é o imóvel com tubito concluído com Aedes aegypti ou albopictus.</p>
+	}
+}
