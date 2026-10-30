@@ -73,7 +73,7 @@ func Cidades(l Layout, linhas []CidadeLinha, podeEditar bool) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div class=\"tabela-wrap\"><table class=\"tabela\"><thead><tr><th scope=\"col\">Cidade</th><th scope=\"col\">UF</th><th scope=\"col\">Código IBGE</th><th scope=\"col\">Bairros</th><th scope=\"col\">Situação</th><th scope=\"col\"><span class=\"sr-only\">Ações</span></th></tr></thead> <tbody>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div class=\"tabela-wrap\"><table class=\"tabela\"><thead><tr><th scope=\"col\" data-ord=\"Nome\">Cidade</th><th scope=\"col\" data-ord=\"UF\">UF</th><th scope=\"col\" data-ord=\"IBGE\">Código IBGE</th><th scope=\"col\" data-ord=\"Bairros\">Bairros</th><th scope=\"col\" data-ord=\"Ativo\">Situação</th><th scope=\"col\"><span class=\"sr-only\">Ações</span></th></tr></thead> <tbody>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

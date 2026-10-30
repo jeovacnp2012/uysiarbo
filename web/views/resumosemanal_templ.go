@@ -192,7 +192,7 @@ func ResumosSemanais(l Layout, d ResumosData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<div class=\"cartao tabela-rolavel\"><table class=\"tabela\"><thead><tr><th>Bairro</th><th>Ciclo</th><th>Semana</th><th>Atividade</th><th>Gerado em</th><th></th></tr></thead> <tbody>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<div class=\"cartao tabela-rolavel\"><table class=\"tabela\"><thead><tr><th data-ord=\"Bairro\">Bairro</th><th data-ord=\"Ciclo\">Ciclo</th><th data-ord=\"Semana\">Semana</th><th data-ord=\"Atividade\">Atividade</th><th data-ord=\"Gerado\">Gerado em</th><th></th></tr></thead> <tbody>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

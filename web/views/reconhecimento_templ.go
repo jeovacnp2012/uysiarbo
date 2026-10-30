@@ -143,7 +143,7 @@ func Reconhecimentos(l Layout, d ReconhecimentosData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<div class=\"cartao tabela-rolavel\"><table class=\"tabela\"><thead><tr><th>Bairro</th><th>Ciclo</th><th>Início</th><th>Fim</th><th>Imóveis</th><th>Habitantes</th><th></th></tr></thead> <tbody>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<div class=\"cartao tabela-rolavel\"><table class=\"tabela\"><thead><tr><th data-ord=\"Bairro\">Bairro</th><th data-ord=\"Ciclo\">Ciclo</th><th data-ord=\"Inicio\">Início</th><th data-ord=\"Fim\">Fim</th><th data-ord=\"Imoveis\">Imóveis</th><th data-ord=\"Habitantes\">Habitantes</th><th></th></tr></thead> <tbody>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

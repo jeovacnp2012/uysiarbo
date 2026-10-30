@@ -170,7 +170,7 @@ func ApiLista(l Layout, d ApiListaData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<div class=\"tabela-wrap\"><table class=\"tabela\"><thead><tr><th scope=\"col\">Credencial</th><th scope=\"col\">Escopos</th><th scope=\"col\">Validade</th><th scope=\"col\">Último uso</th><th scope=\"col\">Chamadas (24 h)</th><th scope=\"col\">Situação</th><th scope=\"col\"><span class=\"sr-only\">Ações</span></th></tr></thead> <tbody>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<div class=\"tabela-wrap\"><table class=\"tabela\"><thead><tr><th scope=\"col\" data-ord=\"Nome\">Credencial</th><th scope=\"col\" data-ord=\"Escopos\">Escopos</th><th scope=\"col\" data-ord=\"Validade\">Validade</th><th scope=\"col\" data-ord=\"UltimoUso\">Último uso</th><th scope=\"col\" data-ord=\"Chamadas\">Chamadas (24 h)</th><th scope=\"col\" data-ord=\"Ativa\">Situação</th><th scope=\"col\"><span class=\"sr-only\">Ações</span></th></tr></thead> <tbody>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

@@ -163,7 +163,7 @@ func ImportacoesLista(l Layout, d ImportacoesListaData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"tabela-wrap\"><table class=\"tabela\"><thead><tr><th scope=\"col\">Importação</th><th scope=\"col\">Quando</th><th scope=\"col\">Quem</th><th scope=\"col\">Situação</th><th scope=\"col\">Resultado</th><th scope=\"col\"><span class=\"sr-only\">Ações</span></th></tr></thead> <tbody>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"tabela-wrap\"><table class=\"tabela\"><thead><tr><th scope=\"col\" data-ord=\"Tipo\">Importação</th><th scope=\"col\" data-ord=\"Quando\">Quando</th><th scope=\"col\" data-ord=\"Quem\">Quem</th><th scope=\"col\" data-ord=\"StatusRotulo\">Situação</th><th scope=\"col\" data-ord=\"Resumo\">Resultado</th><th scope=\"col\"><span class=\"sr-only\">Ações</span></th></tr></thead> <tbody>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

@@ -73,7 +73,7 @@ func Ciclos(l Layout, d CiclosData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div class=\"tabela-wrap\"><table class=\"tabela\"><thead><tr><th scope=\"col\">Ciclo</th><th scope=\"col\">Período</th><th scope=\"col\">Semanas epidemiológicas</th><th scope=\"col\">Atividades</th><th scope=\"col\">Situação</th><th scope=\"col\">Painel público</th><th scope=\"col\"><span class=\"sr-only\">Ações</span></th></tr></thead> <tbody>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div class=\"tabela-wrap\"><table class=\"tabela\"><thead><tr><th scope=\"col\" data-ord=\"Nome\">Ciclo</th><th scope=\"col\" data-ord=\"Inicio\">Período</th><th scope=\"col\" data-ord=\"Semanas\">Semanas epidemiológicas</th><th scope=\"col\" data-ord=\"Atividades\">Atividades</th><th scope=\"col\" data-ord=\"Fechado\">Situação</th><th scope=\"col\" data-ord=\"Publico\">Painel público</th><th scope=\"col\"><span class=\"sr-only\">Ações</span></th></tr></thead> <tbody>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

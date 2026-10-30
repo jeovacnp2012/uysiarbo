@@ -809,7 +809,7 @@ func Clientes(l Layout, d ClientesData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 69, "<div class=\"tabela-wrap\"><table class=\"tabela\"><thead><tr><th scope=\"col\">Cliente</th><th scope=\"col\">Endereço</th><th scope=\"col\">Situação</th><th scope=\"col\">Criado em</th><th scope=\"col\"><span class=\"sr-only\">Ações</span></th></tr></thead> <tbody>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 69, "<div class=\"tabela-wrap\"><table class=\"tabela\"><thead><tr><th scope=\"col\" data-ord=\"Nome\">Cliente</th><th scope=\"col\" data-ord=\"Endereco\">Endereço</th><th scope=\"col\" data-ord=\"Status\">Situação</th><th scope=\"col\" data-ord=\"Criado\">Criado em</th><th scope=\"col\"><span class=\"sr-only\">Ações</span></th></tr></thead> <tbody>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1540,7 +1540,7 @@ func Masters(l Layout, d MastersData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 138, "<div class=\"tabela-wrap\"><table class=\"tabela\"><thead><tr><th scope=\"col\">Nome</th><th scope=\"col\">Tipo</th><th scope=\"col\">Último acesso</th><th scope=\"col\">Situação</th><th scope=\"col\"><span class=\"sr-only\">Ações</span></th></tr></thead> <tbody>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 138, "<div class=\"tabela-wrap\"><table class=\"tabela\"><thead><tr><th scope=\"col\" data-ord=\"Nome\">Nome</th><th scope=\"col\" data-ord=\"Master\">Tipo</th><th scope=\"col\" data-ord=\"UltimoAcesso\">Último acesso</th><th scope=\"col\" data-ord=\"Ativo\">Situação</th><th scope=\"col\"><span class=\"sr-only\">Ações</span></th></tr></thead> <tbody>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

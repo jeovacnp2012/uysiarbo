@@ -133,7 +133,7 @@ func PapeisLista(l Layout, linhas []PapelLinha) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<div class=\"tabela-wrap\"><table class=\"tabela\"><thead><tr><th scope=\"col\">Papel</th><th scope=\"col\">Permissões</th><th scope=\"col\">Usuários</th><th scope=\"col\">Situação</th><th scope=\"col\"><span class=\"sr-only\">Ações</span></th></tr></thead> <tbody>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<div class=\"tabela-wrap\"><table class=\"tabela\"><thead><tr><th scope=\"col\" data-ord=\"Nome\">Papel</th><th scope=\"col\" data-ord=\"Permissoes\">Permissões</th><th scope=\"col\" data-ord=\"Usuarios\">Usuários</th><th scope=\"col\" data-ord=\"Ativo\">Situação</th><th scope=\"col\"><span class=\"sr-only\">Ações</span></th></tr></thead> <tbody>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -666,7 +666,7 @@ func UsuariosLista(l Layout, linhas []UsuarioLinha, pode bool) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "<div class=\"tabela-wrap\"><table class=\"tabela\"><thead><tr><th scope=\"col\">Nome</th><th scope=\"col\">Papel</th><th scope=\"col\">Acesso</th><th scope=\"col\">Último acesso</th><th scope=\"col\">Situação</th><th scope=\"col\"><span class=\"sr-only\">Ações</span></th></tr></thead> <tbody>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "<div class=\"tabela-wrap\"><table class=\"tabela\"><thead><tr><th scope=\"col\" data-ord=\"Nome\">Nome</th><th scope=\"col\" data-ord=\"Papel\">Papel</th><th scope=\"col\" data-ord=\"LoginWeb\">Acesso</th><th scope=\"col\" data-ord=\"UltimoAcesso\">Último acesso</th><th scope=\"col\" data-ord=\"Ativo\">Situação</th><th scope=\"col\"><span class=\"sr-only\">Ações</span></th></tr></thead> <tbody>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

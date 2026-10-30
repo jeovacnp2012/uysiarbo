@@ -82,7 +82,35 @@
         document.querySelectorAll('table.tabela').forEach(function (t, n) { automatica(t, n); });
     }
 
+
+    // Títulos th[data-ord="Campo"]: clique ordena a lista (o servidor ordena por ?ordem=Campo&dir=asc|desc).
+    function titulosOrdenaveis(raiz) {
+        var qs = new URLSearchParams(location.search);
+        (raiz || document).querySelectorAll('th[data-ord]').forEach(function (th) {
+            if (th._ord) return;
+            th._ord = true;
+            var campo = th.getAttribute('data-ord');
+            var ativo = qs.get('ordem') === campo;
+            var dir = ativo && qs.get('dir') !== 'desc' ? 'desc' : 'asc';
+            var a = document.createElement('a');
+            a.className = 'ordenar';
+            var u = new URLSearchParams(location.search);
+            u.set('ordem', campo);
+            u.set('dir', dir);
+            u.delete('pagina');
+            a.href = location.pathname + '?' + u.toString();
+            while (th.firstChild) a.appendChild(th.firstChild);
+            var seta = document.createElement('span');
+            seta.className = 'seta';
+            seta.textContent = ativo ? (qs.get('dir') === 'desc' ? ' ▼' : ' ▲') : '';
+            a.appendChild(seta);
+            th.appendChild(a);
+            th.setAttribute('aria-sort', ativo ? (qs.get('dir') === 'desc' ? 'descending' : 'ascending') : 'none');
+        });
+    }
+
     function varrer(raiz) {
+        titulosOrdenaveis(raiz);
         varrerAuto(raiz);
         (raiz || document).querySelectorAll('table[data-colunas]').forEach(aplicar);
         (raiz || document).querySelectorAll('[data-colunas-menu]').forEach(montarMenu);

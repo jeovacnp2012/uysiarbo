@@ -71,7 +71,7 @@ func Leis(l Layout, linhas []LeiLinha) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div class=\"tabela-wrap\"><table class=\"tabela\"><thead><tr><th scope=\"col\">Lei</th><th scope=\"col\">Nome</th><th scope=\"col\">Publicação</th><th scope=\"col\">Trechos</th><th scope=\"col\">Situação</th><th scope=\"col\"><span class=\"sr-only\">Ações</span></th></tr></thead> <tbody>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div class=\"tabela-wrap\"><table class=\"tabela\"><thead><tr><th scope=\"col\" data-ord=\"Numero\">Lei</th><th scope=\"col\" data-ord=\"Nome\">Nome</th><th scope=\"col\" data-ord=\"Publicacao\">Publicação</th><th scope=\"col\" data-ord=\"Trechos\">Trechos</th><th scope=\"col\" data-ord=\"Ativo\">Situação</th><th scope=\"col\"><span class=\"sr-only\">Ações</span></th></tr></thead> <tbody>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
