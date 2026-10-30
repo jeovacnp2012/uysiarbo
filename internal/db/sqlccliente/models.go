@@ -901,6 +901,15 @@ type Reconhecimento struct {
 	DeletedBy           pgtype.Int8        `json:"deleted_by"`
 }
 
+type RecuperacoesSenha struct {
+	TokenHash []byte             `json:"token_hash"`
+	UsuarioID int64              `json:"usuario_id"`
+	CriadoEm  pgtype.Timestamptz `json:"criado_em"`
+	ExpiraEm  pgtype.Timestamptz `json:"expira_em"`
+	UsadoEm   pgtype.Timestamptz `json:"usado_em"`
+	Ip        string             `json:"ip"`
+}
+
 type ResumosSemanai struct {
 	ID          int64              `json:"id"`
 	CicloID     int64              `json:"ciclo_id"`

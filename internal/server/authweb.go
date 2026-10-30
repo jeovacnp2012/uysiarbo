@@ -82,7 +82,7 @@ func (h *handlers) autenticacao(next http.Handler) http.Handler {
 		}
 		r = r.WithContext(context.WithValue(r.Context(), authKey{}, info))
 
-		if r.URL.Path == "/entrar" {
+		if r.URL.Path == "/entrar" || r.URL.Path == "/esqueci-senha" || r.URL.Path == "/redefinir-senha" {
 			next.ServeHTTP(w, r)
 			return
 		}

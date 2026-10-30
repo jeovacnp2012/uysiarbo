@@ -398,3 +398,37 @@ func (s *Service) MarcarNovidadeVista(ctx context.Context, sess *Sessao, versaoI
 	sess.Conta.NovidadeVista = versaoID
 	return nil
 }
+
+// NovoCodigo cria um código aleatório para links de uso único (ex.: recuperação de senha) e o hash
+// que vai para o banco; o código em si só segue para a pessoa.
+func NovoCodigo() (codigo string, hash []byte, err error) { return novoToken() }
+
+// HashDoCodigo devolve o hash de um código recebido; false se o formato não é de um código nosso.
+func HashDoCodigo(codigo string) ([]byte, bool) { return hashDoToken(codigo) }
+
+// RedefinirSenha define a senha escolhida por quem provou ser dono do e-mail (recuperação). Aplica a
+// política de senhas, tira a obrigação de trocar e derruba todas as sessões da conta.
+func (s *Service) RedefinirSenha(ctx context.Context, tipo Tipo, contaID, nova string) error {
+	loja, err := s.loja(tipo)
+	if err != nil {
+		return err
+	}
+	c, err := loja.PorID(ctx, contaID)
+	if err != nil {
+		return err
+	}
+	if !c.Ativo {
+		return ErrNaoEncontrada
+	}
+	if err := ValidarSenha(nova, c.Email); err != nil {
+		return err
+	}
+	hash, err := Hash(nova)
+	if err != nil {
+		return err
+	}
+	if err := loja.DefinirSenha(ctx, contaID, hash, false); err != nil {
+		return err
+	}
+	return s.Sessoes.RemoverDaConta(ctx, tipo, contaID, nil)
+}

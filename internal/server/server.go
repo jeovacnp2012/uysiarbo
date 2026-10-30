@@ -154,6 +154,10 @@ func New(d Deps) http.Handler {
 	r.Get("/entrar", h.entrarForm)
 	r.Post("/entrar", h.entrarPost)
 	r.Post("/sair", h.sair)
+	r.Get("/esqueci-senha", h.esqueciSenhaForm)
+	r.Post("/esqueci-senha", h.esqueciSenhaPost)
+	r.Get("/redefinir-senha", h.redefinirSenhaForm)
+	r.Post("/redefinir-senha", h.redefinirSenhaPost)
 	r.Get("/trocar-senha", h.trocarSenhaForm)
 	r.Post("/trocar-senha", h.trocarSenhaPost)
 

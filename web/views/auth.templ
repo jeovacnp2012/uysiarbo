@@ -82,7 +82,9 @@ templ Login(d LoginData) {
 			}
 			<button type="submit" class="btn btn-primario entrar-botao">Entrar</button>
 		</form>
-		<p class="subtitulo">Esqueceu a senha? Peça a um administrador para gerar uma nova.</p>
+		if d.Cliente != "" {
+			<p class="subtitulo"><a href="/esqueci-senha">Esqueci a senha</a></p>
+		}
 	}
 }
 
