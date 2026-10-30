@@ -241,6 +241,7 @@ var Rotulos = map[string]string{
 	"grupo.local_remover":           "Retirou um local de um grupo",
 	"grupo.limpar":                  "Esvaziou um grupo de locais",
 	"grupo.exportar":                "Exportou um grupo de locais",
+	"relatorio.baixar":              "Baixou um relatório",
 	"local.criar":                   "Cadastrou um local",
 	"local.editar":                  "Editou um local",
 	"local.desativar":               "Desativou um local",

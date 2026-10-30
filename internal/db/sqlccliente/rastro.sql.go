@@ -12,23 +12,27 @@ import (
 )
 
 const listRastroGPS = `-- name: ListRastroGPS :many
-SELECT v.id, v.agente_id, u.nome AS agente, v.data, v.hora_entrada, v.latitude, v.longitude,
+SELECT v.id, v.agente_id, u.nome AS agente, v.data, v.hora_entrada,
+       COALESCE(v.latitude, l.latitude)::float8 AS latitude, COALESCE(v.longitude, l.longitude)::float8 AS longitude,
+       (v.latitude IS NULL)::boolean AS do_local,
        COALESCE(v.precisao_gps, 0)::float8 AS precisao, v.achou_deposito, v.pendencia,
        l.endereco, l.numero
 FROM visitas v
 JOIN usuarios u ON u.id = v.agente_id
 JOIN locais l ON l.id = v.local_id
-WHERE v.deleted_at IS NULL AND v.ativo AND v.latitude IS NOT NULL AND v.longitude IS NOT NULL
-  AND ($1::bigint IS NULL OR v.ciclo_id = $1::bigint)
-  AND ($2::bigint IS NULL OR v.agente_id = $2::bigint)
-  AND ($3::date IS NULL OR v.data >= $3::date)
-  AND ($4::date IS NULL OR v.data <= $4::date)
-  AND ($5::bigint IS NULL OR v.agente_id = $5::bigint)
+WHERE v.deleted_at IS NULL AND v.ativo AND ((v.latitude IS NOT NULL AND v.longitude IS NOT NULL)
+       OR ($1::boolean AND l.latitude IS NOT NULL AND l.longitude IS NOT NULL))
+  AND ($2::bigint IS NULL OR v.ciclo_id = $2::bigint)
+  AND ($3::bigint IS NULL OR v.agente_id = $3::bigint)
+  AND ($4::date IS NULL OR v.data >= $4::date)
+  AND ($5::date IS NULL OR v.data <= $5::date)
+  AND ($6::bigint IS NULL OR v.agente_id = $6::bigint)
 ORDER BY v.agente_id, v.data, v.hora_entrada NULLS LAST, v.id
 LIMIT 5001
 `
 
 type ListRastroGPSParams struct {
+	UsarLocal     bool        `json:"usar_local"`
 	CicloID       pgtype.Int8 `json:"ciclo_id"`
 	AgenteID      pgtype.Int8 `json:"agente_id"`
 	DataDe        pgtype.Date `json:"data_de"`
@@ -37,22 +41,24 @@ type ListRastroGPSParams struct {
 }
 
 type ListRastroGPSRow struct {
-	ID            int64         `json:"id"`
-	AgenteID      int64         `json:"agente_id"`
-	Agente        string        `json:"agente"`
-	Data          pgtype.Date   `json:"data"`
-	HoraEntrada   pgtype.Time   `json:"hora_entrada"`
-	Latitude      pgtype.Float8 `json:"latitude"`
-	Longitude     pgtype.Float8 `json:"longitude"`
-	Precisao      float64       `json:"precisao"`
-	AchouDeposito bool          `json:"achou_deposito"`
-	Pendencia     string        `json:"pendencia"`
-	Endereco      string        `json:"endereco"`
-	Numero        string        `json:"numero"`
+	ID            int64       `json:"id"`
+	AgenteID      int64       `json:"agente_id"`
+	Agente        string      `json:"agente"`
+	Data          pgtype.Date `json:"data"`
+	HoraEntrada   pgtype.Time `json:"hora_entrada"`
+	Latitude      float64     `json:"latitude"`
+	Longitude     float64     `json:"longitude"`
+	DoLocal       bool        `json:"do_local"`
+	Precisao      float64     `json:"precisao"`
+	AchouDeposito bool        `json:"achou_deposito"`
+	Pendencia     string      `json:"pendencia"`
+	Endereco      string      `json:"endereco"`
+	Numero        string      `json:"numero"`
 }
 
 func (q *Queries) ListRastroGPS(ctx context.Context, arg ListRastroGPSParams) ([]ListRastroGPSRow, error) {
 	rows, err := q.db.Query(ctx, listRastroGPS,
+		arg.UsarLocal,
 		arg.CicloID,
 		arg.AgenteID,
 		arg.DataDe,
@@ -74,6 +80,7 @@ func (q *Queries) ListRastroGPS(ctx context.Context, arg ListRastroGPSParams) ([
 			&i.HoraEntrada,
 			&i.Latitude,
 			&i.Longitude,
+			&i.DoLocal,
 			&i.Precisao,
 			&i.AchouDeposito,
 			&i.Pendencia,

@@ -138,7 +138,7 @@ Objetivo: migrar dados de outros sistemas e de planilhas, com segurança.
 - [ ] 7.4 Mapas: visitas, doenças, rastro GPS, campanha, ovitrampa, EDL, com filtros — **feitos: visitas (`/mapa`) e rastro GPS (`/mapa/rastro`, `mapa_coleta`, versão 1.0.036)**; doenças, campanha, ovitrampa e EDL entram com as etapas dos seus dados
 
 ## Etapa 8 — Relatórios e PDFs
-- [ ] 8.1 Motor de relatórios parametrizados (filtros, tela, PDF, planilha)
+- [x] 8.1 Motor de relatórios parametrizados (filtros, tela, PDF, planilha) — `internal/relatorio` (Doc: tela, CSV, XLSX, PDF com fpdf), `internal/server/relatorios.go` (`relatoriosDoSistema`), `/relatorios`; primeiro relatório: Visitas (versão 1.0.037)
 - [ ] 8.2 Os 14 relatórios do sistema atual, um a um (cada um validado contra um exemplo real)
 - [ ] 8.3 Resumo semanal e Reconhecimento Geográfico
 

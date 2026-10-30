@@ -1,0 +1,118 @@
+package views
+
+import "strconv"
+
+type RelatorioItem struct{ Slug, Titulo, Resumo string }
+
+type RelatoriosIndice struct{ Itens []RelatorioItem }
+
+// RelatorioCampo é um filtro do formulário do relatório; Opcoes só vale para os tipos de lista.
+type RelatorioCampo struct {
+	Nome, Rotulo, Tipo, Valor string
+	Opcoes                    []CidadeOpcao
+}
+
+type RelatorioTela struct {
+	Slug, Titulo, Resumo string
+	Campos               []RelatorioCampo
+	Gerado, Cortado      bool
+	Colunas              []string
+	Linhas               [][]string
+	Totais               []string
+	Total, Mostradas     int
+	Query                string
+}
+
+func valorOpcao(o CidadeOpcao) string {
+	if o.Valor != "" {
+		return o.Valor
+	}
+	return strconv.FormatInt(o.ID, 10)
+}
+
+templ Relatorios(l Layout, d RelatoriosIndice) {
+	@Base(l) {
+		@PageHeader("Relatórios", "Escolha um relatório, ajuste os filtros e veja na tela ou baixe em PDF, planilha ou CSV.")
+		if len(d.Itens) == 0 {
+			<p class="cartao">Você não tem permissão para nenhum relatório.</p>
+		}
+		<div class="grade-cartoes">
+			for _, i := range d.Itens {
+				<a class="cartao" href={ templ.SafeURL("/relatorios/" + i.Slug) }>
+					<strong>{ i.Titulo }</strong>
+					<p class="subtitulo">{ i.Resumo }</p>
+				</a>
+			}
+		</div>
+	}
+}
+
+templ RelatorioPagina(l Layout, d RelatorioTela) {
+	@Base(l) {
+		@PageHeader(d.Titulo, d.Resumo)
+		<form method="get" action={ templ.SafeURL("/relatorios/" + d.Slug) } class="cartao filtros">
+			for _, c := range d.Campos {
+				<div class="campo">
+					<label for={ "rel-" + c.Nome }>{ c.Rotulo }</label>
+					if c.Tipo == "data" {
+						<input id={ "rel-" + c.Nome } type="date" name={ c.Nome } value={ c.Valor }/>
+					} else {
+						<select id={ "rel-" + c.Nome } name={ c.Nome }>
+							<option value="">Todos</option>
+							for _, o := range c.Opcoes {
+								<option value={ valorOpcao(o) } selected?={ o.Selecionada }>{ o.Rotulo }</option>
+							}
+						</select>
+					}
+				</div>
+			}
+			<div class="form-acoes">
+				<button type="submit" name="gerar" value="1" class="btn btn-primario">Gerar relatório</button>
+				<button type="submit" name="formato" value="pdf" class="btn">Baixar PDF</button>
+				<button type="submit" name="formato" value="xlsx" class="btn">Baixar planilha</button>
+				<button type="submit" name="formato" value="csv" class="btn">Baixar CSV</button>
+				<a class="btn" href={ templ.SafeURL("/relatorios/" + d.Slug) }>Limpar</a>
+			</div>
+		</form>
+		if d.Gerado {
+			<div class="cartao tabela-rolavel">
+				if d.Cortado {
+					<p class="alerta">O relatório passou do limite e foi cortado: estreite os filtros para ver o restante.</p>
+				}
+				if d.Total > d.Mostradas {
+					<p class="subtitulo">Mostrando as primeiras { strconv.Itoa(d.Mostradas) } de { strconv.Itoa(d.Total) } linhas. Baixe o PDF, a planilha ou o CSV para ver todas.</p>
+				}
+				<table class="tabela">
+					<thead>
+						<tr>
+							for _, c := range d.Colunas {
+								<th>{ c }</th>
+							}
+						</tr>
+					</thead>
+					<tbody>
+						if len(d.Linhas) == 0 {
+							<tr><td colspan={ strconv.Itoa(len(d.Colunas)) }>Nenhum registro para estes filtros.</td></tr>
+						}
+						for _, l := range d.Linhas {
+							<tr>
+								for _, v := range l {
+									<td>{ v }</td>
+								}
+							</tr>
+						}
+					</tbody>
+					if len(d.Totais) > 0 && len(d.Linhas) > 0 {
+						<tfoot>
+							<tr>
+								for _, v := range d.Totais {
+									<th>{ v }</th>
+								}
+							</tr>
+						</tfoot>
+					}
+				</table>
+			</div>
+		}
+	}
+}

@@ -62,6 +62,10 @@ func (s *handlers) menu(r *http.Request) []views.NavGrupo {
 			}})
 		}
 
+		if relatoriosPermitidos(pr.Pode) {
+			menu = append(menu, views.NavGrupo{Label: "Relatórios", Icone: "visitas", Href: "/relatorios"})
+		}
+
 		if pr.Pode("bi_visualizar") {
 			menu = append(menu, views.NavGrupo{Label: "B.I.", Icone: "mapa", Href: "/bi"})
 		}

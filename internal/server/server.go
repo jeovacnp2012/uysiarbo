@@ -180,6 +180,8 @@ func New(d Deps) http.Handler {
 	r.Post("/visitas/{id}/amostras/{aid}/resultado", h.exigir("visita_laboratorio_adicionar", h.amostraResultado))
 	r.Post("/visitas/{id}/amostras/{aid}/excluir", h.exigir("visita_editar", h.amostraExcluir))
 	r.Get("/dashboard", h.exigir("visita_visualizar", h.dashboard))
+	r.Get("/relatorios", h.relatoriosIndice)
+	r.Get("/relatorios/{slug}", h.relatorioGerar)
 	r.Get("/bi", h.exigir("bi_visualizar", h.biPagina))
 	r.Get("/laboratorio", h.exigir("visita_laboratorio_visualizar", h.laboratorioLista))
 	r.Get("/mobilidade/historico", h.exigir("historico_mobilidade", h.mobilidadeHistorico))

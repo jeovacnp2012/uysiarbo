@@ -4,7 +4,7 @@ import "strconv"
 
 type RastroData struct {
 	TilesURL, Credito string
-	De, Ate           string
+	De, Ate, Origem   string
 	Ciclos, Agentes   []CidadeOpcao
 }
 
@@ -38,6 +38,13 @@ templ Rastro(l Layout, d RastroData) {
 				<label for="r-ate">Até</label>
 				<input id="r-ate" type="date" name="ate" value={ d.Ate }/>
 			</div>
+			<div class="campo">
+				<label for="r-origem">Origem do ponto</label>
+				<select id="r-origem" name="origem" data-sem-busca>
+					<option value="" selected?={ d.Origem != "local" }>Só GPS do aplicativo</option>
+					<option value="local" selected?={ d.Origem == "local" }>GPS, ou a posição do local</option>
+				</select>
+			</div>
 			<div class="form-acoes">
 				<a class="btn" href="/mapa/rastro">Limpar</a>
 			</div>
@@ -51,6 +58,7 @@ templ Rastro(l Layout, d RastroData) {
 				<span><i class="ponto ponto-comercio"></i> Visita com depósito</span>
 				<span><i class="ponto ponto-residencial"></i> Visita sem depósito</span>
 				<span><i class="ponto ponto-inativo"></i> Com pendência</span>
+				<span>Contorno escuro: posição do local (visita sem GPS)</span>
 			</div>
 		</section>
 		<link rel="stylesheet" href={ asset("/static/vendor/maplibre-gl.css") }/>

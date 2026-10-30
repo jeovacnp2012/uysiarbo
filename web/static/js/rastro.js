@@ -25,7 +25,7 @@
     var t = document.createElement("strong");
     t.textContent = p.endereco;
     caixa.appendChild(t);
-    [p.agente, p.data + (p.hora ? " " + p.hora : ""), p.precisao ? "Precisão " + Math.round(p.precisao) + " m" : ""].forEach(function (l) {
+    [p.do_local ? "Posição do local (visita sem GPS)" : "", p.agente, p.data + (p.hora ? " " + p.hora : ""), p.precisao ? "Precisão " + Math.round(p.precisao) + " m" : ""].forEach(function (l) {
       if (!l) return;
       var d = document.createElement("div");
       d.textContent = l;
@@ -46,7 +46,7 @@
       paint: {
         "circle-radius": 5,
         "circle-color": ["case", ["!=", ["get", "pendencia"], "nenhuma"], "#94a3b8", ["get", "deposito"], "#d97706", "#2563eb"],
-        "circle-stroke-color": "#fff", "circle-stroke-width": 1.5,
+        "circle-stroke-color": ["case", ["==", ["get", "do_local"], true], "#0f172a", "#fff"], "circle-stroke-width": 1.5,
       } });
     map.on("click", "rastro-ponto", function (e) { popup(e.lngLat, e.features[0].properties); });
     map.on("mouseenter", "rastro-ponto", function () { map.getCanvas().style.cursor = "pointer"; });

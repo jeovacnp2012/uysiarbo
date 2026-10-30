@@ -22,7 +22,7 @@ func (h *handlers) rastroPagina(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	qs := r.URL.Query()
-	d := views.RastroData{TilesURL: h.mapaTiles, Credito: h.mapaCredito, De: strings.TrimSpace(qs.Get("de")), Ate: strings.TrimSpace(qs.Get("ate"))}
+	d := views.RastroData{TilesURL: h.mapaTiles, Credito: h.mapaCredito, De: strings.TrimSpace(qs.Get("de")), Ate: strings.TrimSpace(qs.Get("ate")), Origem: qs.Get("origem")}
 	ciclo, agente := idOpcional(qs.Get("ciclo")), idOpcional(qs.Get("agente"))
 	ciclos, err := q.ListCiclos(ctx)
 	if err != nil {
@@ -54,7 +54,7 @@ func (h *handlers) rastroGeoJSON(w http.ResponseWriter, r *http.Request) {
 	rows, err := q.ListRastroGPS(r.Context(), sqlccliente.ListRastroGPSParams{
 		CicloID: idOpcional(qs.Get("ciclo")), AgenteID: idOpcional(qs.Get("agente")),
 		DataDe: dataOpcional(strings.TrimSpace(qs.Get("de"))), DataAte: dataOpcional(strings.TrimSpace(qs.Get("ate"))),
-		SomenteAgente: h.escopoVisitas(r),
+		SomenteAgente: h.escopoVisitas(r), UsarLocal: qs.Get("origem") == "local",
 	})
 	if err != nil {
 		h.falhaInterna(w, r, "rastro GPS", err)
@@ -74,12 +74,12 @@ func (h *handlers) rastroGeoJSON(w http.ResponseWriter, r *http.Request) {
 			hora = fmt.Sprintf("%02d:%02d", min/60, min%60)
 		}
 		data := dataBR(v.Data)
-		pt := [2]float64{v.Longitude.Float64, v.Latitude.Float64}
+		pt := [2]float64{v.Longitude, v.Latitude}
 		features = append(features, map[string]any{
 			"type": "Feature", "geometry": map[string]any{"type": "Point", "coordinates": pt},
 			"properties": map[string]any{
 				"id": v.ID, "agente": v.Agente, "data": data, "hora": hora, "precisao": v.Precisao,
-				"deposito": v.AchouDeposito, "pendencia": v.Pendencia, "endereco": enderecoCompleto(v.Endereco, v.Numero),
+				"deposito": v.AchouDeposito, "do_local": v.DoLocal, "pendencia": v.Pendencia, "endereco": enderecoCompleto(v.Endereco, v.Numero),
 			},
 		})
 		chave := fmt.Sprintf("%d|%s|%s", v.AgenteID, data, v.Agente)

@@ -356,6 +356,13 @@ h3 {
     display: grid;
     gap: 0.3rem;
     font-size: 0.875rem;
+    min-width: 0;
+}
+
+.campo .sb-botao {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 .campo label {
