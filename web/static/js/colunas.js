@@ -21,8 +21,13 @@
 
     function montarMenu(menu) {
         var chave = menu.getAttribute('data-colunas-menu');
-        var secao = menu.closest('section, .cartao') || document;
-        var tabela = secao.querySelector('table[data-colunas="' + chave + '"]');
+        var tabela = document.querySelector('table[data-colunas="' + chave + '"]');
+        // O menu vai para a barra do botão Filtros (à esquerda dele); um menu antigo da mesma tabela sai.
+        var barra = document.querySelector('.gaveta-barra');
+        if (barra && menu.parentNode !== barra) {
+            barra.querySelectorAll('[data-colunas-menu="' + chave + '"]').forEach(function (m) { m.remove(); });
+            barra.insertBefore(menu, barra.firstChild);
+        }
         var lista = menu.querySelector('.colunas-lista');
         if (!tabela || !lista || lista.children.length) return;
         var escondidas = ler(chave);

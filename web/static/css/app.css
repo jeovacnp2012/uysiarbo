@@ -2153,3 +2153,12 @@ select.sb-nativo {
     box-shadow: 0 8px 24px rgba(0,0,0,.18); display: grid; gap: 0.35rem;
 }
 .colunas-lista label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; cursor: pointer; }
+
+/* Menu de colunas ao lado do botão Filtros; títulos quebram; Endereço e Data/agente absorvem a folga */
+.gaveta-barra { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.gaveta-barra .colunas-menu { margin: 0; }
+.tabela th, .tabela th a.ordenar { white-space: normal; overflow-wrap: normal; }
+.tabela th .seta { white-space: nowrap; }
+@media (min-width: 641px) {
+    .tabela td.quebra2 { max-width: none; min-width: 11rem; width: 100%; }
+}
