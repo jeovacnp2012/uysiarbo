@@ -22,7 +22,7 @@ func (h *handlers) rastroPagina(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	qs := r.URL.Query()
-	d := views.RastroData{TilesURL: h.mapaTiles, Credito: h.mapaCredito, De: strings.TrimSpace(qs.Get("de")), Ate: strings.TrimSpace(qs.Get("ate")), Origem: qs.Get("origem")}
+	d := views.RastroData{TilesURL: h.mapaTiles, Credito: h.mapaCredito, De: strings.TrimSpace(qs.Get("de")), Ate: strings.TrimSpace(qs.Get("ate")), Origem: origemDoRastro(qs.Get("origem"))}
 	ciclo, agente := idOpcional(qs.Get("ciclo")), idOpcional(qs.Get("agente"))
 	ciclos, err := q.ListCiclos(ctx)
 	if err != nil {
@@ -54,7 +54,7 @@ func (h *handlers) rastroGeoJSON(w http.ResponseWriter, r *http.Request) {
 	rows, err := q.ListRastroGPS(r.Context(), sqlccliente.ListRastroGPSParams{
 		CicloID: idOpcional(qs.Get("ciclo")), AgenteID: idOpcional(qs.Get("agente")),
 		DataDe: dataOpcional(strings.TrimSpace(qs.Get("de"))), DataAte: dataOpcional(strings.TrimSpace(qs.Get("ate"))),
-		SomenteAgente: h.escopoVisitas(r), UsarLocal: qs.Get("origem") == "local",
+		SomenteAgente: h.escopoVisitas(r), UsarLocal: origemDoRastro(qs.Get("origem")) == "local",
 	})
 	if err != nil {
 		h.falhaInterna(w, r, "rastro GPS", err)
@@ -100,4 +100,13 @@ func (h *handlers) rastroGeoJSON(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/geo+json; charset=utf-8")
 	w.Header().Set("Cache-Control", "private, no-store")
 	_ = json.NewEncoder(w).Encode(map[string]any{"type": "FeatureCollection", "features": features, "truncado": truncado, "pontos": len(rows)})
+}
+
+// origemDoRastro: por padrão o ponto é o GPS da visita ou, na falta dele, a posição do local (a base importada
+// do Geo Controle não tem GPS); "gps" mostra só os pontos gravados pelo aplicativo.
+func origemDoRastro(v string) string {
+	if v == "gps" {
+		return "gps"
+	}
+	return "local"
 }

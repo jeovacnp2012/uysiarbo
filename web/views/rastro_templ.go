@@ -168,11 +168,11 @@ func Rastro(l Layout, d RastroData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\"></div><div class=\"campo\"><label for=\"r-origem\">Origem do ponto</label> <select id=\"r-origem\" name=\"origem\" data-sem-busca><option value=\"\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\"></div><div class=\"campo\"><label for=\"r-origem\">Origem do ponto</label> <select id=\"r-origem\" name=\"origem\" data-sem-busca><option value=\"gps\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if d.Origem != "local" {
+			if d.Origem == "gps" {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, " selected")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
@@ -182,7 +182,7 @@ func Rastro(l Layout, d RastroData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if d.Origem == "local" {
+			if d.Origem != "gps" {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, " selected")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err

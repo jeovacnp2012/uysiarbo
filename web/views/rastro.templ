@@ -41,8 +41,8 @@ templ Rastro(l Layout, d RastroData) {
 			<div class="campo">
 				<label for="r-origem">Origem do ponto</label>
 				<select id="r-origem" name="origem" data-sem-busca>
-					<option value="" selected?={ d.Origem != "local" }>Só GPS do aplicativo</option>
-					<option value="local" selected?={ d.Origem == "local" }>GPS, ou a posição do local</option>
+					<option value="gps" selected?={ d.Origem == "gps" }>Só GPS do aplicativo</option>
+					<option value="local" selected?={ d.Origem != "gps" }>GPS, ou a posição do local</option>
 				</select>
 			</div>
 			<div class="form-acoes">
