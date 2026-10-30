@@ -1,6 +1,9 @@
 package views
 
-import "time"
+import (
+	"net/url"
+	"time"
+)
 
 // ---- Visitas ----
 
@@ -73,8 +76,31 @@ type VisitaLinha struct {
 }
 
 type VisitasData struct {
-	Linhas   []VisitaLinha
-	LocalID  int64
-	Local    string
-	PodeNova bool
+	Linhas      []VisitaLinha
+	LocalID     int64
+	Local       string
+	PodeNova    bool
+	Filtro      VisitasFiltro
+	PodeLote    bool
+	Aviso       string
+	Pag         Pagination
+	Query       url.Values
+	Ciclos      []CidadeOpcao
+	Atividades  []CidadeOpcao
+	Agentes     []CidadeOpcao
+	Bairros     []CidadeOpcao
+	Quarteiroes []CidadeOpcao
+	Pendencias  []CidadeOpcao
+	Deposito    []CidadeOpcao
+	Amostra     []CidadeOpcao
+	Tratamento  []CidadeOpcao
+	Foto        []CidadeOpcao
+}
+
+// VisitasFiltro são os filtros da listagem de visitas, como chegaram na URL.
+type VisitasFiltro struct {
+	ID, Endereco, Numero, Bairro, Quarteirao, Lado string
+	Ciclo, Agente, Atividade, Semana, De, Ate      string
+	Pendencia, Deposito, Amostra, Tratamento, Foto string
+	Situacao                                       string
 }

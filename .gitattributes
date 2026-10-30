@@ -1,0 +1,2 @@
+*.templ text eol=lf
+*_templ.go text eol=lf

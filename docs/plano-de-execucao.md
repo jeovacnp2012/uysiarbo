@@ -118,7 +118,8 @@ Objetivo: migrar dados de outros sistemas e de planilhas, com segurança.
 ## Etapa 6 — Visitas e laboratório (núcleo do negócio)
 - [x] 6.1 Visita completa: pendência, tipo, depósitos A1–E, amostra, tratamento L1/L2, adulticida, BRI, fotos, assinatura, anotações
   - Feito em 2026-10-29 (versão 1.0.022): migração `cliente/00021` (`visitas`, `visita_fotos`, `visita_anotacoes`, com `id_externo` para o tablet e exclusão lógica), telas `/visitas` (últimas visitas), `/visitas/nova?local=`, `/visitas/{id}` (ficha e edição), fotos (JPEG/PNG/WebP, 5 MB, 20 por visita), anotações internas, Lixeira, regras de ciclo fechado/período/pendência, semana calculada pela data, atalhos na ficha do local. A listagem com os 17 filtros, a desativação e a edição completa ficam na 6.2.
-- [ ] 6.2 Listagem com os 17 filtros, ficha da visita, edição e desativação lógica
+- [x] 6.2 Listagem com os 17 filtros, ficha da visita, edição e desativação lógica
+  - Feito em 2026-10-30 (versão 1.0.027): `internal/server/visitas_lista.go` (`CountVisitas`/`ListVisitas` com os filtros, ao vivo por HTMX como em Locais), `POST /visitas/{id}/ativo` e `POST /visitas/lote` (desativar/reativar, permissão `visita_desativar`, auditoria `visita.desativar|reativar`), botão Imprimir (CSS `@media print`). Excluir (Lixeira) continua em `visita_desativar`.
 - [ ] 6.3 Laboratório: amostras/tubitos (numeração automática ou digitada), resultados, status, permissões por ciclo fechado
 - [ ] 6.4 **API de sincronização em lote** (`POST /sync`) para o tablet: idempotente, com resolução de conflito
 - [ ] 6.5 Reincidência (12 meses) e histórico na ficha do local

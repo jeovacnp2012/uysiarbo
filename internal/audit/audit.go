@@ -171,6 +171,8 @@ var Rotulos = map[string]string{
 	"cidade.excluir_definitivo":     "Excluiu uma cidade definitivamente",
 	"visita.criar":                  "Registrou uma visita",
 	"visita.editar":                 "Editou uma visita",
+	"visita.desativar":              "Desativou uma visita",
+	"visita.reativar":               "Reativou uma visita",
 	"visita.excluir":                "Enviou uma visita para a lixeira",
 	"visita.restaurar":              "Restaurou uma visita da lixeira",
 	"visita.excluir_definitivo":     "Excluiu uma visita definitivamente",

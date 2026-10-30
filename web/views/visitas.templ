@@ -4,9 +4,26 @@ import "strconv"
 
 // ---- Visitas ----
 
+templ campoTexto(id, rotulo, nome, valor, extra string) {
+	<div class="campo">
+		<label for={ id }>{ rotulo }</label>
+		<input id={ id } name={ nome } type="search" value={ valor } placeholder={ rotulo } inputmode={ extra }/>
+	</div>
+}
+
+templ campoEscolha(id, rotulo, nome, todos string, opcoes []CidadeOpcao) {
+	<div class="campo">
+		<label for={ id }>{ rotulo }</label>
+		<select id={ id } name={ nome } class="filtro-auto" data-sb-sempre>
+			<option value="">{ todos }</option>
+			@opcoesDe(opcoes)
+		</select>
+	</div>
+}
+
 templ Visitas(l Layout, d VisitasData) {
 	@Base(l) {
-		@PageHeader("Visitas", "As visitas registradas pelos agentes. A listagem completa, com filtros, chega na próxima etapa.") {
+		@PageHeader("Visitas", "As visitas registradas pelos agentes, com filtros ao vivo.") {
 			if d.PodeNova && d.LocalID != 0 {
 				<a class="btn btn-primario" href={ templ.SafeURL("/visitas/nova?local=" + strconv.FormatInt(d.LocalID, 10)) }>Registrar visita</a>
 			}
@@ -14,12 +31,96 @@ templ Visitas(l Layout, d VisitasData) {
 		if d.Local != "" {
 			<p class="subtitulo">Mostrando as visitas do local <strong>{ d.Local }</strong>. <a href="/visitas">Ver todas</a></p>
 		}
-		<section class="cartao">
-			@PaginacaoDoLayout(l)
+		<form
+			method="get"
+			action="/visitas"
+			class="cartao filtros filtros-vivos"
+			hx-get="/visitas"
+			hx-trigger="input changed delay:350ms from:find input, change from:find .filtro-auto, filtrar from:body"
+			hx-target="#visitas-lista"
+			hx-select="#visitas-lista"
+			hx-swap="outerHTML"
+			hx-push-url="true"
+			hx-indicator="#visitas-lista"
+		>
+			if d.LocalID != 0 {
+				<input type="hidden" name="local" value={ strconv.FormatInt(d.LocalID, 10) }/>
+			}
+			@campoTexto("f-id", "ID", "id", d.Filtro.ID, "numeric")
+			<div class="campo campo-largo">
+				<label for="f-endereco">Endereço</label>
+				<input id="f-endereco" name="endereco" type="search" value={ d.Filtro.Endereco } placeholder="Endereço"/>
+			</div>
+			@campoTexto("f-numero", "Número", "numero", d.Filtro.Numero, "")
+			<div class="campo">
+				<label for="f-bairro">Bairro</label>
+				<select
+					id="f-bairro"
+					name="bairro"
+					hx-get="/locais/quarteiroes?filtro=1"
+					hx-include="this"
+					hx-target="#f-quarteirao"
+					hx-swap="innerHTML"
+					hx-trigger="change"
+				>
+					<option value="">Todos os bairros</option>
+					@opcoesDe(d.Bairros)
+				</select>
+			</div>
+			@campoEscolha("f-quarteirao", "Quarteirão", "quarteirao", "Todos os quarteirões", d.Quarteiroes)
+			@campoTexto("f-lado", "Lado", "lado", d.Filtro.Lado, "")
+			@campoEscolha("f-ciclo", "Ciclo", "ciclo", "Todos os ciclos", d.Ciclos)
+			@campoEscolha("f-agente", "Agente", "agente", "Todos os agentes", d.Agentes)
+			@campoEscolha("f-atividade", "Atividade", "atividade", "Todas as atividades", d.Atividades)
+			@campoTexto("f-semana", "Semana", "semana", d.Filtro.Semana, "numeric")
+			<div class="campo">
+				<label for="f-de">De</label>
+				<input id="f-de" name="de" type="date" value={ d.Filtro.De } class="filtro-auto"/>
+			</div>
+			<div class="campo">
+				<label for="f-ate">Até</label>
+				<input id="f-ate" name="ate" type="date" value={ d.Filtro.Ate } class="filtro-auto"/>
+			</div>
+			@campoEscolha("f-pendencia", "Pendência", "pendencia", "Todas", d.Pendencias)
+			@campoEscolha("f-deposito", "Depósito", "deposito", "Todos", d.Deposito)
+			@campoEscolha("f-amostra", "Amostra", "amostra", "Todas", d.Amostra)
+			@campoEscolha("f-tratamento", "Tratamento", "tratamento", "Todos", d.Tratamento)
+			@campoEscolha("f-foto", "Foto", "foto", "Todas", d.Foto)
+			<div class="campo">
+				<label for="f-situacao">Situação</label>
+				<select id="f-situacao" name="situacao" class="filtro-auto" data-sb-sempre>
+					<option value="">Todas</option>
+					<option value="ativa" selected?={ d.Filtro.Situacao == "ativa" }>Ativa</option>
+					<option value="desativada" selected?={ d.Filtro.Situacao == "desativada" }>Desativada</option>
+				</select>
+			</div>
+			<div class="form-acoes">
+				<a class="btn btn-escuro" href="/visitas" data-icone="undo">Limpar filtros</a>
+			</div>
+			<noscript><button type="submit" class="btn btn-primario">Filtrar</button></noscript>
+		</form>
+		<div id="visitas-lista" class="lista-viva">
+			if d.Aviso != "" {
+				<p class="alerta alerta-ok" role="status">{ d.Aviso }</p>
+			}
+			<section class="cartao">
+				@Paginacao(d.Pag, "/visitas", d.Query)
+			<form method="post" action="/visitas/lote">
+				<input type="hidden" name="csrf" value={ l.CSRF }/>
+				<input type="hidden" name="voltar" value={ "/visitas?" + d.Query.Encode() }/>
+				if d.PodeLote {
+					<div class="form-acoes">
+						<button type="submit" name="acao" value="desativar" class="btn" onclick="return confirm('Desativar as visitas marcadas?')">Desativar marcadas</button>
+						<button type="submit" name="acao" value="reativar" class="btn">Reativar marcadas</button>
+					</div>
+				}
 			<div class="tabela-wrap">
 				<table class="tabela">
 					<thead>
 						<tr>
+							if d.PodeLote {
+								<th scope="col"><span class="sr-only">Marcar</span></th>
+							}
 							<th scope="col">ID</th>
 							<th scope="col">Endereço</th>
 							<th scope="col">Data / agente</th>
@@ -36,6 +137,9 @@ templ Visitas(l Layout, d VisitasData) {
 					<tbody>
 						for _, v := range d.Linhas {
 							<tr>
+								if d.PodeLote {
+									<td data-rotulo="Marcar"><input type="checkbox" name="ids" value={ strconv.FormatInt(v.ID, 10) } aria-label="Marcar a visita"/></td>
+								}
 								<td data-rotulo="ID">{ strconv.FormatInt(v.ID, 10) }</td>
 								<td data-rotulo="Endereço">{ v.Endereco }</td>
 								<td data-rotulo="Data / agente">{ v.Data } — { v.Agente }</td>
@@ -57,11 +161,13 @@ templ Visitas(l Layout, d VisitasData) {
 					</tbody>
 				</table>
 				if len(d.Linhas) == 0 {
-					<div class="tabela-vazia">Nenhuma visita registrada.</div>
+					<div class="tabela-vazia">Nenhuma visita encontrada.</div>
 				}
 			</div>
-			@PaginacaoDoLayout(l)
-		</section>
+			</form>
+			@Paginacao(d.Pag, "/visitas", d.Query)
+			</section>
+		</div>
 	}
 }
 
@@ -89,6 +195,7 @@ templ VisitaForm(l Layout, d VisitaFormData) {
 			@PageHeader("Visita "+strconv.FormatInt(d.ID, 10), d.Local) {
 				<a class="btn" href={ templ.SafeURL("/visitas?local=" + strconv.FormatInt(d.LocalID, 10)) }>Voltar</a>
 				<a class="btn" href={ templ.SafeURL("/locais/" + strconv.FormatInt(d.LocalID, 10)) }>Ficha do local</a>
+				<button type="button" class="btn" onclick="window.print()" data-icone="imprimir">Imprimir</button>
 			}
 			@Presenca("visita", strconv.FormatInt(d.ID, 10), modoDaTela(d.PodeEditar))
 			if !d.Ativo {
@@ -317,6 +424,22 @@ templ VisitaForm(l Layout, d VisitaFormData) {
 					</form>
 				}
 			</section>
+			if d.PodeExcluir {
+				<section class="cartao form-admin" id="situacao">
+					<h2>Situação da visita</h2>
+					<p class="subtitulo">Desativar esconde a visita das listagens e dos números, sem apagar nada; dá para reativar.</p>
+					<form method="post" action={ templ.SafeURL("/visitas/" + strconv.FormatInt(d.ID, 10) + "/ativo") } class="inline">
+						<input type="hidden" name="csrf" value={ d.CSRF }/>
+						if d.Ativo {
+							<input type="hidden" name="ativo" value="0"/>
+							<button type="submit" class="btn">Desativar visita</button>
+						} else {
+							<input type="hidden" name="ativo" value="1"/>
+							<button type="submit" class="btn btn-sucesso">Reativar visita</button>
+						}
+					</form>
+				</section>
+			}
 			if d.PodeExcluir {
 				<section class="cartao form-admin" id="excluir">
 					<h2>Excluir visita</h2>

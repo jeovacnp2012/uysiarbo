@@ -34,3 +34,11 @@ Na ficha da visita:
 - **Apenas as minhas**: quem tem essa restrição só vê as próprias visitas.
 - **Excluir** envia a visita para a **Lixeira** (dá para restaurar). Um local ou ciclo com visitas ativas não pode ser excluído.
 - Toda mudança fica na **Auditoria**, com o antes e o depois.
+
+## Listagem e filtros
+Em **Visitas**, os filtros pesquisam enquanto você digita ou escolhe (sem botão): ID, endereço, número, bairro, quarteirão, lado, ciclo, agente, atividade, semana, período (de/até), pendência, depósito, amostra, tratamento, foto e situação. "Limpar filtros" volta ao começo. A lista tem 10 por página (dá para mudar) e o endereço da página guarda os filtros.
+
+## Desativar, reativar e lote
+- Na ficha, **Desativar visita** esconde a visita das listagens sem apagar nada; **Reativar visita** a traz de volta (precisa da permissão de desativar). Quem não tem "ver desativados" não enxerga as desativadas.
+- Na lista, marque várias visitas e use **Desativar marcadas** ou **Reativar marcadas**. Visitas de ciclo fechado (sem a permissão) ou fora do seu acesso são puladas, e o aviso diz quantas.
+- **Imprimir** na ficha abre a impressão do navegador só com o conteúdo.

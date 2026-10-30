@@ -53,6 +53,66 @@ WHERE v.deleted_at IS NULL AND (v.ativo OR sqlc.arg(ver_desativadas)::boolean)
 ORDER BY v.data DESC, v.id DESC
 LIMIT 5000;
 
+-- Listagem com os filtros da tela (6.2).
+-- name: CountVisitas :one
+SELECT count(*)::int
+FROM visitas v
+JOIN locais l ON l.id = v.local_id
+WHERE v.deleted_at IS NULL AND (v.ativo OR sqlc.arg(ver_desativadas)::boolean)
+  AND (sqlc.narg(local_id)::bigint IS NULL OR v.local_id = sqlc.narg(local_id)::bigint)
+  AND (sqlc.narg(somente_agente)::bigint IS NULL OR v.agente_id = sqlc.narg(somente_agente)::bigint)
+  AND (sqlc.arg(id_texto)::text = '' OR v.id::text = sqlc.arg(id_texto)::text OR v.id_externo = sqlc.arg(id_texto)::text)
+  AND (sqlc.arg(endereco)::text = '' OR position(lower(sqlc.arg(endereco)::text) in lower(l.endereco)) > 0)
+  AND (sqlc.arg(numero)::text = '' OR position(lower(sqlc.arg(numero)::text) in lower(l.numero)) > 0)
+  AND (sqlc.narg(bairro_id)::bigint IS NULL OR l.bairro_id = sqlc.narg(bairro_id)::bigint)
+  AND (sqlc.narg(quarteirao_id)::bigint IS NULL OR l.quarteirao_id = sqlc.narg(quarteirao_id)::bigint)
+  AND (sqlc.arg(lado)::text = '' OR lower(l.lado) = lower(sqlc.arg(lado)::text))
+  AND (sqlc.narg(ciclo_id)::bigint IS NULL OR v.ciclo_id = sqlc.narg(ciclo_id)::bigint)
+  AND (sqlc.narg(agente_id)::bigint IS NULL OR v.agente_id = sqlc.narg(agente_id)::bigint)
+  AND (sqlc.narg(atividade_id)::bigint IS NULL OR v.atividade_id = sqlc.narg(atividade_id)::bigint)
+  AND (sqlc.narg(semana)::int IS NULL OR v.semana = sqlc.narg(semana)::int)
+  AND (sqlc.narg(data_de)::date IS NULL OR v.data >= sqlc.narg(data_de)::date)
+  AND (sqlc.narg(data_ate)::date IS NULL OR v.data <= sqlc.narg(data_ate)::date)
+  AND (sqlc.arg(pendencia)::text = '' OR v.pendencia = sqlc.arg(pendencia)::text)
+  AND (sqlc.arg(deposito)::text = '' OR v.achou_deposito = (sqlc.arg(deposito)::text = 'sim'))
+  AND (sqlc.arg(amostra)::text = '' OR v.coletou_amostra = (sqlc.arg(amostra)::text = 'sim'))
+  AND (sqlc.arg(tratamento)::text = '' OR v.fez_tratamento = (sqlc.arg(tratamento)::text = 'sim'))
+  AND (sqlc.arg(foto)::text = '' OR EXISTS (SELECT 1 FROM visita_fotos f WHERE f.visita_id = v.id AND f.deleted_at IS NULL) = (sqlc.arg(foto)::text = 'sim'))
+  AND (sqlc.arg(situacao)::text = '' OR v.ativo = (sqlc.arg(situacao)::text = 'ativa'));
+
+-- name: ListVisitas :many
+SELECT v.id, v.data, v.ativo, v.tipo_visita, v.pendencia, v.semana, v.semana_ano,
+       l.endereco, l.numero, c.nome AS ciclo_nome, a.sigla AS atividade_sigla, u.nome AS agente_nome,
+       v.achou_deposito, v.coletou_amostra, v.fez_tratamento
+FROM visitas v
+JOIN locais l ON l.id = v.local_id
+JOIN ciclos c ON c.id = v.ciclo_id
+JOIN atividades a ON a.id = v.atividade_id
+JOIN usuarios u ON u.id = v.agente_id
+WHERE v.deleted_at IS NULL AND (v.ativo OR sqlc.arg(ver_desativadas)::boolean)
+  AND (sqlc.narg(local_id)::bigint IS NULL OR v.local_id = sqlc.narg(local_id)::bigint)
+  AND (sqlc.narg(somente_agente)::bigint IS NULL OR v.agente_id = sqlc.narg(somente_agente)::bigint)
+  AND (sqlc.arg(id_texto)::text = '' OR v.id::text = sqlc.arg(id_texto)::text OR v.id_externo = sqlc.arg(id_texto)::text)
+  AND (sqlc.arg(endereco)::text = '' OR position(lower(sqlc.arg(endereco)::text) in lower(l.endereco)) > 0)
+  AND (sqlc.arg(numero)::text = '' OR position(lower(sqlc.arg(numero)::text) in lower(l.numero)) > 0)
+  AND (sqlc.narg(bairro_id)::bigint IS NULL OR l.bairro_id = sqlc.narg(bairro_id)::bigint)
+  AND (sqlc.narg(quarteirao_id)::bigint IS NULL OR l.quarteirao_id = sqlc.narg(quarteirao_id)::bigint)
+  AND (sqlc.arg(lado)::text = '' OR lower(l.lado) = lower(sqlc.arg(lado)::text))
+  AND (sqlc.narg(ciclo_id)::bigint IS NULL OR v.ciclo_id = sqlc.narg(ciclo_id)::bigint)
+  AND (sqlc.narg(agente_id)::bigint IS NULL OR v.agente_id = sqlc.narg(agente_id)::bigint)
+  AND (sqlc.narg(atividade_id)::bigint IS NULL OR v.atividade_id = sqlc.narg(atividade_id)::bigint)
+  AND (sqlc.narg(semana)::int IS NULL OR v.semana = sqlc.narg(semana)::int)
+  AND (sqlc.narg(data_de)::date IS NULL OR v.data >= sqlc.narg(data_de)::date)
+  AND (sqlc.narg(data_ate)::date IS NULL OR v.data <= sqlc.narg(data_ate)::date)
+  AND (sqlc.arg(pendencia)::text = '' OR v.pendencia = sqlc.arg(pendencia)::text)
+  AND (sqlc.arg(deposito)::text = '' OR v.achou_deposito = (sqlc.arg(deposito)::text = 'sim'))
+  AND (sqlc.arg(amostra)::text = '' OR v.coletou_amostra = (sqlc.arg(amostra)::text = 'sim'))
+  AND (sqlc.arg(tratamento)::text = '' OR v.fez_tratamento = (sqlc.arg(tratamento)::text = 'sim'))
+  AND (sqlc.arg(foto)::text = '' OR EXISTS (SELECT 1 FROM visita_fotos f WHERE f.visita_id = v.id AND f.deleted_at IS NULL) = (sqlc.arg(foto)::text = 'sim'))
+  AND (sqlc.arg(situacao)::text = '' OR v.ativo = (sqlc.arg(situacao)::text = 'ativa'))
+ORDER BY v.data DESC, v.id DESC
+LIMIT sqlc.arg(limite)::int OFFSET sqlc.arg(deslocamento)::int;
+
 -- ---------------------------------------------------------------- Fotos
 
 -- name: CreateVisitaFoto :one

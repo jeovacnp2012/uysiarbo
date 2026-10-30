@@ -19,6 +19,12 @@ if ($sujos) { Falhar "arquivos sem gofmt:`n$sujos" }
 Write-Host "==> templ (telas geradas em dia)"
 $antes = Digital "web/views/*_templ.go"
 go tool templ generate | Out-Null
+# No Windows o templ grava "\r\n" nos textos das telas (o checkout vem com CRLF); no Linux (CI) sai "\n". Igualar.
+Get-ChildItem web/views/*_templ.go | ForEach-Object {
+    $t = [IO.File]::ReadAllText($_.FullName)
+    $n = $t.Replace('\r\n', '\n')
+    if ($n -ne $t) { [IO.File]::WriteAllText($_.FullName, $n, (New-Object Text.UTF8Encoding $false)) }
+}
 if ($LASTEXITCODE -ne 0) { Falhar "templ generate" }
 if ($antes -ne (Digital "web/views/*_templ.go")) { Falhar "os *_templ.go estavam desatualizados; foram regenerados, confira e commite" }
 

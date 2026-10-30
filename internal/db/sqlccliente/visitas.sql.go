@@ -55,6 +55,87 @@ func (q *Queries) CountFotosDaVisita(ctx context.Context, visitaID int64) (int32
 	return column_1, err
 }
 
+const countVisitas = `-- name: CountVisitas :one
+SELECT count(*)::int
+FROM visitas v
+JOIN locais l ON l.id = v.local_id
+WHERE v.deleted_at IS NULL AND (v.ativo OR $1::boolean)
+  AND ($2::bigint IS NULL OR v.local_id = $2::bigint)
+  AND ($3::bigint IS NULL OR v.agente_id = $3::bigint)
+  AND ($4::text = '' OR v.id::text = $4::text OR v.id_externo = $4::text)
+  AND ($5::text = '' OR position(lower($5::text) in lower(l.endereco)) > 0)
+  AND ($6::text = '' OR position(lower($6::text) in lower(l.numero)) > 0)
+  AND ($7::bigint IS NULL OR l.bairro_id = $7::bigint)
+  AND ($8::bigint IS NULL OR l.quarteirao_id = $8::bigint)
+  AND ($9::text = '' OR lower(l.lado) = lower($9::text))
+  AND ($10::bigint IS NULL OR v.ciclo_id = $10::bigint)
+  AND ($11::bigint IS NULL OR v.agente_id = $11::bigint)
+  AND ($12::bigint IS NULL OR v.atividade_id = $12::bigint)
+  AND ($13::int IS NULL OR v.semana = $13::int)
+  AND ($14::date IS NULL OR v.data >= $14::date)
+  AND ($15::date IS NULL OR v.data <= $15::date)
+  AND ($16::text = '' OR v.pendencia = $16::text)
+  AND ($17::text = '' OR v.achou_deposito = ($17::text = 'sim'))
+  AND ($18::text = '' OR v.coletou_amostra = ($18::text = 'sim'))
+  AND ($19::text = '' OR v.fez_tratamento = ($19::text = 'sim'))
+  AND ($20::text = '' OR EXISTS (SELECT 1 FROM visita_fotos f WHERE f.visita_id = v.id AND f.deleted_at IS NULL) = ($20::text = 'sim'))
+  AND ($21::text = '' OR v.ativo = ($21::text = 'ativa'))
+`
+
+type CountVisitasParams struct {
+	VerDesativadas bool        `json:"ver_desativadas"`
+	LocalID        pgtype.Int8 `json:"local_id"`
+	SomenteAgente  pgtype.Int8 `json:"somente_agente"`
+	IDTexto        string      `json:"id_texto"`
+	Endereco       string      `json:"endereco"`
+	Numero         string      `json:"numero"`
+	BairroID       pgtype.Int8 `json:"bairro_id"`
+	QuarteiraoID   pgtype.Int8 `json:"quarteirao_id"`
+	Lado           string      `json:"lado"`
+	CicloID        pgtype.Int8 `json:"ciclo_id"`
+	AgenteID       pgtype.Int8 `json:"agente_id"`
+	AtividadeID    pgtype.Int8 `json:"atividade_id"`
+	Semana         pgtype.Int4 `json:"semana"`
+	DataDe         pgtype.Date `json:"data_de"`
+	DataAte        pgtype.Date `json:"data_ate"`
+	Pendencia      string      `json:"pendencia"`
+	Deposito       string      `json:"deposito"`
+	Amostra        string      `json:"amostra"`
+	Tratamento     string      `json:"tratamento"`
+	Foto           string      `json:"foto"`
+	Situacao       string      `json:"situacao"`
+}
+
+// Listagem com os filtros da tela (6.2).
+func (q *Queries) CountVisitas(ctx context.Context, arg CountVisitasParams) (int32, error) {
+	row := q.db.QueryRow(ctx, countVisitas,
+		arg.VerDesativadas,
+		arg.LocalID,
+		arg.SomenteAgente,
+		arg.IDTexto,
+		arg.Endereco,
+		arg.Numero,
+		arg.BairroID,
+		arg.QuarteiraoID,
+		arg.Lado,
+		arg.CicloID,
+		arg.AgenteID,
+		arg.AtividadeID,
+		arg.Semana,
+		arg.DataDe,
+		arg.DataAte,
+		arg.Pendencia,
+		arg.Deposito,
+		arg.Amostra,
+		arg.Tratamento,
+		arg.Foto,
+		arg.Situacao,
+	)
+	var column_1 int32
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
 const createVisita = `-- name: CreateVisita :one
 
 INSERT INTO visitas (
@@ -521,6 +602,144 @@ func (q *Queries) ListFotosDaVisita(ctx context.Context, visitaID int64) ([]List
 			&i.Nome,
 			&i.TipoMidia,
 			&i.Tamanho,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listVisitas = `-- name: ListVisitas :many
+SELECT v.id, v.data, v.ativo, v.tipo_visita, v.pendencia, v.semana, v.semana_ano,
+       l.endereco, l.numero, c.nome AS ciclo_nome, a.sigla AS atividade_sigla, u.nome AS agente_nome,
+       v.achou_deposito, v.coletou_amostra, v.fez_tratamento
+FROM visitas v
+JOIN locais l ON l.id = v.local_id
+JOIN ciclos c ON c.id = v.ciclo_id
+JOIN atividades a ON a.id = v.atividade_id
+JOIN usuarios u ON u.id = v.agente_id
+WHERE v.deleted_at IS NULL AND (v.ativo OR $1::boolean)
+  AND ($2::bigint IS NULL OR v.local_id = $2::bigint)
+  AND ($3::bigint IS NULL OR v.agente_id = $3::bigint)
+  AND ($4::text = '' OR v.id::text = $4::text OR v.id_externo = $4::text)
+  AND ($5::text = '' OR position(lower($5::text) in lower(l.endereco)) > 0)
+  AND ($6::text = '' OR position(lower($6::text) in lower(l.numero)) > 0)
+  AND ($7::bigint IS NULL OR l.bairro_id = $7::bigint)
+  AND ($8::bigint IS NULL OR l.quarteirao_id = $8::bigint)
+  AND ($9::text = '' OR lower(l.lado) = lower($9::text))
+  AND ($10::bigint IS NULL OR v.ciclo_id = $10::bigint)
+  AND ($11::bigint IS NULL OR v.agente_id = $11::bigint)
+  AND ($12::bigint IS NULL OR v.atividade_id = $12::bigint)
+  AND ($13::int IS NULL OR v.semana = $13::int)
+  AND ($14::date IS NULL OR v.data >= $14::date)
+  AND ($15::date IS NULL OR v.data <= $15::date)
+  AND ($16::text = '' OR v.pendencia = $16::text)
+  AND ($17::text = '' OR v.achou_deposito = ($17::text = 'sim'))
+  AND ($18::text = '' OR v.coletou_amostra = ($18::text = 'sim'))
+  AND ($19::text = '' OR v.fez_tratamento = ($19::text = 'sim'))
+  AND ($20::text = '' OR EXISTS (SELECT 1 FROM visita_fotos f WHERE f.visita_id = v.id AND f.deleted_at IS NULL) = ($20::text = 'sim'))
+  AND ($21::text = '' OR v.ativo = ($21::text = 'ativa'))
+ORDER BY v.data DESC, v.id DESC
+LIMIT $23::int OFFSET $22::int
+`
+
+type ListVisitasParams struct {
+	VerDesativadas bool        `json:"ver_desativadas"`
+	LocalID        pgtype.Int8 `json:"local_id"`
+	SomenteAgente  pgtype.Int8 `json:"somente_agente"`
+	IDTexto        string      `json:"id_texto"`
+	Endereco       string      `json:"endereco"`
+	Numero         string      `json:"numero"`
+	BairroID       pgtype.Int8 `json:"bairro_id"`
+	QuarteiraoID   pgtype.Int8 `json:"quarteirao_id"`
+	Lado           string      `json:"lado"`
+	CicloID        pgtype.Int8 `json:"ciclo_id"`
+	AgenteID       pgtype.Int8 `json:"agente_id"`
+	AtividadeID    pgtype.Int8 `json:"atividade_id"`
+	Semana         pgtype.Int4 `json:"semana"`
+	DataDe         pgtype.Date `json:"data_de"`
+	DataAte        pgtype.Date `json:"data_ate"`
+	Pendencia      string      `json:"pendencia"`
+	Deposito       string      `json:"deposito"`
+	Amostra        string      `json:"amostra"`
+	Tratamento     string      `json:"tratamento"`
+	Foto           string      `json:"foto"`
+	Situacao       string      `json:"situacao"`
+	Deslocamento   int32       `json:"deslocamento"`
+	Limite         int32       `json:"limite"`
+}
+
+type ListVisitasRow struct {
+	ID             int64       `json:"id"`
+	Data           pgtype.Date `json:"data"`
+	Ativo          bool        `json:"ativo"`
+	TipoVisita     string      `json:"tipo_visita"`
+	Pendencia      string      `json:"pendencia"`
+	Semana         pgtype.Int2 `json:"semana"`
+	SemanaAno      pgtype.Int2 `json:"semana_ano"`
+	Endereco       string      `json:"endereco"`
+	Numero         string      `json:"numero"`
+	CicloNome      string      `json:"ciclo_nome"`
+	AtividadeSigla string      `json:"atividade_sigla"`
+	AgenteNome     string      `json:"agente_nome"`
+	AchouDeposito  bool        `json:"achou_deposito"`
+	ColetouAmostra bool        `json:"coletou_amostra"`
+	FezTratamento  bool        `json:"fez_tratamento"`
+}
+
+func (q *Queries) ListVisitas(ctx context.Context, arg ListVisitasParams) ([]ListVisitasRow, error) {
+	rows, err := q.db.Query(ctx, listVisitas,
+		arg.VerDesativadas,
+		arg.LocalID,
+		arg.SomenteAgente,
+		arg.IDTexto,
+		arg.Endereco,
+		arg.Numero,
+		arg.BairroID,
+		arg.QuarteiraoID,
+		arg.Lado,
+		arg.CicloID,
+		arg.AgenteID,
+		arg.AtividadeID,
+		arg.Semana,
+		arg.DataDe,
+		arg.DataAte,
+		arg.Pendencia,
+		arg.Deposito,
+		arg.Amostra,
+		arg.Tratamento,
+		arg.Foto,
+		arg.Situacao,
+		arg.Deslocamento,
+		arg.Limite,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListVisitasRow
+	for rows.Next() {
+		var i ListVisitasRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Data,
+			&i.Ativo,
+			&i.TipoVisita,
+			&i.Pendencia,
+			&i.Semana,
+			&i.SemanaAno,
+			&i.Endereco,
+			&i.Numero,
+			&i.CicloNome,
+			&i.AtividadeSigla,
+			&i.AgenteNome,
+			&i.AchouDeposito,
+			&i.ColetouAmostra,
+			&i.FezTratamento,
 		); err != nil {
 			return nil, err
 		}

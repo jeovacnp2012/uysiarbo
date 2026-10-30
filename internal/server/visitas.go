@@ -100,60 +100,6 @@ func (h *handlers) visitaVisivel(ctx context.Context, r *http.Request, q *sqlccl
 	return true, nil
 }
 
-// ------------------------------------------------------------------- Lista
-
-func (h *handlers) visitasLista(w http.ResponseWriter, r *http.Request) {
-	q, _, err := h.cliente(r)
-	if err != nil {
-		h.falhaInterna(w, r, "pool do cliente", err)
-		return
-	}
-	pr := h.principal(r)
-	d := views.VisitasData{PodeNova: pr.Pode("visita_adicionar")}
-	arg := sqlccliente.ListVisitasRecentesParams{VerDesativadas: pr.Pode("visita_ver_desativados"), SomenteAgente: h.escopoVisitas(r)}
-	if txt := r.URL.Query().Get("local"); txt != "" {
-		id, err := strconv.ParseInt(txt, 10, 64)
-		if err != nil {
-			http.NotFound(w, r)
-			return
-		}
-		l, err := q.GetLocal(r.Context(), id)
-		if err != nil {
-			http.NotFound(w, r)
-			return
-		}
-		if ok, err := h.localVisivel(r.Context(), r, q, l); err != nil {
-			h.falhaInterna(w, r, "checar acesso ao local", err)
-			return
-		} else if !ok {
-			http.NotFound(w, r)
-			return
-		}
-		d.LocalID, d.Local = l.ID, enderecoCompleto(l.Endereco, l.Numero)
-		arg.LocalID = pgtype.Int8{Int64: id, Valid: true}
-	}
-	rows, err := q.ListVisitasRecentes(r.Context(), arg)
-	if err != nil {
-		h.falhaInterna(w, r, "listar visitas", err)
-		return
-	}
-	for _, v := range rows {
-		semana := ""
-		if v.Semana.Valid {
-			semana = strconv.Itoa(int(v.Semana.Int16))
-		}
-		d.Linhas = append(d.Linhas, views.VisitaLinha{
-			ID: v.ID, Data: dataBR(v.Data), Endereco: enderecoCompleto(v.Endereco, v.Numero), Agente: v.AgenteNome,
-			Ciclo: v.CicloNome, Semana: semana, Atividade: v.AtividadeSigla, Tipo: rotuloDe(rotulosTipoVisita, v.TipoVisita),
-			Pendencia: rotuloDe(rotulosPendencia, v.Pendencia), Deposito: v.AchouDeposito, Amostra: v.ColetouAmostra,
-			Tratou: v.FezTratamento, Ativo: v.Ativo,
-		})
-	}
-	lay := h.layout(r, "Visitas", "/visitas")
-	d.Linhas = paginar(r, &lay, d.Linhas)
-	render(w, r, views.Visitas(lay, d))
-}
-
 // ------------------------------------------------------------------- Formulário
 
 func lerVisita(r *http.Request) views.VisitaCampos {
@@ -383,6 +329,10 @@ func avisoDaVisita(codigo string) string {
 		return "Foto(s) adicionada(s)."
 	case "anotacao":
 		return "Anotação adicionada."
+	case "desativada":
+		return "Visita desativada."
+	case "reativada":
+		return "Visita reativada."
 	}
 	return ""
 }

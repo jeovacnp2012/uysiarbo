@@ -1643,3 +1643,10 @@ form.inline {
 .busca-viva input {
     min-width: 15rem;
 }
+
+/* Impressão (ficha da visita e listas): só o conteúdo, sem menu, botões nem formulários de ação. */
+@media print {
+  .menu, .barra, .toasts, .form-acoes, .filtros, .paginacao, form.inline, .btn, #situacao, #excluir, nav { display: none !important; }
+  body, .conteudo, main { background: #fff !important; color: #000 !important; margin: 0 !important; padding: 0 !important; }
+  .cartao { box-shadow: none !important; border: 1px solid #999 !important; break-inside: avoid; }
+}

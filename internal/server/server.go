@@ -172,6 +172,8 @@ func New(d Deps) http.Handler {
 	r.Post("/visitas/{id}/fotos/{fid}/excluir", h.exigir("visita_editar", h.visitaFotoExcluir))
 	r.Post("/visitas/{id}/anotacoes", h.exigir("visita_anotacao", h.visitaAnotar))
 	r.Post("/visitas/{id}/excluir", h.exigir("visita_desativar", h.visitaExcluir))
+	r.Post("/visitas/{id}/ativo", h.exigir("visita_desativar", h.visitaAtivo))
+	r.Post("/visitas/lote", h.exigir("visita_desativar", h.visitasLote))
 	r.Get("/leis", h.exigir("param_leis", h.leisLista))
 	r.Get("/leis/nova", h.exigir("param_leis", h.leiNovaForm))
 	r.Post("/leis", h.exigir("param_leis", h.leiSalvar))

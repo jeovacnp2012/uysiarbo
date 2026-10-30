@@ -82,7 +82,7 @@ func TestVisitaRegistrarEditarEValidar(t *testing.T) {
 	c := m.cenarioVisita(t, ana)
 	agente := m.idUsuario(t, emailAna)
 
-	quer(t, ana.get("/visitas"), http.StatusOK, "Nenhuma visita registrada")
+	quer(t, ana.get("/visitas"), http.StatusOK, "Nenhuma visita encontrada")
 	quer(t, ana.get("/visitas/nova"), http.StatusNotFound)
 	quer(t, ana.get("/visitas/nova?local="+s64(c.local)), http.StatusOK, "Registrar visita", "Encontrou depósitos", "Pendência", "01 Ciclo")
 
@@ -251,7 +251,7 @@ func TestVisitaFotosAnotacoesEExclusao(t *testing.T) {
 	quer(t, ana.post("/ciclos/"+s64(c.ciclo)+"/excluir", url.Values{}), http.StatusConflict, "1 visita ativa")
 	quer(t, ana.post("/visitas/"+id+"/excluir", url.Values{}), http.StatusSeeOther)
 	quer(t, ana.get("/visitas/"+id), http.StatusNotFound)
-	quer(t, ana.get("/visitas"), http.StatusOK, "Nenhuma visita registrada")
+	quer(t, ana.get("/visitas"), http.StatusOK, "Nenhuma visita encontrada")
 	quer(t, ana.get("/lixeira?tipo=visita"), http.StatusOK, "Visita "+id)
 	// Na lixeira, o local e o ciclo ainda têm vínculo (a visita excluída conta).
 	quer(t, ana.post("/locais/"+s64(c.local)+"/excluir", url.Values{}), http.StatusSeeOther)
@@ -289,7 +289,7 @@ func TestVisitasRespeitamPermissoesEEscopo(t *testing.T) {
 	_ = m.cliQ.AddPermissoesAoPapel(t.Context(), permsParams(pa.ID, "visita_visualizar", "visita_visualizar_minha"))
 	rui := m.novoUsuarioLogado(t, "Rui Reis", "rui@nm.gov.br", pa.ID)
 	quer(t, rui.get("/visitas/"+id), http.StatusNotFound)
-	if strings.Contains(rui.get("/visitas").Body.String(), "Rua das Palmeiras") {
+	if strings.Contains(rui.get("/visitas").Body.String(), "href=\"/visitas/"+id+"\"") {
 		t.Error("quem vê só as minhas não deveria ver a visita da Ana")
 	}
 
