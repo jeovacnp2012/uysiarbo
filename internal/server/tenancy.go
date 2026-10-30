@@ -11,7 +11,7 @@ import (
 
 // semCliente são os caminhos que valem em qualquer endereço (monitoramento e arquivos estáticos).
 func semCliente(path string) bool {
-	return path == "/healthz" || path == "/readyz" || strings.HasPrefix(path, "/static/")
+	return path == "/healthz" || path == "/readyz" || path == "/metrics" || strings.HasPrefix(path, "/static/")
 }
 
 // tenancy descobre o cliente pelo endereço da requisição e o guarda no contexto. Sem resolvedor

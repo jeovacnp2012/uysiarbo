@@ -29,6 +29,7 @@ const ajuda = `uso:
   uysiarbo dados cifrar             cifra os dados pessoais antigos que ainda estão em texto puro (precisa de DADOS_CHAVE)
   uysiarbo backup                   copia o catálogo e cada cliente (um .dump por schema), confere e apaga as rodadas antigas
   uysiarbo backup listar|verificar|restaurar   ver "uysiarbo backup -h"
+  uysiarbo carga -url URL [-c 20] [-d 30s]   teste de carga simples (vazão, erros e latência)
   uysiarbo master listar`
 
 // tenantService abre o banco e monta o serviço de clientes. close deve ser chamado ao fim.

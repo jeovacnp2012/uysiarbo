@@ -42,6 +42,9 @@ func main() {
 		case "dados":
 			exitOnError(dadosCmd(context.Background(), os.Args[2:]))
 			return
+		case "carga":
+			exitOnError(cargaCmd(context.Background(), os.Args[2:]))
+			return
 		case "backup":
 			exitOnError(backupCmd(context.Background(), os.Args[2:]))
 			return
@@ -121,6 +124,8 @@ func run() error {
 			Geocoder:                  geocodificador(cfg),
 			Comunicacao:               provedorDeComunicacao(cfg, log),
 			Fundo:                     ctx,
+			Versao:                    version,
+			MetricsToken:              cfg.MetricsToken,
 			APIKey:                    chaveDaAPI(cfg, log),
 			ImportPermitirRedePrivada: cfg.ImportPermitirRedePrivada,
 			Tenants:                   &tenant.Service{Pool: pool, URL: cfg.DatabaseURL, Log: log, Auditoria: audit.Plataforma{Q: sqlc.New(pool)}},

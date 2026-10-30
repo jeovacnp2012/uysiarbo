@@ -16,6 +16,7 @@ import (
 	"uysiarbo/internal/db/sqlc"
 	"uysiarbo/internal/geocode"
 	"uysiarbo/internal/httpx"
+	"uysiarbo/internal/metrics"
 	"uysiarbo/internal/presenca"
 	"uysiarbo/internal/tenant"
 	"uysiarbo/web"
@@ -60,6 +61,10 @@ type Deps struct {
 	// Chave que assina os tokens da API (mínimo 32 bytes). Vazia = a API fica desligada.
 	APIKey []byte
 
+	// Versao aparece nas métricas; MetricsToken libera GET /metrics (vazio = a rota fica desligada).
+	Versao       string
+	MetricsToken string
+
 	// Tenants permite ao console criar clientes e masters (nil = telas do console desligadas).
 	Tenants *tenant.Service
 }
@@ -87,6 +92,10 @@ type handlers struct {
 	vatual versaoAtual
 
 	presenca *presenca.Registro
+
+	metricas     *metrics.Registro
+	metricsToken string
+	db           Pinger
 }
 
 func New(d Deps) http.Handler {
@@ -110,12 +119,13 @@ func New(d Deps) http.Handler {
 		h.mapaTiles, h.mapaCredito = "https://tile.openstreetmap.org/{z}/{x}/{y}.png", "© contribuidores do OpenStreetMap"
 	}
 	h.presenca = &presenca.Registro{}
+	h.metricas, h.metricsToken, h.db = metrics.Novo(d.Versao), d.MetricsToken, d.DB
 	h.imp = &motorImp{}
 	h.importPermitirRedePrivada = d.ImportPermitirRedePrivada
 	h.api = &apiEstado{chave: d.APIKey, tocadoEm: map[int64]time.Time{}}
 
 	r := chi.NewRouter()
-	r.Use(securityHeaders, requestID, middleware.RealIP, accessLog(d.Log), recoverer(d.Log))
+	r.Use(securityHeaders, requestID, middleware.RealIP, accessLog(d.Log, h.metricas), recoverer(d.Log))
 	r.Use(middleware.Timeout(30 * time.Second))
 	r.Use(tenancy(d.Log, d.Resolver), csrf, h.autenticacao, h.auditoriaGenerica, h.exportarLista)
 
@@ -149,6 +159,7 @@ func New(d Deps) http.Handler {
 
 	r.Get("/healthz", health)
 	r.Get("/readyz", ready(d.Log, d.DB))
+	r.Get("/metrics", h.metricasHandler)
 
 	r.Handle("/static/*", http.StripPrefix("/static/", staticHandler()))
 

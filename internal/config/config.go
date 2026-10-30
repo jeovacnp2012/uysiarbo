@@ -36,6 +36,7 @@ type Config struct {
 	ImportPermitirRedePrivada bool // libera a importação por API para endereços da rede interna (só testes e desenvolvimento)
 
 	APIJWTSecret    string // chave que assina os tokens da API (vazia = gerada a cada início, só fora de produção)
+	MetricsToken    string // libera GET /metrics com "Authorization: Bearer <token>" (vazio = desligado)
 	DadosChave      string // chave (base64, 32 bytes) que cifra dados pessoais em repouso (LGPD)
 	ShutdownTimeout time.Duration
 }
@@ -62,6 +63,7 @@ func Load(envFile string) (Config, error) {
 		DadosChave:      os.Getenv("DADOS_CHAVE"),
 		SMTPHost:        os.Getenv("SMTP_HOST"), SMTPUser: os.Getenv("SMTP_USER"), SMTPPass: os.Getenv("SMTP_PASS"), SMTPFrom: os.Getenv("SMTP_FROM"),
 		SMTPSecurity:              strings.ToLower(get("SMTP_SECURITY", "starttls")),
+		MetricsToken:              os.Getenv("METRICS_TOKEN"),
 		ImportPermitirRedePrivada: os.Getenv("IMPORT_PERMITIR_REDE_PRIVADA") == "1",
 		MapAttribution:            get("MAP_ATTRIBUTION", "© contribuidores do OpenStreetMap"),
 		ShutdownTimeout:           10 * time.Second,

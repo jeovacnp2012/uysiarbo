@@ -173,7 +173,7 @@ Objetivo: migrar dados de outros sistemas e de planilhas, com segurança.
 - [ ] 13.1 Deploy na VPS (Nginx, serviço systemd, Postgres, TLS) e script de atualização sem queda
 - [x] 13.2 Backups e restauração testada, por schema de cliente (`uysiarbo backup`, `internal/backup`, `docs/infra/backup.md`; versão 1.0.072; falta agendar e copiar para fora na VPS, junto da 13.1)
 - [x] 13.3 LGPD (concluída; (d) retenção por prazo na 1.0.071, `/lgpd/retencao`): (a) CPF cifrado com DADOS_CHAVE e comando `dados cifrar` e (b) registro de acesso a fichas com dados pessoais: feitos na 1.0.068; (c) anonimização a pedido do titular feita na 1.0.070 (`/lgpd/anonimizar`); falta (d) retenção/exclusão por prazo; telefones seguem em texto (decisão: são pesquisados e usados nas mensagens)
-- [ ] 13.4 Observabilidade (logs, métricas, alertas) e testes de carga
+- [x] 13.4 Observabilidade (logs, métricas, alertas) e testes de carga (`/metrics` com `METRICS_TOKEN`, aviso de requisição lenta, `uysiarbo carga`, `docs/infra/observabilidade.md`; versão 1.0.073)
 
 ## Etapa 14 — Aplicativo do tablet (Flutter) — **última etapa do projeto**
 - [ ] 14.1 Autenticação, download de dados por ciclo (respeitando os parâmetros de "dias de download")
