@@ -136,10 +136,16 @@ func (s *handlers) menu(r *http.Request) []views.NavGrupo {
 			menu = append(menu, views.NavGrupo{Label: "Laboratório", Icone: "visitas", Href: "/laboratorio", Contagem: emAnalise})
 		}
 
+		if pr.Pode("investigacao_visualizar") {
+			menu = append(menu, views.NavGrupo{Label: "Investigações", Icone: "visitas", Href: "/investigacoes"})
+		}
+
 		add(pr.Pode("conf_usuario"), "Usuários", "/usuarios")
 		add(pr.Pode("conf_papel"), "Papéis", "/papeis")
 		add(pr.Pode("param_ciclo"), "Ciclos", "/ciclos")
 		add(pr.Pode("param_leis"), "Leis municipais", "/leis")
+		add(pr.Pode("param_doenca"), "Doenças e agravos", "/doencas")
+		add(pr.Pode("param_doenca"), "Entrevistas", "/entrevistas")
 		add(pr.Pode("param_geral"), "Parâmetros gerais", "/parametros/geral")
 		add(pr.Pode("param_mobilidade"), "Mobilidade (aplicativo)", "/parametros/mobilidade")
 		add(pr.Pode("historico_mobilidade"), "Histórico de mobilidade", "/mobilidade/historico")

@@ -44,3 +44,9 @@ FROM caso_eventos e
 JOIN usuarios d ON d.id = e.destino_id
 WHERE e.tipo = $1 AND e.caso_id = $2 AND e.evento = 'encaminhamento'
 ORDER BY e.id DESC LIMIT 1;
+
+-- name: ForceDeleteCasoEventos :exec
+DELETE FROM caso_eventos WHERE tipo = $1 AND caso_id = $2;
+
+-- name: ForceDeleteCasoAnexos :exec
+DELETE FROM caso_anexos WHERE tipo = $1 AND caso_id = $2;

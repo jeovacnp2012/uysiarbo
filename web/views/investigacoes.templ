@@ -1,0 +1,300 @@
+package views
+
+import "strconv"
+
+func seloDaSituacao(s string) string {
+	switch s {
+	case "encerrada":
+		return "selo-ok"
+	case "em_atendimento":
+		return "selo-aviso"
+	}
+	return ""
+}
+
+func seloDoResultado(s string) string {
+	switch s {
+	case "positivo":
+		return "selo-erro"
+	case "negativo":
+		return "selo-ok"
+	case "inconclusivo":
+		return "selo-aviso"
+	}
+	return ""
+}
+
+templ Investigacoes(l Layout, d InvestigacoesData) {
+	@Base(l) {
+		@PageHeader("Investigações", "Casos suspeitos e confirmados, com a entrevista e o resultado de cada um.") {
+			if d.PodeNova {
+				<a class="btn btn-primario" href="/investigacoes/nova" data-icone="plus">Nova investigação</a>
+			}
+		}
+		<form
+			method="get"
+			action="/investigacoes"
+			class="cartao filtros filtros-vivos"
+			autocomplete="off"
+			hx-get="/investigacoes"
+			hx-trigger="input delay:350ms, change delay:60ms, filtrar from:body"
+			hx-sync="this:replace"
+			hx-target="#investigacoes-lista"
+			hx-select="#investigacoes-lista"
+			hx-swap="outerHTML"
+			hx-push-url="true"
+			hx-indicator="#investigacoes-lista"
+		>
+			<input type="hidden" name="ordem" value={ d.Ordem }/>
+			<input type="hidden" name="dir" value={ d.Dir }/>
+			<div class="campo campo-largo">
+				<label for="f-busca">Paciente, endereço, telefone ou número</label>
+				<input id="f-busca" name="busca" type="search" value={ d.Filtro.Busca } placeholder="Buscar"/>
+			</div>
+			@campoEscolha("f-doenca", "Doença / agravo", "doenca", "Todas as doenças", d.Doencas)
+			@campoEscolha("f-situacao", "Situação", "situacao", "Todas as situações", d.Situacoes)
+			@campoEscolha("f-resultado", "Resultado", "resultado", "Todos os resultados", d.Resultados)
+			<div class="campo">
+				<label for="f-de">Início de</label>
+				<input id="f-de" name="de" type="date" value={ d.Filtro.De } class="filtro-auto"/>
+			</div>
+			<div class="campo">
+				<label for="f-ate">Início até</label>
+				<input id="f-ate" name="ate" type="date" value={ d.Filtro.Ate } class="filtro-auto"/>
+			</div>
+			<div class="form-acoes">
+				<a class="btn btn-escuro" href="/investigacoes" data-icone="undo">Limpar filtros</a>
+			</div>
+			<noscript><button type="submit" class="btn btn-primario">Filtrar</button></noscript>
+		</form>
+		<div id="investigacoes-lista" class="lista-viva">
+			<section class="cartao">
+				@Paginacao(d.Pag, "/investigacoes", d.Query)
+				<div class="tabela-wrap">
+					<table class="tabela">
+						<thead>
+							<tr>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "id") }><a class="ordenar" href="#" data-ordenar="id" data-dir={ proximaDir(d.Ordem, d.Dir, "id") }>Nº<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "id") }</span></a></th>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "paciente") }><a class="ordenar" href="#" data-ordenar="paciente" data-dir={ proximaDir(d.Ordem, d.Dir, "paciente") }>Paciente<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "paciente") }</span></a></th>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "doenca") }><a class="ordenar" href="#" data-ordenar="doenca" data-dir={ proximaDir(d.Ordem, d.Dir, "doenca") }>Doença<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "doenca") }</span></a></th>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "data") }><a class="ordenar" href="#" data-ordenar="data" data-dir={ proximaDir(d.Ordem, d.Dir, "data") }>Início<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "data") }</span></a></th>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "endereco") }><a class="ordenar" href="#" data-ordenar="endereco" data-dir={ proximaDir(d.Ordem, d.Dir, "endereco") }>Endereço<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "endereco") }</span></a></th>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "situacao") }><a class="ordenar" href="#" data-ordenar="situacao" data-dir={ proximaDir(d.Ordem, d.Dir, "situacao") }>Situação<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "situacao") }</span></a></th>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "resultado") }><a class="ordenar" href="#" data-ordenar="resultado" data-dir={ proximaDir(d.Ordem, d.Dir, "resultado") }>Resultado<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "resultado") }</span></a></th>
+								<th scope="col">Responsável</th>
+								<th scope="col" data-fixa><span class="sr-only">Ações</span></th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, i := range d.Linhas {
+								<tr>
+									<td data-rotulo="Nº"><strong>{ i.IDTexto }</strong></td>
+									<td data-rotulo="Paciente" class="quebra2" title={ i.Paciente + " " + i.Telefone }><span class="clamp2">{ i.Paciente }<span class="subtitulo"> { i.Telefone }</span></span></td>
+									<td data-rotulo="Doença">{ i.Doenca }</td>
+									<td data-rotulo="Início">{ i.Data }</td>
+									<td data-rotulo="Endereço" class="quebra2" title={ i.Endereco }><span class="clamp2">{ i.Endereco }</span></td>
+									<td data-rotulo="Situação"><span class={ "selo", seloDaSituacao(i.Situacao) }>{ i.SituacaoRotulo }</span></td>
+									<td data-rotulo="Resultado"><span class={ "selo", seloDoResultado(i.Resultado) }>{ i.ResultadoRotulo }</span></td>
+									<td data-rotulo="Responsável">{ i.Responsavel }</td>
+									<td data-rotulo="Ações"><a class="btn" href={ templ.SafeURL("/investigacoes/" + strconv.FormatInt(i.ID, 10)) }>Abrir</a></td>
+								</tr>
+							}
+						</tbody>
+					</table>
+					if len(d.Linhas) == 0 {
+						<div class="tabela-vazia">Nenhuma investigação encontrada.</div>
+					}
+				</div>
+				@Paginacao(d.Pag, "/investigacoes", d.Query)
+			</section>
+		</div>
+	}
+}
+
+templ dadosDaInvestigacao(d InvestigacaoFormData) {
+	<form method="post" class="cartao form-admin" data-sem-gaveta
+		if d.Novo() {
+			action="/investigacoes"
+		} else {
+			action={ templ.SafeURL("/investigacoes/" + strconv.FormatInt(d.ID, 10)) }
+		}
+	>
+		<input type="hidden" name="csrf" value={ d.CSRF }/>
+		if d.Erro != "" {
+			<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
+		}
+		<h2 class="rel-titulo" data-ico="file">Dados do caso</h2>
+		<div class="grade-form">
+			<div class="campo">
+				<label for="doenca">Doença / agravo</label>
+				<select id="doenca" name="doenca" required>
+					<option value="">Escolha a doença</option>
+					@opcoesDe(d.Doencas)
+				</select>
+			</div>
+			<div class="campo">
+				<label for="paciente">Paciente</label>
+				<input id="paciente" name="paciente" type="text" value={ d.Paciente } maxlength="150" required/>
+			</div>
+			<div class="campo">
+				<label for="telefone">Telefone</label>
+				<input id="telefone" name="telefone" type="text" value={ d.Telefone } maxlength="40"/>
+			</div>
+			<div class="campo">
+				<label for="data_inicio">Data de início (sintomas ou notificação)</label>
+				<input id="data_inicio" name="data_inicio" type="date" value={ d.DataInicio }/>
+			</div>
+		</div>
+		<div class="campo">
+			<label for="endereco">Endereço (se não houver local cadastrado)</label>
+			<input id="endereco" name="endereco" type="text" value={ d.Endereco } maxlength="300"/>
+		</div>
+		<div class="campo">
+			<label for="observacao">Observações</label>
+			<textarea id="observacao" name="observacao" rows="3" maxlength="2000">{ d.Observacao }</textarea>
+		</div>
+		<div class="form-acoes">
+			<button type="submit" class="btn btn-primario" data-icone="save">Salvar</button>
+			<a class="btn" href="/investigacoes">Cancelar</a>
+		</div>
+	</form>
+}
+
+templ InvestigacaoNova(l Layout, d InvestigacaoFormData) {
+	@Base(l) {
+		@PageHeader("Nova investigação", "Registre o caso; depois vincule o local e faça a entrevista.") {
+			<a class="btn" href="/investigacoes">Voltar</a>
+		}
+		@dadosDaInvestigacao(d)
+	}
+}
+
+templ InvestigacaoFicha(l Layout, d InvestigacaoFichaData) {
+	@Base(l) {
+		@PageHeader("Investigação "+d.IDTexto, d.Doenca+" — "+d.Paciente) {
+			<a class="btn" href="/investigacoes">Voltar</a>
+		}
+		@Presenca("investigacao", strconv.FormatInt(d.ID, 10), modoDaTela(d.PodeEditar))
+		if d.Aviso != "" {
+			<p class="alerta alerta-ok" role="status">{ d.Aviso }</p>
+		}
+		<section class="cartao">
+			<div class="resumo-ficha">
+				<p>
+					<span class={ "selo", seloDaSituacao(d.Situacao) }>{ d.SituacaoRotulo }</span>
+					<span class={ "selo", seloDoResultado(d.Resultado) }>Resultado: { d.ResultadoRotulo }</span>
+					if d.Responsavel != "" {
+						<span class="subtitulo">Responsável: <strong>{ d.Responsavel }</strong></span>
+					}
+				</p>
+				<p><strong>{ d.Paciente }</strong>
+					if d.Telefone != "" {
+						<span class="subtitulo"> · { d.Telefone }</span>
+					}
+				</p>
+				<p class="subtitulo">
+					if d.Data != "" {
+						Início: { d.Data } ·
+					}
+					if d.LocalID != 0 {
+						Local: <a href={ templ.SafeURL("/locais/" + strconv.FormatInt(d.LocalID, 10)) }>{ d.LocalEndereco }</a>
+					} else if d.Endereco != "" {
+						Endereço: { d.Endereco }
+					}
+				</p>
+				if d.Observacao != "" {
+					<p class="caso-texto">{ d.Observacao }</p>
+				}
+			</div>
+		</section>
+		@FichaCaso(d.Caso)
+		if d.PodeEditar {
+			@dadosDaInvestigacao(d.Dados)
+		}
+		<section class="cartao" id="local">
+			<h2 class="rel-titulo" data-ico="pin">Local do caso</h2>
+			if d.LocalID != 0 {
+				<p>Vinculado a <a href={ templ.SafeURL("/locais/" + strconv.FormatInt(d.LocalID, 10)) }>{ d.LocalEndereco }</a></p>
+			} else {
+				<p class="subtitulo">Nenhum local cadastrado vinculado.</p>
+			}
+			if d.PodeLocal {
+				<form method="get" action={ templ.SafeURL("/investigacoes/" + strconv.FormatInt(d.ID, 10)) } class="form-acoes" data-sem-gaveta>
+					<div class="campo">
+						<label for="busca-local" data-ico="search">Buscar local (endereço, número ou bairro)</label>
+						<input id="busca-local" name="busca_local" type="search" value={ d.Busca } maxlength="100"/>
+					</div>
+					<button type="submit" class="btn" data-icone="search">Buscar</button>
+				</form>
+				if d.Buscou && len(d.Locais) == 0 {
+					<p class="subtitulo">Nenhum local encontrado.</p>
+				}
+				for _, lc := range d.Locais {
+					<form method="post" action={ templ.SafeURL("/investigacoes/" + strconv.FormatInt(d.ID, 10) + "/local") } class="form-acoes" data-sem-gaveta>
+						<input type="hidden" name="csrf" value={ d.CSRF }/>
+						<input type="hidden" name="local" value={ strconv.FormatInt(lc.ID, 10) }/>
+						<span>{ lc.Endereco } <span class="subtitulo">· { lc.Bairro }</span></span>
+						<button type="submit" class="btn" data-icone="link">Vincular</button>
+					</form>
+				}
+				if d.LocalID != 0 {
+					<form method="post" action={ templ.SafeURL("/investigacoes/" + strconv.FormatInt(d.ID, 10) + "/local") } data-sem-gaveta>
+						<input type="hidden" name="csrf" value={ d.CSRF }/>
+						<input type="hidden" name="local" value=""/>
+						<button type="submit" class="btn" data-icone="x">Desvincular local</button>
+					</form>
+				}
+			}
+		</section>
+		<section class="cartao" id="entrevista">
+			<h2 class="rel-titulo" data-ico="file">Entrevista</h2>
+			if d.EntrevistaTitulo == "" {
+				<p class="subtitulo">Esta doença não tem uma entrevista configurada.</p>
+			} else {
+				<p class="subtitulo">{ d.EntrevistaTitulo }</p>
+				if d.ErroEntrevista != "" {
+					<p class="alerta alerta-erro" role="alert">{ d.ErroEntrevista }</p>
+				}
+				<form method="post" action={ templ.SafeURL("/investigacoes/" + strconv.FormatInt(d.ID, 10) + "/entrevista") } class="form-admin" data-entrevista data-sem-gaveta>
+					<input type="hidden" name="csrf" value={ d.CSRF }/>
+					<fieldset class="sem-borda" disabled?={ !d.PodeEntrevista }>
+						for _, c := range d.Entrevista {
+							<div class="campo pergunta-campo" data-cond-campo={ c.CondCampo } data-cond-op={ c.CondOp } data-cond-valor={ c.CondValor } hidden?={ c.Oculto }>
+								<label for={ "c_" + c.Nome }>
+									{ c.Label }
+									if c.Obrigatorio {
+										<span class="subtitulo"> (obrigatória)</span>
+									}
+								</label>
+								switch c.Tipo {
+									case "textarea":
+										<textarea id={ "c_" + c.Nome } name={ "c_" + c.Nome } rows="3" maxlength="2000" placeholder={ c.Placeholder }>{ c.Valor }</textarea>
+									case "numero":
+										<input id={ "c_" + c.Nome } name={ "c_" + c.Nome } type="text" inputmode="decimal" value={ c.Valor } placeholder={ c.Placeholder }/>
+									case "select":
+										<select id={ "c_" + c.Nome } name={ "c_" + c.Nome } data-sem-busca>
+											<option value="">—</option>
+											for _, op := range c.Opcoes {
+												<option value={ op } selected?={ c.Marcado(op) }>{ op }</option>
+											}
+										</select>
+									case "multi_select":
+										<div class="opcoes-multi">
+											for _, op := range c.Opcoes {
+												<label class="marcar"><input type="checkbox" name={ "c_" + c.Nome } value={ op } checked?={ c.Marcado(op) }/> { op }</label>
+											}
+										</div>
+									default:
+										<input id={ "c_" + c.Nome } name={ "c_" + c.Nome } type="text" value={ c.Valor } maxlength="2000" placeholder={ c.Placeholder }/>
+								}
+							</div>
+						}
+					</fieldset>
+					if d.PodeEntrevista {
+						<div class="form-acoes"><button type="submit" class="btn btn-primario" data-icone="save">Salvar entrevista</button></div>
+					}
+				</form>
+			}
+		</section>
+	}
+}

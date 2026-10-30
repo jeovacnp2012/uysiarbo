@@ -145,7 +145,7 @@ Objetivo: migrar dados de outros sistemas e de planilhas, com segurança.
 
 ## Etapa 9 — Casos e fiscalização
 - [x] 9.1 Componente único de **ficha com linha do tempo, ações, encaminhamento e anexos**
-- [ ] 9.2 Investigação (doenças, resultado, vincular local, entrevistas por doença configuráveis)
+- [x] 9.2 Investigação (doenças, resultado, vincular local, entrevistas por doença configuráveis)
 - [ ] 9.3 Denúncia (inclui cidadão e denúncia anônima)
 - [ ] 9.4 Notificação → Auto de infração → pagamento/cancelamento (com leis municipais)
 - [ ] 9.5 Solicitação de drone e BAAP (animais peçonhentos)

@@ -1,0 +1,248 @@
+package views
+
+import "strconv"
+
+templ Doencas(l Layout, linhas []DoencaLinha) {
+	@Base(l) {
+		@PageHeader("Doenças e agravos", "As doenças que podem ser investigadas e a entrevista usada em cada uma.") {
+			<a class="btn btn-primario" href="/doencas/nova" data-icone="plus">Nova doença</a>
+		}
+		<section class="cartao">
+			@PaginacaoDoLayout(l)
+			<div class="tabela-wrap">
+				<table class="tabela">
+					<thead>
+						<tr>
+							<th scope="col" data-ord="Nome">Doença / agravo</th>
+							<th scope="col" data-ord="Entrevista">Entrevista</th>
+							<th scope="col" data-ord="Ativo">Situação</th>
+							<th scope="col"><span class="sr-only">Ações</span></th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, d := range linhas {
+							<tr>
+								<td data-rotulo="Doença"><strong>{ d.Nome }</strong></td>
+								<td data-rotulo="Entrevista">{ d.Entrevista }</td>
+								<td data-rotulo="Situação">
+									if d.Ativo {
+										<span class="selo selo-ok">Ativa</span>
+									} else {
+										<span class="selo">Inativa</span>
+									}
+								</td>
+								<td data-rotulo="Ações"><a class="btn" href={ templ.SafeURL("/doencas/" + strconv.FormatInt(d.ID, 10)) }>Editar</a></td>
+							</tr>
+						}
+					</tbody>
+				</table>
+				if len(linhas) == 0 {
+					<div class="tabela-vazia">Nenhuma doença cadastrada.</div>
+				}
+			</div>
+			@PaginacaoDoLayout(l)
+		</section>
+	}
+}
+
+templ DoencaForm(l Layout, d DoencaFormData) {
+	@Base(l) {
+		if d.Novo() {
+			@PageHeader("Nova doença", "") {
+				<a class="btn" href="/doencas">Voltar</a>
+			}
+		} else {
+			@PageHeader("Doença / agravo", d.Nome) {
+				<a class="btn" href="/doencas">Voltar</a>
+			}
+			@Presenca("doenca", strconv.FormatInt(d.ID, 10), modoDaTela(true))
+		}
+		<form method="post" class="cartao form-admin" data-sem-gaveta
+			if d.Novo() {
+				action="/doencas"
+			} else {
+				action={ templ.SafeURL("/doencas/" + strconv.FormatInt(d.ID, 10)) }
+			}
+		>
+			<input type="hidden" name="csrf" value={ d.CSRF }/>
+			if d.Erro != "" {
+				<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
+			}
+			<fieldset class="sem-borda">
+				<div class="campo">
+					<label for="nome">Nome da doença / agravo</label>
+					<input id="nome" name="nome" type="text" value={ d.Nome } maxlength="100" required/>
+				</div>
+				<div class="campo">
+					<label for="entrevista">Entrevista usada na investigação</label>
+					<select id="entrevista" name="entrevista">
+						@opcoesDe(d.Entrevistas)
+					</select>
+				</div>
+				if !d.Novo() {
+					<label class="marcar">
+						<input type="checkbox" name="ativo" value="1" checked?={ d.Ativo }/>
+						Doença ativa (pode ser escolhida em novas investigações)
+					</label>
+				}
+			</fieldset>
+			<div class="form-acoes">
+				<button type="submit" class="btn btn-primario">Salvar</button>
+				<a class="btn" href="/doencas">Cancelar</a>
+			</div>
+		</form>
+	}
+}
+
+templ Entrevistas(l Layout, linhas []EntrevistaLinha) {
+	@Base(l) {
+		@PageHeader("Entrevistas", "As perguntas feitas na investigação de cada doença.") {
+			<a class="btn btn-primario" href="/entrevistas/nova" data-icone="plus">Nova entrevista</a>
+		}
+		<section class="cartao">
+			@PaginacaoDoLayout(l)
+			<div class="tabela-wrap">
+				<table class="tabela">
+					<thead>
+						<tr>
+							<th scope="col" data-ord="Titulo">Entrevista</th>
+							<th scope="col" data-ord="Codigo">Código</th>
+							<th scope="col" data-ord="Perguntas">Perguntas</th>
+							<th scope="col" data-ord="Doencas">Doenças</th>
+							<th scope="col" data-ord="Ativo">Situação</th>
+							<th scope="col"><span class="sr-only">Ações</span></th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, g := range linhas {
+							<tr>
+								<td data-rotulo="Entrevista"><strong>{ g.Titulo }</strong></td>
+								<td data-rotulo="Código"><code>{ g.Codigo }</code></td>
+								<td data-rotulo="Perguntas">{ strconv.Itoa(g.Perguntas) }</td>
+								<td data-rotulo="Doenças">{ strconv.Itoa(g.Doencas) }</td>
+								<td data-rotulo="Situação">
+									if g.Ativo {
+										<span class="selo selo-ok">Ativa</span>
+									} else {
+										<span class="selo">Inativa</span>
+									}
+								</td>
+								<td data-rotulo="Ações"><a class="btn" href={ templ.SafeURL("/entrevistas/" + strconv.FormatInt(g.ID, 10)) }>Editar</a></td>
+							</tr>
+						}
+					</tbody>
+				</table>
+				if len(linhas) == 0 {
+					<div class="tabela-vazia">Nenhuma entrevista cadastrada.</div>
+				}
+			</div>
+			@PaginacaoDoLayout(l)
+		</section>
+	}
+}
+
+templ EntrevistaForm(l Layout, d EntrevistaFormData) {
+	@Base(l) {
+		if d.Novo() {
+			@PageHeader("Nova entrevista", "Monte a lista de perguntas; cada doença escolhe a entrevista que usa.") {
+				<a class="btn" href="/entrevistas">Voltar</a>
+			}
+		} else {
+			@PageHeader("Entrevista", d.Titulo) {
+				<a class="btn" href="/entrevistas">Voltar</a>
+			}
+			@Presenca("entrevista", strconv.FormatInt(d.ID, 10), modoDaTela(true))
+		}
+		<form method="post" class="cartao form-admin" data-sem-gaveta x-data="editorEntrevista" data-campos={ d.CamposJSON } x-on:submit="preparar()"
+			if d.Novo() {
+				action="/entrevistas"
+			} else {
+				action={ templ.SafeURL("/entrevistas/" + strconv.FormatInt(d.ID, 10)) }
+			}
+		>
+			<input type="hidden" name="csrf" value={ d.CSRF }/>
+			<input type="hidden" name="campos" x-ref="saida"/>
+			if d.Erro != "" {
+				<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
+			}
+			<fieldset class="sem-borda">
+				<div class="grade-form">
+					<div class="campo">
+						<label for="titulo">Título</label>
+						<input id="titulo" name="titulo" type="text" value={ d.Titulo } maxlength="120" required/>
+					</div>
+					<div class="campo">
+						<label for="codigo">Código (não muda depois de criado)</label>
+						<input id="codigo" name="codigo" type="text" value={ d.Codigo } maxlength="41" pattern="[a-z][a-z0-9_]{1,40}" required readonly?={ !d.Novo() }/>
+					</div>
+				</div>
+				if !d.Novo() {
+					<label class="marcar">
+						<input type="checkbox" name="ativo" value="1" checked?={ d.Ativo }/>
+						Entrevista ativa
+					</label>
+				}
+			</fieldset>
+			<h2 class="rel-titulo" data-ico="sliders">Perguntas</h2>
+			<template x-for="(c, i) in campos" x-bind:key="c._k">
+				<div class="cartao pergunta">
+					<div class="grade-form">
+						<div class="campo campo-largo">
+							<label x-bind:for="'p-label-' + i">Pergunta <span x-text="i + 1"></span></label>
+							<input type="text" x-bind:id="'p-label-' + i" x-model="c.label" maxlength="300" required/>
+						</div>
+						<div class="campo">
+							<label x-bind:for="'p-tipo-' + i">Tipo de resposta</label>
+							<select x-bind:id="'p-tipo-' + i" x-model="c.tipo" data-sem-busca>
+								<option value="texto">Texto curto</option>
+								<option value="textarea">Texto longo</option>
+								<option value="numero">Número</option>
+								<option value="select">Escolha uma</option>
+								<option value="multi_select">Escolha várias</option>
+							</select>
+						</div>
+						<div class="campo" x-show="c.tipo === 'select' || c.tipo === 'multi_select'">
+							<label x-bind:for="'p-op-' + i">Opções (separadas por vírgula)</label>
+							<input type="text" x-bind:id="'p-op-' + i" x-model="c.opcoes" placeholder="Sim, Não, Não sabe"/>
+						</div>
+						<div class="campo">
+							<label x-bind:for="'p-cc-' + i">Mostrar só se a pergunta…</label>
+							<select x-bind:id="'p-cc-' + i" x-model="c.cond_campo" data-sem-busca>
+								<option value="">— sempre mostrar —</option>
+								<template x-for="o in outras(i)" x-bind:key="o.nome"><option x-bind:value="o.nome" x-text="o.label"></option></template>
+							</select>
+						</div>
+						<div class="campo" x-show="c.cond_campo">
+							<label x-bind:for="'p-co-' + i">…tiver a resposta</label>
+							<div class="form-acoes">
+								<select x-bind:id="'p-co-' + i" x-model="c.cond_operador" data-sem-busca>
+									<option value="igual">igual a</option>
+									<option value="diferente">diferente de</option>
+								</select>
+								<input type="text" x-model="c.cond_valor" placeholder="Sim"/>
+							</div>
+						</div>
+						<div class="campo">
+							<label x-bind:for="'p-ag-' + i">Só para as doenças (opcional)</label>
+							<input type="text" x-bind:id="'p-ag-' + i" x-model="c.exibir_se_agravo" placeholder="Febre Amarela, Mayaro"/>
+						</div>
+					</div>
+					<div class="form-acoes">
+						<label class="marcar"><input type="checkbox" x-model="c.obrigatorio"/> Resposta obrigatória</label>
+						<button type="button" class="btn" x-on:click="mover(i, -1)" x-bind:disabled="i === 0" data-icone="up">Subir</button>
+						<button type="button" class="btn" x-on:click="mover(i, 1)" x-bind:disabled="i === campos.length - 1" data-icone="down">Descer</button>
+						<button type="button" class="btn btn-perigo" x-on:click="remover(i)" data-icone="trash">Remover pergunta</button>
+					</div>
+				</div>
+			</template>
+			<p class="subtitulo" x-show="campos.length === 0">Nenhuma pergunta ainda.</p>
+			<div class="form-acoes">
+				<button type="button" class="btn" x-on:click="adicionar()" data-icone="plus">Adicionar pergunta</button>
+			</div>
+			<div class="form-acoes">
+				<button type="submit" class="btn btn-primario">Salvar</button>
+				<a class="btn" href="/entrevistas">Cancelar</a>
+			</div>
+		</form>
+	}
+}

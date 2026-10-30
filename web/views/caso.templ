@@ -68,6 +68,7 @@ templ FichaCaso(d FichaCasoData) {
 					</div>
 					<div class="form-acoes"><button type="submit" class="btn btn-primario" data-icone="save">Registrar</button></div>
 				</form>
+				if d.PodeEncaminhar {
 				<form method="post" action={ templ.SafeURL(casoBase(d) + "/encaminhar") } class="caso-form" data-sem-gaveta>
 					<input type="hidden" name="csrf" value={ d.CSRF }/>
 					<div class="campo">
@@ -85,6 +86,7 @@ templ FichaCaso(d FichaCasoData) {
 					</div>
 					<div class="form-acoes"><button type="submit" class="btn" data-icone="send">Encaminhar</button></div>
 				</form>
+				}
 				<form method="post" action={ templ.SafeURL(casoBase(d) + "/anexos") } enctype="multipart/form-data" class="caso-form" data-sem-gaveta>
 					<input type="hidden" name="csrf" value={ d.CSRF }/>
 					<div class="campo">

@@ -449,6 +449,50 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 			return out, err
 		},
 	},
+	"investigacao": {
+		Chave: "investigacao", Rotulo: "Investigação", Plural: "Investigações", Genero: "a",
+		soft: func(ctx context.Context, q *sqlccliente.Queries, id int64, por pgtype.Int8) (int64, error) {
+			return q.SoftDeleteInvestigacao(ctx, sqlccliente.SoftDeleteInvestigacaoParams{ID: id, Por: por})
+		},
+		restore: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			return q.RestoreInvestigacao(ctx, id)
+		},
+		force: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			// o andamento (eventos e anexos) é só da investigação e sai junto
+			if err := q.ForceDeleteCasoEventos(ctx, sqlccliente.ForceDeleteCasoEventosParams{Tipo: "investigacao", CasoID: id}); err != nil {
+				return 0, err
+			}
+			if err := q.ForceDeleteCasoAnexos(ctx, sqlccliente.ForceDeleteCasoAnexosParams{Tipo: "investigacao", CasoID: id}); err != nil {
+				return 0, err
+			}
+			return q.ForceDeleteInvestigacao(ctx, id)
+		},
+		rotulo: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, bool, error) {
+			i, err := q.GetInvestigacaoQualquer(ctx, id)
+			return "Investigação " + strconv.FormatInt(i.ID, 10) + " — " + i.Paciente, i.DeletedAt.Valid, err
+		},
+		filhosAtivos: func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
+		vinculos:     func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
+		paiExcluido: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, error) {
+			i, err := q.GetInvestigacaoQualquer(ctx, id)
+			if err != nil || !i.LocalID.Valid {
+				return "", err
+			}
+			l, err := q.GetLocalQualquer(ctx, i.LocalID.Int64)
+			if err == nil && l.DeletedAt.Valid {
+				return "o local " + l.Endereco, nil
+			}
+			return "", err
+		},
+		lixeira: func(ctx context.Context, q *sqlccliente.Queries) ([]views.LixeiraLinha, error) {
+			rows, err := q.ListInvestigacoesExcluidas(ctx)
+			out := make([]views.LixeiraLinha, len(rows))
+			for i, r := range rows {
+				out[i] = views.LixeiraLinha{ID: r.ID, Rotulo: "Investigação " + strconv.FormatInt(r.ID, 10) + " — " + r.Paciente, Contexto: r.DoencaNome, Quando: r.DeletedAt.Time, Por: r.Por}
+			}
+			return out, err
+		},
+	},
 	"visita": {
 		Chave: "visita", Rotulo: "Visita", Plural: "Visitas", Genero: "a",
 		soft: func(ctx context.Context, q *sqlccliente.Queries, id int64, por pgtype.Int8) (int64, error) {
@@ -622,7 +666,7 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 }
 
 // ordemDaLixeira é a ordem das abas.
-var ordemDaLixeira = []string{"local", "quarteirao", "bairro", "cidade", "ciclo", "lei", "lei_trecho", "visita", "amostra", "reconhecimento", "resumosemanal", "grupo", "mapeamento"}
+var ordemDaLixeira = []string{"local", "quarteirao", "bairro", "cidade", "ciclo", "lei", "lei_trecho", "visita", "investigacao", "amostra", "reconhecimento", "resumosemanal", "grupo", "mapeamento"}
 
 // excluirLogicamente aplica a regra completa: recusa se há filhos ativos; senão marca deleted_at.
 // Devolve os motivos da recusa (vazio = excluído), o nome do registro e o erro de banco, se houve.

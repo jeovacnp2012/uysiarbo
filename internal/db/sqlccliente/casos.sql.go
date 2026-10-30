@@ -92,6 +92,34 @@ func (q *Queries) CreateCasoEvento(ctx context.Context, arg CreateCasoEventoPara
 	return id, err
 }
 
+const forceDeleteCasoAnexos = `-- name: ForceDeleteCasoAnexos :exec
+DELETE FROM caso_anexos WHERE tipo = $1 AND caso_id = $2
+`
+
+type ForceDeleteCasoAnexosParams struct {
+	Tipo   string `json:"tipo"`
+	CasoID int64  `json:"caso_id"`
+}
+
+func (q *Queries) ForceDeleteCasoAnexos(ctx context.Context, arg ForceDeleteCasoAnexosParams) error {
+	_, err := q.db.Exec(ctx, forceDeleteCasoAnexos, arg.Tipo, arg.CasoID)
+	return err
+}
+
+const forceDeleteCasoEventos = `-- name: ForceDeleteCasoEventos :exec
+DELETE FROM caso_eventos WHERE tipo = $1 AND caso_id = $2
+`
+
+type ForceDeleteCasoEventosParams struct {
+	Tipo   string `json:"tipo"`
+	CasoID int64  `json:"caso_id"`
+}
+
+func (q *Queries) ForceDeleteCasoEventos(ctx context.Context, arg ForceDeleteCasoEventosParams) error {
+	_, err := q.db.Exec(ctx, forceDeleteCasoEventos, arg.Tipo, arg.CasoID)
+	return err
+}
+
 const getCasoAnexo = `-- name: GetCasoAnexo :one
 SELECT id, nome, tipo_midia, conteudo FROM caso_anexos WHERE id = $1 AND tipo = $2 AND caso_id = $3 AND deleted_at IS NULL
 `

@@ -29,12 +29,13 @@ const (
 
 // tipoDeCaso descreve um tipo de caso para a ficha comum.
 type tipoDeCaso struct {
-	Slug    string                                                           // vai na URL: /casos/{slug}/{id}/...
-	Rotulo  string                                                           // "Investigação", "Denúncia"...
-	Ver     string                                                           // permissão para ver o andamento e baixar anexos
-	Editar  string                                                           // permissão para comentar, encaminhar e anexar
-	Existe  func(ctx context.Context, q *sqlccliente.Queries, id int64) bool // o caso existe e a pessoa pode vê-lo
-	Caminho func(id int64) string                                            // endereço da ficha do caso (para voltar)
+	Slug       string                                                           // vai na URL: /casos/{slug}/{id}/...
+	Rotulo     string                                                           // "Investigação", "Denúncia"...
+	Ver        string                                                           // permissão para ver o andamento e baixar anexos
+	Encaminhar string                                                           // permissão de encaminhar (vazia = a mesma de Editar)
+	Editar     string                                                           // permissão para comentar, encaminhar e anexar
+	Existe     func(ctx context.Context, q *sqlccliente.Queries, id int64) bool // o caso existe e a pessoa pode vê-lo
+	Caminho    func(id int64) string                                            // endereço da ficha do caso (para voltar)
 }
 
 var tiposDeCaso = map[string]tipoDeCaso{}
@@ -63,7 +64,7 @@ func (h *handlers) fichaDoCaso(r *http.Request, q *sqlccliente.Queries, t tipoDe
 	ctx := r.Context()
 	loc := h.fuso(r)
 	d := views.FichaCasoData{
-		Tipo: t.Slug, ID: id, CSRF: csrfToken(ctx), Acoes: acoes, PodeEditar: h.principal(r).Pode(t.Editar),
+		Tipo: t.Slug, ID: id, CSRF: csrfToken(ctx), Acoes: acoes, PodeEditar: h.principal(r).Pode(t.Editar), PodeEncaminhar: h.principal(r).Pode(t.Editar) && (t.Encaminhar == "" || h.principal(r).Pode(t.Encaminhar)),
 		Erro: r.URL.Query().Get("caso_erro"),
 	}
 	eventos, err := q.ListCasoEventos(ctx, sqlccliente.ListCasoEventosParams{Tipo: t.Slug, CasoID: id})
@@ -158,6 +159,10 @@ func (h *handlers) casoComentar(w http.ResponseWriter, r *http.Request, q *sqlcc
 }
 
 func (h *handlers) casoEncaminhar(w http.ResponseWriter, r *http.Request, q *sqlccliente.Queries, t tipoDeCaso, id int64) {
+	if t.Encaminhar != "" && !h.principal(r).Pode(t.Encaminhar) {
+		http.Error(w, "Você não tem permissão para encaminhar.", http.StatusForbidden)
+		return
+	}
 	if err := r.ParseForm(); err != nil {
 		http.Error(w, "Requisição inválida.", http.StatusBadRequest)
 		return

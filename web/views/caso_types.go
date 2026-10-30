@@ -31,14 +31,15 @@ type CasoAcao struct {
 
 // FichaCasoData alimenta o componente FichaCaso, o mesmo para todo tipo de caso.
 type FichaCasoData struct {
-	Tipo        string
-	ID          int64
-	CSRF        string
-	Eventos     []CasoEvento
-	Anexos      []CasoAnexo
-	Responsavel string
-	Usuarios    []CidadeOpcao
-	Acoes       []CasoAcao
-	PodeEditar  bool
-	Erro        string
+	Tipo           string
+	ID             int64
+	CSRF           string
+	Eventos        []CasoEvento
+	Anexos         []CasoAnexo
+	Responsavel    string
+	Usuarios       []CidadeOpcao
+	Acoes          []CasoAcao
+	PodeEditar     bool
+	PodeEncaminhar bool
+	Erro           string
 }

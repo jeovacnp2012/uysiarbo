@@ -212,6 +212,25 @@ type ClienteInfo struct {
 	CriadoEm pgtype.Timestamptz `json:"criado_em"`
 }
 
+type Doenca struct {
+	ID           int64              `json:"id"`
+	Nome         string             `json:"nome"`
+	GrupoID      pgtype.Int8        `json:"grupo_id"`
+	Ativo        bool               `json:"ativo"`
+	CriadoEm     pgtype.Timestamptz `json:"criado_em"`
+	AtualizadoEm pgtype.Timestamptz `json:"atualizado_em"`
+}
+
+type EntrevistaGrupo struct {
+	ID           int64              `json:"id"`
+	Codigo       string             `json:"codigo"`
+	Titulo       string             `json:"titulo"`
+	Ativo        bool               `json:"ativo"`
+	Campos       []byte             `json:"campos"`
+	CriadoEm     pgtype.Timestamptz `json:"criado_em"`
+	AtualizadoEm pgtype.Timestamptz `json:"atualizado_em"`
+}
+
 type ImportacaoLinha struct {
 	ImportacaoID int64       `json:"importacao_id"`
 	Linha        int32       `json:"linha"`
@@ -269,6 +288,29 @@ type Importaco struct {
 	Conector            string             `json:"conector"`
 	Arquivo             []byte             `json:"arquivo"`
 	OrigemInfo          string             `json:"origem_info"`
+}
+
+type Investigaco struct {
+	ID            int64              `json:"id"`
+	IDExterno     pgtype.Text        `json:"id_externo"`
+	DoencaID      int64              `json:"doenca_id"`
+	LocalID       pgtype.Int8        `json:"local_id"`
+	EnderecoTexto string             `json:"endereco_texto"`
+	Paciente      string             `json:"paciente"`
+	Telefone      string             `json:"telefone"`
+	DataInicio    pgtype.Date        `json:"data_inicio"`
+	Situacao      string             `json:"situacao"`
+	Resultado     string             `json:"resultado"`
+	ResponsavelID pgtype.Int8        `json:"responsavel_id"`
+	Observacao    string             `json:"observacao"`
+	GrupoID       pgtype.Int8        `json:"grupo_id"`
+	Entrevista    []byte             `json:"entrevista"`
+	CriadoPor     pgtype.Int8        `json:"criado_por"`
+	CriadoEm      pgtype.Timestamptz `json:"criado_em"`
+	AtualizadoEm  pgtype.Timestamptz `json:"atualizado_em"`
+	EncerradaEm   pgtype.Timestamptz `json:"encerrada_em"`
+	DeletedAt     pgtype.Timestamptz `json:"deleted_at"`
+	DeletedBy     pgtype.Int8        `json:"deleted_by"`
 }
 
 type LeisMunicipai struct {
