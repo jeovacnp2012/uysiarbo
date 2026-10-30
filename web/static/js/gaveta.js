@@ -35,12 +35,46 @@
         selo.hidden = n === 0;
     }
 
-    function abrir(form) {
+    // Chave do aviso "reabrir depois do recarregamento" (formulários que se enviam sozinhos ao mudar um campo).
+    function chave() {
+        return 'uysi-gaveta:' + location.pathname;
+    }
+
+    function guardar(valor) {
+        try {
+            if (valor) sessionStorage.setItem(chave(), '1');
+            else sessionStorage.removeItem(chave());
+        } catch (e) { /* sem armazenamento: a gaveta só não reabre */ }
+    }
+
+    function lembrado() {
+        try {
+            var v = sessionStorage.getItem(chave()) === '1';
+            sessionStorage.removeItem(chave());
+            return v;
+        } catch (e) { return false; }
+    }
+
+    function abrir(form, semAnimacao) {
         if (aberta && aberta !== form) fechar();
         aberta = form;
-        garantirFundo().classList.add('aberto');
+        var f = garantirFundo();
+        if (semAnimacao) {
+            form.classList.add('sem-anim');
+            f.classList.add('sem-anim');
+        }
+        f.classList.add('aberto');
         form.classList.add('aberta');
         form.setAttribute('aria-hidden', 'false');
+        if (semAnimacao) {
+            requestAnimationFrame(function () {
+                requestAnimationFrame(function () {
+                    form.classList.remove('sem-anim');
+                    f.classList.remove('sem-anim');
+                });
+            });
+            return;
+        }
         var primeiro = form.querySelector('input:not([type=hidden]), select, textarea');
         if (primeiro) setTimeout(function () { primeiro.focus({ preventScroll: true }); }, 220);
     }
@@ -81,7 +115,12 @@
         form.addEventListener('input', function () { atualizarContagem(form); });
         form.addEventListener('change', function () { atualizarContagem(form); });
         atualizarContagem(form);
-        if (form.hasAttribute('data-gaveta-aberta')) abrir(form);
+        // Envio automático (requestSubmit sem botão, como no mapa): a página recarrega e a gaveta volta aberta.
+        form.addEventListener('submit', function (e) {
+            if (!e.submitter && !form.classList.contains('rel-form')) guardar(true);
+        });
+        if (lembrado()) abrir(form, true);
+        else if (form.hasAttribute('data-gaveta-aberta')) abrir(form);
     }
 
     function varrer(raiz) {

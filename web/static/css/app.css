@@ -1956,3 +1956,9 @@ form.gaveta > * {
 form.gaveta > .rel-campos {
     overflow: visible;
 }
+
+/* Gaveta reaberta depois de um recarregamento: sem animação, para não piscar */
+form.gaveta.sem-anim,
+.gaveta-fundo.sem-anim {
+    transition: none;
+}
