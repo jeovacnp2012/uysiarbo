@@ -59,7 +59,7 @@ func GuiaLista(l Layout, d GuiaListaData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<form method=\"get\" action=\"/guia\" class=\"cartao filtros\" role=\"search\"><div class=\"campo\"><label for=\"busca-guia\">Buscar no guia</label> <input id=\"busca-guia\" name=\"q\" type=\"search\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<form method=\"get\" action=\"/guia\" class=\"cartao filtros\" role=\"search\" data-sem-gaveta><div class=\"campo\"><label for=\"busca-guia\">Buscar no guia</label> <input id=\"busca-guia\" name=\"q\" type=\"search\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

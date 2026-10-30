@@ -73,7 +73,7 @@ templ Relatorios(l Layout, d RelatoriosIndice) {
 templ RelatorioPagina(l Layout, d RelatorioTela) {
 	@Base(l) {
 		@PageHeader(d.Titulo, d.Resumo)
-		<form method="get" action={ templ.SafeURL("/relatorios/" + d.Slug) } class="cartao rel-form">
+		<form method="get" action={ templ.SafeURL("/relatorios/" + d.Slug) } class="cartao rel-form" data-gaveta-aberta?={ !d.Gerado }>
 			<h2 class="rel-titulo" data-ico="sliders">Filtros</h2>
 			<div class="rel-campos">
 			for _, c := range d.Campos {

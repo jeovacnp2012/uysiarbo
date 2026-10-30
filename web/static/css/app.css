@@ -1810,3 +1810,132 @@ form.inline {
     border-top: 1px solid var(--borda);
     align-items: center;
 }
+
+/* Gaveta de filtros: painel que desliza da direita (até metade da tela) com o botão "Filtros" acima da lista */
+.gaveta-barra {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 0.75rem;
+}
+
+.gaveta-contagem {
+    margin-left: 0.2rem;
+}
+
+.gaveta-fundo {
+    position: fixed;
+    inset: 0;
+    z-index: 59;
+    background: rgb(15 23 43 / 0.28);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.28s ease;
+}
+
+.gaveta-fundo.aberto {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+form.gaveta {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 60;
+    width: clamp(20rem, 50vw, 32rem);
+    max-width: 100vw;
+    margin: 0;
+    padding: 0 1.15rem 1.15rem;
+    border-radius: 0;
+    border-width: 0 0 0 1px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.95rem;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(3rem);
+    transition: transform 0.28s ease, opacity 0.28s ease, visibility 0s linear 0.28s;
+    box-shadow: -12px 0 32px rgb(15 23 43 / 0.18);
+}
+
+form.gaveta.aberta {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    transition: transform 0.28s ease, opacity 0.28s ease, visibility 0s;
+}
+
+.gaveta-cab {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin: 0 -1.15rem;
+    padding: 0.9rem 1.15rem;
+    background: var(--superficie);
+    border-bottom: 1px solid var(--borda);
+}
+
+.gaveta-titulo {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 1.05rem;
+}
+
+form.gaveta .campo-largo,
+form.gaveta .campo {
+    grid-column: auto;
+    width: 100%;
+}
+
+form.gaveta .rel-campos {
+    grid-template-columns: 1fr;
+}
+
+form.gaveta > .form-acoes,
+form.gaveta > .rel-acoes {
+    position: sticky;
+    bottom: 0;
+    margin: auto -1.15rem -1.15rem;
+    padding: 0.85rem 1.15rem;
+    background: var(--superficie);
+    border-top: 1px solid var(--borda);
+}
+
+form.gaveta .rel-baixar {
+    padding-left: 0;
+    margin-left: 0;
+    border-left: 0;
+}
+
+form.gaveta .rel-limpar {
+    margin-left: 0;
+}
+
+@media (max-width: 640px) {
+    form.gaveta {
+        width: 92vw;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    form.gaveta,
+    form.gaveta.aberta,
+    .gaveta-fundo {
+        transition: none;
+    }
+}
+
+@media print {
+    .gaveta-barra,
+    .gaveta-fundo {
+        display: none !important;
+    }
+}

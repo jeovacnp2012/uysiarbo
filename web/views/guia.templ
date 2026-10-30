@@ -7,7 +7,7 @@ templ GuiaLista(l Layout, d GuiaListaData) {
 	@Base(l) {
 		@PageHeader("Guia do sistema", "Explica cada tela, passo a passo, em linguagem simples.") {
 		}
-		<form method="get" action="/guia" class="cartao filtros" role="search">
+		<form method="get" action="/guia" class="cartao filtros" role="search" data-sem-gaveta>
 			<div class="campo">
 				<label for="busca-guia">Buscar no guia</label>
 				<input id="busca-guia" name="q" type="search" value={ d.Q } placeholder="Ex.: resetar senha, subdomínio, papel" autofocus/>
