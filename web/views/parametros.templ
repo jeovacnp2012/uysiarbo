@@ -6,6 +6,7 @@ templ Parametros(l Layout, d ParametrosData) {
 	@Base(l) {
 		@PageHeader(d.Titulo, d.Descricao) {
 		}
+		@AbasParametros(d.Abas)
 		<form method="post" action={ templ.SafeURL(d.Acao) } class="cartao form-admin">
 			<input type="hidden" name="csrf" value={ d.CSRF }/>
 			if d.Salvo {
@@ -65,5 +66,68 @@ templ Parametros(l Layout, d ParametrosData) {
 				<button type="submit" class="btn btn-primario">Salvar</button>
 			</div>
 		</form>
+	}
+}
+
+templ AbasParametros(abas []AbaParam) {
+	if len(abas) > 0 {
+		<nav class="abas" aria-label="Parâmetros">
+			for _, a := range abas {
+				<a href={ templ.SafeURL(a.Href) } class={ "aba", templ.KV("aba-ativa", a.Ativa) }>{ a.Rotulo }</a>
+			}
+		</nav>
+	}
+}
+
+templ ParametrosSemanas(l Layout, d SemanasData) {
+	@Base(l) {
+		@PageHeader("Semanas epidemiológicas", "Calendário calculado pelo padrão escolhido: "+d.Tipo+".")
+		@AbasParametros(d.Abas)
+		<div class="cartao">
+			<table class="tabela">
+				<thead><tr><th>Ano</th><th>Primeiro dia</th><th>Último dia</th><th>Semanas</th><th></th></tr></thead>
+				<tbody>
+					for _, a := range d.Anos {
+						<tr>
+							<td>{ strconv.Itoa(a.Ano) }</td><td>{ a.Primeiro }</td><td>{ a.Ultimo }</td><td>{ strconv.Itoa(a.Semanas) }</td>
+							<td><a href={ templ.SafeURL("/parametros/semanas?ano=" + strconv.Itoa(a.Ano)) }>Ver semanas</a></td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+		if len(d.Detalhe) > 0 {
+			<div class="cartao">
+				<h2>Semanas de { strconv.Itoa(d.Ano) }</h2>
+				<table class="tabela">
+					<thead><tr><th>Semana</th><th>Início</th><th>Fim</th></tr></thead>
+					<tbody>
+						for _, s := range d.Detalhe {
+							<tr><td>{ strconv.Itoa(s.Numero) }</td><td>{ s.Inicio }</td><td>{ s.Fim }</td></tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		}
+		if d.Pode {
+			<p class="subtitulo">O padrão (SINAN ou ISO) é escolhido em <a href="/ciclos">Ciclos</a>.</p>
+		}
+	}
+}
+
+templ ParametrosNumeracao(l Layout, d NumeracaoData) {
+	@Base(l) {
+		@PageHeader("Numeração", "Como os números de notificações e autos de infração são formados. Recomeçam todo ano.")
+		@AbasParametros(d.Abas)
+		<div class="cartao">
+			<table class="tabela">
+				<thead><tr><th>Tipo</th><th>Formato</th><th>Último de { strconv.Itoa(d.Ano) }</th><th>Próximo</th></tr></thead>
+				<tbody>
+					for _, n := range d.Linhas {
+						<tr><td>{ n.Tipo }</td><td>{ n.Formato }</td><td>{ n.Ultimo }</td><td>{ n.Proximo }</td></tr>
+					}
+				</tbody>
+			</table>
+		</div>
 	}
 }

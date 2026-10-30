@@ -162,3 +162,22 @@ func (m *mundo) notificacaoDe(t *testing.T, caminho string) string {
 func parseIDDoCaminho(caminho string) (int64, error) {
 	return strconv.ParseInt(caminho[strings.LastIndex(caminho, "/")+1:], 10, 64)
 }
+
+func TestAbasDeParametros(t *testing.T) {
+	m := novoMundo(t)
+	ana := m.comAna(t)
+	quer(t, ana.get("/parametros/geral"), http.StatusOK, "Semanas epidemiológicas", "Numeração")
+	ano := strconv.Itoa(time.Now().UTC().Year())
+	quer(t, ana.get("/parametros/semanas?ano="+ano), http.StatusOK, "Semanas de "+ano)
+	quer(t, ana.get("/parametros/numeracao"), http.StatusOK, "NT-AAAA", "INF-AAAA")
+}
+
+func TestSemanasDoAno(t *testing.T) {
+	s := semanasDoAno(2026, "sinan")
+	if len(s) != 52 || s[0].Inicio.Format("2006-01-02") != "2026-01-04" {
+		t.Fatalf("2026 SINAN: %d semanas, início %v", len(s), s[0].Inicio)
+	}
+	if n := len(semanasDoAno(2025, "sinan")); n != 53 {
+		t.Fatalf("2025 SINAN deveria ter 53 semanas, tem %d", n)
+	}
+}

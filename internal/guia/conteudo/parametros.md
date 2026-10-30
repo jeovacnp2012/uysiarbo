@@ -28,3 +28,9 @@ Toda alteração é registrada na Auditoria (a senha aparece só como "definida"
 Em **Leis municipais** você cadastra as leis (número, ano, nome e data de publicação) e, dentro de cada uma, os **trechos**: o rótulo (como "Art. 12, §2º") e o texto. É dessa lista que visitas, notificações e autos de infração vão escolher o que citar.
 - O número e o ano formam uma identificação única; a lei pode ser **desativada** sem apagar.
 - **Excluir** envia para a **Lixeira** (dá para restaurar). Uma lei só pode ser excluída depois de excluir seus trechos ativos.
+
+## Abas de Parâmetros
+Todas as telas de Parâmetros têm uma barra de abas no topo, como no Geo Controle: **Geral**, **Semanas epidemiológicas**, **Numeração**, **Mobilidade**, **Controle de acesso**, **Leis municipais** e **Investigação** (grupos e doenças). Só aparecem as abas que a sua permissão libera.
+
+- **Semanas epidemiológicas**: o calendário de cada ano (primeiro dia, último dia e quantas semanas), calculado pelo padrão escolhido em **Ciclos**. Clique em **Ver semanas** para listar todas as semanas do ano.
+- **Numeração**: mostra o formato dos números de notificação (`NT-AAAA0000000`) e de auto de infração (`INF-AAAA00000`), o último número usado no ano e o próximo. A contagem recomeça todo ano.

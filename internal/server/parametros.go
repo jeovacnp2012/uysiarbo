@@ -96,7 +96,7 @@ func (h *handlers) parametrosForm(grupo string) http.HandlerFunc {
 // dadosDeParametros monta a tela; enviados (quando não nulo) são os valores digitados, em caso de erro.
 func (h *handlers) dadosDeParametros(r *http.Request, q *sqlccliente.Queries, grupo string, enviados map[string]string) views.ParametrosData {
 	t := textosDoGrupo[grupo]
-	d := views.ParametrosData{Titulo: t.titulo, Descricao: t.descricao, Acao: t.rota, CSRF: csrfToken(r.Context())}
+	d := views.ParametrosData{Titulo: t.titulo, Descricao: t.descricao, Acao: t.rota, CSRF: csrfToken(r.Context()), Abas: h.abasParametros(r, t.rota)}
 	for _, p := range parametrosDoGrupo(grupo) {
 		valor := h.valorDoParametro(r, q, p)
 		if v, ok := enviados[p.Chave]; ok {

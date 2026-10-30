@@ -20,4 +20,42 @@ type ParametrosData struct {
 	Salvo     bool
 	Erro      string
 	CSRF      string
+	Abas      []AbaParam
+}
+
+// AbaParam é uma aba da área Parâmetros (cada uma leva a uma tela).
+type AbaParam struct {
+	Rotulo string
+	Href   string
+	Ativa  bool
+}
+
+type SemanaLinha struct {
+	Ano, Semanas     int
+	Primeiro, Ultimo string
+}
+
+type SemanaDetalhe struct {
+	Numero      int
+	Inicio, Fim string
+}
+
+type SemanasData struct {
+	Abas    []AbaParam
+	Tipo    string
+	Anos    []SemanaLinha
+	Ano     int
+	Detalhe []SemanaDetalhe
+	Pode    bool
+	CSRF    string
+}
+
+type NumeracaoLinha struct {
+	Tipo, Prefixo, Formato, Ultimo, Proximo string
+}
+
+type NumeracaoData struct {
+	Abas   []AbaParam
+	Ano    int
+	Linhas []NumeracaoLinha
 }
