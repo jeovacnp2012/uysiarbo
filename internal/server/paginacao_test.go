@@ -31,3 +31,11 @@ func TestListagensPaginamComDezPorPadrao(t *testing.T) {
 	quer(t, ana.get("/cidades?por_pagina=7"), http.StatusOK, "1–10 de 25") // valor fora da lista volta ao padrão
 	quer(t, ana.get("/cidades?por_pagina=20&pagina=2"), http.StatusOK, "21–25 de 25")
 }
+
+func TestTelasCarregamOScriptDeSelectPesquisavel(t *testing.T) {
+	m := novoMundo(t)
+	ana := m.comAna(t)
+	quer(t, ana.get("/cidades"), http.StatusOK, "/static/js/selectbusca.js")
+	js := ana.get("/static/js/selectbusca.js")
+	quer(t, js, http.StatusOK, "LIMITE = 5", "data-sem-busca")
+}

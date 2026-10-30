@@ -1121,3 +1121,141 @@ form.inline {
 .aba { padding: .4rem .8rem; border: 1px solid var(--borda, #cbd5e1); border-radius: .5rem; text-decoration: none; color: inherit; }
 .aba-ativa { background: var(--marca, #155a9e); color: #fff; border-color: transparent; }
 .aba-ativa .selo { background: rgba(255,255,255,.2); color: #fff; }
+
+/* Seleção pesquisável (selectbusca.js): todo select com mais de 5 opções */
+.sb-nativo {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.sb {
+    position: relative;
+    width: 100%;
+}
+
+.sb-botao {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid var(--borda);
+    border-radius: var(--radius);
+    background: var(--superficie);
+    color: var(--texto);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.sb-botao:focus-visible,
+.sb-busca:focus-visible {
+    outline: 2px solid var(--anel);
+    outline-offset: 1px;
+}
+
+.sb-botao:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.sb-texto {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sb-placeholder {
+    color: var(--suave);
+}
+
+.sb-seta::before {
+    content: '';
+    display: block;
+    width: 0.45rem;
+    height: 0.45rem;
+    border-right: 2px solid var(--suave);
+    border-bottom: 2px solid var(--suave);
+    transform: rotate(45deg) translateY(-2px);
+}
+
+.sb-painel {
+    position: absolute;
+    z-index: 60;
+    top: calc(100% + 0.25rem);
+    left: 0;
+    right: 0;
+    min-width: 12rem;
+    padding: 0.5rem;
+    border: 1px solid var(--borda);
+    border-radius: var(--radius);
+    background: var(--superficie);
+    box-shadow: 0 10px 25px rgba(15, 23, 43, 0.18);
+}
+
+.sb-painel[hidden] {
+    display: none;
+}
+
+.sb-busca {
+    width: 100%;
+    padding: 0.45rem 0.65rem;
+    border: 1px solid var(--borda);
+    border-radius: var(--radius);
+    background: var(--superficie);
+    color: var(--texto);
+    font: inherit;
+}
+
+.sb-lista {
+    list-style: none;
+    margin: 0.4rem 0 0;
+    padding: 0;
+    max-height: 15rem;
+    overflow-y: auto;
+}
+
+.sb-item {
+    padding: 0.4rem 0.6rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+}
+
+.sb-item[hidden],
+.sb-grupo[hidden],
+.sb-vazio[hidden] {
+    display: none;
+}
+
+.sb-item.sb-ativo {
+    background: var(--marca-fraca);
+}
+
+.sb-item.sb-escolhido {
+    font-weight: 600;
+    color: var(--marca);
+}
+
+.sb-item[aria-disabled='true'] {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.sb-grupo {
+    padding: 0.4rem 0.6rem 0.2rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--suave);
+    text-transform: uppercase;
+}
+
+.sb-vazio {
+    padding: 0.6rem;
+    color: var(--suave);
+    font-size: 0.875rem;
+}
