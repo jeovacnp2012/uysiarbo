@@ -25,3 +25,12 @@ Quem tem a permissão restrita "apenas o meu" vê só as diárias em que está n
 
 ## Excluir
 A diária vai para a **Lixeira**. Não é possível excluí-la de vez se houver atendimentos ligados a ela.
+
+## Estoque da diária
+Na ficha, em **Estoque da diária**, escolha o **lote da vacina** e o **lote da seringa** (só aparecem produtos marcados como selecionáveis na diária, com saldo).
+
+Ao **finalizar**, o sistema baixa do estoque:
+- do lote da seringa: seringas usadas + perdidas + com defeito (final de trabalho);
+- do lote da vacina: frascos vazios.
+
+Se o saldo não cobrir, a diária não finaliza e a mensagem diz o que falta. Ao **reabrir**, as baixas são devolvidas ao estoque. Se o parâmetro "Uso obrigatório do Estoque" (Parâmetros > Geral) estiver em Sim, não é possível finalizar sem escolher os dois lotes. Lote usado por diária não pode ser excluído de vez.

@@ -59,6 +59,12 @@ type DiariaFichaData struct {
 	Equipe                            []DiariaMembro
 	Candidatos                        []CidadeOpcao
 	Atendimentos                      []DiariaAtendimento
+	VacinaLotes, SeringaLotes         []CidadeOpcao
+	Baixas                            []DiariaBaixa
+	EstoqueObrigatorio                bool
 	TotalVacinados, TotalNaoVacinados int
 	Erro, Aviso, CSRF                 string
 }
+
+// DiariaBaixa é o consumo de estoque lançado ao finalizar a diária (11.4).
+type DiariaBaixa struct{ Categoria, Produto, Lote, Quantidade string }

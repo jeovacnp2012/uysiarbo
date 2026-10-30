@@ -271,6 +271,16 @@ type CampanhaDiaria struct {
 	AtualizadoEm           pgtype.Timestamptz `json:"atualizado_em"`
 	DeletedAt              pgtype.Timestamptz `json:"deleted_at"`
 	DeletedBy              pgtype.Int8        `json:"deleted_by"`
+	VacinaLoteID           pgtype.Int8        `json:"vacina_lote_id"`
+	SeringaLoteID          pgtype.Int8        `json:"seringa_lote_id"`
+}
+
+type CampanhaDiariaBaixa struct {
+	ID         int64          `json:"id"`
+	DiariaID   int64          `json:"diaria_id"`
+	LoteID     int64          `json:"lote_id"`
+	Categoria  string         `json:"categoria"`
+	Quantidade pgtype.Numeric `json:"quantidade"`
 }
 
 type CampanhaDiariaEquipe struct {

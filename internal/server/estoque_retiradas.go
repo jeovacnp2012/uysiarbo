@@ -39,6 +39,11 @@ func estoqueRetiradaCaminho(id int64) string { return "/estoque/retirada/" + str
 // moverSaldo trava o lote, aplica a variação (se houver) e registra a movimentação. Devolve o saldo final.
 // delta muda o saldo; para uso e perda já baixados na retirada, passe delta = 0 e a quantidade em info.
 func (h *handlers) moverSaldo(ctx context.Context, r *http.Request, qt *sqlccliente.Queries, loteID int64, tipo string, delta, info float64, desc string, retirada int64) (float64, error) {
+	return h.moverSaldoDe(ctx, r, qt, loteID, tipo, delta, info, desc, "retirada", retirada)
+}
+
+// moverSaldoDe é o moverSaldo com a origem da movimentação (retirada, diária...).
+func (h *handlers) moverSaldoDe(ctx context.Context, r *http.Request, qt *sqlccliente.Queries, loteID int64, tipo string, delta, info float64, desc, origem string, retirada int64) (float64, error) {
 	l, err := qt.GetEstoqueLoteParaAjuste(ctx, loteID)
 	if err != nil {
 		return 0, err
@@ -58,7 +63,7 @@ func (h *handlers) moverSaldo(ctx context.Context, r *http.Request, qt *sqlcclie
 	}
 	return saldo, qt.CreateEstoqueMovimentacao(ctx, sqlccliente.CreateEstoqueMovimentacaoParams{
 		LoteID: loteID, Tipo: tipo, Quantidade: numericoDe(qtd, 3), SaldoApos: numericoDe(saldo, 3),
-		UsuarioID: idOuNulo(meuID(r)), Descricao: desc, Origem: "retirada", RetiradaID: idOuNulo(retirada),
+		UsuarioID: idOuNulo(meuID(r)), Descricao: desc, Origem: origem, RetiradaID: idOuNulo(retirada),
 	})
 }
 

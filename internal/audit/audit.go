@@ -349,6 +349,7 @@ var Rotulos = map[string]string{
 	"diaria.equipe":                       "Alterou a equipe de uma diária de trabalho",
 	"diaria.registro":                     "Registrou o trabalho do dia (início, fim, perdas e temperaturas)",
 	"diaria.iniciar":                      "Iniciou uma diária de trabalho",
+	"diaria.estoque":                      "Escolheu os lotes de estoque de uma diária",
 	"diaria.finalizar":                    "Finalizou uma diária de trabalho",
 	"diaria.reabrir":                      "Reabriu uma diária de trabalho",
 	"diaria.cancelar":                     "Cancelou uma diária de trabalho",

@@ -878,6 +878,11 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 			} else if p > 0 {
 				itens = append(itens, plural(p, "bem patrimonial", "bens patrimoniais"))
 			}
+			if d, err := q.CountDiariasDoLote(ctx, pgtype.Int8{Int64: id, Valid: true}); err != nil {
+				return nil, err
+			} else if d > 0 {
+				itens = append(itens, plural(d, "diária de campanha", "diárias de campanha"))
+			}
 			return itens, nil
 		},
 		paiExcluido: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, error) {

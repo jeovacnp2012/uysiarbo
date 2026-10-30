@@ -282,6 +282,24 @@ func (h *handlers) renderDiaria(w http.ResponseWriter, r *http.Request, q *sqlcc
 		d.TotalVacinados += int(c.VacCachorros + c.VacGatos)
 		d.TotalNaoVacinados += int(c.NaoCachorros + c.NaoGatos)
 	}
+	d.EstoqueObrigatorio = h.campanhaEstoqueObrigatorio(r, q)
+	if d.PodeEditar {
+		if d.VacinaLotes, err = h.opcoesDeLotesDaDiaria(r, q, "vacina", n.VacinaLoteID); err == nil {
+			d.SeringaLotes, err = h.opcoesDeLotesDaDiaria(r, q, "seringa", n.SeringaLoteID)
+		}
+		if err != nil {
+			h.falhaInterna(w, r, "listar lotes da diária", err)
+			return
+		}
+	}
+	baixas, err := q.ListDiariaBaixas(r.Context(), n.ID)
+	if err != nil {
+		h.falhaInterna(w, r, "listar baixas da diária", err)
+		return
+	}
+	for _, b := range baixas {
+		d.Baixas = append(d.Baixas, views.DiariaBaixa{Categoria: b.Categoria, Produto: b.Produto, Lote: b.NumeroLote, Quantidade: qtdTexto(b.Quantidade) + " " + b.UnidadeMedida})
+	}
 	status := http.StatusOK
 	if erro != "" {
 		status = http.StatusBadRequest
@@ -480,24 +498,6 @@ func (h *handlers) diariaIniciar(w http.ResponseWriter, r *http.Request) {
 	h.mudarStatusDaDiaria(w, r, "iniciar", func(n sqlccliente.CampanhaDiaria) (string, string) {
 		if n.Status != "aguardando" {
 			return "", "Só uma diária aguardando pode ser iniciada."
-		}
-		return "executando", ""
-	})
-}
-
-func (h *handlers) diariaFinalizar(w http.ResponseWriter, r *http.Request) {
-	h.mudarStatusDaDiaria(w, r, "finalizar", func(n sqlccliente.CampanhaDiaria) (string, string) {
-		if n.Status != "executando" {
-			return "", "Só uma diária em execução pode ser finalizada."
-		}
-		return "finalizado", ""
-	})
-}
-
-func (h *handlers) diariaReabrir(w http.ResponseWriter, r *http.Request) {
-	h.mudarStatusDaDiaria(w, r, "reabrir", func(n sqlccliente.CampanhaDiaria) (string, string) {
-		if n.Status != "finalizado" {
-			return "", "Só uma diária finalizada pode ser reaberta."
 		}
 		return "executando", ""
 	})

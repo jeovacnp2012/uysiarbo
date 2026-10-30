@@ -283,6 +283,7 @@ func New(d Deps) http.Handler {
 	r.Post("/zoonose/campanha/diaria/{id}/equipe/{uid}/remover", h.exigir("campanha_diaria_editar", h.diariaMembroRemover))
 	r.Post("/zoonose/campanha/diaria/{id}/registro", h.exigir("campanha_diaria_registrar", h.diariaRegistro))
 	r.Post("/zoonose/campanha/diaria/{id}/iniciar", h.exigir("campanha_diaria_registrar", h.diariaIniciar))
+	r.Post("/zoonose/campanha/diaria/{id}/estoque", h.exigir("campanha_diaria_editar", h.diariaEstoque))
 	r.Post("/zoonose/campanha/diaria/{id}/finalizar", h.exigir("campanha_diaria_finalizar", h.diariaFinalizar))
 	r.Post("/zoonose/campanha/diaria/{id}/reabrir", h.exigir("campanha_diaria_finalizar", h.diariaReabrir))
 	r.Post("/zoonose/campanha/diaria/{id}/cancelar", h.exigir("campanha_diaria_desativar", h.diariaCancelar))

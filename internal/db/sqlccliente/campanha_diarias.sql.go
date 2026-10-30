@@ -68,7 +68,7 @@ func (q *Queries) CountDiarias(ctx context.Context, arg CountDiariasParams) (int
 
 const createDiaria = `-- name: CreateDiaria :one
 
-INSERT INTO campanha_diarias (data, anotacao, criado_por) VALUES ($1, $2, $3) RETURNING id, id_externo, data, anotacao, status, ini_seringas, ini_frascos_fechados, ini_frascos_abertos, ini_doses, fim_seringas_usadas, fim_seringas_perdidas, fim_seringas_defeito, fim_frascos_vazios, fim_frascos_cheios, fim_frascos_abertos, fim_vacinas_perdidas, def_seringas_defeito, def_seringas_descartadas, def_vacinas_descartadas, def_vacinas_perdidas, temperaturas, criado_por, criado_em, atualizado_em, deleted_at, deleted_by
+INSERT INTO campanha_diarias (data, anotacao, criado_por) VALUES ($1, $2, $3) RETURNING id, id_externo, data, anotacao, status, ini_seringas, ini_frascos_fechados, ini_frascos_abertos, ini_doses, fim_seringas_usadas, fim_seringas_perdidas, fim_seringas_defeito, fim_frascos_vazios, fim_frascos_cheios, fim_frascos_abertos, fim_vacinas_perdidas, def_seringas_defeito, def_seringas_descartadas, def_vacinas_descartadas, def_vacinas_perdidas, temperaturas, criado_por, criado_em, atualizado_em, deleted_at, deleted_by, vacina_lote_id, seringa_lote_id
 `
 
 type CreateDiariaParams struct {
@@ -108,6 +108,8 @@ func (q *Queries) CreateDiaria(ctx context.Context, arg CreateDiariaParams) (Cam
 		&i.AtualizadoEm,
 		&i.DeletedAt,
 		&i.DeletedBy,
+		&i.VacinaLoteID,
+		&i.SeringaLoteID,
 	)
 	return i, err
 }
@@ -141,7 +143,7 @@ func (q *Queries) ForceDeleteDiaria(ctx context.Context, id int64) (int64, error
 }
 
 const getDiaria = `-- name: GetDiaria :one
-SELECT id, id_externo, data, anotacao, status, ini_seringas, ini_frascos_fechados, ini_frascos_abertos, ini_doses, fim_seringas_usadas, fim_seringas_perdidas, fim_seringas_defeito, fim_frascos_vazios, fim_frascos_cheios, fim_frascos_abertos, fim_vacinas_perdidas, def_seringas_defeito, def_seringas_descartadas, def_vacinas_descartadas, def_vacinas_perdidas, temperaturas, criado_por, criado_em, atualizado_em, deleted_at, deleted_by FROM campanha_diarias WHERE id = $1 AND deleted_at IS NULL
+SELECT id, id_externo, data, anotacao, status, ini_seringas, ini_frascos_fechados, ini_frascos_abertos, ini_doses, fim_seringas_usadas, fim_seringas_perdidas, fim_seringas_defeito, fim_frascos_vazios, fim_frascos_cheios, fim_frascos_abertos, fim_vacinas_perdidas, def_seringas_defeito, def_seringas_descartadas, def_vacinas_descartadas, def_vacinas_perdidas, temperaturas, criado_por, criado_em, atualizado_em, deleted_at, deleted_by, vacina_lote_id, seringa_lote_id FROM campanha_diarias WHERE id = $1 AND deleted_at IS NULL
 `
 
 func (q *Queries) GetDiaria(ctx context.Context, id int64) (CampanhaDiaria, error) {
@@ -174,12 +176,14 @@ func (q *Queries) GetDiaria(ctx context.Context, id int64) (CampanhaDiaria, erro
 		&i.AtualizadoEm,
 		&i.DeletedAt,
 		&i.DeletedBy,
+		&i.VacinaLoteID,
+		&i.SeringaLoteID,
 	)
 	return i, err
 }
 
 const getDiariaQualquer = `-- name: GetDiariaQualquer :one
-SELECT id, id_externo, data, anotacao, status, ini_seringas, ini_frascos_fechados, ini_frascos_abertos, ini_doses, fim_seringas_usadas, fim_seringas_perdidas, fim_seringas_defeito, fim_frascos_vazios, fim_frascos_cheios, fim_frascos_abertos, fim_vacinas_perdidas, def_seringas_defeito, def_seringas_descartadas, def_vacinas_descartadas, def_vacinas_perdidas, temperaturas, criado_por, criado_em, atualizado_em, deleted_at, deleted_by FROM campanha_diarias WHERE id = $1
+SELECT id, id_externo, data, anotacao, status, ini_seringas, ini_frascos_fechados, ini_frascos_abertos, ini_doses, fim_seringas_usadas, fim_seringas_perdidas, fim_seringas_defeito, fim_frascos_vazios, fim_frascos_cheios, fim_frascos_abertos, fim_vacinas_perdidas, def_seringas_defeito, def_seringas_descartadas, def_vacinas_descartadas, def_vacinas_perdidas, temperaturas, criado_por, criado_em, atualizado_em, deleted_at, deleted_by, vacina_lote_id, seringa_lote_id FROM campanha_diarias WHERE id = $1
 `
 
 func (q *Queries) GetDiariaQualquer(ctx context.Context, id int64) (CampanhaDiaria, error) {
@@ -212,6 +216,8 @@ func (q *Queries) GetDiariaQualquer(ctx context.Context, id int64) (CampanhaDiar
 		&i.AtualizadoEm,
 		&i.DeletedAt,
 		&i.DeletedBy,
+		&i.VacinaLoteID,
+		&i.SeringaLoteID,
 	)
 	return i, err
 }
