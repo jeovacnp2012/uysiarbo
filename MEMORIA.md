@@ -157,7 +157,7 @@ Observação: a maioria dessas telas ainda não existe no UYSI ARBO (estoque, LI
 - 16 investigação e 17 laboratório (decisão do usuário: capturar já): **listas completas capturadas em bruto** (`gc/investigacao.txt`: 13.495 linhas com id, status, local, paciente, doença/data; `gc/laboratorio.txt`: 7.765 linhas com id da visita, endereço, status, data/agente, ciclo, semana, atividade, tubetes, totais). **Fichas completas não vieram** (`/investigacao/{id}` com paciente e atividades; `/local/visita/{id}` com depósitos, amostras e resultados): capturar na etapa 6.3 (laboratório) e 9 (investigação), junto com as visitas.
 
 ## Pedidos anotados (a fazer)
-- **Rastro GPS (pedido do usuário, 2026-10-30):** o popup dos pontos deve aparecer ao passar o mouse (hover), sem precisar clicar (`web/static/js/rastro.js`; manter o link "Abrir a visita" acessível, p.ex. popup que fica enquanto o mouse está sobre ele, e clique/toque como alternativa no celular). Também: o texto do popup fica quase ilegível no tema escuro (letra clara sobre fundo claro): corrigir a cor.
+- (nenhum aberto) **Rastro GPS: popup ao passar o mouse e texto legível no tema escuro, feito em 2026-10-30** (`rastro.js`: hover abre, sai 300 ms depois, clique fixa; `app.css`: cor do `.maplibregl-popup-content`).
 - **Depois da 9.3 (pedido do usuário, 2026-10-30):** carregar as 17 doenças, as 10 entrevistas e as 13.495 investigações do Geo Controle (bruto em `gc/`, scratchpad), fazer a importação de investigações (`investigacao_importar`, tipo novo no gerenciador de importação) e o relatório "Investigação totais" (`relatorio_investigacao_total`).
 - (nenhum aberto) **Laboratório com todos os filtros do Geo Controle: feito em 2026-10-30 (versão 1.0.033, plano 6.3b).**
 

@@ -2176,3 +2176,7 @@ select.sb-nativo {
 .caso-evento::before { content: ""; position: absolute; left: -1.4rem; top: 0.35rem; width: 0.7rem; height: 0.7rem; border-radius: 50%; background: var(--marca); }
 .caso-evento-cab { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; }
 .caso-texto { white-space: pre-wrap; overflow-wrap: anywhere; margin: 0.3rem 0 0; }
+
+/* Popups do mapa: fundo claro mesmo no tema escuro, então o texto fica escuro */
+.maplibregl-popup-content{color:#0f172a}
+.maplibregl-popup-content a{color:#155a9e}
