@@ -191,6 +191,24 @@ type LocalFormData struct {
 	UsuariosAcesso      []CidadeOpcao
 	Historico           []AuditoriaLinha // últimas alterações deste local
 	Secoes              []SecaoFicha     // espaços reservados para os módulos seguintes
+	VisitasRecentes     []VisitaDoLocal  // últimas visitas do local (6.5)
+	Reincidencia        *ReincidenciaLocal
+}
+
+// VisitaDoLocal é uma linha do histórico de visitas na ficha do local.
+type VisitaDoLocal struct {
+	ID                             int64
+	Data, Semana, Ciclo, Atividade string
+	Agente, Pendencia              string
+	Deposito, Amostra, Tratamento  bool
+}
+
+// ReincidenciaLocal resume os últimos 12 meses do local.
+type ReincidenciaLocal struct {
+	Visitas, Trabalhadas, ComDeposito int
+	AmostrasPositivas                 int
+	UltimoDeposito                    string
+	Reincidente                       bool
 }
 
 // AcessoDoLocal é quem tem acesso a um local, e por qual atribuição (local, quarteirão ou bairro).

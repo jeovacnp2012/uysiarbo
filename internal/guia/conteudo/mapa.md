@@ -9,6 +9,8 @@ palavras: mapa, bairros, quarteirões, locais, coordenadas, grupo, camadas, geoj
 O **Mapa** (menu lateral) mostra o território do município: os **contornos dos bairros**, os **quarteirões** e os **locais** que têm latitude e longitude.
 
 ## Como usar
+- Os filtros (**bairro**, **grupo de locais** e **tipo de local**) valem na hora: ao escolher uma opção o mapa se atualiza, sem botão. Se o bairro não tem contorno desenhado, o mapa se enquadra pelos locais dele.
+- No menu lateral, **Mapa** é um grupo; por enquanto só **Visitas** está pronto, e os demais (Rastro GPS, Doenças, Campanha Antirrábica, Ovitrampas e EDLs) aparecem apagados até serem lançados.
 - Arraste e use o zoom para navegar. Os **bairros** aparecem desde o início; os **quarteirões** e os **locais** aparecem quando você se aproxima do nível da rua.
 - Cada local é um ponto colorido pelo **tipo** (veja a legenda embaixo do mapa); os desativados ficam em cinza.
 - **Clique** em um local, quarteirão ou bairro para ver o resumo e abrir a ficha.

@@ -295,3 +295,28 @@ func TestVisitasRespeitamPermissoesEEscopo(t *testing.T) {
 
 	quer(t, ana.get("/visitas/abc"), http.StatusNotFound)
 }
+
+func TestFichaDoLocalMostraReincidenciaEHistorico(t *testing.T) {
+	m := novoMundo(t)
+	ana := m.comAna(t)
+	c := m.cenarioVisita(t, ana)
+	agente := m.idUsuario(t, emailAna)
+	ficha := "/locais/" + s64(c.local)
+
+	// Sem visitas, a ficha não mostra a seção.
+	if strings.Contains(ana.get(ficha).Body.String(), `id="reincidencia"`) {
+		t.Error("sem visitas não deveria haver a seção de reincidência")
+	}
+
+	// Uma visita com depósito: aparece no histórico, ainda sem reincidência.
+	quer(t, ana.post("/visitas", c.form(agente, "achou", "1", "a1", "1", "total_eliminado", "1")), http.StatusSeeOther)
+	quer(t, ana.get(ficha), http.StatusOK, "Visitas e reincidência", "Sem reincidência", "1 com depósito encontrado", "01 Ciclo")
+
+	// A segunda visita com depósito, nos 12 meses, torna o local reincidente.
+	quer(t, ana.post("/visitas", c.form(agente, "data", c.hoje, "achou", "1", "b", "1", "total_eliminado", "1")), http.StatusSeeOther)
+	quer(t, ana.get(ficha), http.StatusOK, "Reincidente", "2 com depósito encontrado", "2 visita(s)")
+
+	// Visita sem depósito não conta para a reincidência.
+	quer(t, ana.post("/visitas", c.form(agente, "data", c.hoje)), http.StatusSeeOther)
+	quer(t, ana.get(ficha), http.StatusOK, "3 visita(s)", "2 com depósito encontrado")
+}

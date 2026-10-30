@@ -48,7 +48,12 @@ A lista busca por **endereço, número ou proprietário** e filtra por bairro, t
 Tudo o que é criado ou alterado fica registrado na **Auditoria**, com o antes e o depois. Se outra pessoa estiver com o mesmo local aberto, a ficha avisa quem é.
 
 ## Ficha do local
-Abrindo um local, além dos dados, a ficha mostra os **grupos** a que ele pertence, o **histórico de alterações** (para quem tem acesso à Auditoria) e espaços reservados para **visitas, laboratório, casos, infrações, armadilhas, animais e comunicação**: cada um passa a aparecer ali quando o módulo correspondente for lançado.
+Abrindo um local, além dos dados, a ficha mostra os **grupos** a que ele pertence, o **histórico de alterações** (para quem tem acesso à Auditoria) e a seção **Visitas e reincidência** (veja abaixo) e espaços reservados para **laboratório, casos, infrações, armadilhas, animais e comunicação**: cada um passa a aparecer ali quando o módulo correspondente for lançado.
+
+## Visitas e reincidência
+Quando o local já tem visitas, a ficha mostra as **10 últimas** (data, semana epidemiológica, ciclo, atividade, agente, pendência e se houve depósito, amostra e tratamento) e um resumo dos **últimos 12 meses**: quantas visitas, quantas foram trabalhadas (sem pendência), quantas encontraram depósito e quantas amostras deram positivo para *Aedes*.
+
+O local aparece como **Reincidente** quando **2 ou mais visitas** dos últimos 12 meses encontraram depósito. Essa regra é um ponto de partida e deve ser confirmada com a área técnica do município. Quem só enxerga as próprias visitas vê só elas, sem o resumo geral do local. Visitas desativadas ou na Lixeira não contam.
 
 ## Buscar pelo CEP e localizar no mapa
 No cadastro de um local há dois atalhos, que usam serviços gratuitos:

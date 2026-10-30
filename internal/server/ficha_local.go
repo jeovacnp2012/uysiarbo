@@ -4,10 +4,57 @@ import (
 	"context"
 	"net/http"
 	"strconv"
+	"time"
+
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"uysiarbo/internal/db/sqlccliente"
 	"uysiarbo/web/views"
 )
+
+// reincidenciaMinima é o número de visitas com depósito encontrado, nos últimos 12 meses, a partir do qual o local
+// é tratado como reincidente. Regra a validar com a área técnica (ver plano, 7.2).
+const reincidenciaMinima = 2
+
+// visitasDoLocal preenche a ficha do local com o resumo dos últimos 12 meses (reincidência) e as últimas visitas.
+// Quem só vê as próprias visitas vê só o que é seu, e não recebe o resumo geral do local.
+func (h *handlers) visitasDoLocal(ctx context.Context, r *http.Request, q *sqlccliente.Queries, localID int64, form *views.LocalFormData) error {
+	agora := time.Now().In(h.fuso(r))
+	hoje := time.Date(agora.Year(), agora.Month(), agora.Day(), 0, 0, 0, 0, time.UTC)
+	somente := h.escopoVisitas(r)
+
+	rows, err := q.ListVisitasDoLocal(ctx, sqlccliente.ListVisitasDoLocalParams{LocalID: localID, SomenteAgente: somente})
+	if err != nil {
+		return err
+	}
+	tipo := h.tipoSemana(r, q)
+	for _, v := range rows {
+		semana := ""
+		if v.Data.Valid {
+			semana = textoDaSemana(v.Data.Time, tipo)
+		}
+		form.VisitasRecentes = append(form.VisitasRecentes, views.VisitaDoLocal{
+			ID: v.ID, Data: dataBR(v.Data), Semana: semana, Ciclo: v.CicloNome, Atividade: v.AtividadeSigla, Agente: v.AgenteNome,
+			Pendencia: rotuloDe(rotulosPendencia, v.Pendencia), Deposito: v.AchouDeposito, Amostra: v.ColetouAmostra, Tratamento: v.FezTratamento,
+		})
+	}
+	if somente.Valid {
+		return nil
+	}
+	res, err := q.ResumoDoLocal12Meses(ctx, sqlccliente.ResumoDoLocal12MesesParams{LocalID: localID, Hoje: pgtype.Date{Time: hoje, Valid: true}})
+	if err != nil {
+		return err
+	}
+	rc := &views.ReincidenciaLocal{
+		Visitas: int(res.Visitas), Trabalhadas: int(res.Trabalhadas), ComDeposito: int(res.ComDeposito),
+		AmostrasPositivas: int(res.AmostrasPositivas), Reincidente: res.ComDeposito >= reincidenciaMinima,
+	}
+	if res.UltimoDeposito.Valid {
+		rc.UltimoDeposito = dataBR(res.UltimoDeposito)
+	}
+	form.Reincidencia = rc
+	return nil
+}
 
 // secoesDaFicha são os espaços da ficha do local que os módulos seguintes vão preencher.
 // Cada módulo, ao ficar pronto, troca o espaço reservado pelo conteúdo real.
@@ -33,6 +80,9 @@ func (h *handlers) completarFichaDoLocal(ctx context.Context, r *http.Request, q
 			links = append(links, views.SecaoLink{Rotulo: "Registrar visita", Href: "/visitas/nova?local=" + id})
 		}
 		form.Secoes[0].Links = links
+		if err := h.visitasDoLocal(ctx, r, q, l.ID, form); err != nil {
+			return err
+		}
 	}
 	if form.PodeGrupos = pr.Pode("local_grupo_visualizar"); form.PodeGrupos {
 		do, err := q.ListGruposDoLocal(ctx, l.ID)

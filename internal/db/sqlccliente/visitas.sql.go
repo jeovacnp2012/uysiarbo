@@ -751,6 +751,71 @@ func (q *Queries) ListVisitas(ctx context.Context, arg ListVisitasParams) ([]Lis
 	return items, nil
 }
 
+const listVisitasDoLocal = `-- name: ListVisitasDoLocal :many
+SELECT v.id, v.data, v.pendencia, v.semana, v.semana_ano, c.nome AS ciclo_nome, a.sigla AS atividade_sigla, u.nome AS agente_nome,
+       v.achou_deposito, v.coletou_amostra, v.fez_tratamento
+FROM visitas v
+JOIN ciclos c ON c.id = v.ciclo_id
+JOIN atividades a ON a.id = v.atividade_id
+JOIN usuarios u ON u.id = v.agente_id
+WHERE v.local_id = $1::bigint AND v.deleted_at IS NULL AND v.ativo
+  AND ($2::bigint IS NULL OR v.agente_id = $2::bigint)
+ORDER BY v.data DESC, v.id DESC
+LIMIT 10
+`
+
+type ListVisitasDoLocalParams struct {
+	LocalID       int64       `json:"local_id"`
+	SomenteAgente pgtype.Int8 `json:"somente_agente"`
+}
+
+type ListVisitasDoLocalRow struct {
+	ID             int64       `json:"id"`
+	Data           pgtype.Date `json:"data"`
+	Pendencia      string      `json:"pendencia"`
+	Semana         pgtype.Int2 `json:"semana"`
+	SemanaAno      pgtype.Int2 `json:"semana_ano"`
+	CicloNome      string      `json:"ciclo_nome"`
+	AtividadeSigla string      `json:"atividade_sigla"`
+	AgenteNome     string      `json:"agente_nome"`
+	AchouDeposito  bool        `json:"achou_deposito"`
+	ColetouAmostra bool        `json:"coletou_amostra"`
+	FezTratamento  bool        `json:"fez_tratamento"`
+}
+
+// Ficha do local (6.5): últimas visitas e resumo dos últimos 12 meses.
+func (q *Queries) ListVisitasDoLocal(ctx context.Context, arg ListVisitasDoLocalParams) ([]ListVisitasDoLocalRow, error) {
+	rows, err := q.db.Query(ctx, listVisitasDoLocal, arg.LocalID, arg.SomenteAgente)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListVisitasDoLocalRow
+	for rows.Next() {
+		var i ListVisitasDoLocalRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Data,
+			&i.Pendencia,
+			&i.Semana,
+			&i.SemanaAno,
+			&i.CicloNome,
+			&i.AtividadeSigla,
+			&i.AgenteNome,
+			&i.AchouDeposito,
+			&i.ColetouAmostra,
+			&i.FezTratamento,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listVisitasExcluidas = `-- name: ListVisitasExcluidas :many
 SELECT v.id, ('Visita ' || v.id)::text AS rotulo, (to_char(v.data, 'DD/MM/YYYY') || ' — ' || l.endereco || ', ' || l.numero)::text AS contexto,
        v.deleted_at, COALESCE(u.nome, '')::text AS excluido_por
@@ -879,6 +944,46 @@ func (q *Queries) RestoreVisita(ctx context.Context, id int64) (int64, error) {
 		return 0, err
 	}
 	return result.RowsAffected(), nil
+}
+
+const resumoDoLocal12Meses = `-- name: ResumoDoLocal12Meses :one
+SELECT count(*)::int AS visitas,
+       count(*) FILTER (WHERE v.pendencia = 'nenhuma')::int AS trabalhadas,
+       count(*) FILTER (WHERE v.achou_deposito)::int AS com_deposito,
+       (max(v.data) FILTER (WHERE v.achou_deposito))::date AS ultimo_deposito,
+       (SELECT count(*) FROM amostras am JOIN visitas v2 ON v2.id = am.visita_id
+         WHERE v2.local_id = $1::bigint AND v2.deleted_at IS NULL AND v2.ativo AND am.deleted_at IS NULL
+           AND v2.data > $2::date - interval '12 months' AND v2.data <= $2::date
+           AND (am.total_aegypti + am.total_albopictus) > 0)::int AS amostras_positivas
+FROM visitas v
+WHERE v.local_id = $1::bigint AND v.deleted_at IS NULL AND v.ativo
+  AND v.data > $2::date - interval '12 months' AND v.data <= $2::date
+`
+
+type ResumoDoLocal12MesesParams struct {
+	LocalID int64       `json:"local_id"`
+	Hoje    pgtype.Date `json:"hoje"`
+}
+
+type ResumoDoLocal12MesesRow struct {
+	Visitas           int32       `json:"visitas"`
+	Trabalhadas       int32       `json:"trabalhadas"`
+	ComDeposito       int32       `json:"com_deposito"`
+	UltimoDeposito    pgtype.Date `json:"ultimo_deposito"`
+	AmostrasPositivas int32       `json:"amostras_positivas"`
+}
+
+func (q *Queries) ResumoDoLocal12Meses(ctx context.Context, arg ResumoDoLocal12MesesParams) (ResumoDoLocal12MesesRow, error) {
+	row := q.db.QueryRow(ctx, resumoDoLocal12Meses, arg.LocalID, arg.Hoje)
+	var i ResumoDoLocal12MesesRow
+	err := row.Scan(
+		&i.Visitas,
+		&i.Trabalhadas,
+		&i.ComDeposito,
+		&i.UltimoDeposito,
+		&i.AmostrasPositivas,
+	)
+	return i, err
 }
 
 const setVisitaAtiva = `-- name: SetVisitaAtiva :execrows

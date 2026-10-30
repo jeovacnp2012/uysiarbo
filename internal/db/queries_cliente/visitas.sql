@@ -113,6 +113,32 @@ WHERE v.deleted_at IS NULL AND (v.ativo OR sqlc.arg(ver_desativadas)::boolean)
 ORDER BY v.data DESC, v.id DESC
 LIMIT sqlc.arg(limite)::int OFFSET sqlc.arg(deslocamento)::int;
 
+-- Ficha do local (6.5): últimas visitas e resumo dos últimos 12 meses.
+-- name: ListVisitasDoLocal :many
+SELECT v.id, v.data, v.pendencia, v.semana, v.semana_ano, c.nome AS ciclo_nome, a.sigla AS atividade_sigla, u.nome AS agente_nome,
+       v.achou_deposito, v.coletou_amostra, v.fez_tratamento
+FROM visitas v
+JOIN ciclos c ON c.id = v.ciclo_id
+JOIN atividades a ON a.id = v.atividade_id
+JOIN usuarios u ON u.id = v.agente_id
+WHERE v.local_id = sqlc.arg(local_id)::bigint AND v.deleted_at IS NULL AND v.ativo
+  AND (sqlc.narg(somente_agente)::bigint IS NULL OR v.agente_id = sqlc.narg(somente_agente)::bigint)
+ORDER BY v.data DESC, v.id DESC
+LIMIT 10;
+
+-- name: ResumoDoLocal12Meses :one
+SELECT count(*)::int AS visitas,
+       count(*) FILTER (WHERE v.pendencia = 'nenhuma')::int AS trabalhadas,
+       count(*) FILTER (WHERE v.achou_deposito)::int AS com_deposito,
+       (max(v.data) FILTER (WHERE v.achou_deposito))::date AS ultimo_deposito,
+       (SELECT count(*) FROM amostras am JOIN visitas v2 ON v2.id = am.visita_id
+         WHERE v2.local_id = sqlc.arg(local_id)::bigint AND v2.deleted_at IS NULL AND v2.ativo AND am.deleted_at IS NULL
+           AND v2.data > sqlc.arg(hoje)::date - interval '12 months' AND v2.data <= sqlc.arg(hoje)::date
+           AND (am.total_aegypti + am.total_albopictus) > 0)::int AS amostras_positivas
+FROM visitas v
+WHERE v.local_id = sqlc.arg(local_id)::bigint AND v.deleted_at IS NULL AND v.ativo
+  AND v.data > sqlc.arg(hoje)::date - interval '12 months' AND v.data <= sqlc.arg(hoje)::date;
+
 -- ---------------------------------------------------------------- Fotos
 
 -- name: CreateVisitaFoto :one
