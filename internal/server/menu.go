@@ -12,6 +12,14 @@ func grupo(label, icone string, itens ...views.NavItem) (views.NavGrupo, bool) {
 	return views.NavGrupo{Label: label, Icone: icone, Itens: itens}, len(itens) > 0
 }
 
+// pontoDoMenu devolve o item se permitido, ou um item vazio (descartado pelo chamador).
+func pontoDoMenu(permitido bool, label, href string) views.NavItem {
+	if !permitido {
+		return views.NavItem{}
+	}
+	return views.NavItem{Label: label, Href: href}
+}
+
 // menu monta o menu lateral por categoria, só com o que a pessoa pode usar (o master vê tudo).
 //
 // Para acrescentar uma tela nova ao menu, ponha o item na categoria certa abaixo, com a permissão
@@ -56,7 +64,6 @@ func (s *handlers) menu(r *http.Request) []views.NavGrupo {
 		add(pode, "Bairros", "/bairros")
 		add(pode, "Cidades", "/cidades")
 		add(pr.Pode("local_visualizar"), "Locais", "/locais")
-		add(pr.Pode("reconhecimento_visualizar"), "Reconhecimento geográfico", "/reconhecimentos")
 		incluir("Território", "territorio")
 
 		if pr.Pode("bairro_visualizar") || pr.Pode("local_visualizar") {
@@ -76,12 +83,43 @@ func (s *handlers) menu(r *http.Request) []views.NavGrupo {
 			}})
 		}
 
-		if pr.Pode("resumosemanal_visualizar") {
-			menu = append(menu, views.NavGrupo{Label: "Resumo semanal", Icone: "bi", Href: "/resumosemanal"})
+		// Relatórios é um grupo, na ordem do Geo Controle; os que ainda não têm tela aparecem apagados
+		// (ao construir um, troque emBreve por rel).
+		rel := func(rotulo, slug string) views.NavItem {
+			if d, ok := definicaoPorSlug(slug); ok && pr.Pode(d.Permissao) {
+				return views.NavItem{Label: rotulo, Href: "/relatorios/" + slug}
+			}
+			return views.NavItem{}
 		}
-
-		if relatoriosPermitidos(pr.Pode) {
-			menu = append(menu, views.NavGrupo{Label: "Relatórios", Icone: "visitas", Href: "/relatorios"})
+		emBreve := func(rotulo string) views.NavItem { return views.NavItem{Label: rotulo, EmBreve: true} }
+		var relItens []views.NavItem
+		temTela := false
+		for _, it := range []views.NavItem{
+			rel("Visita", "visitas"),
+			pontoDoMenu(pr.Pode("reconhecimento_visualizar"), "Reconhecimento Geog.", "/reconhecimentos"),
+			pontoDoMenu(pr.Pode("resumosemanal_visualizar"), "Resumo Semanal", "/resumosemanal"),
+			rel("Local x Visita", "local-visita"),
+			emBreve("Entomologica / Trat."),
+			emBreve("Campanha Vacinação"),
+			rel("Acomp. de Produção", "producao"),
+			rel("Serviço Antivetorial", "antivetorial"),
+			emBreve("Locais por Criticidade"),
+			emBreve("LIRAa - Bol. de Campo"),
+			rel("Visita por Dia Trab.", "dia-trabalhado"),
+			emBreve("Investigação totais"),
+			rel("Laboratório totais", "laboratorio-total"),
+			rel("Animais", "animais"),
+			rel("Borrifação Residual Intradomiciliar (BRI)", "bri"),
+			rel("Local Incompleto", "local-incompleto"),
+		} {
+			if it.Label == "" {
+				continue
+			}
+			relItens = append(relItens, it)
+			temTela = temTela || !it.EmBreve
+		}
+		if temTela {
+			menu = append(menu, views.NavGrupo{Label: "Relatórios", Icone: "visitas", Itens: relItens})
 		}
 
 		if pr.Pode("visita_visualizar") {

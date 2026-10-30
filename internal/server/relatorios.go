@@ -153,7 +153,7 @@ func (h *handlers) relatorioGerar(w http.ResponseWriter, r *http.Request) {
 		f[c.Nome] = v
 	}
 
-	lay := h.layout(r, def.Titulo, "/relatorios")
+	lay := h.layout(r, def.Titulo, "/relatorios/"+def.Slug)
 	d := views.RelatorioTela{Slug: def.Slug, Titulo: def.Titulo, Resumo: def.Resumo}
 	if d.Campos, err = h.camposDoRelatorio(ctx, q, def, f, r); err != nil {
 		h.falhaInterna(w, r, "opções do relatório", err)
@@ -283,14 +283,4 @@ func (h *handlers) camposDoRelatorio(ctx context.Context, q *sqlccliente.Queries
 		out = append(out, campo)
 	}
 	return out, nil
-}
-
-// relatoriosPermitidos diz se a pessoa pode gerar ao menos um relatório (o item do menu só aparece então).
-func relatoriosPermitidos(pode func(string) bool) bool {
-	for _, d := range relatoriosDoSistema {
-		if pode(d.Permissao) {
-			return true
-		}
-	}
-	return false
 }

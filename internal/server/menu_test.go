@@ -33,13 +33,13 @@ func TestMenuPorCategoriaComGruposRecolhidos(t *testing.T) {
 	if len(abertos) != 0 {
 		t.Errorf("na página inicial os grupos deveriam estar recolhidos, abertos: %v", abertos)
 	}
-	if strings.Join(recolhidos, ",") != "Território,Mapa,Administração" {
-		t.Errorf("grupos recolhidos = %v, quer Território, Mapa e Administração", recolhidos)
+	if strings.Join(recolhidos, ",") != "Território,Mapa,Relatórios,Administração" {
+		t.Errorf("grupos recolhidos = %v, quer Território, Mapa, Relatórios e Administração", recolhidos)
 	}
 
 	// Numa tela de um grupo, só esse grupo abre.
 	abertos, recolhidos = gruposDoMenu(ana.get("/bairros").Body.String())
-	if strings.Join(abertos, ",") != "Território" || strings.Join(recolhidos, ",") != "Mapa,Administração" {
+	if strings.Join(abertos, ",") != "Território" || strings.Join(recolhidos, ",") != "Mapa,Relatórios,Administração" {
 		t.Errorf("em /bairros: abertos=%v recolhidos=%v", abertos, recolhidos)
 	}
 	abertos, _ = gruposDoMenu(ana.get("/usuarios").Body.String())
