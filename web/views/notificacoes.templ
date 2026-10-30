@@ -1,0 +1,472 @@
+package views
+
+import "strconv"
+
+func seloDaNotificacao(s string) string {
+	switch s {
+	case "resolvida":
+		return "selo-ok"
+	case "autuada":
+		return "selo-aviso"
+	case "cancelada":
+		return "selo-erro"
+	}
+	return ""
+}
+
+func seloDoAuto(s string) string {
+	switch s {
+	case "pago":
+		return "selo-ok"
+	case "cancelado":
+		return "selo-erro"
+	}
+	return "selo-aviso"
+}
+
+templ Notificacoes(l Layout, d NotificacoesData) {
+	@Base(l) {
+		@PageHeader("Notificações", "Avisos da vigilância ao responsável do imóvel, com prazo para resolver.") {
+			if d.PodeNova {
+				<a class="btn btn-primario" href="/notificacoes/nova" data-icone="plus">Nova notificação</a>
+			}
+		}
+		<form
+			method="get"
+			action="/notificacoes"
+			class="cartao filtros filtros-vivos"
+			autocomplete="off"
+			hx-get="/notificacoes"
+			hx-trigger="input delay:350ms, change delay:60ms, filtrar from:body"
+			hx-sync="this:replace"
+			hx-target="#notificacoes-lista"
+			hx-select="#notificacoes-lista"
+			hx-swap="outerHTML"
+			hx-push-url="true"
+			hx-indicator="#notificacoes-lista"
+		>
+			<input type="hidden" name="ordem" value={ d.Ordem }/>
+			<input type="hidden" name="dir" value={ d.Dir }/>
+			<div class="campo campo-largo">
+				<label for="f-busca">Número, motivo ou endereço</label>
+				<input id="f-busca" name="busca" type="search" value={ d.Filtro.Busca } placeholder="Buscar"/>
+			</div>
+			@campoEscolha("f-situacao", "Situação", "situacao", "Todas as situações", d.Situacoes)
+			@campoEscolha("f-vencidas", "Prazo", "vencidas", "Todas", d.Vencidas)
+			@campoEscolha("f-bairro", "Bairro", "bairro", "Todos os bairros", d.Bairros)
+			<div class="campo">
+				<label for="f-de">Data de</label>
+				<input id="f-de" name="de" type="date" value={ d.Filtro.De } class="filtro-auto"/>
+			</div>
+			<div class="campo">
+				<label for="f-ate">Data até</label>
+				<input id="f-ate" name="ate" type="date" value={ d.Filtro.Ate } class="filtro-auto"/>
+			</div>
+			<div class="form-acoes">
+				<a class="btn btn-escuro" href="/notificacoes" data-icone="undo">Limpar filtros</a>
+			</div>
+			<noscript><button type="submit" class="btn btn-primario">Filtrar</button></noscript>
+		</form>
+		<div id="notificacoes-lista" class="lista-viva">
+			<section class="cartao">
+				@Paginacao(d.Pag, "/notificacoes", d.Query)
+				<div class="tabela-wrap">
+					<table class="tabela">
+						<thead>
+							<tr>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "numero") }><a class="ordenar" href="#" data-ordenar="numero" data-dir={ proximaDir(d.Ordem, d.Dir, "numero") }>Número<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "numero") }</span></a></th>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "motivo") }><a class="ordenar" href="#" data-ordenar="motivo" data-dir={ proximaDir(d.Ordem, d.Dir, "motivo") }>Motivo<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "motivo") }</span></a></th>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "endereco") }><a class="ordenar" href="#" data-ordenar="endereco" data-dir={ proximaDir(d.Ordem, d.Dir, "endereco") }>Endereço<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "endereco") }</span></a></th>
+								<th scope="col">Bairro</th>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "data") }><a class="ordenar" href="#" data-ordenar="data" data-dir={ proximaDir(d.Ordem, d.Dir, "data") }>Data<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "data") }</span></a></th>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "prazo") }><a class="ordenar" href="#" data-ordenar="prazo" data-dir={ proximaDir(d.Ordem, d.Dir, "prazo") }>Prazo<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "prazo") }</span></a></th>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "situacao") }><a class="ordenar" href="#" data-ordenar="situacao" data-dir={ proximaDir(d.Ordem, d.Dir, "situacao") }>Situação<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "situacao") }</span></a></th>
+								<th scope="col">Auto</th>
+								<th scope="col" data-fixa><span class="sr-only">Ações</span></th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, n := range d.Linhas {
+								<tr>
+									<td data-rotulo="Número"><strong>{ n.Numero }</strong></td>
+									<td data-rotulo="Motivo" class="quebra2" title={ n.Motivo }><span class="clamp2">{ n.Motivo }</span></td>
+									<td data-rotulo="Endereço" class="quebra2" title={ n.Endereco }><span class="clamp2">{ n.Endereco }</span></td>
+									<td data-rotulo="Bairro">{ n.Bairro }</td>
+									<td data-rotulo="Data">{ n.Data }</td>
+									<td data-rotulo="Prazo">
+										{ n.Prazo }
+										if n.Vencida {
+											<span class="selo selo-erro">Vencida</span>
+										}
+									</td>
+									<td data-rotulo="Situação"><span class={ "selo", seloDaNotificacao(n.Situacao) }>{ n.SituacaoRotulo }</span></td>
+									<td data-rotulo="Auto">{ n.Auto }</td>
+									<td data-rotulo="Ações"><a class="btn" href={ templ.SafeURL("/notificacoes/" + strconv.FormatInt(n.ID, 10)) }>Abrir</a></td>
+								</tr>
+							}
+						</tbody>
+					</table>
+					if len(d.Linhas) == 0 {
+						<div class="tabela-vazia">Nenhuma notificação encontrada.</div>
+					}
+				</div>
+				@Paginacao(d.Pag, "/notificacoes", d.Query)
+			</section>
+		</div>
+	}
+}
+
+templ NotificacaoEscolher(l Layout, d NotificacaoEscolherLocal) {
+	@Base(l) {
+		@PageHeader("Nova notificação", "Primeiro escolha o local que será notificado.") {
+			<a class="btn" href="/notificacoes">Voltar</a>
+		}
+		<section class="cartao">
+			<form method="get" action="/notificacoes/nova" class="form-acoes" data-sem-gaveta>
+				<div class="campo">
+					<label for="busca-local">Buscar local (endereço, número ou bairro)</label>
+					<input id="busca-local" name="busca_local" type="search" value={ d.Busca } maxlength="100" autofocus/>
+				</div>
+				<button type="submit" class="btn" data-icone="search">Buscar</button>
+			</form>
+			if d.Buscou && len(d.Locais) == 0 {
+				<p class="subtitulo">Nenhum local encontrado.</p>
+			}
+			for _, lc := range d.Locais {
+				<p class="form-acoes">
+					<span>{ lc.Endereco } <span class="subtitulo">· { lc.Bairro }</span></span>
+					<a class="btn btn-primario" href={ templ.SafeURL("/notificacoes/nova?local=" + strconv.FormatInt(lc.ID, 10)) } data-icone="plus">Notificar este local</a>
+				</p>
+			}
+		</section>
+	}
+}
+
+templ dadosDaNotificacao(d NotificacaoFormData) {
+	<form method="post" class="cartao form-admin" data-sem-gaveta
+		if d.Novo() {
+			action="/notificacoes"
+		} else {
+			action={ templ.SafeURL("/notificacoes/" + strconv.FormatInt(d.ID, 10)) }
+		}
+	>
+		<input type="hidden" name="csrf" value={ d.CSRF }/>
+		<input type="hidden" name="local" value={ strconv.FormatInt(d.LocalID, 10) }/>
+		if d.Erro != "" {
+			<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
+		}
+		<p>Local: <a href={ templ.SafeURL("/locais/" + strconv.FormatInt(d.LocalID, 10)) }>{ d.LocalEndereco }</a></p>
+		<div class="campo">
+			<label for="motivo">Motivo</label>
+			<input id="motivo" name="motivo" type="text" value={ d.Motivo } maxlength="150" required/>
+		</div>
+		<div class="campo">
+			<label for="descricao">Descrição</label>
+			<textarea id="descricao" name="descricao" rows="4" maxlength="4000">{ d.Descricao }</textarea>
+		</div>
+		<div class="grade-form">
+			<div class="campo">
+				<label for="data">Data da notificação</label>
+				<input id="data" name="data" type="date" value={ d.Data } required/>
+			</div>
+			<div class="campo">
+				<label for="prazo">Prazo para resolver</label>
+				<input id="prazo" name="prazo" type="date" value={ d.Prazo }/>
+			</div>
+			<div class="campo">
+				<label for="visita">Visita (número, opcional)</label>
+				<input id="visita" name="visita" type="text" inputmode="numeric" maxlength="12" value={ d.Visita }/>
+			</div>
+		</div>
+		<div class="campo">
+			<label for="trecho">Enquadramento na lei (opcional)</label>
+			<select id="trecho" name="trecho">
+				<option value="">Sem enquadramento</option>
+				@opcoesDe(d.Trechos)
+			</select>
+		</div>
+		<div class="form-acoes">
+			<button type="submit" class="btn btn-primario" data-icone="save">Salvar</button>
+			<a class="btn" href="/notificacoes">Cancelar</a>
+		</div>
+	</form>
+}
+
+templ NotificacaoNova(l Layout, d NotificacaoFormData) {
+	@Base(l) {
+		@PageHeader("Nova notificação", "Informe o motivo e o prazo para o responsável resolver.") {
+			<a class="btn" href="/notificacoes/nova">Trocar o local</a>
+		}
+		@dadosDaNotificacao(d)
+	}
+}
+
+templ NotificacaoFicha(l Layout, d NotificacaoFichaData) {
+	@Base(l) {
+		@PageHeader("Notificação "+d.Numero, d.Motivo) {
+			<a class="btn" href="/notificacoes">Voltar</a>
+		}
+		@Presenca("notificacao", strconv.FormatInt(d.ID, 10), modoDaTela(d.PodeEditar))
+		if d.Aviso != "" {
+			<p class="alerta alerta-ok" role="status">{ d.Aviso }</p>
+		}
+		<section class="cartao">
+			<div class="resumo-ficha">
+				<p>
+					<span class={ "selo", seloDaNotificacao(d.Situacao) }>{ d.SituacaoRotulo }</span>
+					<span class="subtitulo">Notificada em { d.Data }</span>
+					if d.Prazo != "" {
+						<span class="subtitulo">Prazo: <strong>{ d.Prazo }</strong></span>
+					}
+					if d.Vencida {
+						<span class="selo selo-erro">Prazo vencido</span>
+					}
+				</p>
+				<p class="subtitulo">
+					Local: <a href={ templ.SafeURL("/locais/" + strconv.FormatInt(d.LocalID, 10)) }>{ d.LocalEndereco }</a>
+					if d.Bairro != "" {
+						· Bairro { d.Bairro }
+					}
+				</p>
+				if d.Trecho != "" {
+					<p class="subtitulo">Enquadramento: { d.Trecho }</p>
+				}
+				if d.VisitaID != 0 {
+					<p class="subtitulo">Visita: <a href={ templ.SafeURL("/visitas/" + strconv.FormatInt(d.VisitaID, 10)) }>nº { strconv.FormatInt(d.VisitaID, 10) }</a></p>
+				}
+				if d.Descricao != "" {
+					<p class="caso-texto">{ d.Descricao }</p>
+				}
+			</div>
+		</section>
+		if len(d.Autos) > 0 {
+			<section class="cartao" id="autos">
+				<h2 class="rel-titulo" data-ico="file">Auto de infração</h2>
+				for _, a := range d.Autos {
+					<p>
+						<a href={ templ.SafeURL("/infracoes/" + strconv.FormatInt(a.ID, 10)) }><strong>{ a.Numero }</strong></a>
+						<span class={ "selo", seloDoAuto(a.Situacao) }>{ a.Rotulo }</span>
+						<span class="subtitulo">{ a.Valor } · { a.Data }</span>
+					</p>
+				}
+			</section>
+		}
+		@FichaCaso(d.Caso)
+		if d.Caso.PodeEditar && d.Situacao == "aberta" {
+			<section class="cartao" id="fechar">
+				<h2 class="rel-titulo" data-ico="lock">Resolver ou cancelar</h2>
+				<form method="post" class="form-admin" data-sem-gaveta>
+					<input type="hidden" name="csrf" value={ d.CSRF }/>
+					<div class="campo">
+						<label for="texto-fechar">Observação (resolver) ou motivo (cancelar, obrigatório)</label>
+						<textarea id="texto-fechar" name="texto" rows="2" maxlength="2000"></textarea>
+					</div>
+					<div class="form-acoes">
+						<button type="submit" class="btn btn-sucesso" formaction={ "/notificacoes/" + strconv.FormatInt(d.ID, 10) + "/resolver" } data-icone="check">Resolver</button>
+						<button type="submit" class="btn btn-perigo" formaction={ "/notificacoes/" + strconv.FormatInt(d.ID, 10) + "/cancelar" } data-icone="x">Cancelar notificação</button>
+					</div>
+				</form>
+			</section>
+		}
+		if d.PodeEditar {
+			@dadosDaNotificacao(d.Dados)
+		}
+		if d.PodeAuto {
+			<section class="cartao" id="auto">
+				<h2 class="rel-titulo" data-ico="file">Gerar auto de infração</h2>
+				<p class="subtitulo">Use quando o prazo passou sem a solução do problema. A notificação passa a "Autuada".</p>
+				<form method="post" action={ templ.SafeURL("/notificacoes/" + strconv.FormatInt(d.ID, 10) + "/auto") } class="form-admin" data-sem-gaveta>
+					<input type="hidden" name="csrf" value={ d.CSRF }/>
+					@camposDoAuto(d.AutoForm)
+					<div class="form-acoes">
+						<button type="submit" class="btn btn-perigo" data-icone="file">Gerar auto de infração</button>
+					</div>
+				</form>
+			</section>
+		}
+	}
+}
+
+templ camposDoAuto(d AutoFormData) {
+	<div class="campo">
+		<label for="auto-descricao">Descrição da infração</label>
+		<textarea id="auto-descricao" name="descricao" rows="3" maxlength="4000" required>{ d.Descricao }</textarea>
+	</div>
+	<div class="grade-form">
+		<div class="campo">
+			<label for="auto-valor">Valor (R$)</label>
+			<input id="auto-valor" name="valor" type="text" inputmode="decimal" value={ d.Valor } placeholder="0,00"/>
+		</div>
+		<div class="campo">
+			<label for="auto-data">Data do auto</label>
+			<input id="auto-data" name="data" type="date" value={ d.Data } required/>
+		</div>
+		<div class="campo">
+			<label for="auto-venc">Vencimento</label>
+			<input id="auto-venc" name="vencimento" type="date" value={ d.Vencimento }/>
+		</div>
+	</div>
+	<div class="campo">
+		<label for="auto-trecho">Enquadramento na lei</label>
+		<select id="auto-trecho" name="trecho">
+			<option value="">Sem enquadramento</option>
+			@opcoesDe(d.Trechos)
+		</select>
+	</div>
+	if d.Erro != "" {
+		<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
+	}
+}
+
+templ Autos(l Layout, d AutosData) {
+	@Base(l) {
+		@PageHeader("Autos de infração", "Autos gerados a partir das notificações não resolvidas.")
+		<form
+			method="get"
+			action="/infracoes"
+			class="cartao filtros filtros-vivos"
+			autocomplete="off"
+			hx-get="/infracoes"
+			hx-trigger="input delay:350ms, change delay:60ms, filtrar from:body"
+			hx-sync="this:replace"
+			hx-target="#autos-lista"
+			hx-select="#autos-lista"
+			hx-swap="outerHTML"
+			hx-push-url="true"
+			hx-indicator="#autos-lista"
+		>
+			<input type="hidden" name="ordem" value={ d.Ordem }/>
+			<input type="hidden" name="dir" value={ d.Dir }/>
+			<div class="campo campo-largo">
+				<label for="f-busca">Número, descrição ou endereço</label>
+				<input id="f-busca" name="busca" type="search" value={ d.Filtro.Busca } placeholder="Buscar"/>
+			</div>
+			@campoEscolha("f-situacao", "Situação", "situacao", "Todas as situações", d.Situacoes)
+			@campoEscolha("f-vencidos", "Vencimento", "vencidos", "Todos", d.Vencidos)
+			@campoEscolha("f-bairro", "Bairro", "bairro", "Todos os bairros", d.Bairros)
+			<div class="campo">
+				<label for="f-de">Data de</label>
+				<input id="f-de" name="de" type="date" value={ d.Filtro.De } class="filtro-auto"/>
+			</div>
+			<div class="campo">
+				<label for="f-ate">Data até</label>
+				<input id="f-ate" name="ate" type="date" value={ d.Filtro.Ate } class="filtro-auto"/>
+			</div>
+			<div class="form-acoes">
+				<a class="btn btn-escuro" href="/infracoes" data-icone="undo">Limpar filtros</a>
+			</div>
+			<noscript><button type="submit" class="btn btn-primario">Filtrar</button></noscript>
+		</form>
+		<div id="autos-lista" class="lista-viva">
+			<section class="cartao">
+				@Paginacao(d.Pag, "/infracoes", d.Query)
+				<div class="tabela-wrap">
+					<table class="tabela">
+						<thead>
+							<tr>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "numero") }><a class="ordenar" href="#" data-ordenar="numero" data-dir={ proximaDir(d.Ordem, d.Dir, "numero") }>Número<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "numero") }</span></a></th>
+								<th scope="col">Notificação</th>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "endereco") }><a class="ordenar" href="#" data-ordenar="endereco" data-dir={ proximaDir(d.Ordem, d.Dir, "endereco") }>Endereço<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "endereco") }</span></a></th>
+								<th scope="col">Bairro</th>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "valor") }><a class="ordenar" href="#" data-ordenar="valor" data-dir={ proximaDir(d.Ordem, d.Dir, "valor") }>Valor<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "valor") }</span></a></th>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "data") }><a class="ordenar" href="#" data-ordenar="data" data-dir={ proximaDir(d.Ordem, d.Dir, "data") }>Data<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "data") }</span></a></th>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "vencimento") }><a class="ordenar" href="#" data-ordenar="vencimento" data-dir={ proximaDir(d.Ordem, d.Dir, "vencimento") }>Vencimento<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "vencimento") }</span></a></th>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "situacao") }><a class="ordenar" href="#" data-ordenar="situacao" data-dir={ proximaDir(d.Ordem, d.Dir, "situacao") }>Situação<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "situacao") }</span></a></th>
+								<th scope="col" data-fixa><span class="sr-only">Ações</span></th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, a := range d.Linhas {
+								<tr>
+									<td data-rotulo="Número"><strong>{ a.Numero }</strong></td>
+									<td data-rotulo="Notificação"><a href={ templ.SafeURL("/notificacoes/" + strconv.FormatInt(a.NotificacaoID, 10)) }>{ a.NotificacaoNumero }</a></td>
+									<td data-rotulo="Endereço" class="quebra2" title={ a.Endereco }><span class="clamp2">{ a.Endereco }</span></td>
+									<td data-rotulo="Bairro">{ a.Bairro }</td>
+									<td data-rotulo="Valor">{ a.Valor }</td>
+									<td data-rotulo="Data">{ a.Data }</td>
+									<td data-rotulo="Vencimento">
+										{ a.Vencimento }
+										if a.Vencido {
+											<span class="selo selo-erro">Vencido</span>
+										}
+									</td>
+									<td data-rotulo="Situação"><span class={ "selo", seloDoAuto(a.Situacao) }>{ a.SituacaoRotulo }</span></td>
+									<td data-rotulo="Ações"><a class="btn" href={ templ.SafeURL("/infracoes/" + strconv.FormatInt(a.ID, 10)) }>Abrir</a></td>
+								</tr>
+							}
+						</tbody>
+					</table>
+					if len(d.Linhas) == 0 {
+						<div class="tabela-vazia">Nenhum auto de infração encontrado.</div>
+					}
+				</div>
+				@Paginacao(d.Pag, "/infracoes", d.Query)
+			</section>
+		</div>
+	}
+}
+
+templ AutoFicha(l Layout, d AutoFichaData) {
+	@Base(l) {
+		@PageHeader("Auto de infração "+d.Numero, "Gerado a partir da notificação "+d.NotificacaoNumero) {
+			<a class="btn" href="/infracoes">Voltar</a>
+			<a class="btn" href={ templ.SafeURL("/notificacoes/" + strconv.FormatInt(d.NotificacaoID, 10)) }>Ver a notificação</a>
+		}
+		@Presenca("infracao", strconv.FormatInt(d.ID, 10), modoDaTela(d.PodeEditar))
+		if d.Aviso != "" {
+			<p class="alerta alerta-ok" role="status">{ d.Aviso }</p>
+		}
+		<section class="cartao">
+			<div class="resumo-ficha">
+				<p>
+					<span class={ "selo", seloDoAuto(d.Situacao) }>{ d.SituacaoRotulo }</span>
+					<span class="subtitulo">Valor: <strong>{ d.Valor }</strong></span>
+					<span class="subtitulo">Data: { d.Data }</span>
+					if d.Vencimento != "" {
+						<span class="subtitulo">Vencimento: <strong>{ d.Vencimento }</strong></span>
+					}
+					if d.Vencido {
+						<span class="selo selo-erro">Vencido</span>
+					}
+					if d.PagoEm != "" {
+						<span class="subtitulo">Pago em { d.PagoEm }</span>
+					}
+				</p>
+				<p class="subtitulo">Local: <a href={ templ.SafeURL("/locais/" + strconv.FormatInt(d.LocalID, 10)) }>{ d.LocalEndereco }</a></p>
+				if d.Trecho != "" {
+					<p class="subtitulo">Enquadramento: { d.Trecho }</p>
+				}
+				<p class="caso-texto">{ d.Descricao }</p>
+			</div>
+		</section>
+		@FichaCaso(d.Caso)
+		if d.Situacao != "cancelado" && d.Caso.PodeEditar {
+			<section class="cartao" id="fechar">
+				<h2 class="rel-titulo" data-ico="lock">Pagamento ou cancelamento</h2>
+				<form method="post" class="form-admin" data-sem-gaveta>
+					<input type="hidden" name="csrf" value={ d.CSRF }/>
+					<div class="campo">
+						<label for="texto-auto">Observação (pagamento) ou motivo (cancelamento, obrigatório)</label>
+						<textarea id="texto-auto" name="texto" rows="2" maxlength="2000"></textarea>
+					</div>
+					<div class="form-acoes">
+						if d.Situacao == "aberto" {
+							<button type="submit" class="btn btn-sucesso" formaction={ "/infracoes/" + strconv.FormatInt(d.ID, 10) + "/pagar" } data-icone="check">Marcar como pago hoje</button>
+						}
+						<button type="submit" class="btn btn-perigo" formaction={ "/infracoes/" + strconv.FormatInt(d.ID, 10) + "/cancelar" } data-icone="x">Cancelar auto</button>
+					</div>
+				</form>
+			</section>
+		}
+		if d.PodeEditar {
+			<form method="post" class="cartao form-admin" data-sem-gaveta action={ templ.SafeURL("/infracoes/" + strconv.FormatInt(d.ID, 10)) }>
+				<input type="hidden" name="csrf" value={ d.Dados.CSRF }/>
+				<h2 class="rel-titulo" data-ico="edit">Dados do auto</h2>
+				@camposDoAuto(d.Dados)
+				<div class="form-acoes">
+					<button type="submit" class="btn btn-primario" data-icone="save">Salvar</button>
+				</div>
+			</form>
+		}
+	}
+}

@@ -1,0 +1,164 @@
+package server
+
+import (
+	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
+	"testing"
+	"time"
+)
+
+func TestValorEmCentavosEReais(t *testing.T) {
+	casos := map[string]int64{"": 0, "0": 0, "1.234,56": 123456, "1234,5": 123450, "1234.56": 123456, "R$ 10": 1000, "0,05": 5}
+	for in, esperado := range casos {
+		if got, ok := valorEmCentavos(in); !ok || got != esperado {
+			t.Errorf("valorEmCentavos(%q) = %d, %v; esperado %d", in, got, ok, esperado)
+		}
+	}
+	for _, ruim := range []string{"abc", "1,234", "-5", "1,2,3"} {
+		if _, ok := valorEmCentavos(ruim); ok {
+			t.Errorf("valorEmCentavos(%q) deveria falhar", ruim)
+		}
+	}
+	if got := reais(123456); got != "R$ 1.234,56" {
+		t.Errorf("reais = %q", got)
+	}
+	if got := reais(5); got != "R$ 0,05" {
+		t.Errorf("reais = %q", got)
+	}
+}
+
+func TestNotificacaoEAutoDeInfracao(t *testing.T) {
+	m := novoMundo(t)
+	ana := m.comAna(t)
+	c := m.cenarioVisita(t, ana)
+	hoje := time.Now().UTC().Format("2006-01-02")
+	depois := time.Now().UTC().AddDate(0, 0, 10).Format("2006-01-02")
+	antes := time.Now().UTC().AddDate(0, 0, -10).Format("2006-01-02")
+
+	quer(t, ana.get("/notificacoes"), http.StatusOK)
+	quer(t, ana.get("/notificacoes/nova"), http.StatusOK)
+	quer(t, ana.get("/notificacoes/nova?local="+s64(c.local)), http.StatusOK)
+	quer(t, ana.get("/notificacoes/nova?local=999999"), http.StatusNotFound)
+	quer(t, ana.get("/infracoes"), http.StatusOK)
+
+	form := func(extra map[string]string) url.Values {
+		v := url.Values{"local": {s64(c.local)}, "motivo": {"Água parada no quintal"}, "data": {hoje}, "prazo": {depois}}
+		for k, x := range extra {
+			v.Set(k, x)
+		}
+		return v
+	}
+	quer(t, ana.post("/notificacoes", form(map[string]string{"motivo": " "})), http.StatusBadRequest)
+	quer(t, ana.post("/notificacoes", form(map[string]string{"prazo": antes})), http.StatusBadRequest)
+	quer(t, ana.post("/notificacoes", form(map[string]string{"visita": "999999"})), http.StatusBadRequest)
+	quer(t, ana.post("/notificacoes", form(map[string]string{"local": "999999"})), http.StatusNotFound)
+
+	rec := ana.post("/notificacoes", form(nil))
+	quer(t, rec, http.StatusSeeOther)
+	nCam := local(rec)
+	if !strings.HasPrefix(nCam, "/notificacoes/") {
+		t.Fatalf("redirecionou para %q", nCam)
+	}
+	corpo := ana.get(nCam)
+	quer(t, corpo, http.StatusOK, "NT-"+time.Now().UTC().Format("2006")+"0000001")
+	// a segunda notificação recebe o número seguinte
+	quer(t, ana.post("/notificacoes", form(nil)), http.StatusSeeOther)
+
+	// editar
+	quer(t, ana.post(nCam, form(map[string]string{"motivo": "Pneus acumulando água"})), http.StatusSeeOther)
+	quer(t, ana.post(nCam, form(map[string]string{"motivo": ""})), http.StatusBadRequest)
+
+	// auto: valor inválido volta com erro, válido cria
+	autoForm := func(extra map[string]string) url.Values {
+		v := url.Values{"descricao": {"Não sanou o problema no prazo"}, "valor": {"1.250,00"}, "data": {hoje}, "vencimento": {depois}}
+		for k, x := range extra {
+			v.Set(k, x)
+		}
+		return v
+	}
+	rec = ana.post(nCam+"/auto", autoForm(map[string]string{"valor": "abc"}))
+	if !strings.Contains(local(rec), "caso_erro=") {
+		t.Fatalf("valor inválido deveria voltar com erro: %s", local(rec))
+	}
+	rec = ana.post(nCam+"/auto", autoForm(nil))
+	quer(t, rec, http.StatusSeeOther)
+	aCam, _, _ := strings.Cut(local(rec), "?")
+	if !strings.HasPrefix(aCam, "/infracoes/") {
+		t.Fatalf("redirecionou para %q", aCam)
+	}
+	quer(t, ana.get(aCam), http.StatusOK, "INF-"+time.Now().UTC().Format("2006")+"00001", "R$ 1.250,00")
+	quer(t, ana.get("/infracoes"), http.StatusOK, "INF-")
+	quer(t, ana.get(nCam), http.StatusOK, "Autuada")
+	// segunda tentativa: a notificação já está autuada
+	rec = ana.post(nCam+"/auto", autoForm(nil))
+	if !strings.Contains(local(rec), "caso_erro=") {
+		t.Fatalf("segundo auto deveria ser recusado: %s", local(rec))
+	}
+	quer(t, ana.post(nCam+"/resolver", url.Values{}), http.StatusSeeOther)
+	if n := m.notificacaoDe(t, nCam); n != "autuada" {
+		t.Fatalf("notificação autuada não pode ser resolvida: situação = %s", n)
+	}
+
+	// editar o auto, pagar e cancelar
+	quer(t, ana.post(aCam, autoForm(map[string]string{"valor": "2.000,00"})), http.StatusSeeOther)
+	quer(t, ana.get(aCam), http.StatusOK, "R$ 2.000,00")
+	quer(t, ana.post(aCam, autoForm(map[string]string{"vencimento": antes})), http.StatusBadRequest)
+	quer(t, ana.post(aCam+"/pagar", url.Values{}), http.StatusSeeOther)
+	quer(t, ana.get(aCam), http.StatusOK, "Pago")
+	quer(t, ana.post(aCam, autoForm(nil)), http.StatusConflict)
+	rec = ana.post(aCam+"/cancelar", url.Values{"texto": {" "}})
+	if !strings.Contains(local(rec), "caso_erro=") {
+		t.Fatalf("cancelar sem motivo deveria voltar com erro: %s", local(rec))
+	}
+	quer(t, ana.post(aCam+"/cancelar", url.Values{"texto": {"Lançado por engano"}}), http.StatusSeeOther)
+	if n := m.notificacaoDe(t, nCam); n != "aberta" {
+		t.Fatalf("cancelar o auto deveria reabrir a notificação: situação = %s", n)
+	}
+
+	// com o auto cancelado, um novo auto é possível; resolver depois
+	rec = ana.post(nCam+"/auto", autoForm(nil))
+	quer(t, rec, http.StatusSeeOther)
+	a2, _, _ := strings.Cut(local(rec), "?")
+	// notificação com auto vivo não vai para a lixeira
+	rec = ana.post(nCam+"/excluir", url.Values{})
+	if strings.Contains(local(rec), "aviso=excluido") {
+		t.Fatalf("não deveria excluir com auto ativo: %s", local(rec))
+	}
+	// auto não cancelado não se exclui
+	rec = ana.post(a2+"/excluir", url.Values{})
+	if !strings.Contains(local(rec), "caso_erro=") {
+		t.Fatalf("auto aberto não deveria ser excluído: %s", local(rec))
+	}
+	quer(t, ana.post(a2+"/cancelar", url.Values{"texto": {"Duplicado"}}), http.StatusSeeOther)
+	quer(t, ana.post(a2+"/excluir", url.Values{}), http.StatusSeeOther)
+	quer(t, ana.get(a2), http.StatusNotFound)
+	quer(t, ana.post(aCam+"/excluir", url.Values{}), http.StatusSeeOther)
+	quer(t, ana.post(nCam+"/resolver", url.Values{"texto": {"Resolvido pelo morador"}}), http.StatusSeeOther)
+	if n := m.notificacaoDe(t, nCam); n != "resolvida" {
+		t.Fatalf("situação = %s", n)
+	}
+	quer(t, ana.post(nCam+"/reabrir", url.Values{}), http.StatusSeeOther)
+	quer(t, ana.post(nCam+"/cancelar", url.Values{}), http.StatusSeeOther) // sem motivo: volta com erro
+	quer(t, ana.post(nCam+"/excluir", url.Values{}), http.StatusSeeOther)
+	quer(t, ana.get(nCam), http.StatusNotFound)
+	quer(t, ana.get("/lixeira"), http.StatusOK)
+}
+
+func (m *mundo) notificacaoDe(t *testing.T, caminho string) string {
+	t.Helper()
+	id, err := parseIDDoCaminho(caminho)
+	if err != nil {
+		t.Fatal(err)
+	}
+	n, err := m.cliQ.GetNotificacaoQualquer(t.Context(), id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return n.Situacao
+}
+
+func parseIDDoCaminho(caminho string) (int64, error) {
+	return strconv.ParseInt(caminho[strings.LastIndex(caminho, "/")+1:], 10, 64)
+}

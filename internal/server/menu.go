@@ -144,6 +144,11 @@ func (s *handlers) menu(r *http.Request) []views.NavGrupo {
 			menu = append(menu, views.NavGrupo{Label: "Denúncias", Icone: "visitas", Href: "/denuncias"})
 		}
 
+		if pr.Pode("notificacao_visualizar") {
+			menu = append(menu, views.NavGrupo{Label: "Notificações", Icone: "visitas", Href: "/notificacoes"})
+			menu = append(menu, views.NavGrupo{Label: "Autos de infração", Icone: "visitas", Href: "/infracoes"})
+		}
+
 		add(pr.Pode("conf_usuario"), "Usuários", "/usuarios")
 		add(pr.Pode("conf_papel"), "Papéis", "/papeis")
 		add(pr.Pode("param_ciclo"), "Ciclos", "/ciclos")

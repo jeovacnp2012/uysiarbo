@@ -34,6 +34,8 @@ var recursosPresenca = map[string]recursoPresenca{
 	"entrevista":     {ver: "param_doenca", editar: "param_doenca", noCliente: true},
 	"investigacao":   {ver: "investigacao_visualizar", editar: "investigacao_editar", noCliente: true},
 	"denuncia":       {ver: "denuncia_visualizar", editar: "denuncia_editar", noCliente: true},
+	"notificacao":    {ver: "notificacao_visualizar", editar: "notificacao_adicionar", noCliente: true},
+	"infracao":       {ver: "notificacao_visualizar", editar: "notificacao_criarauto", noCliente: true},
 	"usuario":        {ver: "conf_usuario", editar: "conf_usuario", noCliente: true},
 	"papel":          {ver: "conf_papel", editar: "conf_papel", noCliente: true},
 }

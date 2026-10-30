@@ -105,6 +105,26 @@ type Auditorium struct {
 	Detalhes   []byte             `json:"detalhes"`
 }
 
+type AutosInfracao struct {
+	ID            int64              `json:"id"`
+	IDExterno     pgtype.Text        `json:"id_externo"`
+	Numero        string             `json:"numero"`
+	NotificacaoID int64              `json:"notificacao_id"`
+	LocalID       int64              `json:"local_id"`
+	LeiTrechoID   pgtype.Int8        `json:"lei_trecho_id"`
+	Descricao     string             `json:"descricao"`
+	ValorCentavos int64              `json:"valor_centavos"`
+	DataAuto      pgtype.Date        `json:"data_auto"`
+	Vencimento    pgtype.Date        `json:"vencimento"`
+	Situacao      string             `json:"situacao"`
+	PagoEm        pgtype.Date        `json:"pago_em"`
+	CriadoPor     pgtype.Int8        `json:"criado_por"`
+	CriadoEm      pgtype.Timestamptz `json:"criado_em"`
+	AtualizadoEm  pgtype.Timestamptz `json:"atualizado_em"`
+	DeletedAt     pgtype.Timestamptz `json:"deleted_at"`
+	DeletedBy     pgtype.Int8        `json:"deleted_by"`
+}
+
 type Bairro struct {
 	ID              int64              `json:"id"`
 	CidadeID        int64              `json:"cidade_id"`
@@ -417,6 +437,32 @@ type LocalGrupoIten struct {
 	GrupoID      int64              `json:"grupo_id"`
 	LocalID      int64              `json:"local_id"`
 	AdicionadoEm pgtype.Timestamptz `json:"adicionado_em"`
+}
+
+type Notificaco struct {
+	ID              int64              `json:"id"`
+	IDExterno       pgtype.Text        `json:"id_externo"`
+	Numero          string             `json:"numero"`
+	LocalID         int64              `json:"local_id"`
+	VisitaID        pgtype.Int8        `json:"visita_id"`
+	LeiTrechoID     pgtype.Int8        `json:"lei_trecho_id"`
+	Motivo          string             `json:"motivo"`
+	Descricao       string             `json:"descricao"`
+	DataNotificacao pgtype.Date        `json:"data_notificacao"`
+	Prazo           pgtype.Date        `json:"prazo"`
+	Situacao        string             `json:"situacao"`
+	ResolvidaEm     pgtype.Timestamptz `json:"resolvida_em"`
+	CriadoPor       pgtype.Int8        `json:"criado_por"`
+	CriadoEm        pgtype.Timestamptz `json:"criado_em"`
+	AtualizadoEm    pgtype.Timestamptz `json:"atualizado_em"`
+	DeletedAt       pgtype.Timestamptz `json:"deleted_at"`
+	DeletedBy       pgtype.Int8        `json:"deleted_by"`
+}
+
+type Numeraco struct {
+	Tipo   string `json:"tipo"`
+	Ano    int32  `json:"ano"`
+	Ultimo int32  `json:"ultimo"`
 }
 
 type Papei struct {

@@ -237,10 +237,19 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 		},
 		filhosAtivos: func(ctx context.Context, q *sqlccliente.Queries, id int64) ([]string, error) {
 			n, err := q.ContarVisitasDoLocal(ctx, id)
-			if err != nil || n.Ativas == 0 {
+			if err != nil {
 				return nil, err
 			}
-			return []string{plural(n.Ativas, "visita ativa", "visitas ativas")}, nil
+			var itens []string
+			if n.Ativas > 0 {
+				itens = append(itens, plural(n.Ativas, "visita ativa", "visitas ativas"))
+			}
+			if c, err := q.CountNotificacoesAtivasDoLocal(ctx, id); err != nil {
+				return nil, err
+			} else if c > 0 {
+				itens = append(itens, plural(c, "notificação ativa", "notificações ativas"))
+			}
+			return itens, nil
 		},
 		vinculos: func(ctx context.Context, q *sqlccliente.Queries, id int64) ([]string, error) {
 			n, err := q.ContarVinculosDoLocal(ctx, id)
@@ -252,6 +261,16 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 				return nil, err
 			} else if v.Total > 0 {
 				itens = append(itens, plural(v.Total, "visita", "visitas")+" (contando as excluídas)")
+			}
+			if c, err := q.CountNotificacoesDoLocalQualquer(ctx, id); err != nil {
+				return nil, err
+			} else if c > 0 {
+				itens = append(itens, plural(c, "notificação", "notificações")+" (contando as excluídas)")
+			}
+			if c, err := q.CountAutosDoLocalQualquer(ctx, id); err != nil {
+				return nil, err
+			} else if c > 0 {
+				itens = append(itens, plural(c, "auto de infração", "autos de infração")+" (contando os excluídos)")
 			}
 			if n.Grupos > 0 {
 				itens = append(itens, plural(n.Grupos, "grupo de locais", "grupos de locais"))
@@ -427,9 +446,27 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 			}
 			return nome, t.DeletedAt.Valid, err
 		},
-		// As visitas, notificações e autos que citam o trecho entram aqui quando as suas etapas existirem.
-		filhosAtivos: func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
-		vinculos:     func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
+		filhosAtivos: func(ctx context.Context, q *sqlccliente.Queries, id int64) ([]string, error) {
+			c, err := q.CountNotificacoesAtivasDoTrecho(ctx, pgtype.Int8{Int64: id, Valid: true})
+			if err != nil || c == 0 {
+				return nil, err
+			}
+			return []string{plural(c, "notificação ativa", "notificações ativas")}, nil
+		},
+		vinculos: func(ctx context.Context, q *sqlccliente.Queries, id int64) ([]string, error) {
+			var itens []string
+			if c, err := q.CountNotificacoesDoTrecho(ctx, pgtype.Int8{Int64: id, Valid: true}); err != nil {
+				return nil, err
+			} else if c > 0 {
+				itens = append(itens, plural(c, "notificação", "notificações")+" (contando as excluídas)")
+			}
+			if c, err := q.CountAutosDoTrecho(ctx, pgtype.Int8{Int64: id, Valid: true}); err != nil {
+				return nil, err
+			} else if c > 0 {
+				itens = append(itens, plural(c, "auto de infração", "autos de infração")+" (contando os excluídos)")
+			}
+			return itens, nil
+		},
 		paiExcluido: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, error) {
 			t, err := q.GetTrechoQualquer(ctx, id)
 			if err != nil {
@@ -533,6 +570,104 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 			out := make([]views.LixeiraLinha, len(rows))
 			for i, r := range rows {
 				out[i] = views.LixeiraLinha{ID: r.ID, Rotulo: "Denúncia " + strconv.FormatInt(r.ID, 10) + " — " + r.Titulo, Contexto: r.Tipo, Quando: r.DeletedAt.Time, Por: r.Por}
+			}
+			return out, err
+		},
+	},
+	"notificacao": {
+		Chave: "notificacao", Rotulo: "Notificação", Plural: "Notificações", Genero: "a",
+		soft: func(ctx context.Context, q *sqlccliente.Queries, id int64, por pgtype.Int8) (int64, error) {
+			return q.SoftDeleteNotificacao(ctx, sqlccliente.SoftDeleteNotificacaoParams{ID: id, Por: por})
+		},
+		restore: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			return q.RestoreNotificacao(ctx, id)
+		},
+		force: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			if err := q.ForceDeleteCasoEventos(ctx, sqlccliente.ForceDeleteCasoEventosParams{Tipo: "notificacao", CasoID: id}); err != nil {
+				return 0, err
+			}
+			if err := q.ForceDeleteCasoAnexos(ctx, sqlccliente.ForceDeleteCasoAnexosParams{Tipo: "notificacao", CasoID: id}); err != nil {
+				return 0, err
+			}
+			return q.ForceDeleteNotificacao(ctx, id)
+		},
+		rotulo: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, bool, error) {
+			n, err := q.GetNotificacaoQualquer(ctx, id)
+			return "Notificação " + n.Numero, n.DeletedAt.Valid, err
+		},
+		filhosAtivos: func(ctx context.Context, q *sqlccliente.Queries, id int64) ([]string, error) {
+			c, err := q.CountAutosVivosDaNotificacao(ctx, id)
+			if err != nil || c == 0 {
+				return nil, err
+			}
+			return []string{plural(c, "auto de infração (exclua antes os autos cancelados)", "autos de infração (exclua antes os autos cancelados)")}, nil
+		},
+		vinculos: func(ctx context.Context, q *sqlccliente.Queries, id int64) ([]string, error) {
+			c, err := q.CountAutosDaNotificacaoQualquer(ctx, id)
+			if err != nil || c == 0 {
+				return nil, err
+			}
+			return []string{plural(c, "auto de infração", "autos de infração") + " (contando os excluídos)"}, nil
+		},
+		paiExcluido: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, error) {
+			n, err := q.GetNotificacaoQualquer(ctx, id)
+			if err != nil {
+				return "", err
+			}
+			l, err := q.GetLocalQualquer(ctx, n.LocalID)
+			if err == nil && l.DeletedAt.Valid {
+				return "o local " + l.Endereco, nil
+			}
+			return "", err
+		},
+		lixeira: func(ctx context.Context, q *sqlccliente.Queries) ([]views.LixeiraLinha, error) {
+			rows, err := q.ListNotificacoesExcluidas(ctx)
+			out := make([]views.LixeiraLinha, len(rows))
+			for i, r := range rows {
+				out[i] = views.LixeiraLinha{ID: r.ID, Rotulo: "Notificação " + r.Numero, Contexto: r.Motivo, Quando: r.DeletedAt.Time, Por: r.Por}
+			}
+			return out, err
+		},
+	},
+	"infracao": {
+		Chave: "infracao", Rotulo: "Auto de infração", Plural: "Autos de infração", Genero: "o",
+		soft: func(ctx context.Context, q *sqlccliente.Queries, id int64, por pgtype.Int8) (int64, error) {
+			return q.SoftDeleteAuto(ctx, sqlccliente.SoftDeleteAutoParams{ID: id, Por: por})
+		},
+		restore: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			return q.RestoreAuto(ctx, id)
+		},
+		force: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			if err := q.ForceDeleteCasoEventos(ctx, sqlccliente.ForceDeleteCasoEventosParams{Tipo: "infracao", CasoID: id}); err != nil {
+				return 0, err
+			}
+			if err := q.ForceDeleteCasoAnexos(ctx, sqlccliente.ForceDeleteCasoAnexosParams{Tipo: "infracao", CasoID: id}); err != nil {
+				return 0, err
+			}
+			return q.ForceDeleteAuto(ctx, id)
+		},
+		rotulo: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, bool, error) {
+			a, err := q.GetAutoQualquer(ctx, id)
+			return "Auto de infração " + a.Numero, a.DeletedAt.Valid, err
+		},
+		filhosAtivos: func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
+		vinculos:     func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
+		paiExcluido: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, error) {
+			a, err := q.GetAutoQualquer(ctx, id)
+			if err != nil {
+				return "", err
+			}
+			n, err := q.GetNotificacaoQualquer(ctx, a.NotificacaoID)
+			if err == nil && n.DeletedAt.Valid {
+				return "a notificação " + n.Numero, nil
+			}
+			return "", err
+		},
+		lixeira: func(ctx context.Context, q *sqlccliente.Queries) ([]views.LixeiraLinha, error) {
+			rows, err := q.ListAutosExcluidos(ctx)
+			out := make([]views.LixeiraLinha, len(rows))
+			for i, r := range rows {
+				out[i] = views.LixeiraLinha{ID: r.ID, Rotulo: "Auto de infração " + r.Numero, Quando: r.DeletedAt.Time, Por: r.Por}
 			}
 			return out, err
 		},
@@ -710,7 +845,7 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 }
 
 // ordemDaLixeira é a ordem das abas.
-var ordemDaLixeira = []string{"local", "quarteirao", "bairro", "cidade", "ciclo", "lei", "lei_trecho", "visita", "investigacao", "denuncia", "amostra", "reconhecimento", "resumosemanal", "grupo", "mapeamento"}
+var ordemDaLixeira = []string{"local", "quarteirao", "bairro", "cidade", "ciclo", "lei", "lei_trecho", "visita", "investigacao", "denuncia", "notificacao", "infracao", "amostra", "reconhecimento", "resumosemanal", "grupo", "mapeamento"}
 
 // excluirLogicamente aplica a regra completa: recusa se há filhos ativos; senão marca deleted_at.
 // Devolve os motivos da recusa (vazio = excluído), o nome do registro e o erro de banco, se houve.

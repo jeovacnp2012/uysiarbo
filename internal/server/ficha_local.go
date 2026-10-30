@@ -84,6 +84,33 @@ func (h *handlers) completarFichaDoLocal(ctx context.Context, r *http.Request, q
 			return err
 		}
 	}
+	if pr.Pode("notificacao_visualizar") || pr.Pode("notificacao_adicionar") {
+		var links []views.SecaoLink
+		if pr.Pode("notificacao_visualizar") {
+			ns, err := q.ListNotificacoesDoLocal(ctx, l.ID)
+			if err != nil {
+				return err
+			}
+			for _, n := range ns {
+				links = append(links, views.SecaoLink{Rotulo: n.Numero + " — " + n.Motivo + " (" + rotuloDe(rotulosSituacaoNotificacao, n.Situacao) + ")", Href: "/notificacoes/" + strconv.FormatInt(n.ID, 10)})
+			}
+			as, err := q.ListAutosDoLocal(ctx, l.ID)
+			if err != nil {
+				return err
+			}
+			for _, a := range as {
+				links = append(links, views.SecaoLink{Rotulo: "Auto " + a.Numero + " — " + reais(a.ValorCentavos) + " (" + rotuloDe(rotulosSituacaoAuto, a.Situacao) + ")", Href: "/infracoes/" + strconv.FormatInt(a.ID, 10)})
+			}
+		}
+		if pr.Pode("notificacao_adicionar") {
+			links = append(links, views.SecaoLink{Rotulo: "Notificar este local", Href: "/notificacoes/nova?local=" + strconv.FormatInt(l.ID, 10)})
+		}
+		for i := range form.Secoes {
+			if form.Secoes[i].Titulo == "Infrações" {
+				form.Secoes[i].Links = links
+			}
+		}
+	}
 	if form.PodeGrupos = pr.Pode("local_grupo_visualizar"); form.PodeGrupos {
 		do, err := q.ListGruposDoLocal(ctx, l.ID)
 		if err != nil {
