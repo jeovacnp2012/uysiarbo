@@ -13,7 +13,7 @@ import (
 )
 
 // reincidenciaMinima é o número de visitas com depósito encontrado, nos últimos 12 meses, a partir do qual o local
-// é tratado como reincidente. Regra a validar com a área técnica (ver plano, 7.2).
+// é tratado como reincidente (critério confirmado pelo usuário em 2026-10-30).
 const reincidenciaMinima = 2
 
 // visitasDoLocal preenche a ficha do local com o resumo dos últimos 12 meses (reincidência) e as últimas visitas.
