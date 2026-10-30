@@ -2197,3 +2197,8 @@ select.sb-nativo {
 .abas-topo .aba:hover { background: rgba(100, 116, 139, .12); }
 .abas-topo .aba-ativa { background: #334155; color: #fff; }
 :root[data-tema="escuro"] .abas-topo .aba-ativa { background: #475569; }
+
+/* Botões da coluna Ações sempre na mesma linha (formulários de excluir ficam em linha com os demais) */
+.tabela td[data-rotulo="Ações"] { white-space: nowrap; max-width: none; overflow: visible; }
+.tabela td[data-rotulo="Ações"] > form { display: inline-block; vertical-align: middle; margin: 0 0.3rem 0 0; }
+.tabela td[data-rotulo="Ações"] > .btn { vertical-align: middle; }

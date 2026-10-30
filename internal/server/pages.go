@@ -26,10 +26,15 @@ var avisosPorCodigo = map[string]string{
 // layout monta o layout da página; no endereço de um cliente, mostra o nome dele no menu.
 func (s *handlers) layout(r *http.Request, title, active string) views.Layout {
 	nav := s.menu(r)
+	abaAtiva := active
 	active = ativoPelaURL(nav, r.URL.Path, active)
+	// As abas de Parâmetros (menos Conta Ovos, que tem menu próprio) ficam sob o item Geral do menu.
+	if (abaDeParametros[abaAtiva] || abaDeParametros[r.URL.Path]) && abaAtiva != "/parametros/contaovos" && r.URL.Path != "/parametros/contaovos" {
+		active = "/parametros/geral"
+	}
 	l := views.Layout{Title: title, Active: active, Nav: nav, CSRF: csrfToken(r.Context()), Aviso: avisosPorCodigo[r.URL.Query().Get("aviso")]}
-	if abaDeParametros[active] || abaDeParametros[r.URL.Path] {
-		l.Abas = s.abasParametros(r, active)
+	if abaDeParametros[abaAtiva] || abaDeParametros[r.URL.Path] {
+		l.Abas = s.abasParametros(r, abaAtiva)
 	}
 	if id, versao := s.ultimaVersao(r.Context()); versao != "" {
 		l.Versao = versao

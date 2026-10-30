@@ -219,9 +219,9 @@ func TestCadastroDeAnosDeSemanas(t *testing.T) {
 func TestAbasDentroDaPaginaEMenuPelaURL(t *testing.T) {
 	m := novoMundo(t)
 	ana := m.comAna(t)
-	quer(t, ana.get("/leis"), http.StatusOK, `id="aba-area"`, `hx-boost="true"`, `class="menu-subitem" href="/leis" aria-current`)
-	quer(t, ana.get("/leis/nova"), http.StatusOK, `id="aba-area"`, `class="menu-subitem" href="/leis" aria-current`)
-	quer(t, ana.get("/parametros/mobilidade"), http.StatusOK, `id="aba-area"`, `class="menu-subitem" href="/parametros/mobilidade" aria-current`)
+	quer(t, ana.get("/leis"), http.StatusOK, `id="aba-area"`, `hx-boost="true"`, `class="menu-subitem" href="/parametros/geral" aria-current`)
+	quer(t, ana.get("/leis/nova"), http.StatusOK, `id="aba-area"`, `class="menu-subitem" href="/parametros/geral" aria-current`)
+	quer(t, ana.get("/parametros/mobilidade"), http.StatusOK, `id="aba-area"`, `class="menu-subitem" href="/parametros/geral" aria-current`)
 	quer(t, ana.get("/parametros/contaovos"), http.StatusOK, `href="/parametros/contaovos" aria-current`)
 	quer(t, ana.get("/locais/novo"), http.StatusOK, `class="menu-item" href="/locais" aria-current`)
 	if strings.Contains(ana.get("/bairros").Body.String(), `id="aba-area"`) {
