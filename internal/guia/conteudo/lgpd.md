@@ -21,5 +21,8 @@ Toda vez que alguém abre a ficha de um **local, LVC, denúncia, investigação 
 ## Anonimização a pedido do titular
 Em **Configuração > Anonimização (LGPD)** (exige a permissão de exclusão definitiva) escolha o identificador da pessoa (CPF, telefone ou e-mail) e clique em **Buscar registros**. O sistema mostra quantos registros há em Locais, Denúncias, LVC, Investigações e BAAP. Informe o **motivo** (por exemplo, o número do pedido), marque a confirmação e clique em **Anonimizar**: nome, CPF, telefone, e-mail e mãe/inquilino são apagados (o paciente vira "ANONIMIZADO"); endereço, datas e resultados ficam. **Não tem volta.** A Auditoria guarda quem fez, o motivo e as quantidades, mas não o dado da pessoa.
 
+## Retenção por prazo
+Em **Configuração > Retenção de dados (LGPD)** defina, para Denúncias, Investigações e Notificações BAAP, por quantos **meses** guardar os dados pessoais depois que o caso é **encerrado ou cancelado** (0 = não apagar, é o padrão). Vencido o prazo, o sistema anonimiza o caso sozinho (a cada 6 horas), do mesmo jeito da anonimização por titular: o resto do caso permanece. A tela mostra quantos registros já passaram do prazo, e **Aplicar agora** executa na hora. A Auditoria registra cada rodada que apagou algo, com as quantidades. Não tem volta; casos em aberto nunca são mexidos.
+
 ## O que ainda não está coberto
-Telefones, nomes e e-mails ficam em texto (precisam ser pesquisados e usados nas mensagens); são protegidos pelas permissões e pelo registro de acesso. A anonimização não alcança o texto livre (observações, entrevistas) nem as mensagens já enviadas em Comunicações. Prazos de retenção ainda serão feitos.
+Telefones, nomes e e-mails ficam em texto (precisam ser pesquisados e usados nas mensagens); são protegidos pelas permissões e pelo registro de acesso. A anonimização e a retenção não alcançam o texto livre (observações, entrevistas), os dados de locais (proprietário) nem as mensagens já enviadas em Comunicações.

@@ -104,6 +104,7 @@ func New(d Deps) http.Handler {
 	}
 	if d.Fundo != nil {
 		go h.processarFilasEmSegundoPlano(d.Fundo)
+		go h.aplicarRetencaoEmSegundoPlano(d.Fundo)
 	}
 	if h.mapaTiles == "" {
 		h.mapaTiles, h.mapaCredito = "https://tile.openstreetmap.org/{z}/{x}/{y}.png", "© contribuidores do OpenStreetMap"
@@ -438,6 +439,9 @@ func New(d Deps) http.Handler {
 	r.Get("/lgpd/anonimizar", h.exigir("conf_exclusao_definitiva", h.anonimizarPagina))
 	r.Post("/lgpd/anonimizar/buscar", h.exigir("conf_exclusao_definitiva", h.anonimizarBuscar))
 	r.Post("/lgpd/anonimizar/confirmar", h.exigir("conf_exclusao_definitiva", h.anonimizarConfirmar))
+	r.Get("/lgpd/retencao", h.exigir("conf_exclusao_definitiva", h.retencaoPagina))
+	r.Post("/lgpd/retencao", h.exigir("conf_exclusao_definitiva", h.retencaoSalvar))
+	r.Post("/lgpd/retencao/executar", h.exigir("conf_exclusao_definitiva", h.retencaoExecutar))
 	r.Post("/lixeira/{tipo}/{id}/restaurar", h.exigir("conf_lixeira", h.lixeiraRestaurar))
 	r.Post("/lixeira/{tipo}/{id}/excluir-definitivo", h.exigir("conf_exclusao_definitiva", h.lixeiraExcluirDefinitivo))
 	r.Post("/cidades/{id}/excluir", h.exigir("bairro_adicionar", h.cidadeExcluir))

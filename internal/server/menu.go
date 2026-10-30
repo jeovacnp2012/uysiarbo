@@ -220,6 +220,7 @@ func (s *handlers) menu(r *http.Request) []views.NavGrupo {
 		add(pr.Pode("conf_importacao"), "Importação de dados", "/importacoes")
 		add(pr.Pode("conf_lixeira"), "Lixeira", "/lixeira")
 		add(pr.Pode("conf_exclusao_definitiva"), "Anonimização (LGPD)", "/lgpd/anonimizar")
+		add(pr.Pode("conf_exclusao_definitiva"), "Retenção de dados (LGPD)", "/lgpd/retencao")
 		add(pr.Pode("conf_api"), "API e integrações", "/parametros/api")
 		add(pr.Master, "Componentes", "/componentes")
 		incluir("Configuração", "configuracao")
