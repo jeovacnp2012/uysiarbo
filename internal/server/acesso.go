@@ -77,7 +77,7 @@ func (h *handlers) acessoPagina(w http.ResponseWriter, r *http.Request) {
 		h.falhaInterna(w, r, "montar tela", err)
 		return
 	}
-	render(w, r, views.Acesso(h.layout(r, "Controle de acesso aos locais", "/parametros/acesso"), d))
+	render(w, r, h.telaAcesso(r, d))
 }
 
 func (h *handlers) acessoMetodo(w http.ResponseWriter, r *http.Request) {
@@ -97,7 +97,7 @@ func (h *handlers) acessoMetodo(w http.ResponseWriter, r *http.Request) {
 			h.falhaInterna(w, r, "montar tela", e)
 			return
 		}
-		renderStatus(w, r, http.StatusBadRequest, views.Acesso(h.layout(r, "Controle de acesso aos locais", "/parametros/acesso"), d))
+		renderStatus(w, r, http.StatusBadRequest, h.telaAcesso(r, d))
 		return
 	}
 	antes := h.metodoDeAcesso(r, q)
@@ -142,7 +142,7 @@ func (h *handlers) acessoCriar(w http.ResponseWriter, r *http.Request) {
 			h.falhaInterna(w, r, "montar tela", e)
 			return
 		}
-		renderStatus(w, r, http.StatusBadRequest, views.Acesso(h.layout(r, "Controle de acesso aos locais", "/parametros/acesso"), d))
+		renderStatus(w, r, http.StatusBadRequest, h.telaAcesso(r, d))
 	}
 	uid, _ := strconv.ParseInt(r.PostFormValue("usuario_id"), 10, 64)
 	bid, _ := strconv.ParseInt(r.PostFormValue("bairro_id"), 10, 64)

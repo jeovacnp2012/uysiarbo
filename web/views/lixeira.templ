@@ -63,6 +63,7 @@ templ Lixeira(l Layout, d LixeiraData) {
 			}
 		</nav>
 		<section class="cartao">
+			@PaginacaoDoLayout(l)
 			<div class="tabela-wrap">
 				<table class="tabela">
 					<thead>
@@ -109,6 +110,7 @@ templ Lixeira(l Layout, d LixeiraData) {
 					<div class="tabela-vazia">Nada na lixeira neste tipo.</div>
 				}
 			</div>
+			@PaginacaoDoLayout(l)
 		</section>
 	}
 }

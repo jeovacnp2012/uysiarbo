@@ -363,7 +363,7 @@ func (h *handlers) auditoriaPagina(w http.ResponseWriter, r *http.Request) {
 		f.ate = t.AddDate(0, 0, 1) // o dia inteiro
 	}
 
-	pag := views.Pagination{Page: 1, PerPage: 30}
+	pag := paginaDe(r)
 	if n, err := strconv.Atoi(qs.Get("pagina")); err == nil && n > 1 {
 		pag.Page = n
 	}
@@ -458,7 +458,9 @@ func (h *handlers) clientesLista(w http.ResponseWriter, r *http.Request) {
 			Cidade: cidadeUF(c.Cidade, c.Uf), Fuso: c.Fuso, Criado: formatarData(h.fuso(r), c.CriadoEm.Time),
 		}
 	}
-	render(w, r, views.Clientes(h.layout(r, "Clientes", "/clientes"), views.ClientesData{Linhas: linhas, CSRF: csrfToken(r.Context())}))
+	lay := h.layout(r, "Clientes", "/clientes")
+	linhas = paginar(r, &lay, linhas)
+	render(w, r, views.Clientes(lay, views.ClientesData{Linhas: linhas, CSRF: csrfToken(r.Context())}))
 }
 
 func (h *handlers) clienteNovoForm(w http.ResponseWriter, r *http.Request) {
@@ -576,7 +578,9 @@ func (h *handlers) mastersLista(w http.ResponseWriter, r *http.Request) {
 			UltimoAcesso: formatarData(h.fuso(r), u.UltimoAcesso.Time), Eu: id == a.sess.Conta.ID,
 		}
 	}
-	render(w, r, views.Masters(h.layout(r, "Usuários da plataforma", "/plataforma/usuarios"), views.MastersData{Linhas: linhas, CSRF: csrfToken(r.Context())}))
+	lay := h.layout(r, "Usuários da plataforma", "/plataforma/usuarios")
+	linhas = paginar(r, &lay, linhas)
+	render(w, r, views.Masters(lay, views.MastersData{Linhas: linhas, CSRF: csrfToken(r.Context())}))
 }
 
 func idTexto(u pgtype.UUID) string {

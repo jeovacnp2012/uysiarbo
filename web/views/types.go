@@ -3,6 +3,7 @@ package views
 
 import (
 	"fmt"
+	"net/url"
 
 	"github.com/a-h/templ"
 )
@@ -42,10 +43,11 @@ type Layout struct {
 	Title   string
 	Active  string // Href do item de menu ativo
 	Nav     []NavGrupo
-	Console bool   // endereço do console da plataforma (sem cliente)
-	Cliente string // nome do cliente (prefeitura), quando o endereço é de um cliente
-	Usuario string // nome de quem está logado
-	CSRF    string // token CSRF, enviado nos formulários e nas chamadas HTMX
+	Console bool       // endereço do console da plataforma (sem cliente)
+	Cliente string     // nome do cliente (prefeitura), quando o endereço é de um cliente
+	Usuario string     // nome de quem está logado
+	CSRF    string     // token CSRF, enviado nos formulários e nas chamadas HTMX
+	Pag     *Paginador // paginação da listagem da tela (preenchida por paginar), se houver
 
 	Versao       string // versão atual do sistema (rodapé do menu)
 	NovidadeNova bool   // há uma versão nas Novidades que a pessoa ainda não viu
@@ -54,6 +56,17 @@ type Layout struct {
 }
 
 // Pagination descreve a paginação de uma listagem.
+// PorPaginaOpcoes são os tamanhos de página que a pessoa pode escolher em qualquer listagem (o primeiro é o padrão).
+var PorPaginaOpcoes = []int{10, 20, 30, 50, 100}
+
+// Paginador é a paginação de uma listagem carregada na memória, guardada no Layout
+// para a tabela mostrá-la em cima e embaixo.
+type Paginador struct {
+	Pagination
+	Path  string
+	Query url.Values
+}
+
 type Pagination struct {
 	Page    int
 	PerPage int

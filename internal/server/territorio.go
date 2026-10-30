@@ -65,7 +65,9 @@ func (h *handlers) cidadesLista(w http.ResponseWriter, r *http.Request) {
 	for i, c := range rows {
 		linhas[i] = views.CidadeLinha{ID: c.ID, Nome: c.Nome, UF: c.Uf, IBGE: c.Ibge, Ativo: c.Ativo, Bairros: int(c.TotalBairros)}
 	}
-	render(w, r, views.Cidades(h.layout(r, "Cidades", "/cidades"), linhas, h.principal(r).Pode("bairro_adicionar")))
+	lay := h.layout(r, "Cidades", "/cidades")
+	linhas = paginar(r, &lay, linhas)
+	render(w, r, views.Cidades(lay, linhas, h.principal(r).Pode("bairro_adicionar")))
 }
 
 func (h *handlers) cidadeNovaForm(w http.ResponseWriter, r *http.Request) {
@@ -220,7 +222,7 @@ func (h *handlers) bairrosLista(w http.ResponseWriter, r *http.Request) {
 	}
 	somente := h.somenteUsuario(r)
 
-	pag := views.Pagination{Page: 1, PerPage: 20}
+	pag := paginaDe(r)
 	if n, err := strconv.Atoi(qs.Get("pagina")); err == nil && n > 1 {
 		pag.Page = n
 	}

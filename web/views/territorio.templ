@@ -12,6 +12,7 @@ templ Cidades(l Layout, linhas []CidadeLinha, podeEditar bool) {
 			}
 		}
 		<section class="cartao">
+			@PaginacaoDoLayout(l)
 			<div class="tabela-wrap">
 				<table class="tabela">
 					<thead>
@@ -47,6 +48,7 @@ templ Cidades(l Layout, linhas []CidadeLinha, podeEditar bool) {
 					<div class="tabela-vazia">Nenhuma cidade cadastrada. Cadastre a primeira para poder criar bairros.</div>
 				}
 			</div>
+			@PaginacaoDoLayout(l)
 		</section>
 	}
 }
@@ -164,6 +166,7 @@ templ Bairros(l Layout, d BairrosData) {
 			</div>
 		</form>
 		<section class="cartao">
+			@Paginacao(d.Pag, "/bairros", d.Query)
 			<div class="tabela-wrap">
 				<table class="tabela">
 					<thead>
@@ -214,13 +217,7 @@ templ Bairros(l Layout, d BairrosData) {
 					<div class="tabela-vazia">Nenhum bairro encontrado.</div>
 				}
 			</div>
-			<div class="paginacao">
-				<span>{ d.Pag.Summary() } · página { strconv.Itoa(d.Pag.Page) } de { strconv.Itoa(d.Pag.Pages()) }</span>
-				<div class="paginacao-botoes">
-					<a class="btn" href={ templ.SafeURL(pageURL("/bairros", d.Query, d.Pag.Page-1)) } aria-disabled?={ !d.Pag.HasPrev() }>← Anterior</a>
-					<a class="btn" href={ templ.SafeURL(pageURL("/bairros", d.Query, d.Pag.Page+1)) } aria-disabled?={ !d.Pag.HasNext() }>Próxima →</a>
-				</div>
-			</div>
+			@Paginacao(d.Pag, "/bairros", d.Query)
 		</section>
 	}
 }

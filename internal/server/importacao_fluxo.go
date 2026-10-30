@@ -465,7 +465,9 @@ func (h *handlers) importacaoMapeamentos(w http.ResponseWriter, r *http.Request)
 		_ = json.Unmarshal(m.Mapa, &mapa)
 		d.Linhas = append(d.Linhas, views.ImportacaoMapeamentoLinha{ID: m.ID, Nome: m.Nome, Conector: m.Conector, Tipo: m.Tipo, Colunas: len(mapa), Quando: formatarData(loc, m.CriadoEm.Time)})
 	}
-	render(w, r, views.ImportacaoMapeamentos(h.layout(r, "Mapeamentos de colunas", "/importacoes"), d))
+	lay := h.layout(r, "Mapeamentos de colunas", "/importacoes")
+	d.Linhas = paginar(r, &lay, d.Linhas)
+	render(w, r, views.ImportacaoMapeamentos(lay, d))
 }
 
 func (h *handlers) importacaoMapeamentoExcluir(w http.ResponseWriter, r *http.Request) {

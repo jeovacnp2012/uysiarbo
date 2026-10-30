@@ -58,7 +58,9 @@ func (h *handlers) ciclosLista(w http.ResponseWriter, r *http.Request) {
 			Fechado: c.Situacao == "fechado", Publico: c.PainelPublico, Atividades: c.Atividades,
 		}
 	}
-	render(w, r, views.Ciclos(h.layout(r, "Ciclos", "/ciclos"), views.CiclosData{Linhas: linhas, PodeEditar: true, TipoSemana: tipo, RotuloSemana: rotuloDoTipoSemana(tipo), CSRF: csrfToken(r.Context())}))
+	lay := h.layout(r, "Ciclos", "/ciclos")
+	linhas = paginar(r, &lay, linhas)
+	render(w, r, views.Ciclos(lay, views.CiclosData{Linhas: linhas, PodeEditar: true, TipoSemana: tipo, RotuloSemana: rotuloDoTipoSemana(tipo), CSRF: csrfToken(r.Context())}))
 }
 
 func (h *handlers) cicloNovoForm(w http.ResponseWriter, r *http.Request) {

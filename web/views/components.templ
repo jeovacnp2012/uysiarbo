@@ -106,29 +106,44 @@ templ Table(cols []Column, rows [][]string) {
 	</div>
 }
 
-// Pager é a paginação por HTMX: troca o conteúdo de target com a página pedida, mantendo os filtros.
-templ Pager(p Pagination, basePath string, query url.Values, target string) {
+// Paginacao é a barra de paginação de toda listagem: quantos registros por página, onde está e para onde ir.
+// Aparece em cima e embaixo da tabela; mantém os filtros da URL.
+templ Paginacao(p Pagination, path string, query url.Values) {
 	<div class="paginacao">
+		<form method="get" action={ templ.SafeURL(path) } class="paginacao-tam">
+			for k, vs := range query {
+				if k != "pagina" && k != "por_pagina" {
+					for _, v := range vs {
+						<input type="hidden" name={ k } value={ v }/>
+					}
+				}
+			}
+			<label>
+				Mostrar
+				<select name="por_pagina" onchange="this.form.submit()">
+					for _, n := range PorPaginaOpcoes {
+						<option value={ strconv.Itoa(n) } selected?={ n == p.PerPage }>{ strconv.Itoa(n) }</option>
+					}
+				</select>
+				por página
+			</label>
+			<noscript><button type="submit" class="btn">Aplicar</button></noscript>
+		</form>
 		<span>{ p.Summary() } · página { strconv.Itoa(p.Page) } de { strconv.Itoa(p.Pages()) }</span>
 		<div class="paginacao-botoes">
-			<a
-				class="btn"
-				href={ templ.SafeURL(pageURL(basePath, query, p.Page-1)) }
-				hx-get={ pageURL(basePath, query, p.Page-1) }
-				hx-target={ target }
-				hx-swap="outerHTML"
-				aria-disabled?={ !p.HasPrev() }
-			>← Anterior</a>
-			<a
-				class="btn"
-				href={ templ.SafeURL(pageURL(basePath, query, p.Page+1)) }
-				hx-get={ pageURL(basePath, query, p.Page+1) }
-				hx-target={ target }
-				hx-swap="outerHTML"
-				aria-disabled?={ !p.HasNext() }
-			>Próxima →</a>
+			<a class="btn" href={ templ.SafeURL(pageURL(path, query, 1)) } aria-disabled?={ !p.HasPrev() }>« Primeira</a>
+			<a class="btn" href={ templ.SafeURL(pageURL(path, query, p.Page-1)) } aria-disabled?={ !p.HasPrev() }>← Anterior</a>
+			<a class="btn" href={ templ.SafeURL(pageURL(path, query, p.Page+1)) } aria-disabled?={ !p.HasNext() }>Próxima →</a>
+			<a class="btn" href={ templ.SafeURL(pageURL(path, query, p.Pages())) } aria-disabled?={ !p.HasNext() }>Última »</a>
 		</div>
 	</div>
+}
+
+// PaginacaoDoLayout mostra a barra da listagem carregada na memória (preenchida por paginar), se houver.
+templ PaginacaoDoLayout(l Layout) {
+	if l.Pag != nil {
+		@Paginacao(l.Pag.Pagination, l.Pag.Path, l.Pag.Query)
+	}
 }
 
 func pageURL(basePath string, query url.Values, page int) string {

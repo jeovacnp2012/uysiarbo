@@ -129,6 +129,7 @@ templ Auditoria(l Layout, d AuditoriaData) {
 			</div>
 		</form>
 		<section class="cartao">
+			@Paginacao(d.Pag, "/auditoria", d.Query)
 			<div class="tabela-wrap">
 				<table class="tabela">
 					<thead>
@@ -193,13 +194,7 @@ templ Auditoria(l Layout, d AuditoriaData) {
 					<div class="tabela-vazia">Nenhum registro encontrado para estes filtros.</div>
 				}
 			</div>
-			<div class="paginacao">
-				<span>{ d.Pag.Summary() } · página { strconv.Itoa(d.Pag.Page) } de { strconv.Itoa(d.Pag.Pages()) }</span>
-				<div class="paginacao-botoes">
-					<a class="btn" href={ templ.SafeURL(pageURL("/auditoria", d.Query, d.Pag.Page-1)) } aria-disabled?={ !d.Pag.HasPrev() }>← Anterior</a>
-					<a class="btn" href={ templ.SafeURL(pageURL("/auditoria", d.Query, d.Pag.Page+1)) } aria-disabled?={ !d.Pag.HasNext() }>Próxima →</a>
-				</div>
-			</div>
+			@Paginacao(d.Pag, "/auditoria", d.Query)
 		</section>
 	}
 }
@@ -212,6 +207,7 @@ templ Clientes(l Layout, d ClientesData) {
 			<a class="btn btn-primario" href="/clientes/novo">Novo cliente</a>
 		}
 		<section class="cartao">
+			@PaginacaoDoLayout(l)
 			<div class="tabela-wrap">
 				<table class="tabela">
 					<thead>
@@ -272,6 +268,7 @@ templ Clientes(l Layout, d ClientesData) {
 					<div class="tabela-vazia">Nenhum cliente cadastrado.</div>
 				}
 			</div>
+			@PaginacaoDoLayout(l)
 		</section>
 	}
 }
@@ -373,6 +370,7 @@ templ Masters(l Layout, d MastersData) {
 			<a class="btn btn-primario" href="/plataforma/usuarios/novo">Novo master</a>
 		}
 		<section class="cartao">
+			@PaginacaoDoLayout(l)
 			<div class="tabela-wrap">
 				<table class="tabela">
 					<thead>
@@ -424,6 +422,7 @@ templ Masters(l Layout, d MastersData) {
 					</tbody>
 				</table>
 			</div>
+			@PaginacaoDoLayout(l)
 		</section>
 	}
 }

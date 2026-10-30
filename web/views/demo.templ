@@ -54,7 +54,7 @@ templ DemoResults(f DemoFilter, rows [][]string, p Pagination) {
 			</div>
 		</form>
 		@Table([]Column{{"Bairro"}, {"Quarteirões"}, {"Situação"}}, rows)
-		@Pager(p, "/componentes/tabela", url.Values{"q": {f.Q}, "status": {f.Status}}, "#resultados")
+		@Paginacao(p, "/componentes/tabela", url.Values{"q": {f.Q}, "status": {f.Status}})
 	</div>
 }
 

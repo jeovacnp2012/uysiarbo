@@ -22,3 +22,6 @@ Mostra atalhos para as telas que você pode usar, os módulos do sistema e as ú
 
 ## Sair
 Clique em **Sair**, no canto de cima. Em computador compartilhado, sempre saia ao terminar.
+
+## Listagens e paginação
+Toda listagem mostra **10 registros por página**. Em cima e embaixo da tabela há a barra de paginação: escolha quantos registros ver por página (10, 20, 30, 50 ou 100) e use **Primeira**, **Anterior**, **Próxima** e **Última** para navegar. Os filtros que você aplicou continuam valendo ao mudar de página.

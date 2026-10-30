@@ -586,7 +586,7 @@ WHERE v.deleted_at IS NULL AND (v.ativo OR $1::boolean)
   AND ($2::bigint IS NULL OR v.local_id = $2::bigint)
   AND ($3::bigint IS NULL OR v.agente_id = $3::bigint)
 ORDER BY v.data DESC, v.id DESC
-LIMIT 200
+LIMIT 5000
 `
 
 type ListVisitasRecentesParams struct {

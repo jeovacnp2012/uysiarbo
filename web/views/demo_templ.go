@@ -184,7 +184,7 @@ func DemoResults(f DemoFilter, rows [][]string, p Pagination) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = Pager(p, "/componentes/tabela", url.Values{"q": {f.Q}, "status": {f.Status}}, "#resultados").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = Paginacao(p, "/componentes/tabela", url.Values{"q": {f.Q}, "status": {f.Status}}).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

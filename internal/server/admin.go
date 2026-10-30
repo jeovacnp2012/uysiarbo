@@ -82,7 +82,9 @@ func (h *handlers) papeisLista(w http.ResponseWriter, r *http.Request) {
 	for i, p := range rows {
 		linhas[i] = views.PapelLinha{ID: p.ID, Nome: p.Nome, Descricao: p.Descricao, Ativo: p.Ativo, Permissoes: int(p.TotalPermissoes), Usuarios: int(p.TotalUsuarios)}
 	}
-	render(w, r, views.PapeisLista(h.layout(r, "Papéis", "/papeis"), linhas))
+	lay := h.layout(r, "Papéis", "/papeis")
+	linhas = paginar(r, &lay, linhas)
+	render(w, r, views.PapeisLista(lay, linhas))
 }
 
 // blocosParaEditor monta os blocos do catálogo para o editor, marcando o que o papel já tem e
@@ -341,7 +343,9 @@ func (h *handlers) usuariosLista(w http.ResponseWriter, r *http.Request) {
 			LoginTablet: u.LoginTablet, DeveTrocar: u.DeveTrocarSenha, UltimoAcesso: formatarData(h.fuso(r), u.UltimoAcesso.Time), Eu: u.ID == eu,
 		}
 	}
-	render(w, r, views.UsuariosLista(h.layout(r, "Usuários", "/usuarios"), linhas, true))
+	lay := h.layout(r, "Usuários", "/usuarios")
+	linhas = paginar(r, &lay, linhas)
+	render(w, r, views.UsuariosLista(lay, linhas, true))
 }
 
 // opcoesDePapel lista os papéis ativos (mais o papel atual do usuário, mesmo inativo).

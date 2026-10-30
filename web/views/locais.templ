@@ -66,6 +66,7 @@ templ Locais(l Layout, d LocaisData) {
 			</div>
 		</form>
 		<section class="cartao">
+			@Paginacao(d.Pag, "/locais", d.Query)
 			<div class="tabela-wrap">
 				<table class="tabela">
 					<thead>
@@ -118,13 +119,7 @@ templ Locais(l Layout, d LocaisData) {
 					<div class="tabela-vazia">Nenhum local encontrado.</div>
 				}
 			</div>
-			<div class="paginacao">
-				<span>{ d.Pag.Summary() } · página { strconv.Itoa(d.Pag.Page) } de { strconv.Itoa(d.Pag.Pages()) }</span>
-				<div class="paginacao-botoes">
-					<a class="btn" href={ templ.SafeURL(pageURL("/locais", d.Query, d.Pag.Page-1)) } aria-disabled?={ !d.Pag.HasPrev() }>← Anterior</a>
-					<a class="btn" href={ templ.SafeURL(pageURL("/locais", d.Query, d.Pag.Page+1)) } aria-disabled?={ !d.Pag.HasNext() }>Próxima →</a>
-				</div>
-			</div>
+			@Paginacao(d.Pag, "/locais", d.Query)
 		</section>
 	}
 }

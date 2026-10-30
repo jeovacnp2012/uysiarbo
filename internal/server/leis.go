@@ -33,7 +33,9 @@ func (h *handlers) leisLista(w http.ResponseWriter, r *http.Request) {
 	for i, l := range rows {
 		linhas[i] = views.LeiLinha{ID: l.ID, Numero: l.Numero, Ano: int(l.Ano), Nome: l.Nome, Publicacao: dataBR(l.Publicacao), Ativo: l.Ativo, Trechos: int(l.TotalTrechos)}
 	}
-	render(w, r, views.Leis(h.layout(r, "Leis municipais", "/leis"), linhas))
+	lay := h.layout(r, "Leis municipais", "/leis")
+	linhas = paginar(r, &lay, linhas)
+	render(w, r, views.Leis(lay, linhas))
 }
 
 func (h *handlers) leiNovaForm(w http.ResponseWriter, r *http.Request) {

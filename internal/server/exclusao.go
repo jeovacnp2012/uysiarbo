@@ -599,7 +599,9 @@ func (h *handlers) lixeiraPagina(w http.ResponseWriter, r *http.Request) {
 		d.Linhas[i].QuandoTexto = formatarData(loc, d.Linhas[i].Quando)
 	}
 	d.Aviso = map[string]string{"restaurado": "Registro restaurado.", "definitivo": "Registro excluído definitivamente."}[r.URL.Query().Get("ok")]
-	render(w, r, views.Lixeira(h.layout(r, "Lixeira", "/lixeira"), d))
+	lay := h.layout(r, "Lixeira", "/lixeira")
+	d.Linhas = paginar(r, &lay, d.Linhas)
+	render(w, r, views.Lixeira(lay, d))
 }
 
 func (h *handlers) registroDaLixeira(w http.ResponseWriter, r *http.Request) (*tipoExcluivel, int64, string, bool, *sqlccliente.Queries, bool) {

@@ -12,6 +12,7 @@ templ Ciclos(l Layout, d CiclosData) {
 			}
 		}
 		<section class="cartao">
+			@PaginacaoDoLayout(l)
 			<div class="tabela-wrap">
 				<table class="tabela">
 					<thead>
@@ -55,6 +56,7 @@ templ Ciclos(l Layout, d CiclosData) {
 					<div class="tabela-vazia">Nenhum ciclo cadastrado. Cadastre o primeiro para registrar visitas e atividades.</div>
 				}
 			</div>
+			@PaginacaoDoLayout(l)
 		</section>
 		<form method="post" action="/ciclos/semana" class="cartao form-admin">
 			<input type="hidden" name="csrf" value={ d.CSRF }/>

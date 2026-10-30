@@ -149,7 +149,9 @@ func (h *handlers) visitasLista(w http.ResponseWriter, r *http.Request) {
 			Tratou: v.FezTratamento, Ativo: v.Ativo,
 		})
 	}
-	render(w, r, views.Visitas(h.layout(r, "Visitas", "/visitas"), d))
+	lay := h.layout(r, "Visitas", "/visitas")
+	d.Linhas = paginar(r, &lay, d.Linhas)
+	render(w, r, views.Visitas(lay, d))
 }
 
 // ------------------------------------------------------------------- Formulário

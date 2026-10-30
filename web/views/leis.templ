@@ -10,6 +10,7 @@ templ Leis(l Layout, linhas []LeiLinha) {
 			<a class="btn btn-primario" href="/leis/nova">Nova lei</a>
 		}
 		<section class="cartao">
+			@PaginacaoDoLayout(l)
 			<div class="tabela-wrap">
 				<table class="tabela">
 					<thead>
@@ -45,6 +46,7 @@ templ Leis(l Layout, linhas []LeiLinha) {
 					<div class="tabela-vazia">Nenhuma lei cadastrada.</div>
 				}
 			</div>
+			@PaginacaoDoLayout(l)
 		</section>
 	}
 }

@@ -89,6 +89,7 @@ templ ApiLista(l Layout, d ApiListaData) {
 			<p class="alerta alerta-ok" role="status">{ d.Aviso }</p>
 		}
 		<section class="cartao">
+			@PaginacaoDoLayout(l)
 			<div class="tabela-wrap">
 				<table class="tabela">
 					<thead>
@@ -128,6 +129,7 @@ templ ApiLista(l Layout, d ApiListaData) {
 					<div class="tabela-vazia">Nenhuma credencial criada.</div>
 				}
 			</div>
+			@PaginacaoDoLayout(l)
 		</section>
 	}
 }

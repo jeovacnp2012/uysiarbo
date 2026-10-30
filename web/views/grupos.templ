@@ -29,6 +29,7 @@ templ Grupos(l Layout, d GruposData) {
 			</div>
 		</form>
 		<section class="cartao">
+			@PaginacaoDoLayout(l)
 			<div class="tabela-wrap">
 				<table class="tabela">
 					<thead>
@@ -59,6 +60,7 @@ templ Grupos(l Layout, d GruposData) {
 					<div class="tabela-vazia">Nenhum grupo cadastrado.</div>
 				}
 			</div>
+			@PaginacaoDoLayout(l)
 		</section>
 	}
 }
@@ -155,6 +157,7 @@ templ GrupoForm(l Layout, d GrupoFormData) {
 			}
 			<section class="cartao" id="locais">
 				<h2>Locais do grupo <span class="selo">{ strconv.Itoa(d.Pag.Total) }</span></h2>
+				@Paginacao(d.Pag, "/grupos/" + strconv.FormatInt(d.ID, 10), d.Query)
 				<div class="tabela-wrap">
 					<table class="tabela">
 						<thead>
@@ -195,13 +198,7 @@ templ GrupoForm(l Layout, d GrupoFormData) {
 						<div class="tabela-vazia">Nenhum local neste grupo.</div>
 					}
 				</div>
-				<div class="paginacao">
-					<span>{ d.Pag.Summary() } · página { strconv.Itoa(d.Pag.Page) } de { strconv.Itoa(d.Pag.Pages()) }</span>
-					<div class="paginacao-botoes">
-						<a class="btn" href={ templ.SafeURL(pageURL("/grupos/" + strconv.FormatInt(d.ID, 10), d.Query, d.Pag.Page-1)) } aria-disabled?={ !d.Pag.HasPrev() }>← Anterior</a>
-						<a class="btn" href={ templ.SafeURL(pageURL("/grupos/" + strconv.FormatInt(d.ID, 10), d.Query, d.Pag.Page+1)) } aria-disabled?={ !d.Pag.HasNext() }>Próxima →</a>
-					</div>
-				</div>
+				@Paginacao(d.Pag, "/grupos/" + strconv.FormatInt(d.ID, 10), d.Query)
 			</section>
 			if d.PodeGerenciar {
 				<section class="cartao form-admin" id="outras-acoes">

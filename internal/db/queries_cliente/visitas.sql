@@ -51,7 +51,7 @@ WHERE v.deleted_at IS NULL AND (v.ativo OR sqlc.arg(ver_desativadas)::boolean)
   AND (sqlc.narg(local_id)::bigint IS NULL OR v.local_id = sqlc.narg(local_id)::bigint)
   AND (sqlc.narg(somente_agente)::bigint IS NULL OR v.agente_id = sqlc.narg(somente_agente)::bigint)
 ORDER BY v.data DESC, v.id DESC
-LIMIT 200;
+LIMIT 5000;
 
 -- ---------------------------------------------------------------- Fotos
 

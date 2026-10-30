@@ -85,6 +85,7 @@ templ ImportacoesLista(l Layout, d ImportacoesListaData) {
 			<p class="alerta alerta-ok" role="status">{ d.Aviso }</p>
 		}
 		<section class="cartao">
+			@PaginacaoDoLayout(l)
 			<div class="tabela-wrap">
 				<table class="tabela">
 					<thead>
@@ -114,6 +115,7 @@ templ ImportacoesLista(l Layout, d ImportacoesListaData) {
 					<div class="tabela-vazia">Nenhuma importação feita.</div>
 				}
 			</div>
+			@PaginacaoDoLayout(l)
 		</section>
 	}
 }
@@ -417,6 +419,7 @@ templ ImportacaoMapeamentos(l Layout, d ImportacaoMapeamentosData) {
 			<a class="btn" href="/importacoes/nova">Nova importação</a>
 		}
 		<section class="cartao">
+			@PaginacaoDoLayout(l)
 			<div class="tabela-wrap">
 				<table class="tabela">
 					<thead>
@@ -449,6 +452,7 @@ templ ImportacaoMapeamentos(l Layout, d ImportacaoMapeamentosData) {
 					<div class="tabela-vazia">Nenhum mapeamento salvo.</div>
 				}
 			</div>
+			@PaginacaoDoLayout(l)
 		</section>
 	}
 }
@@ -572,6 +576,7 @@ templ ImportacaoFicha(l Layout, d ImportacaoFichaData) {
 			</div>
 		</form>
 		<section class="cartao">
+			@Paginacao(d.Pag, "/importacoes/" + strconv.FormatInt(d.ID, 10), d.Query)
 			<div class="tabela-wrap">
 				<table class="tabela">
 					<thead>
@@ -607,13 +612,7 @@ templ ImportacaoFicha(l Layout, d ImportacaoFichaData) {
 					<div class="tabela-vazia">Nenhuma linha neste filtro.</div>
 				}
 			</div>
-			<div class="paginacao">
-				<span>{ d.Pag.Summary() } · página { strconv.Itoa(d.Pag.Page) } de { strconv.Itoa(d.Pag.Pages()) }</span>
-				<div class="paginacao-botoes">
-					<a class="btn" href={ templ.SafeURL(pageURL("/importacoes/" + strconv.FormatInt(d.ID, 10), d.Query, d.Pag.Page-1)) } aria-disabled?={ !d.Pag.HasPrev() }>← Anterior</a>
-					<a class="btn" href={ templ.SafeURL(pageURL("/importacoes/" + strconv.FormatInt(d.ID, 10), d.Query, d.Pag.Page+1)) } aria-disabled?={ !d.Pag.HasNext() }>Próxima →</a>
-				</div>
-			</div>
+			@Paginacao(d.Pag, "/importacoes/" + strconv.FormatInt(d.ID, 10), d.Query)
 		</section>
 	}
 }

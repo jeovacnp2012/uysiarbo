@@ -77,7 +77,9 @@ func (h *handlers) apiListaPagina(w http.ResponseWriter, r *http.Request) {
 		linhas[i] = views.ApiCredLinha{ID: c.ID, Nome: c.Nome, ClientID: c.ClientID, Escopos: len(c.Escopos), Ativa: c.Ativo, Vencida: vencida, Validade: validade, UltimoUso: uso, Chamadas: int(c.Chamadas24h)}
 	}
 	aviso := map[string]string{"ativado": "Credencial reativada.", "desativado": "Credencial desativada: os tokens emitidos deixaram de valer.", "salvo": "Credencial salva."}[r.URL.Query().Get("ok")]
-	render(w, r, views.ApiLista(h.layout(r, "API e integrações", "/parametros/api"), views.ApiListaData{Linhas: linhas, PodeEditar: true, Aviso: aviso}))
+	lay := h.layout(r, "API e integrações", "/parametros/api")
+	linhas = paginar(r, &lay, linhas)
+	render(w, r, views.ApiLista(lay, views.ApiListaData{Linhas: linhas, PodeEditar: true, Aviso: aviso}))
 }
 
 func (h *handlers) apiNovaForm(w http.ResponseWriter, r *http.Request) {

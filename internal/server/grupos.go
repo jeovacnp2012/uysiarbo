@@ -73,7 +73,9 @@ func (h *handlers) gruposLista(w http.ResponseWriter, r *http.Request) {
 	for i, g := range rows {
 		linhas[i] = views.GrupoLinha{ID: g.ID, Nome: g.Nome, Descricao: g.Descricao, Total: int(g.TotalLocais), Criado: formatarData(h.fuso(r), g.CriadoEm.Time)}
 	}
-	render(w, r, views.Grupos(h.layout(r, "Grupos de locais", "/grupos"), views.GruposData{
+	lay := h.layout(r, "Grupos de locais", "/grupos")
+	linhas = paginar(r, &lay, linhas)
+	render(w, r, views.Grupos(lay, views.GruposData{
 		Busca: busca, Linhas: linhas, PodeGerenciar: h.principal(r).Pode("local_grupo_gerenciar"),
 		Aviso: map[string]string{"excluido": "Grupo excluído."}[r.URL.Query().Get("ok")],
 	}))
@@ -84,7 +86,7 @@ func (h *handlers) gruposLista(w http.ResponseWriter, r *http.Request) {
 func (h *handlers) montarFormGrupo(ctx context.Context, r *http.Request, q *sqlccliente.Queries, g sqlccliente.LocalGrupo, nome, descricao, aviso, erro string) (views.GrupoFormData, error) {
 	d := views.GrupoFormData{
 		ID: g.ID, Nome: nome, Descricao: descricao, PodeGerenciar: h.principal(r).Pode("local_grupo_gerenciar"),
-		Aviso: aviso, Erro: erro, CSRF: csrfToken(ctx), Pag: views.Pagination{Page: 1, PerPage: 25},
+		Aviso: aviso, Erro: erro, CSRF: csrfToken(ctx), Pag: paginaDe(r),
 	}
 	if g.ID == 0 {
 		return d, nil

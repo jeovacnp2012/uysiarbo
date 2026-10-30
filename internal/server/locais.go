@@ -88,7 +88,7 @@ func (h *handlers) locaisLista(w http.ResponseWriter, r *http.Request) {
 	somente, soPE := h.escopoLocais(r)
 	verDesativados := h.principal(r).Pode("local_ver_desativados")
 
-	pag := views.Pagination{Page: 1, PerPage: 20}
+	pag := paginaDe(r)
 	if n, err := strconv.Atoi(qs.Get("pagina")); err == nil && n > 1 {
 		pag.Page = n
 	}

@@ -106,7 +106,9 @@ func (h *handlers) importacoesLista(w http.ResponseWriter, r *http.Request) {
 			Quando: formatarData(loc, x.CriadoEm.Time), Quem: x.ResponsavelNome, Total: int(x.TotalLinhas), Resumo: resumo,
 		}
 	}
-	render(w, r, views.ImportacoesLista(h.layout(r, "Importação de dados", "/importacoes"), views.ImportacoesListaData{Linhas: linhas}))
+	lay := h.layout(r, "Importação de dados", "/importacoes")
+	linhas = paginar(r, &lay, linhas)
+	render(w, r, views.ImportacoesLista(lay, views.ImportacoesListaData{Linhas: linhas}))
 }
 
 // importacaoModelo baixa o arquivo de exemplo (CSV ou Excel) de um tipo.
@@ -192,7 +194,7 @@ func (h *handlers) importacaoFicha(w http.ResponseWriter, r *http.Request) {
 	if !slicesContem([]string{"", "criar", "atualizar", "ignorar", "erro"}, d.Filtro) {
 		d.Filtro = ""
 	}
-	d.Pag = views.Pagination{Page: 1, PerPage: 50}
+	d.Pag = paginaDe(r)
 	if n, err := strconv.Atoi(r.URL.Query().Get("pagina")); err == nil && n > 1 {
 		d.Pag.Page = n
 	}
@@ -288,7 +290,7 @@ func (h *handlers) comecarImportacao(w http.ResponseWriter, r *http.Request, sta
 	falha := func(msg string) {
 		d, _ := h.fichaDaImportacao(r, q, imp)
 		d.Aviso = msg
-		d.Pag = views.Pagination{Page: 1, PerPage: 50}
+		d.Pag = paginaDe(r)
 		renderStatus(w, r, http.StatusConflict, views.ImportacaoFicha(h.layout(r, "Importação", "/importacoes"), d))
 	}
 	if imp.Status != statusEsperado {

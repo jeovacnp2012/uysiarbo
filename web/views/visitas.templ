@@ -15,6 +15,7 @@ templ Visitas(l Layout, d VisitasData) {
 			<p class="subtitulo">Mostrando as visitas do local <strong>{ d.Local }</strong>. <a href="/visitas">Ver todas</a></p>
 		}
 		<section class="cartao">
+			@PaginacaoDoLayout(l)
 			<div class="tabela-wrap">
 				<table class="tabela">
 					<thead>
@@ -59,6 +60,7 @@ templ Visitas(l Layout, d VisitasData) {
 					<div class="tabela-vazia">Nenhuma visita registrada.</div>
 				}
 			</div>
+			@PaginacaoDoLayout(l)
 		</section>
 	}
 }
