@@ -1,9 +1,9 @@
 -- ---------------------------------------------------------------- Campanha antirrábica (10.2)
 
 -- name: CreateCampanha :one
-INSERT INTO campanhas (local_id, data_hora, situacao, vac_cachorros, vac_gatos, nao_cachorros, nao_gatos, descricao, aplicador_id, criado_por)
+INSERT INTO campanhas (local_id, data_hora, situacao, vac_cachorros, vac_gatos, nao_cachorros, nao_gatos, descricao, aplicador_id, diaria_id, criado_por)
 VALUES (sqlc.arg(local_id), sqlc.arg(data_hora), sqlc.arg(situacao), sqlc.arg(vac_cachorros), sqlc.arg(vac_gatos), sqlc.arg(nao_cachorros),
-        sqlc.arg(nao_gatos), sqlc.arg(descricao), sqlc.narg(aplicador_id), sqlc.narg(criado_por))
+        sqlc.arg(nao_gatos), sqlc.arg(descricao), sqlc.narg(aplicador_id), sqlc.narg(diaria_id), sqlc.narg(criado_por))
 RETURNING *;
 
 -- name: GetCampanha :one
@@ -15,7 +15,7 @@ SELECT * FROM campanhas WHERE id = $1;
 -- name: UpdateCampanha :execrows
 UPDATE campanhas SET data_hora = sqlc.arg(data_hora), situacao = sqlc.arg(situacao), vac_cachorros = sqlc.arg(vac_cachorros),
        vac_gatos = sqlc.arg(vac_gatos), nao_cachorros = sqlc.arg(nao_cachorros), nao_gatos = sqlc.arg(nao_gatos),
-       descricao = sqlc.arg(descricao), aplicador_id = sqlc.narg(aplicador_id), atualizado_em = now()
+       descricao = sqlc.arg(descricao), aplicador_id = sqlc.narg(aplicador_id), diaria_id = sqlc.narg(diaria_id), atualizado_em = now()
 WHERE id = sqlc.arg(id) AND deleted_at IS NULL;
 
 -- name: CountCampanhas :one

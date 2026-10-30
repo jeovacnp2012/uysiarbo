@@ -697,6 +697,45 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 			return out, err
 		},
 	},
+	"diaria": {
+		Chave: "diaria", Rotulo: "Diária de trabalho", Plural: "Diárias de trabalho", Genero: "a",
+		soft: func(ctx context.Context, q *sqlccliente.Queries, id int64, por pgtype.Int8) (int64, error) {
+			return q.SoftDeleteDiaria(ctx, sqlccliente.SoftDeleteDiariaParams{ID: id, Por: por})
+		},
+		restore: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			return q.RestoreDiaria(ctx, id)
+		},
+		force: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			return q.ForceDeleteDiaria(ctx, id)
+		},
+		rotulo: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, bool, error) {
+			d, err := q.GetDiariaQualquer(ctx, id)
+			return "Diária " + strconv.FormatInt(d.ID, 10), d.DeletedAt.Valid, err
+		},
+		filhosAtivos: func(ctx context.Context, q *sqlccliente.Queries, id int64) ([]string, error) {
+			c, err := q.CountCampanhasAtivasDaDiaria(ctx, pgtype.Int8{Int64: id, Valid: true})
+			if err != nil || c == 0 {
+				return nil, err
+			}
+			return []string{plural(c, "campanha antirrábica ligada", "campanhas antirrábicas ligadas")}, nil
+		},
+		vinculos: func(ctx context.Context, q *sqlccliente.Queries, id int64) ([]string, error) {
+			c, err := q.CountCampanhasDaDiariaQualquer(ctx, pgtype.Int8{Int64: id, Valid: true})
+			if err != nil || c == 0 {
+				return nil, err
+			}
+			return []string{plural(c, "campanha antirrábica", "campanhas antirrábicas") + " (contando as excluídas)"}, nil
+		},
+		paiExcluido: func(context.Context, *sqlccliente.Queries, int64) (string, error) { return "", nil },
+		lixeira: func(ctx context.Context, q *sqlccliente.Queries) ([]views.LixeiraLinha, error) {
+			rows, err := q.ListDiariasExcluidas(ctx)
+			out := make([]views.LixeiraLinha, len(rows))
+			for i, r := range rows {
+				out[i] = views.LixeiraLinha{ID: r.ID, Rotulo: "Diária " + strconv.FormatInt(r.ID, 10), Contexto: dataBR(r.Data), Quando: r.DeletedAt.Time, Por: r.Por}
+			}
+			return out, err
+		},
+	},
 	"drone": {
 		Chave: "drone", Rotulo: "Solicitação de drone", Plural: "Solicitações de drone", Genero: "a",
 		soft: func(ctx context.Context, q *sqlccliente.Queries, id int64, por pgtype.Int8) (int64, error) {
@@ -1012,7 +1051,7 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 }
 
 // ordemDaLixeira é a ordem das abas.
-var ordemDaLixeira = []string{"local", "quarteirao", "bairro", "cidade", "ciclo", "lei", "lei_trecho", "visita", "investigacao", "denuncia", "campanha", "drone", "baap", "ovitrampa", "edl", "notificacao", "infracao", "amostra", "reconhecimento", "resumosemanal", "grupo", "mapeamento"}
+var ordemDaLixeira = []string{"local", "quarteirao", "bairro", "cidade", "ciclo", "lei", "lei_trecho", "visita", "investigacao", "denuncia", "campanha", "diaria", "drone", "baap", "ovitrampa", "edl", "notificacao", "infracao", "amostra", "reconhecimento", "resumosemanal", "grupo", "mapeamento"}
 
 // excluirLogicamente aplica a regra completa: recusa se há filhos ativos; senão marca deleted_at.
 // Devolve os motivos da recusa (vazio = excluído), o nome do registro e o erro de banco, se houve.

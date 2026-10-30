@@ -39,6 +39,8 @@ type CampanhaFormData struct {
 	Situacoes     []CidadeOpcao
 	Aplicadores   []CidadeOpcao
 	Aplicador     string
+	Diarias       []CidadeOpcao
+	Diaria        string
 	Vac, Nao      [2]string // cachorros, gatos
 	Descricao     string
 	Estoque       bool

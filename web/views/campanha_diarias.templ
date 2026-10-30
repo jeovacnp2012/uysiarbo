@@ -1,0 +1,289 @@
+package views
+
+import "strconv"
+
+templ Diarias(l Layout, d DiariasData) {
+	@Base(l) {
+		@PageHeader("Diária de trabalho", "Equipe, início e fim do trabalho, temperaturas e perdas de cada dia da campanha antirrábica.") {
+			if d.PodeNova {
+				<a class="btn btn-primario" href="/zoonose/campanha/diaria/nova" data-icone="plus">Nova diária</a>
+			}
+		}
+		<form
+			method="get"
+			action="/zoonose/campanha/diaria"
+			class="cartao filtros filtros-vivos"
+			autocomplete="off"
+			hx-get="/zoonose/campanha/diaria"
+			hx-trigger="input delay:350ms, change delay:60ms, filtrar from:body"
+			hx-sync="this:replace"
+			hx-target="#diarias-lista"
+			hx-select="#diarias-lista"
+			hx-swap="outerHTML"
+			hx-push-url="true"
+			hx-indicator="#diarias-lista"
+		>
+			<input type="hidden" name="ordem" value={ d.Ordem }/>
+			<input type="hidden" name="dir" value={ d.Dir }/>
+			@campoEscolha("f-status", "Situação", "status", "Todas as situações", d.Status)
+			@campoEscolha("f-agente", "Membro da equipe", "agente", "Todos", d.Agentes)
+			<div class="campo">
+				<label for="f-de">Data de</label>
+				<input id="f-de" name="de" type="date" value={ d.Filtro.De } class="filtro-auto"/>
+			</div>
+			<div class="campo">
+				<label for="f-ate">Data até</label>
+				<input id="f-ate" name="ate" type="date" value={ d.Filtro.Ate } class="filtro-auto"/>
+			</div>
+			<div class="form-acoes">
+				<a class="btn btn-escuro" href="/zoonose/campanha/diaria" data-icone="undo">Limpar filtros</a>
+			</div>
+			<noscript><button type="submit" class="btn btn-primario">Filtrar</button></noscript>
+		</form>
+		<div id="diarias-lista" class="lista-viva">
+			<section class="cartao">
+				@Paginacao(d.Pag, "/zoonose/campanha/diaria", d.Query)
+				<div class="tabela-wrap">
+					<table class="tabela">
+						<thead>
+							<tr>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "id") }><a class="ordenar" href="#" data-ordenar="id" data-dir={ proximaDir(d.Ordem, d.Dir, "id") }>ID<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "id") }</span></a></th>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "data") }><a class="ordenar" href="#" data-ordenar="data" data-dir={ proximaDir(d.Ordem, d.Dir, "data") }>Data<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "data") }</span></a></th>
+								<th scope="col">Situação</th>
+								<th scope="col">Equipe</th>
+								<th scope="col">Criada por</th>
+								<th scope="col" data-fixa><span class="sr-only">Ações</span></th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, x := range d.Linhas {
+								<tr>
+									<td data-rotulo="ID"><strong>{ x.IDTexto }</strong></td>
+									<td data-rotulo="Data">{ x.Data }</td>
+									<td data-rotulo="Situação">{ x.StatusRotulo }</td>
+									<td data-rotulo="Equipe" class="quebra2" title={ x.Equipe }><span class="clamp2">{ x.Equipe }</span></td>
+									<td data-rotulo="Criada por">{ x.Por }</td>
+									<td data-rotulo="Ações"><a class="btn" href={ templ.SafeURL("/zoonose/campanha/diaria/" + x.IDTexto) }>Abrir</a></td>
+								</tr>
+							}
+						</tbody>
+					</table>
+					if len(d.Linhas) == 0 {
+						<div class="tabela-vazia">Nenhuma diária encontrada.</div>
+					}
+				</div>
+				@Paginacao(d.Pag, "/zoonose/campanha/diaria", d.Query)
+			</section>
+		</div>
+	}
+}
+
+templ DiariaNova(l Layout, d DiariaNovaData) {
+	@Base(l) {
+		@PageHeader("Nova diária de trabalho", "Escolha o dia; depois monte a equipe e registre o trabalho.") {
+			<a class="btn" href="/zoonose/campanha/diaria">Voltar</a>
+		}
+		<form method="post" action="/zoonose/campanha/diaria" class="cartao form-admin" data-sem-gaveta>
+			<input type="hidden" name="csrf" value={ d.CSRF }/>
+			if d.Erro != "" {
+				<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
+			}
+			<div class="grade-form">
+				<div class="campo">
+					<label for="data">Data</label>
+					<input id="data" name="data" type="date" value={ d.Data } required/>
+				</div>
+			</div>
+			<div class="campo">
+				<label for="anotacao">Anotação</label>
+				<textarea id="anotacao" name="anotacao" rows="3" maxlength="2000">{ d.Anotacao }</textarea>
+			</div>
+			<div class="form-acoes">
+				<button type="submit" class="btn btn-primario" data-icone="save">Criar diária</button>
+				<a class="btn" href="/zoonose/campanha/diaria">Cancelar</a>
+			</div>
+		</form>
+	}
+}
+
+templ diariaAcao(d DiariaFichaData, acao, rotulo, classe, icone, confirma string) {
+	<form method="post" action={ templ.SafeURL("/zoonose/campanha/diaria/" + d.IDTexto + "/" + acao) } class="form-inline" data-sem-gaveta>
+		<input type="hidden" name="csrf" value={ d.CSRF }/>
+		if confirma != "" {
+			<button type="submit" class={ "btn " + classe } data-icone={ icone } onclick={ templ.JSFuncCall("return confirm", confirma) }>{ rotulo }</button>
+		} else {
+			<button type="submit" class={ "btn " + classe } data-icone={ icone }>{ rotulo }</button>
+		}
+	</form>
+}
+
+templ DiariaFicha(l Layout, d DiariaFichaData) {
+	@Base(l) {
+		@PageHeader("Diária "+d.IDTexto, d.Data+" · "+d.StatusRotulo) {
+			<a class="btn" href="/zoonose/campanha/diaria">Voltar</a>
+			if d.PodeRegistrar && d.Status == "aguardando" {
+				@diariaAcao(d, "iniciar", "Iniciar trabalho", "btn-primario", "play", "")
+			}
+			if d.PodeFinalizar && d.Status == "executando" {
+				@diariaAcao(d, "finalizar", "Finalizar", "btn-sucesso", "check", "")
+			}
+			if d.PodeFinalizar && d.Status == "finalizado" {
+				@diariaAcao(d, "reabrir", "Reabrir", "", "undo", "")
+			}
+			if d.PodeDesativar && d.Aberta {
+				@diariaAcao(d, "cancelar", "Cancelar diária", "", "x", "Cancelar esta diária?")
+			}
+			if d.PodeDesativar && d.Status == "cancelado" {
+				@diariaAcao(d, "reativar", "Reativar", "", "undo", "")
+			}
+		}
+		@Presenca("diaria", d.IDTexto, modoDaTela(d.PodeEditar || d.PodeRegistrar))
+		if d.Aviso != "" {
+			<p class="alerta alerta-ok" role="status">{ d.Aviso }</p>
+		}
+		if d.Erro != "" {
+			<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
+		}
+		<section class="cartao">
+			<h2>Informações gerais</h2>
+			<form method="post" action={ templ.SafeURL("/zoonose/campanha/diaria/" + d.IDTexto) } class="form-admin" data-sem-gaveta>
+				<input type="hidden" name="csrf" value={ d.CSRF }/>
+				<fieldset class="sem-borda" disabled?={ !d.PodeEditar }>
+					<div class="grade-form">
+						<div class="campo">
+							<label for="data">Data</label>
+							<input id="data" name="data" type="date" value={ d.DataISO } required/>
+						</div>
+						<div class="campo">
+							<label>Criada por</label>
+							<input type="text" value={ d.CriadoPor } disabled/>
+						</div>
+					</div>
+					<div class="campo">
+						<label for="anotacao">Anotação</label>
+						<textarea id="anotacao" name="anotacao" rows="2" maxlength="2000">{ d.Anotacao }</textarea>
+					</div>
+				</fieldset>
+				if d.PodeEditar {
+					<div class="form-acoes">
+						<button type="submit" class="btn btn-primario" data-icone="save">Salvar</button>
+					</div>
+				}
+			</form>
+		</section>
+		<section class="cartao">
+			<h2>Equipe</h2>
+			if len(d.Equipe) == 0 {
+				<p class="subtitulo">Ninguém na equipe ainda.</p>
+			}
+			for _, m := range d.Equipe {
+				<p class="form-acoes">
+					<span>{ m.Nome }
+						if m.Lider {
+							<strong> · líder</strong>
+						}
+					</span>
+					if d.PodeEditar {
+						<form method="post" action={ templ.SafeURL("/zoonose/campanha/diaria/" + d.IDTexto + "/equipe/" + strconv.FormatInt(m.ID, 10) + "/remover") } class="form-inline" data-sem-gaveta>
+							<input type="hidden" name="csrf" value={ d.CSRF }/>
+							<button type="submit" class="btn" data-icone="trash">Remover</button>
+						</form>
+					}
+				</p>
+			}
+			if d.PodeEditar {
+				<form method="post" action={ templ.SafeURL("/zoonose/campanha/diaria/" + d.IDTexto + "/equipe") } class="form-acoes" data-sem-gaveta>
+					<input type="hidden" name="csrf" value={ d.CSRF }/>
+					<div class="campo">
+						<label for="usuario">Adicionar à equipe</label>
+						<select id="usuario" name="usuario" required>
+							<option value="">—</option>
+							@opcoesDe(d.Candidatos)
+						</select>
+					</div>
+					<label class="check"><input type="checkbox" name="lider" value="1"/> Líder</label>
+					<button type="submit" class="btn btn-primario" data-icone="plus">Adicionar</button>
+				</form>
+			}
+		</section>
+		<form method="post" action={ templ.SafeURL("/zoonose/campanha/diaria/" + d.IDTexto + "/registro") } class="form-admin" data-sem-gaveta>
+			<input type="hidden" name="csrf" value={ d.CSRF }/>
+			<fieldset class="sem-borda" disabled?={ !d.PodeRegistrar }>
+				for _, g := range d.Grupos {
+					<section class="cartao">
+						<h2>{ g.Titulo }</h2>
+						<div class="grade-form">
+							for _, c := range g.Campos {
+								<div class="campo">
+									<label for={ c.Nome }>{ c.Rotulo }</label>
+									<input id={ c.Nome } name={ c.Nome } type="number" min="0" max="99999" value={ c.Valor }/>
+								</div>
+							}
+						</div>
+					</section>
+				}
+				<section class="cartao">
+					<h2>Temperaturas das vacinas (°C)</h2>
+					<div class="grade-form">
+						<div class="campo">
+							<label for="recebimento">Hora do recebimento</label>
+							<input id="recebimento" name="recebimento" type="time" value={ d.Recebimento }/>
+						</div>
+					</div>
+					<div class="tabela-wrap">
+						<table class="tabela">
+							<thead>
+								<tr><th scope="col">Horário</th><th scope="col">No estoque</th><th scope="col">Em uso</th></tr>
+							</thead>
+							<tbody>
+								for _, t := range d.Temperaturas {
+									<tr>
+										<td data-rotulo="Horário">{ t.Horario }</td>
+										<td data-rotulo="No estoque"><input name={ "estoque_" + t.Horario } type="text" inputmode="decimal" value={ t.Estoque } size="6"/></td>
+										<td data-rotulo="Em uso"><input name={ "uso_" + t.Horario } type="text" inputmode="decimal" value={ t.Uso } size="6"/></td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+				</section>
+			</fieldset>
+			if d.PodeRegistrar {
+				<div class="form-acoes">
+					<button type="submit" class="btn btn-primario" data-icone="save">Salvar registro do dia</button>
+				</div>
+			}
+		</form>
+		<section class="cartao">
+			<h2>Atendimentos da diária</h2>
+			<p class="subtitulo">Vacinados: { strconv.Itoa(d.TotalVacinados) } · Não vacinados: { strconv.Itoa(d.TotalNaoVacinados) }</p>
+			<div class="tabela-wrap">
+				<table class="tabela">
+					<thead>
+						<tr><th scope="col">Campanha</th><th scope="col">Hora</th><th scope="col">Local</th><th scope="col">Vacinados</th><th scope="col">Não vacinados</th></tr>
+					</thead>
+					<tbody>
+						for _, a := range d.Atendimentos {
+							<tr>
+								<td data-rotulo="Campanha"><a href={ templ.SafeURL("/zoonose/campanha/" + strconv.FormatInt(a.ID, 10)) }>{ strconv.FormatInt(a.ID, 10) }</a></td>
+								<td data-rotulo="Hora">{ a.Hora }</td>
+								<td data-rotulo="Local">{ a.Endereco }</td>
+								<td data-rotulo="Vacinados">{ strconv.Itoa(a.Vacinados) }</td>
+								<td data-rotulo="Não vacinados">{ strconv.Itoa(a.NaoVacinados) }</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+				if len(d.Atendimentos) == 0 {
+					<div class="tabela-vazia">Nenhum atendimento ligado a esta diária. Escolha a diária ao registrar a campanha.</div>
+				}
+			</div>
+		</section>
+		if d.PodeDesativar && d.Status != "executando" {
+			<form method="post" action={ templ.SafeURL("/zoonose/campanha/diaria/" + d.IDTexto + "/excluir") } class="form-acoes" data-sem-gaveta>
+				<input type="hidden" name="csrf" value={ d.CSRF }/>
+				<button type="submit" class="btn btn-perigo" onclick="return confirm('Enviar esta diária para a lixeira?')" data-icone="trash">Excluir diária</button>
+			</form>
+		}
+	}
+}

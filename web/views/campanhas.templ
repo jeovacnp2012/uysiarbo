@@ -136,6 +136,13 @@ templ campanhaCampos(d CampanhaFormData) {
 					@opcoesDe(d.Aplicadores)
 				</select>
 			</div>
+			<div class="campo">
+				<label for="diaria">Diária de trabalho</label>
+				<select id="diaria" name="diaria">
+					<option value="">—</option>
+					@opcoesDe(d.Diarias)
+				</select>
+			</div>
 		</div>
 		<h2>Animais vacinados</h2>
 		<div class="grade-form">

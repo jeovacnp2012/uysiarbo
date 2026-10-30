@@ -80,10 +80,10 @@ func (q *Queries) CountCampanhasDoLocalQualquer(ctx context.Context, localID int
 
 const createCampanha = `-- name: CreateCampanha :one
 
-INSERT INTO campanhas (local_id, data_hora, situacao, vac_cachorros, vac_gatos, nao_cachorros, nao_gatos, descricao, aplicador_id, criado_por)
+INSERT INTO campanhas (local_id, data_hora, situacao, vac_cachorros, vac_gatos, nao_cachorros, nao_gatos, descricao, aplicador_id, diaria_id, criado_por)
 VALUES ($1, $2, $3, $4, $5, $6,
-        $7, $8, $9, $10)
-RETURNING id, id_externo, local_id, data_hora, situacao, usar_estoque, vac_cachorros, vac_gatos, nao_cachorros, nao_gatos, descricao, aplicador_id, criado_por, criado_em, atualizado_em, deleted_at, deleted_by
+        $7, $8, $9, $10, $11)
+RETURNING id, id_externo, local_id, data_hora, situacao, usar_estoque, vac_cachorros, vac_gatos, nao_cachorros, nao_gatos, descricao, aplicador_id, criado_por, criado_em, atualizado_em, deleted_at, deleted_by, diaria_id
 `
 
 type CreateCampanhaParams struct {
@@ -96,6 +96,7 @@ type CreateCampanhaParams struct {
 	NaoGatos     int32              `json:"nao_gatos"`
 	Descricao    string             `json:"descricao"`
 	AplicadorID  pgtype.Int8        `json:"aplicador_id"`
+	DiariaID     pgtype.Int8        `json:"diaria_id"`
 	CriadoPor    pgtype.Int8        `json:"criado_por"`
 }
 
@@ -111,6 +112,7 @@ func (q *Queries) CreateCampanha(ctx context.Context, arg CreateCampanhaParams) 
 		arg.NaoGatos,
 		arg.Descricao,
 		arg.AplicadorID,
+		arg.DiariaID,
 		arg.CriadoPor,
 	)
 	var i Campanha
@@ -132,6 +134,7 @@ func (q *Queries) CreateCampanha(ctx context.Context, arg CreateCampanhaParams) 
 		&i.AtualizadoEm,
 		&i.DeletedAt,
 		&i.DeletedBy,
+		&i.DiariaID,
 	)
 	return i, err
 }
@@ -149,7 +152,7 @@ func (q *Queries) ForceDeleteCampanha(ctx context.Context, id int64) (int64, err
 }
 
 const getCampanha = `-- name: GetCampanha :one
-SELECT id, id_externo, local_id, data_hora, situacao, usar_estoque, vac_cachorros, vac_gatos, nao_cachorros, nao_gatos, descricao, aplicador_id, criado_por, criado_em, atualizado_em, deleted_at, deleted_by FROM campanhas WHERE id = $1 AND deleted_at IS NULL
+SELECT id, id_externo, local_id, data_hora, situacao, usar_estoque, vac_cachorros, vac_gatos, nao_cachorros, nao_gatos, descricao, aplicador_id, criado_por, criado_em, atualizado_em, deleted_at, deleted_by, diaria_id FROM campanhas WHERE id = $1 AND deleted_at IS NULL
 `
 
 func (q *Queries) GetCampanha(ctx context.Context, id int64) (Campanha, error) {
@@ -173,12 +176,13 @@ func (q *Queries) GetCampanha(ctx context.Context, id int64) (Campanha, error) {
 		&i.AtualizadoEm,
 		&i.DeletedAt,
 		&i.DeletedBy,
+		&i.DiariaID,
 	)
 	return i, err
 }
 
 const getCampanhaQualquer = `-- name: GetCampanhaQualquer :one
-SELECT id, id_externo, local_id, data_hora, situacao, usar_estoque, vac_cachorros, vac_gatos, nao_cachorros, nao_gatos, descricao, aplicador_id, criado_por, criado_em, atualizado_em, deleted_at, deleted_by FROM campanhas WHERE id = $1
+SELECT id, id_externo, local_id, data_hora, situacao, usar_estoque, vac_cachorros, vac_gatos, nao_cachorros, nao_gatos, descricao, aplicador_id, criado_por, criado_em, atualizado_em, deleted_at, deleted_by, diaria_id FROM campanhas WHERE id = $1
 `
 
 func (q *Queries) GetCampanhaQualquer(ctx context.Context, id int64) (Campanha, error) {
@@ -202,6 +206,7 @@ func (q *Queries) GetCampanhaQualquer(ctx context.Context, id int64) (Campanha, 
 		&i.AtualizadoEm,
 		&i.DeletedAt,
 		&i.DeletedBy,
+		&i.DiariaID,
 	)
 	return i, err
 }
@@ -429,8 +434,8 @@ func (q *Queries) SoftDeleteCampanha(ctx context.Context, arg SoftDeleteCampanha
 const updateCampanha = `-- name: UpdateCampanha :execrows
 UPDATE campanhas SET data_hora = $1, situacao = $2, vac_cachorros = $3,
        vac_gatos = $4, nao_cachorros = $5, nao_gatos = $6,
-       descricao = $7, aplicador_id = $8, atualizado_em = now()
-WHERE id = $9 AND deleted_at IS NULL
+       descricao = $7, aplicador_id = $8, diaria_id = $9, atualizado_em = now()
+WHERE id = $10 AND deleted_at IS NULL
 `
 
 type UpdateCampanhaParams struct {
@@ -442,6 +447,7 @@ type UpdateCampanhaParams struct {
 	NaoGatos     int32              `json:"nao_gatos"`
 	Descricao    string             `json:"descricao"`
 	AplicadorID  pgtype.Int8        `json:"aplicador_id"`
+	DiariaID     pgtype.Int8        `json:"diaria_id"`
 	ID           int64              `json:"id"`
 }
 
@@ -455,6 +461,7 @@ func (q *Queries) UpdateCampanha(ctx context.Context, arg UpdateCampanhaParams) 
 		arg.NaoGatos,
 		arg.Descricao,
 		arg.AplicadorID,
+		arg.DiariaID,
 		arg.ID,
 	)
 	if err != nil {

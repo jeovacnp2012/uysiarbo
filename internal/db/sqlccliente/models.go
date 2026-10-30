@@ -241,6 +241,42 @@ type Campanha struct {
 	AtualizadoEm pgtype.Timestamptz `json:"atualizado_em"`
 	DeletedAt    pgtype.Timestamptz `json:"deleted_at"`
 	DeletedBy    pgtype.Int8        `json:"deleted_by"`
+	DiariaID     pgtype.Int8        `json:"diaria_id"`
+}
+
+type CampanhaDiaria struct {
+	ID                     int64              `json:"id"`
+	IDExterno              pgtype.Text        `json:"id_externo"`
+	Data                   pgtype.Date        `json:"data"`
+	Anotacao               string             `json:"anotacao"`
+	Status                 string             `json:"status"`
+	IniSeringas            int32              `json:"ini_seringas"`
+	IniFrascosFechados     int32              `json:"ini_frascos_fechados"`
+	IniFrascosAbertos      int32              `json:"ini_frascos_abertos"`
+	IniDoses               int32              `json:"ini_doses"`
+	FimSeringasUsadas      int32              `json:"fim_seringas_usadas"`
+	FimSeringasPerdidas    int32              `json:"fim_seringas_perdidas"`
+	FimSeringasDefeito     int32              `json:"fim_seringas_defeito"`
+	FimFrascosVazios       int32              `json:"fim_frascos_vazios"`
+	FimFrascosCheios       int32              `json:"fim_frascos_cheios"`
+	FimFrascosAbertos      int32              `json:"fim_frascos_abertos"`
+	FimVacinasPerdidas     int32              `json:"fim_vacinas_perdidas"`
+	DefSeringasDefeito     int32              `json:"def_seringas_defeito"`
+	DefSeringasDescartadas int32              `json:"def_seringas_descartadas"`
+	DefVacinasDescartadas  int32              `json:"def_vacinas_descartadas"`
+	DefVacinasPerdidas     int32              `json:"def_vacinas_perdidas"`
+	Temperaturas           []byte             `json:"temperaturas"`
+	CriadoPor              pgtype.Int8        `json:"criado_por"`
+	CriadoEm               pgtype.Timestamptz `json:"criado_em"`
+	AtualizadoEm           pgtype.Timestamptz `json:"atualizado_em"`
+	DeletedAt              pgtype.Timestamptz `json:"deleted_at"`
+	DeletedBy              pgtype.Int8        `json:"deleted_by"`
+}
+
+type CampanhaDiariaEquipe struct {
+	DiariaID  int64 `json:"diaria_id"`
+	UsuarioID int64 `json:"usuario_id"`
+	Lider     bool  `json:"lider"`
 }
 
 type CasoAnexo struct {

@@ -127,6 +127,12 @@ func (h *handlers) campanhaForm(r *http.Request, q *sqlccliente.Queries, l sqlcc
 		Aplicador: strconv.FormatInt(meuID(r), 10), PodeEditar: h.principal(r).Pode("campanha_adicionar"),
 		Vac: [2]string{"0", "0"}, Nao: [2]string{"0", "0"},
 	}
+	d.Diaria = strings.TrimSpace(r.FormValue("diaria"))
+	diarias, err := h.opcoesDeDiarias(r, q, idOpcional(d.Diaria))
+	if err != nil {
+		return d, err
+	}
+	d.Diarias = diarias
 	us, err := q.ListUsuariosAtivosParaResponsavel(r.Context())
 	if err != nil {
 		return d, err
@@ -178,13 +184,14 @@ func (h *handlers) campanhaNova(w http.ResponseWriter, r *http.Request) {
 }
 
 // lerCampanha valida o formulário; devolve os parâmetros comuns à criação e à edição.
-func (h *handlers) lerCampanha(r *http.Request, d *views.CampanhaFormData) (data time.Time, sit string, vac, nao [2]int32, aplic pgtype.Int8) {
+func (h *handlers) lerCampanha(r *http.Request, d *views.CampanhaFormData) (data time.Time, sit string, vac, nao [2]int32, aplic, diaria pgtype.Int8) {
 	loc := h.fuso(r)
 	d.Data = strings.TrimSpace(r.PostFormValue("data"))
 	sit = r.PostFormValue("situacao")
 	d.Situacoes = marcarOpcao(rotulosSituacaoCampanha, sit)
 	d.Descricao = strings.TrimSpace(r.PostFormValue("descricao"))
 	d.Aplicador = strings.TrimSpace(r.PostFormValue("aplicador"))
+	d.Diaria = strings.TrimSpace(r.PostFormValue("diaria"))
 	d.Vac = [2]string{r.PostFormValue("vac_cachorros"), r.PostFormValue("vac_gatos")}
 	d.Nao = [2]string{r.PostFormValue("nao_cachorros"), r.PostFormValue("nao_gatos")}
 	var ok bool
@@ -213,6 +220,7 @@ func (h *handlers) lerCampanha(r *http.Request, d *views.CampanhaFormData) (data
 		d.Erro = "A anotação passa de 2000 caracteres."
 	}
 	aplic = idOpcional(d.Aplicador)
+	diaria = idOpcional(d.Diaria)
 	return
 }
 
@@ -236,7 +244,7 @@ func (h *handlers) campanhaCriar(w http.ResponseWriter, r *http.Request) {
 		h.falhaInterna(w, r, "montar formulário da campanha", err)
 		return
 	}
-	data, sit, vac, nao, aplic := h.lerCampanha(r, &d)
+	data, sit, vac, nao, aplic, diaria := h.lerCampanha(r, &d)
 	if d.Erro != "" {
 		renderStatus(w, r, http.StatusBadRequest, views.CampanhaNova(h.layout(r, "Nova campanha de vacinação", "/zoonose/campanha"), d))
 		return
@@ -244,7 +252,7 @@ func (h *handlers) campanhaCriar(w http.ResponseWriter, r *http.Request) {
 	c, err := q.CreateCampanha(r.Context(), sqlccliente.CreateCampanhaParams{
 		LocalID: l.ID, DataHora: pgtype.Timestamptz{Time: data, Valid: true}, Situacao: sit,
 		VacCachorros: vac[0], VacGatos: vac[1], NaoCachorros: nao[0], NaoGatos: nao[1], Descricao: d.Descricao,
-		AplicadorID: aplic, CriadoPor: pgtype.Int8{Int64: meuID(r), Valid: meuID(r) != 0},
+		AplicadorID: aplic, DiariaID: diaria, CriadoPor: pgtype.Int8{Int64: meuID(r), Valid: meuID(r) != 0},
 	})
 	if err != nil {
 		h.falhaInterna(w, r, "criar campanha", err)
@@ -305,6 +313,14 @@ func (h *handlers) campanhaFicha(w http.ResponseWriter, r *http.Request) {
 	d.Situacoes = marcarOpcao(rotulosSituacaoCampanha, c.Situacao)
 	d.Descricao = c.Descricao
 	d.Aplicador = strconv.FormatInt(c.AplicadorID.Int64, 10)
+	if d.Diarias, err = h.opcoesDeDiarias(r, q, c.DiariaID); err != nil {
+		h.falhaInterna(w, r, "listar diárias", err)
+		return
+	}
+	d.Diaria = ""
+	if c.DiariaID.Valid {
+		d.Diaria = strconv.FormatInt(c.DiariaID.Int64, 10)
+	}
 	if !c.AplicadorID.Valid {
 		d.Aplicador = ""
 	}
@@ -344,14 +360,14 @@ func (h *handlers) campanhaSalvar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	d.ID, d.PodeEditar, d.Estoque = c.ID, true, c.UsarEstoque
-	data, sit, vac, nao, aplic := h.lerCampanha(r, &d)
+	data, sit, vac, nao, aplic, diaria := h.lerCampanha(r, &d)
 	if d.Erro != "" {
 		renderStatus(w, r, http.StatusBadRequest, views.CampanhaFicha(h.layout(r, "Campanha "+strconv.FormatInt(c.ID, 10), "/zoonose/campanha"), d))
 		return
 	}
 	if _, err := q.UpdateCampanha(r.Context(), sqlccliente.UpdateCampanhaParams{
 		ID: c.ID, DataHora: pgtype.Timestamptz{Time: data, Valid: true}, Situacao: sit, VacCachorros: vac[0], VacGatos: vac[1],
-		NaoCachorros: nao[0], NaoGatos: nao[1], Descricao: d.Descricao, AplicadorID: aplic,
+		NaoCachorros: nao[0], NaoGatos: nao[1], Descricao: d.Descricao, AplicadorID: aplic, DiariaID: diaria,
 	}); err != nil {
 		h.falhaInterna(w, r, "salvar campanha", err)
 		return
@@ -373,4 +389,24 @@ func (h *handlers) campanhaExcluir(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.excluirRegistro(w, r, "campanha", c.ID, "/zoonose/campanha?aviso=excluido", campanhaCaminho(c.ID))
+}
+
+// opcoesDeDiarias lista as diárias abertas (e a atual, mesmo fechada) para o atendimento escolher a sua.
+func (h *handlers) opcoesDeDiarias(r *http.Request, q *sqlccliente.Queries, atual pgtype.Int8) ([]views.CidadeOpcao, error) {
+	abertas, err := q.ListDiariasAbertas(r.Context())
+	if err != nil {
+		return nil, err
+	}
+	var out []views.CidadeOpcao
+	achou := false
+	for _, a := range abertas {
+		achou = achou || (atual.Valid && a.ID == atual.Int64)
+		out = append(out, views.CidadeOpcao{ID: a.ID, Rotulo: "Diária " + strconv.FormatInt(a.ID, 10) + " — " + dataBR(a.Data), Selecionada: atual.Valid && a.ID == atual.Int64})
+	}
+	if atual.Valid && !achou {
+		if d, err := q.GetDiariaQualquer(r.Context(), atual.Int64); err == nil {
+			out = append(out, views.CidadeOpcao{ID: d.ID, Rotulo: "Diária " + strconv.FormatInt(d.ID, 10) + " — " + dataBR(d.Data), Selecionada: true})
+		}
+	}
+	return out, nil
 }
