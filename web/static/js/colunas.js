@@ -30,6 +30,7 @@
         }
         var lista = menu.querySelector('.colunas-lista');
         if (!tabela || !lista || lista.children.length) return;
+        botoesDeExportar(menu, chave, tabela);
         var escondidas = ler(chave);
         tabela.querySelectorAll('thead th[data-col]').forEach(function (th) {
             var col = th.getAttribute('data-col');
@@ -109,6 +110,43 @@
         });
     }
 
+
+    // Exportar PDF/planilha: só para listas paginadas; sai tudo o que está filtrado, com as colunas visíveis.
+    function botoesDeExportar(menu, chave, tabela) {
+        var secao = tabela.closest('section, .cartao');
+        if (!secao || !secao.querySelector('.paginacao')) return;
+        document.querySelectorAll('[data-exportar-de="' + chave + '"]').forEach(function (b) { b.remove(); });
+        [['pdf', 'PDF', 'file'], ['xlsx', 'Planilha', 'sheet']].forEach(function (f) {
+            var b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'btn';
+            b.setAttribute('data-icone', f[2]);
+            b.setAttribute('data-exportar', f[0]);
+            b.setAttribute('data-exportar-de', chave);
+            b.textContent = f[1];
+            b.title = 'Exportar em ' + (f[0] === 'pdf' ? 'PDF' : 'planilha (xlsx)') + ' tudo o que está filtrado, só com as colunas visíveis';
+            menu.parentNode.insertBefore(b, menu.nextSibling);
+        });
+    }
+
+    function exportar(botao) {
+        var chave = botao.getAttribute('data-exportar-de');
+        var tabela = document.querySelector('table[data-colunas="' + chave + '"]');
+        if (!tabela) return;
+        var visiveis = [];
+        tabela.querySelectorAll('thead th').forEach(function (th) {
+            if (th.hidden || th.style.display === 'none') return;
+            var t = th.textContent.replace(/[▲▼]/g, '').replace(/\s+/g, ' ').trim();
+            if (t) visiveis.push(t);
+        });
+        var u = new URLSearchParams(location.search);
+        u.delete('pagina');
+        u.delete('por_pagina');
+        u.set('formato', botao.getAttribute('data-exportar'));
+        u.set('colunas', visiveis.join('||'));
+        window.location.href = location.pathname + '?' + u.toString();
+    }
+
     function varrer(raiz) {
         titulosOrdenaveis(raiz);
         varrerAuto(raiz);
@@ -117,6 +155,8 @@
     }
 
     document.addEventListener('click', function (e) {
+        var ex = e.target.closest && e.target.closest('button[data-exportar]');
+        if (ex) { exportar(ex); return; }
         var a = e.target.closest && e.target.closest('a[data-ordenar]');
         if (a) {
             e.preventDefault();

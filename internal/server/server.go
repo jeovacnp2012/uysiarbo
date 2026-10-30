@@ -102,7 +102,7 @@ func New(d Deps) http.Handler {
 	r := chi.NewRouter()
 	r.Use(securityHeaders, requestID, middleware.RealIP, accessLog(d.Log), recoverer(d.Log))
 	r.Use(middleware.Timeout(30 * time.Second))
-	r.Use(tenancy(d.Log, d.Resolver), csrf, h.autenticacao, h.auditoriaGenerica)
+	r.Use(tenancy(d.Log, d.Resolver), csrf, h.autenticacao, h.auditoriaGenerica, h.exportarLista)
 
 	if len(d.APIKey) >= 32 {
 		r.Post("/api/v1/token", h.apiToken)

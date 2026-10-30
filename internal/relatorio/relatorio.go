@@ -34,6 +34,7 @@ type Doc struct {
 	Totais   []string // opcional: mesma quantidade de colunas
 	Cortado  bool     // true quando o relatório passou do limite e foi cortado
 	Observar string   // nota exibida no fim (fórmulas, critérios)
+	Logo     []byte   // PNG opcional, desenhado no cabeçalho do PDF
 }
 
 // MaxLinhas é o teto de linhas de um relatório; acima disso o Doc sai cortado e avisado.
@@ -164,14 +165,40 @@ func (d Doc) PDF(w io.Writer) error {
 		pdf.Ln(-1)
 		pdf.SetTextColor(0, 0, 0)
 	}
+	temLogo := false
+	if len(d.Logo) > 0 {
+		info := pdf.RegisterImageOptionsReader("logo", fpdf.ImageOptions{ImageType: "PNG"}, bytes.NewReader(d.Logo))
+		temLogo = info != nil && pdf.Error() == nil
+	}
 	pdf.SetHeaderFunc(func() {
-		pdf.SetFont("Helvetica", "B", 12)
-		pdf.CellFormat(0, 6, tr(d.Titulo), "", 1, "L", false, 0, "")
-		pdf.SetFont("Helvetica", "", 8)
-		if d.Cliente != "" {
-			pdf.CellFormat(0, 4, tr(d.Cliente), "", 1, "L", false, 0, "")
+		// faixa azul com a marca, o título do relatório e o nome de quem usa o sistema
+		pdf.SetFillColor(21, 90, 158)
+		pdf.Rect(0, 0, largura, 20, "F")
+		pdf.SetFillColor(14, 62, 112)
+		pdf.Rect(0, 20, largura, 0.9, "F")
+		x := 10.0
+		if temLogo {
+			pdf.SetFillColor(255, 255, 255)
+			pdf.RoundedRect(10, 3.5, 13, 13, 2, "1234", "F")
+			pdf.ImageOptions("logo", 11, 4.5, 11, 11, false, fpdf.ImageOptions{ImageType: "PNG"}, 0, "")
+			x = 26
 		}
-		pdf.Ln(1)
+		pdf.SetTextColor(255, 255, 255)
+		pdf.SetXY(x, 4)
+		pdf.SetFont("Helvetica", "B", 14)
+		pdf.CellFormat(util-x+10, 7, tr(d.Titulo), "", 0, "L", false, 0, "")
+		pdf.SetXY(x, 11.5)
+		pdf.SetFont("Helvetica", "", 8.5)
+		sub := "UYSI ARBO"
+		if d.Cliente != "" {
+			sub = d.Cliente + "  ·  UYSI ARBO"
+		}
+		pdf.CellFormat(util-x+10, 4, tr(sub), "", 0, "L", false, 0, "")
+		pdf.SetXY(largura-70, 7)
+		pdf.SetFont("Helvetica", "", 8)
+		pdf.CellFormat(60, 4, tr(d.Gerado), "", 0, "R", false, 0, "")
+		pdf.SetTextColor(0, 0, 0)
+		pdf.SetY(25)
 	})
 	pdf.SetFooterFunc(func() {
 		pdf.SetY(-10)
@@ -184,9 +211,17 @@ func (d Doc) PDF(w io.Writer) error {
 	pdf.AddPage()
 
 	pdf.SetFont("Helvetica", "", 8)
+	pdf.SetTextColor(71, 85, 105)
+	if len(d.Filtros) > 0 {
+		pdf.SetFont("Helvetica", "B", 8)
+		pdf.CellFormat(0, 4, tr("Filtros aplicados"), "", 1, "L", false, 0, "")
+		pdf.SetFont("Helvetica", "", 8)
+	}
 	for _, p := range d.Filtros {
 		pdf.CellFormat(0, 4, tr(p.Nome+": "+p.Valor), "", 1, "L", false, 0, "")
 	}
+	pdf.CellFormat(0, 4, tr(fmt.Sprintf("%d registro(s)", len(d.Linhas))), "", 1, "L", false, 0, "")
+	pdf.SetTextColor(0, 0, 0)
 	pdf.Ln(2)
 	cabecalhoTabela()
 	pdf.SetFont("Helvetica", "", 7.5)

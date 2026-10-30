@@ -21,7 +21,7 @@ const padraoPorPagina = 10
 func paginaDe(r *http.Request) views.Pagination {
 	p := views.Pagination{Page: 1, PerPage: padraoPorPagina}
 	qs := r.URL.Query()
-	if n, err := strconv.Atoi(qs.Get("por_pagina")); err == nil && slices.Contains(views.PorPaginaOpcoes, n) {
+	if n, err := strconv.Atoi(qs.Get("por_pagina")); err == nil && slices.Contains(views.PorPaginaOpcoes, n) || n == exportarTudo {
 		p.PerPage = n
 	}
 	if n, err := strconv.Atoi(qs.Get("pagina")); err == nil && n > 1 {

@@ -2,6 +2,7 @@ package server
 
 import (
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -33,5 +34,21 @@ func TestOrdenarPorCampo(t *testing.T) {
 		if got := ordem(query); got != quer {
 			t.Errorf("%q: obtive %s, esperava %s", query, got, quer)
 		}
+	}
+}
+
+func TestExportarListaEmPDFEPlanilha(t *testing.T) {
+	m := novoMundo(t)
+	ana := m.comAna(t)
+	r := ana.get("/laboratorio?formato=pdf&colunas=ID||Status")
+	if r.Code != 200 || !strings.HasPrefix(r.Body.String(), "%PDF") {
+		t.Fatalf("pdf: status %d, início %q", r.Code, r.Body.String()[:min(20, r.Body.Len())])
+	}
+	r = ana.get("/laboratorio?formato=xlsx&colunas=ID||Status")
+	if r.Code != 200 || !strings.Contains(r.Header().Get("Content-Type"), "spreadsheetml") || !strings.HasPrefix(r.Body.String(), "PK") {
+		t.Fatalf("xlsx: status %d, tipo %q", r.Code, r.Header().Get("Content-Type"))
+	}
+	if ana.get("/relatorios?formato=pdf").Code == 404 {
+		t.Fatal("relatórios têm o próprio formato e não passam pelo exportador de listas")
 	}
 }
