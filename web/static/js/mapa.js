@@ -156,15 +156,17 @@
         tarefas.push(buscar(url("/mapa/quarteiroes.geojson", filtro)).then(function (c) { map.getSource("quarteiroes").setData(c); }));
       }
       var msg = "";
+      var locaisDoBairro = null;
       if (cfg.locais && camadaLigada("locais")) {
         var f = Object.assign({}, filtro);
         if (cfg.grupo !== "0") f.grupo = cfg.grupo;
         if (cfg.tipo) f.tipo = cfg.tipo;
         if (cfg.local !== "0") f.local = cfg.local;
-        if (zoom >= ZOOM_DETALHE || cfg.local !== "0" || cfg.grupo !== "0") {
+        if (zoom >= ZOOM_DETALHE || cfg.local !== "0" || cfg.grupo !== "0" || cfg.bairro !== "0") {
           tarefas.push(buscar(url("/mapa/locais.geojson", f)).then(function (c) {
             map.getSource("locais").setData(c);
             if (eraPrimeira && (cfg.local !== "0" || cfg.grupo !== "0")) enquadrar(c);
+            else if (eraPrimeira && cfg.bairro !== "0") locaisDoBairro = c;
             msg = c.features.length + " local(is) na tela";
             if (c.truncado) msg += " (mostrando os primeiros; aproxime o mapa)";
             if (c.sem_ponto) msg += " · " + c.sem_ponto + " sem coordenadas";
@@ -174,7 +176,11 @@
         }
       }
       primeira = false;
-      Promise.all(tarefas).then(function () { mostrar(msg); }).catch(function () { mostrar("Não foi possível carregar o mapa. Tente de novo."); });
+      Promise.all(tarefas).then(function () {
+        // Bairro sem polígono desenhado: o mapa se enquadra pelos locais dele.
+        if (locaisDoBairro) enquadrar(locaisDoBairro);
+        mostrar(msg);
+      }).catch(function () { mostrar("Não foi possível carregar o mapa. Tente de novo."); });
     }
     map.on("moveend", function () { clearTimeout(espera); espera = setTimeout(atualizar, 250); });
     atualizar();
