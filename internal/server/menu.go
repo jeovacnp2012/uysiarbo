@@ -100,6 +100,12 @@ func (s *handlers) menu(r *http.Request) []views.NavGrupo {
 		if pr.Pode("denuncia_visualizar") {
 			menu = append(menu, views.NavGrupo{Label: "Denúncias", Icone: "denuncia", Href: "/denuncias"})
 		}
+		if pr.Pode("ovitrampa_visualizar") {
+			menu = append(menu, views.NavGrupo{Label: "Ovitrampas", Icone: "ovitrampa", Href: "/ovitrampas"})
+		}
+		if pr.Pode("edl_visualizar") {
+			menu = append(menu, views.NavGrupo{Label: "EDLs", Icone: "edl", Href: "/edls"})
+		}
 		if pr.Pode("dronesolicitacao_visualizar") {
 			menu = append(menu, views.NavGrupo{Label: "Solicitações de drone", Icone: "drone", Href: "/drones"})
 		}
@@ -115,8 +121,6 @@ func (s *handlers) menu(r *http.Request) []views.NavGrupo {
 		}
 		// Módulos que ainda não têm tela: aparecem apagados para quem tem a permissão de ver.
 		for _, m := range []struct{ perm, rotulo, icone string }{
-			{"ovitrampa_visualizar", "Ovitrampas", "ovitrampa"},
-			{"edl_visualizar", "EDLs", "edl"},
 			{"comunicacao_visualizar", "Comunicações", "comunicacao"},
 			{"banner_visualizar", "Banners", "banner"},
 		} {

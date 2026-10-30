@@ -79,6 +79,38 @@ type ApiIdempotencium struct {
 	CriadoEm     pgtype.Timestamptz `json:"criado_em"`
 }
 
+type Armadilha struct {
+	ID            int64              `json:"id"`
+	Tipo          string             `json:"tipo"`
+	IDExterno     pgtype.Text        `json:"id_externo"`
+	LocalID       int64              `json:"local_id"`
+	InstaladaEm   pgtype.Timestamptz `json:"instalada_em"`
+	AgenteID      pgtype.Int8        `json:"agente_id"`
+	Latitude      pgtype.Float8      `json:"latitude"`
+	Longitude     pgtype.Float8      `json:"longitude"`
+	Anotacao      string             `json:"anotacao"`
+	Status        string             `json:"status"`
+	RetiradaEm    pgtype.Timestamptz `json:"retirada_em"`
+	RetiradoPorID pgtype.Int8        `json:"retirado_por_id"`
+	CriadoPor     pgtype.Int8        `json:"criado_por"`
+	CriadoEm      pgtype.Timestamptz `json:"criado_em"`
+	AtualizadoEm  pgtype.Timestamptz `json:"atualizado_em"`
+	DeletedAt     pgtype.Timestamptz `json:"deleted_at"`
+	DeletedBy     pgtype.Int8        `json:"deleted_by"`
+}
+
+type ArmadilhaRegistro struct {
+	ID           int64              `json:"id"`
+	ArmadilhaID  int64              `json:"armadilha_id"`
+	Ovos         pgtype.Int4        `json:"ovos"`
+	NivelAgua    string             `json:"nivel_agua"`
+	RegistradoEm pgtype.Timestamptz `json:"registrado_em"`
+	PorID        pgtype.Int8        `json:"por_id"`
+	Anotacao     string             `json:"anotacao"`
+	DeletedAt    pgtype.Timestamptz `json:"deleted_at"`
+	DeletedBy    pgtype.Int8        `json:"deleted_by"`
+}
+
 type Atividade struct {
 	ID        int16  `json:"id"`
 	Sigla     string `json:"sigla"`

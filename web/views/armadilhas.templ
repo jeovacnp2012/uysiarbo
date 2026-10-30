@@ -1,0 +1,335 @@
+package views
+
+import "strconv"
+
+func seloDaArmadilha(s string) string {
+	switch s {
+	case "operando":
+		return "selo-ok"
+	case "cancelado", "extraviado", "sem_acesso":
+		return "selo-erro"
+	}
+	return ""
+}
+
+templ Armadilhas(l Layout, d ArmadilhasData) {
+	@Base(l) {
+		@PageHeader(d.Cfg.Plural, "Estações instaladas em locais para monitorar o Aedes.") {
+			if d.PodeNova {
+				<a class="btn btn-primario" href={ templ.SafeURL(d.Cfg.Caminho + "/nova") } data-icone="plus">Nova { d.Cfg.Rotulo }</a>
+			}
+		}
+		<form
+			method="get"
+			action={ templ.SafeURL(d.Cfg.Caminho) }
+			class="cartao filtros filtros-vivos"
+			autocomplete="off"
+			hx-get={ d.Cfg.Caminho }
+			hx-trigger="input delay:350ms, change delay:60ms, filtrar from:body"
+			hx-sync="this:replace"
+			hx-target="#armadilhas-lista"
+			hx-select="#armadilhas-lista"
+			hx-swap="outerHTML"
+			hx-push-url="true"
+			hx-indicator="#armadilhas-lista"
+		>
+			<input type="hidden" name="ordem" value={ d.Ordem }/>
+			<input type="hidden" name="dir" value={ d.Dir }/>
+			<div class="campo campo-largo">
+				<label for="f-busca">Endereço, anotação ou número</label>
+				<input id="f-busca" name="busca" type="search" value={ d.Filtro.Busca } placeholder="Buscar"/>
+			</div>
+			@campoEscolha("f-status", "Status", "status", "Todos os status", d.Status)
+			@campoEscolha("f-bairro", "Bairro", "bairro", "Todos os bairros", d.Bairros)
+			<div class="campo">
+				<label for="f-de">Instalada de</label>
+				<input id="f-de" name="de" type="date" value={ d.Filtro.De } class="filtro-auto"/>
+			</div>
+			<div class="campo">
+				<label for="f-ate">Instalada até</label>
+				<input id="f-ate" name="ate" type="date" value={ d.Filtro.Ate } class="filtro-auto"/>
+			</div>
+			<div class="form-acoes">
+				<a class="btn btn-escuro" href={ templ.SafeURL(d.Cfg.Caminho) } data-icone="undo">Limpar filtros</a>
+			</div>
+			<noscript><button type="submit" class="btn btn-primario">Filtrar</button></noscript>
+		</form>
+		<div id="armadilhas-lista" class="lista-viva">
+			<section class="cartao">
+				@Paginacao(d.Pag, d.Cfg.Caminho, d.Query)
+				<div class="tabela-wrap">
+					<table class="tabela">
+						<thead>
+							<tr>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "id") }><a class="ordenar" href="#" data-ordenar="id" data-dir={ proximaDir(d.Ordem, d.Dir, "id") }>Nº<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "id") }</span></a></th>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "status") }><a class="ordenar" href="#" data-ordenar="status" data-dir={ proximaDir(d.Ordem, d.Dir, "status") }>Status<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "status") }</span></a></th>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "data") }><a class="ordenar" href="#" data-ordenar="data" data-dir={ proximaDir(d.Ordem, d.Dir, "data") }>Instalada em<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "data") }</span></a></th>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "endereco") }><a class="ordenar" href="#" data-ordenar="endereco" data-dir={ proximaDir(d.Ordem, d.Dir, "endereco") }>Local<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "endereco") }</span></a></th>
+								<th scope="col">Bairro</th>
+								<th scope="col">Agente</th>
+								<th scope="col">Último registro</th>
+								<th scope="col" data-fixa><span class="sr-only">Ações</span></th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, n := range d.Linhas {
+								<tr>
+									<td data-rotulo="Nº"><strong>{ n.IDTexto }</strong></td>
+									<td data-rotulo="Status"><span class={ "selo", seloDaArmadilha(n.Status) }>{ n.StatusRotulo }</span></td>
+									<td data-rotulo="Instalada em">{ n.Data }</td>
+									<td data-rotulo="Local" class="quebra2" title={ n.Endereco }><span class="clamp2">{ n.Endereco }</span></td>
+									<td data-rotulo="Bairro">{ n.Bairro }</td>
+									<td data-rotulo="Agente">{ n.Agente }</td>
+									<td data-rotulo="Último registro">{ n.UltimoRegistro }</td>
+									<td data-rotulo="Ações"><a class="btn" href={ templ.SafeURL(d.Cfg.Caminho + "/" + strconv.FormatInt(n.ID, 10)) }>Abrir</a></td>
+								</tr>
+							}
+						</tbody>
+					</table>
+					if len(d.Linhas) == 0 {
+						<div class="tabela-vazia">Nenhum registro encontrado.</div>
+					}
+				</div>
+				@Paginacao(d.Pag, d.Cfg.Caminho, d.Query)
+			</section>
+		</div>
+	}
+}
+
+templ ArmadilhaEscolher(l Layout, d ArmadilhaEscolherLocal) {
+	@Base(l) {
+		@PageHeader("Nova "+d.Cfg.Rotulo, "Primeiro escolha o local onde ela será instalada.") {
+			<a class="btn" href={ templ.SafeURL(d.Cfg.Caminho) }>Voltar</a>
+		}
+		<section class="cartao">
+			<form method="get" action={ templ.SafeURL(d.Cfg.Caminho + "/nova") } class="form-acoes" data-sem-gaveta>
+				<div class="campo">
+					<label for="busca-local">Buscar local (endereço, número ou bairro)</label>
+					<input id="busca-local" name="busca_local" type="search" value={ d.Busca } maxlength="100" autofocus/>
+				</div>
+				<button type="submit" class="btn" data-icone="search">Buscar</button>
+			</form>
+			if d.Buscou && len(d.Locais) == 0 {
+				<p class="subtitulo">Nenhum local encontrado.</p>
+			}
+			for _, lc := range d.Locais {
+				<p class="form-acoes">
+					<span>{ lc.Endereco } <span class="subtitulo">· { lc.Bairro }</span></span>
+					<a class="btn btn-primario" href={ templ.SafeURL(d.Cfg.Caminho + "/nova?local=" + strconv.FormatInt(lc.ID, 10)) } data-icone="plus">Instalar neste local</a>
+				</p>
+			}
+		</section>
+	}
+}
+
+templ dadosDaArmadilha(d ArmadilhaFormData) {
+	<form method="post" class="cartao form-admin" data-sem-gaveta
+		if d.Novo() {
+			action={ templ.SafeURL(d.Cfg.Caminho) }
+		} else {
+			action={ templ.SafeURL(d.Cfg.Caminho + "/" + strconv.FormatInt(d.ID, 10)) }
+		}
+	>
+		<input type="hidden" name="csrf" value={ d.CSRF }/>
+		<input type="hidden" name="local" value={ strconv.FormatInt(d.LocalID, 10) }/>
+		if d.Erro != "" {
+			<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
+		}
+		<div class="grade-form">
+			<div class="campo">
+				<label for="data">Data e hora da instalação</label>
+				<input id="data" name="data" type="datetime-local" value={ d.Data } required/>
+			</div>
+			<div class="campo">
+				<label for="agente">Agente</label>
+				<select id="agente" name="agente">
+					<option value="">Sem agente</option>
+					@opcoesDe(d.Agentes)
+				</select>
+			</div>
+			<div class="campo">
+				<label for="latitude">Latitude</label>
+				<input id="latitude" name="latitude" type="text" inputmode="decimal" value={ d.Latitude } placeholder="-13.8741377"/>
+			</div>
+			<div class="campo">
+				<label for="longitude">Longitude</label>
+				<input id="longitude" name="longitude" type="text" inputmode="decimal" value={ d.Longitude } placeholder="-56.1220755"/>
+			</div>
+		</div>
+		<div class="campo">
+			<label for="anotacao">Anotação</label>
+			<textarea id="anotacao" name="anotacao" rows="3" maxlength="2000">{ d.Anotacao }</textarea>
+		</div>
+		<div class="form-acoes">
+			<button type="submit" class="btn btn-primario" data-icone="save">Salvar</button>
+			<a class="btn" href={ templ.SafeURL(d.Cfg.Caminho) }>Cancelar</a>
+		</div>
+	</form>
+}
+
+templ ArmadilhaNova(l Layout, d ArmadilhaFormData) {
+	@Base(l) {
+		@PageHeader("Nova "+d.Cfg.Rotulo, d.LocalEndereco) {
+			<a class="btn" href={ templ.SafeURL(d.Cfg.Caminho + "/nova") }>Trocar o local</a>
+		}
+		@dadosDaArmadilha(d)
+	}
+}
+
+templ ArmadilhaFicha(l Layout, d ArmadilhaFichaData) {
+	@Base(l) {
+		@PageHeader(d.Cfg.Rotulo+" "+d.IDTexto, d.LocalEndereco) {
+			<a class="btn" href={ templ.SafeURL(d.Cfg.Caminho) }>Voltar</a>
+		}
+		@Presenca(d.Cfg.Slug, strconv.FormatInt(d.ID, 10), modoDaTela(d.PodeEditar))
+		if d.Aviso != "" {
+			<p class="alerta alerta-ok" role="status">{ d.Aviso }</p>
+		}
+		if d.Erro != "" {
+			<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
+		}
+		<section class="cartao">
+			<div class="resumo-ficha">
+				<p>
+					<span class={ "selo", seloDaArmadilha(d.Status) }>{ d.StatusRotulo }</span>
+					<span class="subtitulo">Instalada em { d.Data }</span>
+					if d.Agente != "" {
+						<span class="subtitulo">por <strong>{ d.Agente }</strong></span>
+					}
+				</p>
+				<p class="subtitulo">
+					Local: <a href={ templ.SafeURL("/locais/" + strconv.FormatInt(d.LocalID, 10)) }>{ d.LocalEndereco }</a>
+					if d.Bairro != "" {
+						· Bairro { d.Bairro }
+					}
+					if d.Coordenadas != "" {
+						· { d.Coordenadas }
+					}
+				</p>
+				if d.Retirada != "" {
+					<p class="subtitulo">Retirada em { d.Retirada } por { d.RetiradoPor }</p>
+				}
+				if d.Anotacao != "" {
+					<p class="caso-texto">{ d.Anotacao }</p>
+				}
+			</div>
+		</section>
+		<section class="cartao" id="registros">
+			<h2 class="rel-titulo" data-ico="file">{ d.Cfg.RegNome }</h2>
+			if len(d.Registros) == 0 {
+				<p class="subtitulo">Nenhum registro ainda.</p>
+			} else {
+				<div class="tabela-wrap">
+					<table class="tabela">
+						<thead>
+							<tr>
+								<th scope="col">Data</th>
+								if d.Cfg.Ovos {
+									<th scope="col">Ovos</th>
+								} else {
+									<th scope="col">Nível da água</th>
+								}
+								<th scope="col">Por</th>
+								<th scope="col">Anotação</th>
+								<th scope="col" data-fixa><span class="sr-only">Ações</span></th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, r := range d.Registros {
+								<tr>
+									<td data-rotulo="Data">{ r.Data }</td>
+									<td data-rotulo="Registro"><strong>{ r.Texto }</strong></td>
+									<td data-rotulo="Por">{ r.Por }</td>
+									<td data-rotulo="Anotação" class="quebra2" title={ r.Nota }><span class="clamp2">{ r.Nota }</span></td>
+									<td data-rotulo="Ações">
+										if d.PodeRegEditar {
+											<details class="inline-edicao">
+												<summary class="btn" title="Editar" data-icone="edit">Editar</summary>
+												<form method="post" action={ templ.SafeURL(d.Cfg.Caminho + "/" + strconv.FormatInt(d.ID, 10) + "/registros/" + strconv.FormatInt(r.ID, 10)) } class="form-admin" data-sem-gaveta>
+													<input type="hidden" name="csrf" value={ d.CSRF }/>
+													@campoRegistro(d, r.Ovos, r.Nivel, r.Nota)
+													<button type="submit" class="btn btn-primario" data-icone="save">Salvar</button>
+												</form>
+											</details>
+										}
+										if d.PodeRegExcluir {
+											<form method="post" action={ templ.SafeURL(d.Cfg.Caminho + "/" + strconv.FormatInt(d.ID, 10) + "/registros/" + strconv.FormatInt(r.ID, 10) + "/excluir") } data-sem-gaveta onsubmit="return confirm('Excluir este registro?')">
+												<input type="hidden" name="csrf" value={ d.CSRF }/>
+												<button type="submit" class="btn btn-perigo" title="Excluir" data-icone="trash">Excluir</button>
+											</form>
+										}
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+			}
+			if d.PodeRegistrar {
+				<form method="post" action={ templ.SafeURL(d.Cfg.Caminho + "/" + strconv.FormatInt(d.ID, 10) + "/registros") } class="form-admin" data-sem-gaveta>
+					<input type="hidden" name="csrf" value={ d.CSRF }/>
+					<div class="campo">
+						<label for="reg-data">Data e hora</label>
+						<input id="reg-data" name="data" type="datetime-local" value={ d.AgoraLocal } required/>
+					</div>
+					@campoRegistro(d, "", "", "")
+					<button type="submit" class="btn btn-primario" data-icone="plus">Adicionar</button>
+				</form>
+			}
+		</section>
+		if d.PodeStatus {
+			<section class="cartao" id="status">
+				<h2 class="rel-titulo" data-ico="lock">Alterar status</h2>
+				<form method="post" action={ templ.SafeURL(d.Cfg.Caminho + "/" + strconv.FormatInt(d.ID, 10) + "/status") } class="form-admin" data-sem-gaveta>
+					<input type="hidden" name="csrf" value={ d.CSRF }/>
+					<div class="grade-form">
+						<div class="campo">
+							<label for="st">Status</label>
+							<select id="st" name="status" data-sem-busca>
+								@opcoesDe(d.StatusOpcoes)
+							</select>
+						</div>
+						<div class="campo">
+							<label for="ret-data">Data da retirada (se retirada)</label>
+							<input id="ret-data" name="retirada" type="datetime-local" value={ d.AgoraLocal }/>
+						</div>
+						<div class="campo">
+							<label for="ret-por">Retirado por</label>
+							<select id="ret-por" name="retirado_por">
+								<option value="">Ninguém</option>
+								@opcoesDe(d.Usuarios)
+							</select>
+						</div>
+					</div>
+					<button type="submit" class="btn btn-primario" data-icone="check">Alterar status</button>
+				</form>
+			</section>
+		}
+		if d.PodeEditar {
+			@dadosDaArmadilha(d.Dados)
+		}
+	}
+}
+
+templ campoRegistro(d ArmadilhaFichaData, ovos, nivel, nota string) {
+	if d.Cfg.Ovos {
+		<div class="campo">
+			<label>Quantidade de ovos</label>
+			<input name="ovos" type="number" min="0" max="100000" value={ ovos } required/>
+		</div>
+	} else {
+		<div class="campo">
+			<label>Nível da água</label>
+			<select name="nivel" data-sem-busca>
+				<option value="">Não informado</option>
+				for _, o := range d.Niveis {
+					<option value={ o.Valor } selected?={ o.Valor == nivel }>{ o.Rotulo }</option>
+				}
+			</select>
+		</div>
+	}
+	<div class="campo">
+		<label>Anotação</label>
+		<textarea name="anotacao" rows="2" maxlength="2000">{ nota }</textarea>
+	</div>
+}

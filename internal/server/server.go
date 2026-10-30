@@ -207,6 +207,8 @@ func New(d Deps) http.Handler {
 	r.Post("/zoonose/baap/{id}/encerrar", h.exigir("zoonose_baap_encerrar", h.baapEncerrar))
 	r.Post("/zoonose/baap/{id}/reabrir", h.exigir("zoonose_baap_atender", h.baapReabrir))
 	r.Post("/zoonose/baap/{id}/excluir", h.exigir("zoonose_baap_encerrar", h.baapExcluir))
+	h.registrarRotasDeArmadilha(r, tiposDeArmadilha["ovitrampa"])
+	h.registrarRotasDeArmadilha(r, tiposDeArmadilha["edl"])
 	r.Get("/drones", h.exigir("dronesolicitacao_visualizar", h.dronesLista))
 	r.Get("/drones/nova", h.exigir("dronesolicitacao_novo", h.droneNova))
 	r.Post("/drones", h.exigir("dronesolicitacao_novo", h.droneCriar))

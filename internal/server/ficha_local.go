@@ -111,6 +111,29 @@ func (h *handlers) completarFichaDoLocal(ctx context.Context, r *http.Request, q
 			}
 		}
 	}
+	if pr.Pode("ovitrampa_visualizar") || pr.Pode("edl_visualizar") {
+		as, err := q.ListArmadilhasDoLocal(ctx, l.ID)
+		if err != nil {
+			return err
+		}
+		var links []views.SecaoLink
+		for _, a := range as {
+			t := tiposDeArmadilha[a.Tipo]
+			if pr.Pode(t.Ver) {
+				links = append(links, views.SecaoLink{Rotulo: t.Rotulo + " " + strconv.FormatInt(a.ID, 10) + " (" + rotuloDe(t.statusOpcoes(), a.Status) + ")", Href: t.Caminho + "/" + strconv.FormatInt(a.ID, 10)})
+			}
+		}
+		for _, t := range []armadilhaTipo{tiposDeArmadilha["ovitrampa"], tiposDeArmadilha["edl"]} {
+			if pr.Pode(t.Novo) {
+				links = append(links, views.SecaoLink{Rotulo: "Instalar " + t.Rotulo + " neste local", Href: t.Caminho + "/nova?local=" + strconv.FormatInt(l.ID, 10)})
+			}
+		}
+		for i := range form.Secoes {
+			if form.Secoes[i].Titulo == "Armadilhas" {
+				form.Secoes[i].Links = links
+			}
+		}
+	}
 	if form.PodeGrupos = pr.Pode("local_grupo_visualizar"); form.PodeGrupos {
 		do, err := q.ListGruposDoLocal(ctx, l.ID)
 		if err != nil {

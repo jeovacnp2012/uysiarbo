@@ -249,6 +249,11 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 			} else if c > 0 {
 				itens = append(itens, plural(c, "notificação ativa", "notificações ativas"))
 			}
+			if c, err := q.CountArmadilhasAtivasDoLocal(ctx, id); err != nil {
+				return nil, err
+			} else if c > 0 {
+				itens = append(itens, plural(c, "armadilha ativa", "armadilhas ativas"))
+			}
 			if c, err := q.CountBaapAtivosDoLocal(ctx, pgtype.Int8{Int64: id, Valid: true}); err != nil {
 				return nil, err
 			} else if c > 0 {
@@ -276,6 +281,11 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 				return nil, err
 			} else if c > 0 {
 				itens = append(itens, plural(c, "notificação", "notificações")+" (contando as excluídas)")
+			}
+			if c, err := q.CountArmadilhasDoLocalQualquer(ctx, id); err != nil {
+				return nil, err
+			} else if c > 0 {
+				itens = append(itens, plural(c, "armadilha", "armadilhas")+" (contando as excluídas)")
 			}
 			if c, err := q.CountBaapDoLocalQualquer(ctx, pgtype.Int8{Int64: id, Valid: true}); err != nil {
 				return nil, err
@@ -594,6 +604,8 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 			return out, err
 		},
 	},
+	"ovitrampa": entradaDeArmadilha(tiposDeArmadilha["ovitrampa"], "a"),
+	"edl":       entradaDeArmadilha(tiposDeArmadilha["edl"], "a"),
 	"baap": {
 		Chave: "baap", Rotulo: "Animal peçonhento", Plural: "Animais peçonhentos", Genero: "a",
 		soft: func(ctx context.Context, q *sqlccliente.Queries, id int64, por pgtype.Int8) (int64, error) {
@@ -953,7 +965,7 @@ var tiposExcluiveis = map[string]*tipoExcluivel{
 }
 
 // ordemDaLixeira é a ordem das abas.
-var ordemDaLixeira = []string{"local", "quarteirao", "bairro", "cidade", "ciclo", "lei", "lei_trecho", "visita", "investigacao", "denuncia", "drone", "baap", "notificacao", "infracao", "amostra", "reconhecimento", "resumosemanal", "grupo", "mapeamento"}
+var ordemDaLixeira = []string{"local", "quarteirao", "bairro", "cidade", "ciclo", "lei", "lei_trecho", "visita", "investigacao", "denuncia", "drone", "baap", "ovitrampa", "edl", "notificacao", "infracao", "amostra", "reconhecimento", "resumosemanal", "grupo", "mapeamento"}
 
 // excluirLogicamente aplica a regra completa: recusa se há filhos ativos; senão marca deleted_at.
 // Devolve os motivos da recusa (vazio = excluído), o nome do registro e o erro de banco, se houve.
@@ -1150,4 +1162,49 @@ func (h *handlers) lixeiraExcluirDefinitivo(w http.ResponseWriter, r *http.Reque
 		Detalhes: map[string]any{"definitivo": true},
 	})
 	http.Redirect(w, r, voltar+"&ok=definitivo", http.StatusSeeOther)
+}
+
+// entradaDeArmadilha monta a entrada da Lixeira de um tipo de armadilha (ovitrampa ou EDL).
+func entradaDeArmadilha(t armadilhaTipo, genero string) *tipoExcluivel {
+	return &tipoExcluivel{
+		Chave: t.Tipo, Rotulo: t.Rotulo, Plural: t.Plural, Genero: genero,
+		soft: func(ctx context.Context, q *sqlccliente.Queries, id int64, por pgtype.Int8) (int64, error) {
+			return q.SoftDeleteArmadilha(ctx, sqlccliente.SoftDeleteArmadilhaParams{ID: id, Por: por})
+		},
+		restore: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			return q.RestoreArmadilha(ctx, id)
+		},
+		force: func(ctx context.Context, q *sqlccliente.Queries, id int64) (int64, error) {
+			// as contagens/manutenções são só da armadilha e saem junto
+			if err := q.ForceDeleteArmadilhaRegistros(ctx, id); err != nil {
+				return 0, err
+			}
+			return q.ForceDeleteArmadilha(ctx, id)
+		},
+		rotulo: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, bool, error) {
+			a, err := q.GetArmadilhaQualquer(ctx, id)
+			return t.Rotulo + " " + strconv.FormatInt(a.ID, 10), a.DeletedAt.Valid, err
+		},
+		filhosAtivos: func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
+		vinculos:     func(context.Context, *sqlccliente.Queries, int64) ([]string, error) { return nil, nil },
+		paiExcluido: func(ctx context.Context, q *sqlccliente.Queries, id int64) (string, error) {
+			a, err := q.GetArmadilhaQualquer(ctx, id)
+			if err != nil {
+				return "", err
+			}
+			l, err := q.GetLocalQualquer(ctx, a.LocalID)
+			if err == nil && l.DeletedAt.Valid {
+				return "o local " + l.Endereco, nil
+			}
+			return "", err
+		},
+		lixeira: func(ctx context.Context, q *sqlccliente.Queries) ([]views.LixeiraLinha, error) {
+			rows, err := q.ListArmadilhasExcluidas(ctx, t.Tipo)
+			out := make([]views.LixeiraLinha, len(rows))
+			for i, r := range rows {
+				out[i] = views.LixeiraLinha{ID: r.ID, Rotulo: t.Rotulo + " " + strconv.FormatInt(r.ID, 10), Contexto: r.Endereco, Quando: r.DeletedAt.Time, Por: r.Por}
+			}
+			return out, err
+		},
+	}
 }

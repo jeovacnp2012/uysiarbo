@@ -34,6 +34,8 @@ var recursosPresenca = map[string]recursoPresenca{
 	"entrevista":     {ver: "param_doenca", editar: "param_doenca", noCliente: true},
 	"investigacao":   {ver: "investigacao_visualizar", editar: "investigacao_editar", noCliente: true},
 	"denuncia":       {ver: "denuncia_visualizar", editar: "denuncia_editar", noCliente: true},
+	"ovitrampa":      {ver: "ovitrampa_visualizar", editar: "ovitrampa_editar", noCliente: true},
+	"edl":            {ver: "edl_visualizar", editar: "edl_editar", noCliente: true},
 	"baap":           {ver: "zoonose_baap_visualizar", editar: "zoonose_baap_editar", noCliente: true},
 	"drone":          {ver: "dronesolicitacao_visualizar", editar: "dronesolicitacao_atender", noCliente: true},
 	"notificacao":    {ver: "notificacao_visualizar", editar: "notificacao_adicionar", noCliente: true},
