@@ -363,6 +363,39 @@ type ClienteInfo struct {
 	CriadoEm pgtype.Timestamptz `json:"criado_em"`
 }
 
+type ComunicacaoEvento struct {
+	ID            int64              `json:"id"`
+	ComunicacaoID int64              `json:"comunicacao_id"`
+	Tipo          string             `json:"tipo"`
+	Descricao     string             `json:"descricao"`
+	UsuarioID     pgtype.Int8        `json:"usuario_id"`
+	CriadoEm      pgtype.Timestamptz `json:"criado_em"`
+}
+
+type Comunicaco struct {
+	ID               int64              `json:"id"`
+	Canal            string             `json:"canal"`
+	Destinatario     string             `json:"destinatario"`
+	DestinatarioNome string             `json:"destinatario_nome"`
+	Assunto          string             `json:"assunto"`
+	Corpo            string             `json:"corpo"`
+	Origem           string             `json:"origem"`
+	OrigemID         pgtype.Int8        `json:"origem_id"`
+	Status           string             `json:"status"`
+	Tentativas       int32              `json:"tentativas"`
+	MaxTentativas    int32              `json:"max_tentativas"`
+	ProximaTentativa pgtype.Timestamptz `json:"proxima_tentativa"`
+	UltimoErro       string             `json:"ultimo_erro"`
+	Provedor         string             `json:"provedor"`
+	IDProvedor       string             `json:"id_provedor"`
+	EnviadaEm        pgtype.Timestamptz `json:"enviada_em"`
+	EntregueEm       pgtype.Timestamptz `json:"entregue_em"`
+	VisualizadaEm    pgtype.Timestamptz `json:"visualizada_em"`
+	CriadoPor        pgtype.Int8        `json:"criado_por"`
+	CriadoEm         pgtype.Timestamptz `json:"criado_em"`
+	AtualizadoEm     pgtype.Timestamptz `json:"atualizado_em"`
+}
+
 type Denuncia struct {
 	ID              int64              `json:"id"`
 	IDExterno       pgtype.Text        `json:"id_externo"`

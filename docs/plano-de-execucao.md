@@ -164,7 +164,7 @@ Objetivo: migrar dados de outros sistemas e de planilhas, com segurança.
 - [x] 11.4 Integração com a campanha antirrábica (a diária consome vacina e seringa)
 
 ## Etapa 12 — Comunicação e integrações externas
-- [ ] 12.1 Comunicações (WhatsApp e e-mail): fila, tentativas, reenvio, timeline, status de visualização
+- [x] 12.1 Comunicações (WhatsApp e e-mail): fila, tentativas, reenvio, timeline, status de visualização
 - [ ] 12.2 Provedor de WhatsApp e SMTP (a decidir; ver pendências)
 - [ ] 12.3 SINAN / e-SUS / SUS: levantar formato oficial, exportar e/ou importar notificações
 - [ ] 12.4 Banners (editor visual)

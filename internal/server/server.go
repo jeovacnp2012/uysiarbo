@@ -12,6 +12,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
+	"uysiarbo/internal/comunicacao"
 	"uysiarbo/internal/db/sqlc"
 	"uysiarbo/internal/geocode"
 	"uysiarbo/internal/httpx"
@@ -47,6 +48,9 @@ type Deps struct {
 	// Localização automática de endereços (CEP e coordenadas). nil = desligada.
 	Geocoder geocode.Geocoder
 
+	// Envio de WhatsApp e e-mail. nil = desligado (as mensagens ficam na fila).
+	Comunicacao comunicacao.Provedor
+
 	// Importação por API de outro sistema: por segurança só acessa a internet pública; true libera a rede interna (testes).
 	ImportPermitirRedePrivada bool
 
@@ -68,6 +72,7 @@ type handlers struct {
 
 	mapaTiles, mapaCredito    string
 	geocoder                  geocode.Geocoder
+	provedorCom               comunicacao.Provedor
 	api                       *apiEstado
 	imp                       *motorImp
 	importPermitirRedePrivada bool
@@ -90,6 +95,9 @@ func New(d Deps) http.Handler {
 	h.mapaTiles, h.mapaCredito = d.MapTileURL, d.MapAttribution
 	if h.geocoder = d.Geocoder; h.geocoder == nil {
 		h.geocoder = geocode.Desligado{}
+	}
+	if h.provedorCom = d.Comunicacao; h.provedorCom == nil {
+		h.provedorCom = comunicacao.Desligado{}
 	}
 	if h.mapaTiles == "" {
 		h.mapaTiles, h.mapaCredito = "https://tile.openstreetmap.org/{z}/{x}/{y}.png", "© contribuidores do OpenStreetMap"
@@ -255,6 +263,14 @@ func New(d Deps) http.Handler {
 	r.Post("/estoque/retirada/{id}/cancelar", h.exigir("estoque_retirada_cancelar", h.estoqueRetiradaCancelar))
 	r.Post("/estoque/retirada/{id}/excluir", h.exigir("estoque_retirada_cancelar", h.estoqueRetiradaExcluir))
 	r.Get("/estoque/balanco", h.exigir("estoque_balanco_visualizar", h.estoqueBalanco))
+	r.Get("/comunicacoes", h.exigir("comunicacao_visualizar", h.comunicacoes))
+	r.Get("/comunicacoes/nova", h.exigir("comunicacao_reenviar", h.comunicacaoNova))
+	r.Post("/comunicacoes", h.exigir("comunicacao_reenviar", h.comunicacaoCriar))
+	r.Post("/comunicacoes/processar", h.exigir("comunicacao_reenviar", h.comunicacaoProcessarFila))
+	r.Get("/comunicacoes/{id}", h.exigir("comunicacao_visualizar", h.comunicacaoFicha))
+	for _, a := range []string{"enviar", "reenviar", "cancelar", "entregue", "visualizada"} {
+		r.Post("/comunicacoes/{id}/"+a, h.exigir("comunicacao_reenviar", h.comunicacaoAcao(a)))
+	}
 	r.Get("/estoque/patrimonio", h.exigir("patrimonio_visualizar", h.patrimonios))
 	r.Get("/estoque/patrimonio/novo", h.exigir("patrimonio_novo", h.patrimonioNovo))
 	r.Post("/estoque/patrimonio", h.exigir("patrimonio_novo", h.patrimonioCriar))

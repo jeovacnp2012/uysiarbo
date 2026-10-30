@@ -116,12 +116,14 @@ func (s *handlers) menu(r *http.Request) []views.NavGrupo {
 		if pr.Pode("historico_mobilidade") {
 			menu = append(menu, views.NavGrupo{Label: "Histórico de mobilidade", Icone: "mobilidade", Href: "/mobilidade/historico"})
 		}
+		if pr.Pode("comunicacao_visualizar") {
+			menu = append(menu, views.NavGrupo{Label: "Comunicações", Icone: "comunicacao", Href: "/comunicacoes"})
+		}
 		if pr.Pode("bairro_visualizar") {
 			menu = append(menu, views.NavGrupo{Label: "Bairros", Icone: "bairros", Href: "/bairros"})
 		}
 		// Módulos que ainda não têm tela: aparecem apagados para quem tem a permissão de ver.
 		for _, m := range []struct{ perm, rotulo, icone string }{
-			{"comunicacao_visualizar", "Comunicações", "comunicacao"},
 			{"banner_visualizar", "Banners", "banner"},
 		} {
 			if pr.Pode(m.perm) {

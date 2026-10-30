@@ -1,0 +1,244 @@
+package views
+
+import "strconv"
+
+templ Comunicacoes(l Layout, d ComunicacoesData) {
+	@Base(l) {
+		@PageHeader("Comunicações", "Fila de mensagens de WhatsApp e e-mail, com tentativas e acompanhamento.") {
+			if d.PodeNova {
+				<a class="btn btn-primario" href="/comunicacoes/nova" data-icone="plus">Nova comunicação</a>
+				<form method="post" action="/comunicacoes/processar" data-sem-gaveta style="display:inline">
+					<input type="hidden" name="csrf" value={ d.CSRF }/>
+					<button type="submit" class="btn btn-escuro" data-icone="send">Processar fila ({ strconv.Itoa(d.EmFila) })</button>
+				</form>
+			}
+		}
+		if d.Aviso != "" {
+			<p class="alerta alerta-ok" role="status">{ d.Aviso }</p>
+		}
+		<form
+			method="get"
+			action="/comunicacoes"
+			class="cartao filtros filtros-vivos"
+			autocomplete="off"
+			hx-get="/comunicacoes"
+			hx-trigger="input delay:350ms, change delay:60ms, filtrar from:body"
+			hx-sync="this:replace"
+			hx-target="#comunicacoes-lista"
+			hx-select="#comunicacoes-lista"
+			hx-swap="outerHTML"
+			hx-push-url="true"
+			hx-indicator="#comunicacoes-lista"
+		>
+			<input type="hidden" name="ordem" value={ d.Ordem }/>
+			<input type="hidden" name="dir" value={ d.Dir }/>
+			<div class="campo">
+				<label for="f-busca">Destinatário, assunto ou texto</label>
+				<input id="f-busca" name="busca" type="search" value={ d.Filtro.Busca }/>
+			</div>
+			@campoEscolha("f-canal", "Canal", "canal", "Todos", d.Canais)
+			@campoEscolha("f-status", "Situação", "status", "Todas", d.Statuses)
+			<div class="form-acoes">
+				<a class="btn btn-escuro" href="/comunicacoes" data-icone="undo">Limpar filtros</a>
+			</div>
+			<noscript><button type="submit" class="btn btn-primario">Filtrar</button></noscript>
+		</form>
+		<div id="comunicacoes-lista" class="lista-viva">
+			<section class="cartao">
+				@Paginacao(d.Pag, "/comunicacoes", d.Query)
+				<div class="tabela-wrap">
+					<table class="tabela">
+						<thead>
+							<tr>
+								<th scope="col" aria-sort={ ariaOrdem(d.Ordem, d.Dir, "id") }><a class="ordenar" href="#" data-ordenar="id" data-dir={ proximaDir(d.Ordem, d.Dir, "id") }>ID<span class="seta">{ setaOrdem(d.Ordem, d.Dir, "id") }</span></a></th>
+								<th scope="col">Canal</th>
+								<th scope="col">Destinatário</th>
+								<th scope="col">Mensagem</th>
+								<th scope="col">Situação</th>
+								<th scope="col">Tentativas</th>
+								<th scope="col">Criada em</th>
+								<th scope="col" data-fixa><span class="sr-only">Ações</span></th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, x := range d.Linhas {
+								<tr>
+									<td data-rotulo="ID"><strong>{ x.IDTexto }</strong></td>
+									<td data-rotulo="Canal">{ x.Canal }</td>
+									<td data-rotulo="Destinatário" class="quebra2">{ x.Destino }</td>
+									<td data-rotulo="Mensagem" class="quebra2">{ x.Resumo }</td>
+									<td data-rotulo="Situação">{ x.Status }</td>
+									<td data-rotulo="Tentativas">{ x.Tentativas }</td>
+									<td data-rotulo="Criada em">{ x.Criada }</td>
+									<td data-rotulo="Ações"><a class="btn" href={ templ.SafeURL("/comunicacoes/" + x.IDTexto) }>Abrir</a></td>
+								</tr>
+							}
+						</tbody>
+					</table>
+					if len(d.Linhas) == 0 {
+						<div class="tabela-vazia">Nenhuma comunicação encontrada.</div>
+					}
+				</div>
+				@Paginacao(d.Pag, "/comunicacoes", d.Query)
+			</section>
+		</div>
+	}
+}
+
+templ ComunicacaoNovaTela(l Layout, d ComunicacaoNova) {
+	@Base(l) {
+		@PageHeader("Nova comunicação", "A mensagem entra na fila e é enviada pelo provedor configurado.") {
+			<a class="btn" href="/comunicacoes">Voltar</a>
+		}
+		if d.Erro != "" {
+			<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
+		}
+		<form method="post" action="/comunicacoes" class="cartao form-admin" data-sem-gaveta>
+			<input type="hidden" name="csrf" value={ d.CSRF }/>
+			<div class="grade-form">
+				<div class="campo">
+					<label for="canal">Canal</label>
+					<select id="canal" name="canal" data-sem-busca>
+						@opcoesDe(d.Canais)
+					</select>
+				</div>
+				<div class="campo">
+					<label for="destinatario">Telefone (com DDD) ou e-mail</label>
+					<input id="destinatario" name="destinatario" type="text" value={ d.Destinatario } maxlength="160" required/>
+				</div>
+				<div class="campo">
+					<label for="nome">Nome do destinatário (opcional)</label>
+					<input id="nome" name="nome" type="text" value={ d.Nome } maxlength="150"/>
+				</div>
+				<div class="campo">
+					<label for="assunto">Assunto (só e-mail)</label>
+					<input id="assunto" name="assunto" type="text" value={ d.Assunto } maxlength="150"/>
+				</div>
+				<div class="campo campo-largo">
+					<label for="corpo">Mensagem</label>
+					<textarea id="corpo" name="corpo" rows="6" maxlength="2000" required>{ d.Corpo }</textarea>
+				</div>
+			</div>
+			<div class="form-acoes">
+				<button type="submit" class="btn btn-primario" data-icone="send">Colocar na fila</button>
+			</div>
+		</form>
+	}
+}
+
+templ comunicacaoBotao(d ComunicacaoFicha, acao, rotulo, classe string, confirma bool) {
+	<form method="post" action={ templ.SafeURL("/comunicacoes/" + strconv.FormatInt(d.ID, 10) + "/" + acao) } data-sem-gaveta style="display:inline">
+		<input type="hidden" name="csrf" value={ d.CSRF }/>
+		if confirma {
+			<button type="submit" class={ "btn " + classe } onclick="return confirm('Confirmar esta ação?')">{ rotulo }</button>
+		} else {
+			<button type="submit" class={ "btn " + classe }>{ rotulo }</button>
+		}
+	</form>
+}
+
+templ ComunicacaoFichaTela(l Layout, d ComunicacaoFicha) {
+	@Base(l) {
+		@PageHeader("Comunicação "+strconv.FormatInt(d.ID, 10), d.Canal+" — "+d.StatusRotulo) {
+			<a class="btn" href="/comunicacoes">Voltar</a>
+		}
+		if d.Aviso != "" {
+			<p class="alerta alerta-ok" role="status">{ d.Aviso }</p>
+		}
+		if d.Erro != "" {
+			<p class="alerta alerta-erro" role="alert">{ d.Erro }</p>
+		}
+		<section class="cartao">
+			<h2>Mensagem</h2>
+			<dl class="dados">
+				<dt>Destinatário</dt>
+				<dd>
+					if d.Nome != "" {
+						{ d.Nome } —
+					}
+					{ d.Destinatario }
+				</dd>
+				if d.Assunto != "" {
+					<dt>Assunto</dt>
+					<dd>{ d.Assunto }</dd>
+				}
+				<dt>Texto</dt>
+				<dd style="white-space:pre-wrap">{ d.Corpo }</dd>
+				<dt>Origem</dt>
+				<dd>{ d.Origem }</dd>
+				<dt>Criada</dt>
+				<dd>{ d.Criada }
+					if d.CriadaPor != "" {
+						por { d.CriadaPor }
+					}
+				</dd>
+				<dt>Tentativas</dt>
+				<dd>{ strconv.Itoa(d.Tentativas) } de { strconv.Itoa(d.MaxTentativas) }</dd>
+				if d.Proxima != "" {
+					<dt>Próxima tentativa</dt>
+					<dd>{ d.Proxima }</dd>
+				}
+				if d.Provedor != "" {
+					<dt>Provedor</dt>
+					<dd>{ d.Provedor }
+						if d.IDProvedor != "" {
+							({ d.IDProvedor })
+						}
+					</dd>
+				}
+				<dt>Enviada</dt>
+				<dd>{ d.Enviada }</dd>
+				<dt>Entregue</dt>
+				<dd>{ d.Entregue }</dd>
+				<dt>Visualizada</dt>
+				<dd>{ d.Visualizada }</dd>
+				if d.UltimoErro != "" {
+					<dt>Último erro</dt>
+					<dd>{ d.UltimoErro }</dd>
+				}
+			</dl>
+			<div class="form-acoes">
+				if d.PodeEnviar {
+					@comunicacaoBotao(d, "enviar", "Enviar agora", "btn-primario", false)
+				}
+				if d.PodeReenviar {
+					@comunicacaoBotao(d, "reenviar", "Reenviar", "btn-primario", false)
+				}
+				if d.PodeStatus {
+					@comunicacaoBotao(d, "entregue", "Marcar como entregue", "btn-escuro", false)
+				}
+				if d.PodeVisualizar {
+					@comunicacaoBotao(d, "visualizada", "Marcar como visualizada", "btn-escuro", false)
+				}
+				if d.PodeCancelar {
+					@comunicacaoBotao(d, "cancelar", "Cancelar", "btn-perigo", true)
+				}
+			</div>
+		</section>
+		<section class="cartao">
+			<h2>Linha do tempo</h2>
+			<div class="tabela-wrap">
+				<table class="tabela">
+					<thead>
+						<tr>
+							<th scope="col">Quando</th>
+							<th scope="col">Evento</th>
+							<th scope="col">Descrição</th>
+							<th scope="col">Por</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, e := range d.Eventos {
+							<tr>
+								<td data-rotulo="Quando">{ e.Quando }</td>
+								<td data-rotulo="Evento">{ e.Tipo }</td>
+								<td data-rotulo="Descrição" class="quebra2">{ e.Descricao }</td>
+								<td data-rotulo="Por">{ e.Por }</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		</section>
+	}
+}
