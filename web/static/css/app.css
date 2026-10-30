@@ -1793,3 +1793,20 @@ form.inline {
         margin-left: 0;
     }
 }
+
+/* Todas as telas: rótulos com ícone e linha de ações dos filtros na largura toda */
+.campo > label.rotulo-ico,
+.campo > label[data-ico] {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.filtros > .form-acoes,
+.filtros-vivos > .form-acoes {
+    grid-column: 1 / -1;
+    margin-top: 0.25rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--borda);
+    align-items: center;
+}

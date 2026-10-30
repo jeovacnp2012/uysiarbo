@@ -44,6 +44,9 @@
         building: '<rect width="16" height="20" x="4" y="2" rx="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M12 6h.01"/><path d="M16 6h.01"/><path d="M8 10h.01"/><path d="M12 10h.01"/><path d="M16 10h.01"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/>',
         sliders: '<path d="M10 5H3"/><path d="M12 19H3"/><path d="M14 3v4"/><path d="M16 17v4"/><path d="M21 12h-9"/><path d="M21 19h-5"/><path d="M21 5h-7"/><path d="M8 10v4"/><path d="M8 12H3"/>',
         play: '<polygon points="6 3 20 12 6 21 6 3"/>',
+        mail: '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
+        phone: '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>',
+        tag: '<path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/>',
         sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>'
     };
 
@@ -70,6 +73,45 @@
         [/(relatorio|erros|guia|artigos)/, 'file'],
         [/^(abrir|ver |ir para|todos|ver todas|mapeamentos)/, 'next']
     ];
+
+    // Ícone de cada rótulo de campo, escolhido pelo texto do rótulo (primeira regra que casar).
+    var REGRAS_CAMPO = [
+        [/senha|segredo/, 'key'],
+        [/e-?mail/, 'mail'],
+        [/telefone|whatsapp|celular|fone/, 'phone'],
+        [/ciclo/, 'repeat'],
+        [/atividade/, 'activity'],
+        [/agente|usuario|responsavel|proprietario|inquilino|paciente|nome|autor|quem/, 'user'],
+        [/bairro|cidade|quarteirao|municipio|unidade|estrato/, 'building'],
+        [/\b(data|de|ate|inicio|fim|periodo|semana|vencimento|quando)\b|^(dia|mes|ano)/, 'calendar'],
+        [/pendencia|situacao|status|resultado|aviso|risco/, 'alert'],
+        [/deposito|amostra|tubito|larva|pupa|criadouro/, 'droplet'],
+        [/endereco|local|lado|cep|latitude|longitude|referencia|numero|complemento|sequencia|rua|logradouro/, 'pin'],
+        [/busca|pesquis|procur/, 'search'],
+        [/arquivo|planilha|importa/, 'upload'],
+        [/descricao|observac|anotac|nota|texto|mensagem|motivo|titulo/, 'file'],
+        [/ordem|ordenac|classific|tipo|categoria|papel|perfil|modo/, 'sliders']
+    ];
+
+    function iconeDoRotulo(txt) {
+        var t = normalizar(txt);
+        for (var i = 0; i < REGRAS_CAMPO.length; i++) {
+            if (REGRAS_CAMPO[i][0].test(t)) return REGRAS_CAMPO[i][1];
+        }
+        return 'tag';
+    }
+
+    function enfeitarCampo(label) {
+        if (label._icone || label.hasAttribute('data-ico') || label.hasAttribute('data-sem-icone')) return;
+        if (label.querySelector('svg, input, select, textarea')) return;
+        label._icone = true;
+        var e = svg(iconeDoRotulo(label.textContent));
+        if (e) {
+            e.setAttribute('class', 'ico-rotulo');
+            label.insertBefore(e, label.firstChild);
+            label.classList.add('rotulo-ico');
+        }
+    }
 
     function normalizar(t) {
         return String(t).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
@@ -123,6 +165,7 @@
     function varrer(raiz) {
         (raiz || document).querySelectorAll('.btn').forEach(enfeitar);
         (raiz || document).querySelectorAll('[data-ico]').forEach(enfeitarRotulo);
+        (raiz || document).querySelectorAll('.campo > label').forEach(enfeitarCampo);
     }
 
     var pendente = false;
