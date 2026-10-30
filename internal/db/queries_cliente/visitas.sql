@@ -141,6 +141,19 @@ WHERE v.local_id = sqlc.arg(local_id)::bigint AND v.deleted_at IS NULL AND v.ati
 ORDER BY v.data DESC, v.id DESC
 LIMIT 10;
 
+-- name: TotaisDoLocal :one
+SELECT count(*)::int AS visitas,
+       (max(v.data))::date AS ultima,
+       count(*) FILTER (WHERE v.achou_deposito)::int AS com_deposito,
+       count(*) FILTER (WHERE v.coletou_amostra)::int AS com_amostra,
+       count(*) FILTER (WHERE v.fez_tratamento)::int AS com_tratamento,
+       (SELECT count(*) FROM amostras am JOIN visitas v2 ON v2.id = am.visita_id
+         WHERE v2.local_id = sqlc.arg(local_id)::bigint AND v2.deleted_at IS NULL AND v2.ativo AND am.deleted_at IS NULL
+           AND (am.total_aegypti + am.total_albopictus) > 0)::int AS amostras_positivas
+FROM visitas v
+WHERE v.local_id = sqlc.arg(local_id)::bigint AND v.deleted_at IS NULL AND v.ativo
+  AND (sqlc.narg(somente_agente)::bigint IS NULL OR v.agente_id = sqlc.narg(somente_agente)::bigint);
+
 -- name: ResumoDoLocal12Meses :one
 SELECT count(*)::int AS visitas,
        count(*) FILTER (WHERE v.pendencia = 'nenhuma')::int AS trabalhadas,
@@ -149,7 +162,9 @@ SELECT count(*)::int AS visitas,
        (SELECT count(*) FROM amostras am JOIN visitas v2 ON v2.id = am.visita_id
          WHERE v2.local_id = sqlc.arg(local_id)::bigint AND v2.deleted_at IS NULL AND v2.ativo AND am.deleted_at IS NULL
            AND v2.data > sqlc.arg(hoje)::date - interval '12 months' AND v2.data <= sqlc.arg(hoje)::date
-           AND (am.total_aegypti + am.total_albopictus) > 0)::int AS amostras_positivas
+           AND (am.total_aegypti + am.total_albopictus) > 0)::int AS amostras_positivas,
+       count(DISTINCT v.ciclo_id)::int AS ciclos_visitados,
+       count(DISTINCT v.ciclo_id) FILTER (WHERE v.achou_deposito)::int AS ciclos_positivos
 FROM visitas v
 WHERE v.local_id = sqlc.arg(local_id)::bigint AND v.deleted_at IS NULL AND v.ativo
   AND v.data > sqlc.arg(hoje)::date - interval '12 months' AND v.data <= sqlc.arg(hoje)::date;

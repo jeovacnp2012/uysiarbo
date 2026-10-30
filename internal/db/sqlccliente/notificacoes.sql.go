@@ -811,6 +811,49 @@ func (q *Queries) ListNotificacoes(ctx context.Context, arg ListNotificacoesPara
 	return items, nil
 }
 
+const listNotificacoesDaFichaDoLocal = `-- name: ListNotificacoesDaFichaDoLocal :many
+SELECT n.id, n.numero, n.situacao, n.data_notificacao, u.nome AS por_nome,
+       EXISTS (SELECT 1 FROM autos_infracao a WHERE a.notificacao_id = n.id AND a.deleted_at IS NULL) AS autuado
+FROM notificacoes n LEFT JOIN usuarios u ON u.id = n.criado_por
+WHERE n.local_id = $1 AND n.deleted_at IS NULL ORDER BY n.id DESC LIMIT 20
+`
+
+type ListNotificacoesDaFichaDoLocalRow struct {
+	ID              int64       `json:"id"`
+	Numero          string      `json:"numero"`
+	Situacao        string      `json:"situacao"`
+	DataNotificacao pgtype.Date `json:"data_notificacao"`
+	PorNome         pgtype.Text `json:"por_nome"`
+	Autuado         bool        `json:"autuado"`
+}
+
+func (q *Queries) ListNotificacoesDaFichaDoLocal(ctx context.Context, localID int64) ([]ListNotificacoesDaFichaDoLocalRow, error) {
+	rows, err := q.db.Query(ctx, listNotificacoesDaFichaDoLocal, localID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListNotificacoesDaFichaDoLocalRow
+	for rows.Next() {
+		var i ListNotificacoesDaFichaDoLocalRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Numero,
+			&i.Situacao,
+			&i.DataNotificacao,
+			&i.PorNome,
+			&i.Autuado,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listNotificacoesDoLocal = `-- name: ListNotificacoesDoLocal :many
 SELECT id, numero, motivo, data_notificacao, prazo, situacao FROM notificacoes
 WHERE local_id = $1 AND deleted_at IS NULL ORDER BY id DESC LIMIT 20

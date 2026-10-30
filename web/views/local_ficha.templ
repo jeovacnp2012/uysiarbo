@@ -1,0 +1,220 @@
+package views
+
+import "strconv"
+
+// FichaLocalTopo é a visão da ficha do local: dados, moradores, habitantes, QR, totais, reincidência, visitas e módulos.
+templ FichaLocalTopo(d LocalFormData) {
+	{{ id := strconv.FormatInt(d.ID, 10) }}
+	<section class="cartao fl-bloco fl-azul">
+		<div class="fl-cab">
+			<h2>Dados do Local <small>({ id })</small></h2>
+			<div class="fl-acoes">
+				if d.PodeGrupos {
+					<a class="btn btn-escuro" href="#grupos">Grupos</a>
+				}
+				if d.PodeEditar {
+					<button type="button" class="btn btn-escuro" @click="editar = !editar; if (editar) $nextTick(() => document.getElementById('editar-local').scrollIntoView({behavior: 'smooth'}))">Editar</button>
+				}
+			</div>
+		</div>
+		<div class="fl-grade4">
+			<div class="fl-endereco">
+				<span class="fl-tipo">{ rotuloSelecionado(d.Tipos) }</span>
+				<strong>{ d.Campos.Endereco }, { d.Campos.Numero }</strong>
+				<span>{ rotuloSelecionado(d.Bairros) }</span>
+				<span>Quarteirão: { rotuloSelecionado(d.Quarteiroes) } — Lado: { vazioOuTraco(d.Campos.Lado) }</span>
+				<span>Seq.: { vazioOuTraco(d.Campos.Sequencia) } — Compl.: { vazioOuTraco(d.Campos.Complemento) }</span>
+				if d.Campos.Referencia != "" {
+					<span>Ref.: { d.Campos.Referencia }</span>
+				}
+				if d.Campos.Latitude != "" && d.Campos.Longitude != "" {
+					<span class="subtitulo">{ d.Campos.Latitude }, { d.Campos.Longitude }</span>
+				}
+			</div>
+			<div class="fl-painel fl-p-azul">
+				<h3>Moradores</h3>
+				<dl>
+					<dt>Proprietário</dt>
+					<dd>{ vazioOuTraco(d.Campos.Proprietario) }</dd>
+					<dt>CPF</dt>
+					<dd>{ vazioOuTraco(d.Campos.ProprietarioCPF) }</dd>
+					<dt>Telefone</dt>
+					<dd>{ vazioOuTraco(d.Campos.ProprietarioTelefone) }</dd>
+					<dt>WhatsApp</dt>
+					<dd>{ vazioOuTraco(d.Campos.Whatsapp) }</dd>
+					<dt>E-mail</dt>
+					<dd>{ vazioOuTraco(d.Campos.Email) }</dd>
+					<dt>Inquilino</dt>
+					<dd>{ vazioOuTraco(d.Campos.Inquilino) }</dd>
+					<dt>Telefone</dt>
+					<dd>{ vazioOuTraco(d.Campos.InquilinoTelefone) }</dd>
+				</dl>
+			</div>
+			<div class="fl-painel fl-p-verde">
+				<h3>Habitantes</h3>
+				<dl>
+					<dt>Humanos</dt>
+					<dd><span class="fl-num">{ vazioOuZero(d.Campos.Humanos) }</span></dd>
+					<dt>Cachorros</dt>
+					<dd><span class="fl-num">{ vazioOuZero(d.Campos.Cachorros) }</span></dd>
+					<dt>Gatos</dt>
+					<dd><span class="fl-num">{ vazioOuZero(d.Campos.Gatos) }</span></dd>
+					<dt>Roedores</dt>
+					<dd><span class="fl-num">{ vazioOuZero(d.Campos.Roedores) }</span></dd>
+				</dl>
+			</div>
+			<div class="fl-painel fl-p-escuro fl-qr">
+				<h3>QR Code / Chave</h3>
+				<img src={ "/locais/" + id + "/qr.png" } alt={ "QR Code do local " + d.Campos.Endereco + ", " + d.Campos.Numero } width="140" height="140"/>
+				<code>{ d.Chave }</code>
+			</div>
+		</div>
+	</section>
+	if d.Totais != nil {
+		<div class="fl-totais">
+			<div class="cartao fl-total fl-t-escuro"><span>Total de visitas</span><strong>{ strconv.Itoa(d.Totais.Visitas) }</strong><small>Última: { vazioOuTraco(d.Totais.Ultima) }</small></div>
+			<div class="cartao fl-total fl-t-laranja"><span>Com depósito</span><strong>{ strconv.Itoa(d.Totais.ComDeposito) }</strong><small>{ pctDe(d.Totais.ComDeposito, d.Totais.Visitas) } das visitas</small></div>
+			<div class="cartao fl-total fl-t-azul"><span>Amostras</span><strong>{ strconv.Itoa(d.Totais.Amostras) }</strong><small>{ positivasTexto(d.Totais.AmostrasPositivas) }</small></div>
+			<div class="cartao fl-total fl-t-verde"><span>Tratamentos</span><strong>{ strconv.Itoa(d.Totais.Tratamentos) }</strong><small>{ pctDe(d.Totais.Tratamentos, d.Totais.Visitas) } das visitas</small></div>
+		</div>
+	}
+	if d.Reincidencia != nil {
+		<section class="cartao fl-bloco fl-verde" id="reincidencia">
+			<div class="fl-cab">
+				<h2>Reincidência — últimos 12 meses</h2>
+				<span class="subtitulo">Baseado em visitas com depósito encontrado</span>
+			</div>
+			<div class="fl-grade4">
+				<div class="fl-metrica"><strong>{ strconv.Itoa(d.Reincidencia.CiclosPositivos) }</strong><span>Ciclos positivos</span><small>de { strconv.Itoa(d.Reincidencia.CiclosVisitados) } ciclo(s) visitado(s)</small></div>
+				<div class="fl-metrica"><strong>{ strconv.Itoa(d.Reincidencia.ComDeposito) } <em>/ { strconv.Itoa(d.Reincidencia.Visitas) }</em></strong><span>Visitas positivas</span><small>total de visitas no período</small></div>
+				<div class="fl-metrica"><strong>{ strconv.Itoa(d.Reincidencia.AmostrasPositivas) }</strong><span>Amostras positivas</span><small>soma do período</small></div>
+				if d.Reincidencia.Reincidente {
+					<div class="fl-veredito fl-v-perigo">Reincidente</div>
+				} else {
+					<div class="fl-veredito fl-v-ok">Sem reincidência</div>
+				}
+			</div>
+		</section>
+	}
+	if d.PodeVisitas {
+		<section class="cartao fl-bloco fl-escuro" id="visitas">
+			<div class="fl-cab">
+				<h2>Visitas</h2>
+				<div class="fl-acoes">
+					<a class="btn" href={ templ.SafeURL("/visitas?local=" + id) }>Ver todas</a>
+					if d.PodeNovaVisita {
+						<a class="btn btn-escuro" href={ templ.SafeURL("/visitas/nova?local=" + id) }>Nova visita</a>
+					}
+				</div>
+			</div>
+			if len(d.VisitasRecentes) == 0 {
+				<div class="tabela-vazia">Nenhuma visita registrada neste local.</div>
+			} else {
+				<div class="tabela-wrap">
+					<table class="tabela">
+						<thead>
+							<tr><th>ID</th><th>Data / Agente</th><th>Ciclo</th><th>Sem.</th><th>Atividade</th><th>Pendência</th><th>Depósito</th><th>Amostra</th><th>Tratamento</th><th>Ações</th></tr>
+						</thead>
+						<tbody>
+							for _, v := range d.VisitasRecentes {
+								<tr>
+									<td data-rotulo="ID">{ strconv.FormatInt(v.ID, 10) }</td>
+									<td data-rotulo="Data / Agente">{ v.Data }<br/><span class="subtitulo">{ v.Agente }</span></td>
+									<td data-rotulo="Ciclo">{ v.Ciclo }</td>
+									<td data-rotulo="Sem.">{ v.Semana }</td>
+									<td data-rotulo="Atividade">{ v.Atividade }</td>
+									<td data-rotulo="Pendência">{ v.Pendencia }</td>
+									<td data-rotulo="Depósito">{ simNao(v.Deposito) }</td>
+									<td data-rotulo="Amostra">{ simNao(v.Amostra) }</td>
+									<td data-rotulo="Tratamento">{ simNao(v.Tratamento) }</td>
+									<td data-rotulo="Ações"><a class="btn" data-icone="ver" title="Abrir a visita" href={ templ.SafeURL("/visitas/" + strconv.FormatInt(v.ID, 10)) }>Abrir</a></td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+				<p class="subtitulo">Mostrando as { strconv.Itoa(len(d.VisitasRecentes)) } visitas mais recentes.</p>
+			}
+		</section>
+	}
+	<section class="cartao fl-bloco fl-roxo">
+		<div class="fl-cab"><h2>Zoonose — Campanha Antirrábica</h2><span class="selo selo-aviso">chega na 10.2</span></div>
+		<div class="tabela-vazia">Nenhuma campanha de vacinação encontrada.</div>
+	</section>
+	<section class="cartao fl-bloco fl-laranja">
+		<div class="fl-cab"><h2>Zoonose — Leishmaniose Visceral Canina (LVC)</h2><span class="selo selo-aviso">chega na 10.4</span></div>
+		<div class="tabela-vazia">Nenhum teste encontrado.</div>
+	</section>
+	@FichaArmadilhas(d.Ovitrampas, "fl-teal", "contagem", d.ID)
+	if d.Notificacoes.Pode {
+		<section class="cartao fl-bloco fl-vermelho" id="notificacoes">
+			<div class="fl-cab">
+				<h2>Notificações</h2>
+				if d.Notificacoes.PodeNova {
+					<a class="btn btn-escuro" href={ templ.SafeURL("/notificacoes/nova?local=" + id) }>Nova notificação</a>
+				}
+			</div>
+			if len(d.Notificacoes.Linhas) == 0 {
+				<div class="tabela-vazia">Nenhuma notificação encontrada.</div>
+			} else {
+				<div class="tabela-wrap">
+					<table class="tabela">
+						<thead><tr><th>Número</th><th>Status</th><th>Data</th><th>Por</th><th>Autuado</th><th>Ações</th></tr></thead>
+						<tbody>
+							for _, n := range d.Notificacoes.Linhas {
+								<tr>
+									<td data-rotulo="Número">{ n.Numero }</td>
+									<td data-rotulo="Status">{ n.Status }</td>
+									<td data-rotulo="Data">{ n.Data }</td>
+									<td data-rotulo="Por">{ vazioOuTraco(n.Por) }</td>
+									<td data-rotulo="Autuado">{ simNao(n.Autuado) }</td>
+									<td data-rotulo="Ações"><a class="btn" data-icone="ver" title="Abrir a notificação" href={ templ.SafeURL("/notificacoes/" + strconv.FormatInt(n.ID, 10)) }>Abrir</a></td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+			}
+		</section>
+	}
+	@FichaArmadilhas(d.EDLs, "fl-indigo", "manutenção", d.ID)
+}
+
+templ FichaArmadilhas(s ArmadilhasFicha, cor string, ultima string, localID int64) {
+	if s.Pode {
+		<section class={ "cartao fl-bloco " + cor } id={ "arm-" + s.Rotulo }>
+			<div class="fl-cab">
+				if s.Rotulo == "EDL" {
+					<h2>EDL — Estação Disseminadora de Larvicida</h2>
+				} else {
+					<h2>Ovitrampa</h2>
+				}
+				if s.PodeNova {
+					<a class="btn btn-escuro" href={ templ.SafeURL(s.Caminho + "/nova?local=" + strconv.FormatInt(localID, 10)) }>Nova { s.Rotulo }</a>
+				}
+			</div>
+			if len(s.Linhas) == 0 {
+				<div class="tabela-vazia">Nenhuma { s.Rotulo } encontrada.</div>
+			} else {
+				<div class="tabela-wrap">
+					<table class="tabela">
+						<thead><tr><th>ID</th><th>Status</th><th>Data</th><th>Por</th><th>Última { ultima }</th><th>Retirada</th><th>Ações</th></tr></thead>
+						<tbody>
+							for _, a := range s.Linhas {
+								<tr>
+									<td data-rotulo="ID">{ strconv.FormatInt(a.ID, 10) }</td>
+									<td data-rotulo="Status">{ a.Status }</td>
+									<td data-rotulo="Data">{ a.Data }</td>
+									<td data-rotulo="Por">{ vazioOuTraco(a.Por) }</td>
+									<td data-rotulo={ "Última " + ultima }>{ vazioOuTraco(a.Ultima) }</td>
+									<td data-rotulo="Retirada">{ vazioOuTraco(a.Retirada) }</td>
+									<td data-rotulo="Ações"><a class="btn" data-icone="ver" title="Abrir" href={ templ.SafeURL(s.Caminho + "/" + strconv.FormatInt(a.ID, 10)) }>Abrir</a></td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+			}
+		</section>
+	}
+}

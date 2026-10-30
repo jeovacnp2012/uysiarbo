@@ -224,3 +224,9 @@ DELETE FROM autos_infracao WHERE id = $1 AND deleted_at IS NOT NULL;
 SELECT a.id, a.numero, a.deleted_at, COALESCE(u.nome, '')::text AS por
 FROM autos_infracao a LEFT JOIN usuarios u ON u.id = a.deleted_by
 WHERE a.deleted_at IS NOT NULL ORDER BY a.deleted_at DESC LIMIT 500;
+
+-- name: ListNotificacoesDaFichaDoLocal :many
+SELECT n.id, n.numero, n.situacao, n.data_notificacao, u.nome AS por_nome,
+       EXISTS (SELECT 1 FROM autos_infracao a WHERE a.notificacao_id = n.id AND a.deleted_at IS NULL) AS autuado
+FROM notificacoes n LEFT JOIN usuarios u ON u.id = n.criado_por
+WHERE n.local_id = $1 AND n.deleted_at IS NULL ORDER BY n.id DESC LIMIT 20;

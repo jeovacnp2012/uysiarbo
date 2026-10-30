@@ -303,7 +303,7 @@ func TestFichaDoLocalComSecoesGruposEHistorico(t *testing.T) {
 	m.criarGrupoPelaTela(t, ana, "Rota 2")
 
 	corpo := ana.get("/locais/1").Body.String()
-	for _, quer := range []string{"Ficha do local", "Visitas", "Etapa 6", "Casos e notificações", "Etapa 9", "Armadilhas", "Etapa 10", "Comunicação", "Etapa 12",
+	for _, quer := range []string{"Dados do Local", "Visitas", "Zoonose — Campanha Antirrábica", "Notificações", "Ovitrampa", "EDL — Estação",
 		"Grupos de locais", "não está em nenhum grupo", "Acrescentar a um grupo", "Rota 1", "Rota 2", "Histórico de alterações", "Cadastrou um local"} {
 		if !strings.Contains(corpo, quer) {
 			t.Errorf("a ficha do local deveria conter %q", quer)
@@ -331,7 +331,7 @@ func TestFichaDoLocalComSecoesGruposEHistorico(t *testing.T) {
 	_ = m.cliQ.AddPermissoesAoPapel(t.Context(), permsParams(pa.ID, "local_visualizar", "local_adicionar"))
 	leo := m.novoUsuarioLogado(t, "Leo Dias", "leo@nm.gov.br", pa.ID)
 	corpo = leo.get("/locais/1").Body.String()
-	if !strings.Contains(corpo, "Ficha do local") || strings.Contains(corpo, "Histórico de alterações") || strings.Contains(corpo, "Acrescentar a um grupo") {
+	if !strings.Contains(corpo, "Dados do Local") || strings.Contains(corpo, "Histórico de alterações") || strings.Contains(corpo, "Acrescentar a um grupo") {
 		t.Error("a ficha do Leo deveria ter as seções reservadas, mas não grupos nem histórico")
 	}
 	quer(t, leo.post("/locais/1/grupo", url.Values{"grupo_id": {g1}}), http.StatusForbidden)

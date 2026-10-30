@@ -234,6 +234,11 @@ templ LocalForm(l Layout, d LocalFormData) {
 				<p class="alerta alerta-aviso" role="status">Este local está desativado.</p>
 			}
 		}
+		<div x-data={ "{ editar: " + strconv.FormatBool(d.Novo() || d.Erro != "") + " }" }>
+			if !d.Novo() {
+				@FichaLocalTopo(d)
+			}
+			<div id="editar-local" x-show="editar" x-cloak>
 		<form
 			method="post"
 			if d.Novo() {
@@ -394,6 +399,8 @@ templ LocalForm(l Layout, d LocalFormData) {
 		if d.Localizacao && d.PodeEditar {
 			<script src={ asset("/static/js/localizacao.js") } defer></script>
 		}
+			</div>
+		</div>
 		if !d.Novo() {
 			<section class="cartao form-admin" id="qr">
 				<h2>Chave e QR Code</h2>
@@ -479,73 +486,6 @@ templ LocalForm(l Layout, d LocalFormData) {
 					}
 				</section>
 			}
-			if len(d.VisitasRecentes) > 0 {
-				<section class="cartao" id="reincidencia">
-					<h2>Visitas e reincidência</h2>
-					if d.Reincidencia != nil {
-						<p>
-							if d.Reincidencia.Reincidente {
-								<span class="selo selo-perigo">Reincidente</span>
-							} else {
-								<span class="selo">Sem reincidência</span>
-							}
-							<span class="subtitulo">
-								Últimos 12 meses: { strconv.Itoa(d.Reincidencia.Visitas) } visita(s), { strconv.Itoa(d.Reincidencia.Trabalhadas) } trabalhada(s),
-								{ strconv.Itoa(d.Reincidencia.ComDeposito) } com depósito encontrado, { strconv.Itoa(d.Reincidencia.AmostrasPositivas) } amostra(s) positiva(s).
-								if d.Reincidencia.UltimoDeposito != "" {
-									Último depósito encontrado em { d.Reincidencia.UltimoDeposito }.
-								}
-							</span>
-						</p>
-					}
-					if len(d.VisitasRecentes) == 0 {
-						<div class="tabela-vazia">Nenhuma visita registrada neste local.</div>
-					} else {
-						<div class="tabela-wrap">
-							<table class="tabela">
-								<thead>
-									<tr><th>Data</th><th>Semana</th><th>Ciclo</th><th>Atividade</th><th>Agente</th><th>Pendência</th><th>Depósito</th><th>Amostra</th><th>Tratamento</th><th></th></tr>
-								</thead>
-								<tbody>
-									for _, v := range d.VisitasRecentes {
-										<tr>
-											<td data-rotulo="Data">{ v.Data }</td>
-											<td data-rotulo="Semana">{ v.Semana }</td>
-											<td data-rotulo="Ciclo">{ v.Ciclo }</td>
-											<td data-rotulo="Atividade">{ v.Atividade }</td>
-											<td data-rotulo="Agente">{ v.Agente }</td>
-											<td data-rotulo="Pendência">{ v.Pendencia }</td>
-											<td data-rotulo="Depósito">{ simNao(v.Deposito) }</td>
-											<td data-rotulo="Amostra">{ simNao(v.Amostra) }</td>
-											<td data-rotulo="Tratamento">{ simNao(v.Tratamento) }</td>
-											<td><a class="btn" href={ templ.SafeURL("/visitas/" + strconv.FormatInt(v.ID, 10)) }>Abrir</a></td>
-										</tr>
-									}
-								</tbody>
-							</table>
-						</div>
-					}
-				</section>
-			}
-			<section class="cartao" id="ficha">
-				<h2>Ficha do local</h2>
-				<p class="subtitulo">O que acontece neste local aparece aqui conforme cada módulo do sistema for entrando.</p>
-				<div class="grade-secoes">
-					for _, s := range d.Secoes {
-						<div class="secao-ficha">
-							<strong>{ s.Titulo }</strong>
-							<p class="subtitulo">{ s.Descricao }</p>
-							if len(s.Links) > 0 {
-								for _, a := range s.Links {
-									<a class="btn" href={ templ.SafeURL(a.Href) }>{ a.Rotulo }</a>
-								}
-							} else {
-								<span class="selo selo-aviso">chega na { s.Etapa }</span>
-							}
-						</div>
-					}
-				</div>
-			</section>
 			if d.MostrarHistorico {
 				<section class="cartao" id="historico">
 					<h2>Histórico de alterações</h2>

@@ -424,6 +424,57 @@ func (q *Queries) ListArmadilhas(ctx context.Context, arg ListArmadilhasParams) 
 	return items, nil
 }
 
+const listArmadilhasDaFichaDoLocal = `-- name: ListArmadilhasDaFichaDoLocal :many
+SELECT a.id, a.tipo, a.status, a.instalada_em, a.retirada_em, u.nome AS agente_nome,
+       (SELECT r.ovos FROM armadilha_registros r WHERE r.armadilha_id = a.id AND r.deleted_at IS NULL ORDER BY r.registrado_em DESC, r.id DESC LIMIT 1) AS ultimo_ovos,
+       (SELECT r.nivel_agua FROM armadilha_registros r WHERE r.armadilha_id = a.id AND r.deleted_at IS NULL ORDER BY r.registrado_em DESC, r.id DESC LIMIT 1) AS ultimo_nivel,
+       (SELECT r.registrado_em FROM armadilha_registros r WHERE r.armadilha_id = a.id AND r.deleted_at IS NULL ORDER BY r.registrado_em DESC, r.id DESC LIMIT 1) AS ultimo_em
+FROM armadilhas a LEFT JOIN usuarios u ON u.id = a.agente_id
+WHERE a.local_id = $1 AND a.deleted_at IS NULL ORDER BY a.id DESC LIMIT 20
+`
+
+type ListArmadilhasDaFichaDoLocalRow struct {
+	ID          int64              `json:"id"`
+	Tipo        string             `json:"tipo"`
+	Status      string             `json:"status"`
+	InstaladaEm pgtype.Timestamptz `json:"instalada_em"`
+	RetiradaEm  pgtype.Timestamptz `json:"retirada_em"`
+	AgenteNome  pgtype.Text        `json:"agente_nome"`
+	UltimoOvos  pgtype.Int4        `json:"ultimo_ovos"`
+	UltimoNivel string             `json:"ultimo_nivel"`
+	UltimoEm    pgtype.Timestamptz `json:"ultimo_em"`
+}
+
+func (q *Queries) ListArmadilhasDaFichaDoLocal(ctx context.Context, localID int64) ([]ListArmadilhasDaFichaDoLocalRow, error) {
+	rows, err := q.db.Query(ctx, listArmadilhasDaFichaDoLocal, localID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListArmadilhasDaFichaDoLocalRow
+	for rows.Next() {
+		var i ListArmadilhasDaFichaDoLocalRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Tipo,
+			&i.Status,
+			&i.InstaladaEm,
+			&i.RetiradaEm,
+			&i.AgenteNome,
+			&i.UltimoOvos,
+			&i.UltimoNivel,
+			&i.UltimoEm,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listArmadilhasDoLocal = `-- name: ListArmadilhasDoLocal :many
 SELECT id, tipo, status, instalada_em FROM armadilhas WHERE local_id = $1 AND deleted_at IS NULL ORDER BY id DESC LIMIT 20
 `

@@ -193,6 +193,12 @@ type LocalFormData struct {
 	Secoes              []SecaoFicha     // espaços reservados para os módulos seguintes
 	VisitasRecentes     []VisitaDoLocal  // últimas visitas do local (6.5)
 	Reincidencia        *ReincidenciaLocal
+
+	Totais           *TotaisLocal
+	PodeVisitas      bool
+	PodeNovaVisita   bool
+	Ovitrampas, EDLs ArmadilhasFicha
+	Notificacoes     NotificacoesFicha
 }
 
 // VisitaDoLocal é uma linha do histórico de visitas na ficha do local.
@@ -208,6 +214,7 @@ type ReincidenciaLocal struct {
 	Visitas, Trabalhadas, ComDeposito int
 	AmostrasPositivas                 int
 	UltimoDeposito                    string
+	CiclosVisitados, CiclosPositivos  int
 	Reincidente                       bool
 }
 
@@ -252,4 +259,35 @@ type LoteFormData struct {
 	Tipos       []CidadeOpcao
 	Erro        string
 	CSRF        string
+}
+
+// TotaisLocal são os números de todas as visitas do local (cartões da ficha).
+type TotaisLocal struct {
+	Visitas, ComDeposito, Amostras, AmostrasPositivas, Tratamentos int
+	Ultima                                                         string
+}
+
+// ArmadilhaFichaLinha é uma armadilha na ficha do local.
+type ArmadilhaFichaLinha struct {
+	ID                                  int64
+	Status, Data, Por, Ultima, Retirada string
+}
+
+// ArmadilhasFicha é a seção de ovitrampas ou EDLs da ficha do local.
+type ArmadilhasFicha struct {
+	Pode, PodeNova  bool
+	Caminho, Rotulo string
+	Linhas          []ArmadilhaFichaLinha
+}
+
+type NotificacaoFichaLinha struct {
+	ID                        int64
+	Numero, Status, Data, Por string
+	Autuado                   bool
+}
+
+// NotificacoesFicha é a seção de notificações da ficha do local.
+type NotificacoesFicha struct {
+	Pode, PodeNova bool
+	Linhas         []NotificacaoFichaLinha
 }

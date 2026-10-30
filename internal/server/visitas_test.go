@@ -143,7 +143,7 @@ func TestVisitaRegistrarEditarEValidar(t *testing.T) {
 	quer(t, ana.get("/visitas"), http.StatusOK, "Rua das Palmeiras", "01 Ciclo", "LIT")
 	quer(t, ana.get("/visitas?local="+s64(c.local)), http.StatusOK, "Mostrando as visitas do local")
 	quer(t, ana.get("/visitas/"+id+"?aviso=salva"), http.StatusOK, "Visita salva.", "Cipermetrina", "Morador presente.", "Assinatura", "SE ")
-	quer(t, ana.get("/locais/"+s64(c.local)), http.StatusOK, "Registrar visita")
+	quer(t, ana.get("/locais/"+s64(c.local)), http.StatusOK, "Nova visita")
 
 	// Editar: sem mudança não gera auditoria; mudando, sim. Pendência apaga o que não vale mais (precisa limpar os marcadores).
 	mesma := c.form(agente,
@@ -304,19 +304,19 @@ func TestFichaDoLocalMostraReincidenciaEHistorico(t *testing.T) {
 	ficha := "/locais/" + s64(c.local)
 
 	// Sem visitas, a ficha não mostra a seção.
-	if strings.Contains(ana.get(ficha).Body.String(), `id="reincidencia"`) {
-		t.Error("sem visitas não deveria haver a seção de reincidência")
+	if !strings.Contains(ana.get(ficha).Body.String(), "Nenhuma visita registrada neste local") {
+		t.Error("sem visitas a ficha deveria avisar que não há visitas")
 	}
 
 	// Uma visita com depósito: aparece no histórico, ainda sem reincidência.
 	quer(t, ana.post("/visitas", c.form(agente, "achou", "1", "a1", "1", "total_eliminado", "1")), http.StatusSeeOther)
-	quer(t, ana.get(ficha), http.StatusOK, "Visitas e reincidência", "Sem reincidência", "1 com depósito encontrado", "01 Ciclo")
+	quer(t, ana.get(ficha), http.StatusOK, "Reincidência", "Sem reincidência", "Visitas positivas", "01 Ciclo")
 
 	// A segunda visita com depósito, nos 12 meses, torna o local reincidente.
 	quer(t, ana.post("/visitas", c.form(agente, "data", c.hoje, "achou", "1", "b", "1", "total_eliminado", "1")), http.StatusSeeOther)
-	quer(t, ana.get(ficha), http.StatusOK, "Reincidente", "2 com depósito encontrado", "2 visita(s)")
+	quer(t, ana.get(ficha), http.StatusOK, "Reincidente", "<em>/ 2</em>")
 
 	// Visita sem depósito não conta para a reincidência.
 	quer(t, ana.post("/visitas", c.form(agente, "data", c.hoje)), http.StatusSeeOther)
-	quer(t, ana.get(ficha), http.StatusOK, "3 visita(s)", "2 com depósito encontrado")
+	quer(t, ana.get(ficha), http.StatusOK, "<em>/ 3</em>")
 }

@@ -116,3 +116,11 @@ SELECT count(*)::int FROM armadilhas WHERE local_id = $1;
 
 -- name: ListArmadilhasDoLocal :many
 SELECT id, tipo, status, instalada_em FROM armadilhas WHERE local_id = $1 AND deleted_at IS NULL ORDER BY id DESC LIMIT 20;
+
+-- name: ListArmadilhasDaFichaDoLocal :many
+SELECT a.id, a.tipo, a.status, a.instalada_em, a.retirada_em, u.nome AS agente_nome,
+       (SELECT r.ovos FROM armadilha_registros r WHERE r.armadilha_id = a.id AND r.deleted_at IS NULL ORDER BY r.registrado_em DESC, r.id DESC LIMIT 1) AS ultimo_ovos,
+       (SELECT r.nivel_agua FROM armadilha_registros r WHERE r.armadilha_id = a.id AND r.deleted_at IS NULL ORDER BY r.registrado_em DESC, r.id DESC LIMIT 1) AS ultimo_nivel,
+       (SELECT r.registrado_em FROM armadilha_registros r WHERE r.armadilha_id = a.id AND r.deleted_at IS NULL ORDER BY r.registrado_em DESC, r.id DESC LIMIT 1) AS ultimo_em
+FROM armadilhas a LEFT JOIN usuarios u ON u.id = a.agente_id
+WHERE a.local_id = $1 AND a.deleted_at IS NULL ORDER BY a.id DESC LIMIT 20;

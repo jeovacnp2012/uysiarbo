@@ -48,11 +48,76 @@ func (h *handlers) visitasDoLocal(ctx context.Context, r *http.Request, q *sqlcc
 	rc := &views.ReincidenciaLocal{
 		Visitas: int(res.Visitas), Trabalhadas: int(res.Trabalhadas), ComDeposito: int(res.ComDeposito),
 		AmostrasPositivas: int(res.AmostrasPositivas), Reincidente: res.ComDeposito >= reincidenciaMinima,
+		CiclosVisitados: int(res.CiclosVisitados), CiclosPositivos: int(res.CiclosPositivos),
 	}
 	if res.UltimoDeposito.Valid {
 		rc.UltimoDeposito = dataBR(res.UltimoDeposito)
 	}
 	form.Reincidencia = rc
+	return nil
+}
+
+// dadosDaFichaDoLocal preenche os cartões e as seções de módulos da ficha (totais, armadilhas e notificações).
+func (h *handlers) dadosDaFichaDoLocal(ctx context.Context, r *http.Request, q *sqlccliente.Queries, localID int64, form *views.LocalFormData) error {
+	pr := h.principal(r)
+	loc := h.fuso(r)
+	form.PodeVisitas = pr.Pode("visita_visualizar")
+	form.PodeNovaVisita = pr.Pode("visita_adicionar")
+	if form.PodeVisitas {
+		t, err := q.TotaisDoLocal(ctx, sqlccliente.TotaisDoLocalParams{LocalID: localID, SomenteAgente: h.escopoVisitas(r)})
+		if err != nil {
+			return err
+		}
+		form.Totais = &views.TotaisLocal{
+			Visitas: int(t.Visitas), ComDeposito: int(t.ComDeposito), Amostras: int(t.ComAmostra), AmostrasPositivas: int(t.AmostrasPositivas),
+			Tratamentos: int(t.ComTratamento), Ultima: dataBR(t.Ultima),
+		}
+	}
+	armadilhas, err := q.ListArmadilhasDaFichaDoLocal(ctx, localID)
+	if err != nil {
+		return err
+	}
+	for _, tipo := range []string{"ovitrampa", "edl"} {
+		t := tiposDeArmadilha[tipo]
+		sec := views.ArmadilhasFicha{Pode: pr.Pode(t.Ver), PodeNova: pr.Pode(t.Novo), Caminho: t.Caminho, Rotulo: t.Rotulo}
+		for _, a := range armadilhas {
+			if a.Tipo != tipo || !sec.Pode {
+				continue
+			}
+			l := views.ArmadilhaFichaLinha{ID: a.ID, Status: rotuloDe(t.statusOpcoes(), a.Status), Data: a.InstaladaEm.Time.In(loc).Format("02/01/2006 15:04"), Por: a.AgenteNome.String}
+			if a.UltimoEm.Valid {
+				if t.Ovos && a.UltimoOvos.Valid {
+					l.Ultima = strconv.Itoa(int(a.UltimoOvos.Int32)) + " ovos"
+				} else if s := a.UltimoNivel; s != "" {
+					l.Ultima = "Água " + s
+				}
+				if l.Ultima != "" {
+					l.Ultima += " em " + a.UltimoEm.Time.In(loc).Format("02/01/2006")
+				}
+			}
+			if a.RetiradaEm.Valid {
+				l.Retirada = a.RetiradaEm.Time.In(loc).Format("02/01/2006")
+			}
+			sec.Linhas = append(sec.Linhas, l)
+		}
+		if tipo == "ovitrampa" {
+			form.Ovitrampas = sec
+		} else {
+			form.EDLs = sec
+		}
+	}
+	form.Notificacoes = views.NotificacoesFicha{Pode: pr.Pode("notificacao_visualizar"), PodeNova: pr.Pode("notificacao_adicionar")}
+	if form.Notificacoes.Pode {
+		ns, err := q.ListNotificacoesDaFichaDoLocal(ctx, localID)
+		if err != nil {
+			return err
+		}
+		for _, n := range ns {
+			form.Notificacoes.Linhas = append(form.Notificacoes.Linhas, views.NotificacaoFichaLinha{
+				ID: n.ID, Numero: n.Numero, Status: rotuloDe(rotulosSituacaoNotificacao, n.Situacao), Data: dataBR(n.DataNotificacao), Por: n.PorNome.String, Autuado: n.Autuado,
+			})
+		}
+	}
 	return nil
 }
 
@@ -71,6 +136,9 @@ var secoesDaFicha = []views.SecaoFicha{
 // completarFichaDoLocal acrescenta à ficha o que não é do formulário: seções reservadas, grupos e histórico.
 func (h *handlers) completarFichaDoLocal(ctx context.Context, r *http.Request, q *sqlccliente.Queries, l sqlccliente.Locai, form *views.LocalFormData) error {
 	pr := h.principal(r)
+	if err := h.dadosDaFichaDoLocal(ctx, r, q, l.ID, form); err != nil {
+		return err
+	}
 	form.Secoes = make([]views.SecaoFicha, len(secoesDaFicha))
 	copy(form.Secoes, secoesDaFicha)
 	if pr.Pode("visita_visualizar") {

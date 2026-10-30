@@ -1023,7 +1023,9 @@ SELECT count(*)::int AS visitas,
        (SELECT count(*) FROM amostras am JOIN visitas v2 ON v2.id = am.visita_id
          WHERE v2.local_id = $1::bigint AND v2.deleted_at IS NULL AND v2.ativo AND am.deleted_at IS NULL
            AND v2.data > $2::date - interval '12 months' AND v2.data <= $2::date
-           AND (am.total_aegypti + am.total_albopictus) > 0)::int AS amostras_positivas
+           AND (am.total_aegypti + am.total_albopictus) > 0)::int AS amostras_positivas,
+       count(DISTINCT v.ciclo_id)::int AS ciclos_visitados,
+       count(DISTINCT v.ciclo_id) FILTER (WHERE v.achou_deposito)::int AS ciclos_positivos
 FROM visitas v
 WHERE v.local_id = $1::bigint AND v.deleted_at IS NULL AND v.ativo
   AND v.data > $2::date - interval '12 months' AND v.data <= $2::date
@@ -1040,6 +1042,8 @@ type ResumoDoLocal12MesesRow struct {
 	ComDeposito       int32       `json:"com_deposito"`
 	UltimoDeposito    pgtype.Date `json:"ultimo_deposito"`
 	AmostrasPositivas int32       `json:"amostras_positivas"`
+	CiclosVisitados   int32       `json:"ciclos_visitados"`
+	CiclosPositivos   int32       `json:"ciclos_positivos"`
 }
 
 func (q *Queries) ResumoDoLocal12Meses(ctx context.Context, arg ResumoDoLocal12MesesParams) (ResumoDoLocal12MesesRow, error) {
@@ -1051,6 +1055,8 @@ func (q *Queries) ResumoDoLocal12Meses(ctx context.Context, arg ResumoDoLocal12M
 		&i.ComDeposito,
 		&i.UltimoDeposito,
 		&i.AmostrasPositivas,
+		&i.CiclosVisitados,
+		&i.CiclosPositivos,
 	)
 	return i, err
 }
@@ -1107,6 +1113,48 @@ func (q *Queries) SoftDeleteVisitaFoto(ctx context.Context, arg SoftDeleteVisita
 		return 0, err
 	}
 	return result.RowsAffected(), nil
+}
+
+const totaisDoLocal = `-- name: TotaisDoLocal :one
+SELECT count(*)::int AS visitas,
+       (max(v.data))::date AS ultima,
+       count(*) FILTER (WHERE v.achou_deposito)::int AS com_deposito,
+       count(*) FILTER (WHERE v.coletou_amostra)::int AS com_amostra,
+       count(*) FILTER (WHERE v.fez_tratamento)::int AS com_tratamento,
+       (SELECT count(*) FROM amostras am JOIN visitas v2 ON v2.id = am.visita_id
+         WHERE v2.local_id = $1::bigint AND v2.deleted_at IS NULL AND v2.ativo AND am.deleted_at IS NULL
+           AND (am.total_aegypti + am.total_albopictus) > 0)::int AS amostras_positivas
+FROM visitas v
+WHERE v.local_id = $1::bigint AND v.deleted_at IS NULL AND v.ativo
+  AND ($2::bigint IS NULL OR v.agente_id = $2::bigint)
+`
+
+type TotaisDoLocalParams struct {
+	LocalID       int64       `json:"local_id"`
+	SomenteAgente pgtype.Int8 `json:"somente_agente"`
+}
+
+type TotaisDoLocalRow struct {
+	Visitas           int32       `json:"visitas"`
+	Ultima            pgtype.Date `json:"ultima"`
+	ComDeposito       int32       `json:"com_deposito"`
+	ComAmostra        int32       `json:"com_amostra"`
+	ComTratamento     int32       `json:"com_tratamento"`
+	AmostrasPositivas int32       `json:"amostras_positivas"`
+}
+
+func (q *Queries) TotaisDoLocal(ctx context.Context, arg TotaisDoLocalParams) (TotaisDoLocalRow, error) {
+	row := q.db.QueryRow(ctx, totaisDoLocal, arg.LocalID, arg.SomenteAgente)
+	var i TotaisDoLocalRow
+	err := row.Scan(
+		&i.Visitas,
+		&i.Ultima,
+		&i.ComDeposito,
+		&i.ComAmostra,
+		&i.ComTratamento,
+		&i.AmostrasPositivas,
+	)
+	return i, err
 }
 
 const updateVisita = `-- name: UpdateVisita :one
