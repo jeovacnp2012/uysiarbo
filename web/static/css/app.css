@@ -1939,3 +1939,20 @@ form.gaveta .rel-limpar {
         display: none !important;
     }
 }
+
+/* Gaveta: os itens não encolhem; o que passar da altura rola dentro do painel */
+form.gaveta {
+    height: 100vh;
+    height: 100dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
+form.gaveta > * {
+    flex-shrink: 0;
+}
+
+form.gaveta > .rel-campos {
+    overflow: visible;
+}
