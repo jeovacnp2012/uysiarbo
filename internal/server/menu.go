@@ -72,6 +72,7 @@ func (s *handlers) menu(r *http.Request) []views.NavGrupo {
 		add(pr.Pode("param_leis"), "Leis municipais", "/leis")
 		add(pr.Pode("param_geral"), "Parâmetros gerais", "/parametros/geral")
 		add(pr.Pode("param_mobilidade"), "Mobilidade (aplicativo)", "/parametros/mobilidade")
+		add(pr.Pode("historico_mobilidade"), "Histórico de mobilidade", "/mobilidade/historico")
 		add(pr.Pode("acesso_local"), "Controle de acesso", "/parametros/acesso")
 		add(pr.Pode("conf_importacao"), "Importação de dados", "/importacoes")
 		add(pr.Pode("conf_lixeira"), "Lixeira", "/lixeira")

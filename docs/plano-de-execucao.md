@@ -125,7 +125,8 @@ Objetivo: migrar dados de outros sistemas e de planilhas, com segurança.
 - [x] 6.4 **API de sincronização em lote** (`POST /sync`) para o tablet: idempotente, com resolução de conflito (servidor vence; `GET /visitas` para baixar; histórico em `sincronismos`)
 - [x] 6.5 Reincidência (12 meses) e histórico na ficha do local
   - Feito em 2026-10-30 (versão 1.0.030): `ListVisitasDoLocal` e `ResumoDoLocal12Meses` (`queries_cliente/visitas.sql`), `visitasDoLocal` em `internal/server/ficha_local.go`, seção "Visitas e reincidência" na ficha. Critério confirmado pelo usuário (2026-10-30): reincidente = 2 ou mais visitas com depósito em 12 meses (`reincidenciaMinima`). Também: filtros do Mapa ao vivo e menu Mapa como grupo.
-- [ ] 6.6 Auditoria de visita/local e histórico de mobilidade (sincronismos)
+- [x] 6.6 Auditoria de visita/local e histórico de mobilidade (sincronismos)
+  - Feito em 2026-10-30 (versão 1.0.031): tela `/mobilidade/historico` (permissão `historico_mobilidade`, filtros ao vivo por aparelho, credencial, período no fuso do cliente e só problemas; `internal/server/mobilidade.go`, `ListSincronismos`), e seção "Histórico de alterações" na ficha da visita (`ListAuditoriaDaVisita`: visita + tubitos). A ficha do local já tinha o histórico (3.5). O histórico do GC (login, local novo etc.) não é reproduzido: só os envios de sincronização.
 - [ ] 6.7 Importador de visitas e laboratório
 
 ## Etapa 7 — Dashboard, B.I. e mapas

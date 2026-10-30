@@ -424,6 +424,29 @@ templ VisitaForm(l Layout, d VisitaFormData) {
 					</form>
 				}
 			</section>
+			if d.MostrarHistorico {
+				<section class="cartao" id="historico">
+					<h2>Histórico de alterações</h2>
+					if len(d.Historico) == 0 {
+						<div class="tabela-vazia">Nenhuma alteração registrada.</div>
+					} else {
+						<div class="tabela-wrap">
+							<table class="tabela">
+								<tbody>
+									for _, u := range d.Historico {
+										<tr>
+											<td data-rotulo="Quando">{ u.Quando }</td>
+											<td data-rotulo="Quem">{ u.Ator }</td>
+											<td data-rotulo="O quê">{ u.Acao }</td>
+											<td data-rotulo="Registro">{ u.Registro }</td>
+										</tr>
+									}
+								</tbody>
+							</table>
+						</div>
+					}
+				</section>
+			}
 			<section class="cartao form-admin" id="amostras">
 				<h2>Amostras (tubitos)</h2>
 				if d.ErroAmostra != "" {

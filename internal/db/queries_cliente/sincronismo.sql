@@ -35,3 +35,25 @@ SELECT pg_advisory_xact_lock(7001);
 
 -- name: CountSincronismos :one
 SELECT count(*)::int FROM sincronismos WHERE dispositivo = $1;
+
+-- ---------------------------------------------------------------- Histórico de mobilidade (6.6)
+
+-- name: CountSincronismosFiltrados :one
+SELECT count(*)::int FROM sincronismos s
+WHERE (sqlc.arg(dispositivo)::text = '' OR position(lower(sqlc.arg(dispositivo)::text) in lower(s.dispositivo)) > 0)
+  AND (sqlc.narg(credencial_id)::bigint IS NULL OR s.credencial_id = sqlc.narg(credencial_id)::bigint)
+  AND (sqlc.narg(de)::timestamptz IS NULL OR s.recebido_em >= sqlc.narg(de)::timestamptz)
+  AND (sqlc.narg(ate)::timestamptz IS NULL OR s.recebido_em < sqlc.narg(ate)::timestamptz)
+  AND (sqlc.arg(problemas)::boolean = false OR s.conflitos > 0 OR s.rejeitadas > 0);
+
+-- name: ListSincronismos :many
+SELECT s.id, s.dispositivo, s.enviado_em, s.recebido_em, s.visitas, s.criadas, s.existentes, s.conflitos, s.rejeitadas, s.amostras,
+       COALESCE(c.nome, '')::text AS credencial_nome
+FROM sincronismos s LEFT JOIN api_credenciais c ON c.id = s.credencial_id
+WHERE (sqlc.arg(dispositivo)::text = '' OR position(lower(sqlc.arg(dispositivo)::text) in lower(s.dispositivo)) > 0)
+  AND (sqlc.narg(credencial_id)::bigint IS NULL OR s.credencial_id = sqlc.narg(credencial_id)::bigint)
+  AND (sqlc.narg(de)::timestamptz IS NULL OR s.recebido_em >= sqlc.narg(de)::timestamptz)
+  AND (sqlc.narg(ate)::timestamptz IS NULL OR s.recebido_em < sqlc.narg(ate)::timestamptz)
+  AND (sqlc.arg(problemas)::boolean = false OR s.conflitos > 0 OR s.rejeitadas > 0)
+ORDER BY s.recebido_em DESC, s.id DESC
+LIMIT sqlc.arg(limite)::int OFFSET sqlc.arg(deslocamento)::int;

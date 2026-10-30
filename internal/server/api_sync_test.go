@@ -169,3 +169,33 @@ func urlValores(kv ...string) url.Values {
 	}
 	return v
 }
+
+func TestHistoricoDeMobilidadeEHistoricoDaVisita(t *testing.T) {
+	m := novoMundo(t)
+	ana := m.comAna(t)
+	c := m.cenarioVisita(t, ana)
+	agente := m.idUsuario(t, emailAna)
+	api := novaAPI(t, m, "visitas:read", "visitas:write")
+
+	quer(t, ana.get("/mobilidade/historico"), http.StatusOK, "Nenhum envio encontrado")
+
+	// Um lote com uma visita boa (com tubito) e uma rejeitada.
+	lote := corpoSync(
+		c.visitaSync("h-ok", agente, map[string]any{"coletou_amostra": true, "amostras": []map[string]any{{"id_externo": "h-am", "deposito": "A1", "larvas": 3}}}),
+		c.visitaSync("h-ruim", agente, map[string]any{"atividade": "ZZZ"}),
+	)
+	quer(t, api.req(http.MethodPost, "/api/v1/sync", lote), http.StatusOK)
+
+	quer(t, ana.get("/mobilidade/historico"), http.StatusOK, "tablet-01", "Rejeitadas")
+	quer(t, ana.get("/mobilidade/historico?problemas=sim"), http.StatusOK, "tablet-01")
+	quer(t, ana.get("/mobilidade/historico?dispositivo=outro"), http.StatusOK, "Nenhum envio encontrado")
+	quer(t, ana.get("/mobilidade/historico?de=2999-01-01"), http.StatusOK, "Nenhum envio encontrado")
+	quer(t, ana.get("/mobilidade/historico?ate=2000-01-01"), http.StatusOK, "Nenhum envio encontrado")
+
+	// A ficha da visita criada pelo aparelho mostra o histórico, com o tubito junto.
+	vs, _ := m.cliQ.ListVisitasRecentes(t.Context(), listarVisitas())
+	if len(vs) != 1 {
+		t.Fatalf("visitas = %d", len(vs))
+	}
+	quer(t, ana.get("/visitas/"+s64(vs[0].ID)), http.StatusOK, "Histórico de alterações", "Registrou uma visita")
+}

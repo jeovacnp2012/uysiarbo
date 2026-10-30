@@ -577,6 +577,56 @@ func (q *Queries) ListAnotacoesDaVisita(ctx context.Context, visitaID int64) ([]
 	return items, nil
 }
 
+const listAuditoriaDaVisita = `-- name: ListAuditoriaDaVisita :many
+SELECT id, quando, ator_tipo, ator_id, ator_nome, ator_email, ip, user_agent, request_id, acao, entidade, entidade_id, rotulo, antes, depois, detalhes FROM auditoria
+WHERE (entidade = 'visita' AND entidade_id = $1::text)
+   OR (entidade = 'amostra' AND detalhes->>'visita' = $1::text)
+ORDER BY quando DESC, id DESC LIMIT $2::int
+`
+
+type ListAuditoriaDaVisitaParams struct {
+	Visita string `json:"visita"`
+	Limite int32  `json:"limite"`
+}
+
+// Histórico de alterações da ficha da visita (6.6): a visita e os tubitos dela.
+func (q *Queries) ListAuditoriaDaVisita(ctx context.Context, arg ListAuditoriaDaVisitaParams) ([]Auditorium, error) {
+	rows, err := q.db.Query(ctx, listAuditoriaDaVisita, arg.Visita, arg.Limite)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Auditorium
+	for rows.Next() {
+		var i Auditorium
+		if err := rows.Scan(
+			&i.ID,
+			&i.Quando,
+			&i.AtorTipo,
+			&i.AtorID,
+			&i.AtorNome,
+			&i.AtorEmail,
+			&i.Ip,
+			&i.UserAgent,
+			&i.RequestID,
+			&i.Acao,
+			&i.Entidade,
+			&i.EntidadeID,
+			&i.Rotulo,
+			&i.Antes,
+			&i.Depois,
+			&i.Detalhes,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listFotosDaVisita = `-- name: ListFotosDaVisita :many
 SELECT id, nome, tipo_midia, length(conteudo)::int AS tamanho FROM visita_fotos WHERE visita_id = $1 AND deleted_at IS NULL ORDER BY id
 `

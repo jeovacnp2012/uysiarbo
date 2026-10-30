@@ -32,6 +32,38 @@ func (q *Queries) CountSincronismos(ctx context.Context, dispositivo string) (in
 	return column_1, err
 }
 
+const countSincronismosFiltrados = `-- name: CountSincronismosFiltrados :one
+
+SELECT count(*)::int FROM sincronismos s
+WHERE ($1::text = '' OR position(lower($1::text) in lower(s.dispositivo)) > 0)
+  AND ($2::bigint IS NULL OR s.credencial_id = $2::bigint)
+  AND ($3::timestamptz IS NULL OR s.recebido_em >= $3::timestamptz)
+  AND ($4::timestamptz IS NULL OR s.recebido_em < $4::timestamptz)
+  AND ($5::boolean = false OR s.conflitos > 0 OR s.rejeitadas > 0)
+`
+
+type CountSincronismosFiltradosParams struct {
+	Dispositivo  string             `json:"dispositivo"`
+	CredencialID pgtype.Int8        `json:"credencial_id"`
+	De           pgtype.Timestamptz `json:"de"`
+	Ate          pgtype.Timestamptz `json:"ate"`
+	Problemas    bool               `json:"problemas"`
+}
+
+// ---------------------------------------------------------------- Histórico de mobilidade (6.6)
+func (q *Queries) CountSincronismosFiltrados(ctx context.Context, arg CountSincronismosFiltradosParams) (int32, error) {
+	row := q.db.QueryRow(ctx, countSincronismosFiltrados,
+		arg.Dispositivo,
+		arg.CredencialID,
+		arg.De,
+		arg.Ate,
+		arg.Problemas,
+	)
+	var column_1 int32
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
 const createAmostraSync = `-- name: CreateAmostraSync :one
 
 INSERT INTO amostras (visita_id, numero_tubito, deposito, larvas, pupas, observacao, criado_por, id_externo)
@@ -191,6 +223,83 @@ func (q *Queries) ListAmostrasDasVisitas(ctx context.Context, ids []int64) ([]Am
 			&i.DeletedAt,
 			&i.DeletedBy,
 			&i.IDExterno,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listSincronismos = `-- name: ListSincronismos :many
+SELECT s.id, s.dispositivo, s.enviado_em, s.recebido_em, s.visitas, s.criadas, s.existentes, s.conflitos, s.rejeitadas, s.amostras,
+       COALESCE(c.nome, '')::text AS credencial_nome
+FROM sincronismos s LEFT JOIN api_credenciais c ON c.id = s.credencial_id
+WHERE ($1::text = '' OR position(lower($1::text) in lower(s.dispositivo)) > 0)
+  AND ($2::bigint IS NULL OR s.credencial_id = $2::bigint)
+  AND ($3::timestamptz IS NULL OR s.recebido_em >= $3::timestamptz)
+  AND ($4::timestamptz IS NULL OR s.recebido_em < $4::timestamptz)
+  AND ($5::boolean = false OR s.conflitos > 0 OR s.rejeitadas > 0)
+ORDER BY s.recebido_em DESC, s.id DESC
+LIMIT $7::int OFFSET $6::int
+`
+
+type ListSincronismosParams struct {
+	Dispositivo  string             `json:"dispositivo"`
+	CredencialID pgtype.Int8        `json:"credencial_id"`
+	De           pgtype.Timestamptz `json:"de"`
+	Ate          pgtype.Timestamptz `json:"ate"`
+	Problemas    bool               `json:"problemas"`
+	Deslocamento int32              `json:"deslocamento"`
+	Limite       int32              `json:"limite"`
+}
+
+type ListSincronismosRow struct {
+	ID             int64              `json:"id"`
+	Dispositivo    string             `json:"dispositivo"`
+	EnviadoEm      pgtype.Timestamptz `json:"enviado_em"`
+	RecebidoEm     pgtype.Timestamptz `json:"recebido_em"`
+	Visitas        int32              `json:"visitas"`
+	Criadas        int32              `json:"criadas"`
+	Existentes     int32              `json:"existentes"`
+	Conflitos      int32              `json:"conflitos"`
+	Rejeitadas     int32              `json:"rejeitadas"`
+	Amostras       int32              `json:"amostras"`
+	CredencialNome string             `json:"credencial_nome"`
+}
+
+func (q *Queries) ListSincronismos(ctx context.Context, arg ListSincronismosParams) ([]ListSincronismosRow, error) {
+	rows, err := q.db.Query(ctx, listSincronismos,
+		arg.Dispositivo,
+		arg.CredencialID,
+		arg.De,
+		arg.Ate,
+		arg.Problemas,
+		arg.Deslocamento,
+		arg.Limite,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListSincronismosRow
+	for rows.Next() {
+		var i ListSincronismosRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Dispositivo,
+			&i.EnviadoEm,
+			&i.RecebidoEm,
+			&i.Visitas,
+			&i.Criadas,
+			&i.Existentes,
+			&i.Conflitos,
+			&i.Rejeitadas,
+			&i.Amostras,
+			&i.CredencialNome,
 		); err != nil {
 			return nil, err
 		}

@@ -1,0 +1,107 @@
+package views
+
+import "strconv"
+
+templ Mobilidade(l Layout, d MobilidadeData) {
+	@Base(l) {
+		@PageHeader("Histórico de mobilidade", "Envios feitos pelos aplicativos dos tablets: quando, de qual aparelho e o resultado de cada lote.")
+		<form
+			method="get"
+			action="/mobilidade/historico"
+			class="cartao filtros filtros-vivos"
+			hx-get="/mobilidade/historico"
+			hx-trigger="input changed delay:350ms from:find input, change from:find .filtro-auto, filtrar from:body"
+			hx-target="#mobilidade-lista"
+			hx-select="#mobilidade-lista"
+			hx-swap="outerHTML"
+			hx-push-url="true"
+			hx-indicator="#mobilidade-lista"
+		>
+			<div class="campo campo-largo">
+				<label for="f-dispositivo">Aparelho</label>
+				<input id="f-dispositivo" name="dispositivo" type="search" value={ d.Filtro.Dispositivo } placeholder="Nome ou identificação do aparelho"/>
+			</div>
+			@campoEscolha("f-credencial", "Credencial", "credencial", "Todas", d.Credenciais)
+			<div class="campo">
+				<label for="f-de">De</label>
+				<input id="f-de" name="de" type="date" value={ d.Filtro.De } class="filtro-auto"/>
+			</div>
+			<div class="campo">
+				<label for="f-ate">Até</label>
+				<input id="f-ate" name="ate" type="date" value={ d.Filtro.Ate } class="filtro-auto"/>
+			</div>
+			<label class="marcar">
+				<input type="checkbox" name="problemas" value="sim" class="filtro-auto" checked?={ d.Filtro.Problemas }/> Só com conflito ou rejeição
+			</label>
+			<div class="form-acoes">
+				<a class="btn btn-escuro" href="/mobilidade/historico" data-icone="undo">Limpar filtros</a>
+			</div>
+			<noscript><button type="submit" class="btn btn-primario">Filtrar</button></noscript>
+		</form>
+		<div id="mobilidade-lista" class="lista-viva">
+			<section class="cartao">
+				@Paginacao(d.Pag, "/mobilidade/historico", d.Query)
+				<div class="tabela-wrap">
+					<table class="tabela">
+						<thead>
+							<tr>
+								<th scope="col">Recebido em</th>
+								<th scope="col">Aparelho</th>
+								<th scope="col">Credencial</th>
+								<th scope="col">Visitas</th>
+								<th scope="col">Criadas</th>
+								<th scope="col">Já existiam</th>
+								<th scope="col">Conflitos</th>
+								<th scope="col">Rejeitadas</th>
+								<th scope="col">Amostras</th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, s := range d.Linhas {
+								<tr>
+									<td data-rotulo="Recebido em">
+										{ s.Recebido }
+										if s.Enviado != "" {
+											<br/>
+											<span class="subtitulo">relógio do aparelho: { s.Enviado }</span>
+										}
+									</td>
+									<td data-rotulo="Aparelho">
+										if s.Dispositivo == "" {
+											<span class="subtitulo">não informado</span>
+										} else {
+											{ s.Dispositivo }
+										}
+									</td>
+									<td data-rotulo="Credencial">{ s.Credencial }</td>
+									<td data-rotulo="Visitas">{ strconv.Itoa(s.Visitas) }</td>
+									<td data-rotulo="Criadas">{ strconv.Itoa(s.Criadas) }</td>
+									<td data-rotulo="Já existiam">{ strconv.Itoa(s.Existentes) }</td>
+									<td data-rotulo="Conflitos">
+										if s.Conflitos > 0 {
+											<span class="selo selo-aviso">{ strconv.Itoa(s.Conflitos) }</span>
+										} else {
+											0
+										}
+									</td>
+									<td data-rotulo="Rejeitadas">
+										if s.Rejeitadas > 0 {
+											<span class="selo selo-perigo">{ strconv.Itoa(s.Rejeitadas) }</span>
+										} else {
+											0
+										}
+									</td>
+									<td data-rotulo="Amostras">{ strconv.Itoa(s.Amostras) }</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+					if len(d.Linhas) == 0 {
+						<div class="tabela-vazia">Nenhum envio encontrado.</div>
+					}
+				</div>
+				@Paginacao(d.Pag, "/mobilidade/historico", d.Query)
+			</section>
+		</div>
+	}
+}

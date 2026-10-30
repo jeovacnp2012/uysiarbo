@@ -204,6 +204,18 @@ func (h *handlers) montarFormVisita(ctx context.Context, r *http.Request, q *sql
 		d.PodeAmostra = pr.Pode("visita_editar") && c.Amostra
 		d.PodeResultado = pr.Pode("visita_laboratorio_adicionar")
 		d.TubitoAutomatico = h.tubitoAutomatico(r, q)
+		if d.MostrarHistorico = pr.Pode("auditoria_sistema"); d.MostrarHistorico {
+			regs, err := q.ListAuditoriaDaVisita(ctx, sqlccliente.ListAuditoriaDaVisitaParams{Visita: strconv.FormatInt(id, 10), Limite: 30})
+			if err != nil {
+				return d, err
+			}
+			loc := h.fuso(r)
+			for _, g := range regs {
+				d.Historico = append(d.Historico, linhaAuditoria(registroAuditoria{
+					g.ID, g.Quando.Time, g.AtorTipo, g.AtorNome, g.AtorEmail, g.Ip, g.UserAgent, g.Acao, g.Entidade, g.EntidadeID, g.Rotulo, g.Antes, g.Depois, g.Detalhes,
+				}, loc))
+			}
+		}
 		fotos, err := q.ListFotosDaVisita(ctx, id)
 		if err != nil {
 			return d, err

@@ -56,6 +56,8 @@ type VisitaFormData struct {
 	PodeResultado       bool
 	TubitoAutomatico    bool
 	ErroAmostra         string
+	MostrarHistorico    bool
+	Historico           []AuditoriaLinha // alterações da visita e dos tubitos
 	Anotacoes           []VisitaAnotacaoLinha
 	Aviso               string
 	Erro                string
@@ -134,6 +136,28 @@ type AmostraListaLinha struct {
 // LaboratorioFiltro são os filtros da listagem do laboratório.
 type LaboratorioFiltro struct {
 	Tubito, Status, Ciclo, Agente, De, Ate, Endereco string
+}
+
+// MobilidadeFiltro são as escolhas da tela de histórico de mobilidade.
+type MobilidadeFiltro struct {
+	Dispositivo, Credencial, De, Ate string
+	Problemas                        bool
+}
+
+// MobilidadeLinha é um envio (lote) do aplicativo.
+type MobilidadeLinha struct {
+	ID                                                  int64
+	Recebido, Enviado, Dispositivo, Credencial          string
+	Visitas, Criadas, Existentes, Conflitos, Rejeitadas int
+	Amostras                                            int
+}
+
+type MobilidadeData struct {
+	Linhas      []MobilidadeLinha
+	Filtro      MobilidadeFiltro
+	Pag         Pagination
+	Query       url.Values
+	Credenciais []CidadeOpcao
 }
 
 type LaboratorioData struct {

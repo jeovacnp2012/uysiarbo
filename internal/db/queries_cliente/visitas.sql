@@ -193,3 +193,10 @@ SELECT count(*) FILTER (WHERE deleted_at IS NULL)::int AS ativas, count(*)::int 
 
 -- name: ContarVisitasDoCiclo :one
 SELECT count(*) FILTER (WHERE deleted_at IS NULL)::int AS ativas, count(*)::int AS total FROM visitas WHERE ciclo_id = $1;
+
+-- Histórico de alterações da ficha da visita (6.6): a visita e os tubitos dela.
+-- name: ListAuditoriaDaVisita :many
+SELECT * FROM auditoria
+WHERE (entidade = 'visita' AND entidade_id = sqlc.arg(visita)::text)
+   OR (entidade = 'amostra' AND detalhes->>'visita' = sqlc.arg(visita)::text)
+ORDER BY quando DESC, id DESC LIMIT sqlc.arg(limite)::int;
