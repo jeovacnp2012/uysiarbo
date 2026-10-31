@@ -29,7 +29,7 @@ func TestBiIndicesPorBairro(t *testing.T) {
 	quer(t, ana.post("/visitas/"+id+"/amostras/"+s64(as[0].ID)+"/resultado",
 		url.Values{"status": {"concluido"}, "aegypti": {"3"}}), http.StatusSeeOther)
 
-	quer(t, ana.get("/bi?ciclo="+s64(c.ciclo)), http.StatusOK, "IIP", "Breteau", "100.0%")
+	quer(t, ana.get("/bi?ciclo="+s64(c.ciclo)), http.StatusOK, "IIP", "Breteau", "100.0%", `id="bi-dados"`, "bi-depositos", "Risco de surto")
 	quer(t, ana.get("/bi?ciclo=todos&atividade=1"), http.StatusOK, "Cobertura")
 
 	sem := m.usuarioCom(t, "Sem BI", "sembi@nm.gov.br", "visita_visualizar")

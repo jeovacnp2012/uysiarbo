@@ -1,0 +1,647 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>BI Dengue Nova Mutum</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: painel de vigilância. Menu lateral escuro flutuante, faixa de resumo com a curva do ano, cartões claros para indicadores e gráficos.
+   Azul = epidemiologia (casos). Laranja = entomologia (campo). Verde-água = terceira classe. */
+:root{
+  --bg:#f3f5f9; --surface:#ffffff; --ink:#0e1726; --ink2:#46536a; --muted:#76839a;
+  --grid:#e7ebf2; --axis:#cdd5e2; --fill-soft:#eef2f8; --line:#e3e8f0;
+  --s1:#2a78d6; --s1-lo:#a9c9f3; --s1-hi:#184f95;
+  --s2:#eb6834; --s2-lo:#f6bfa8; --s3:#1baf7a;
+  --y2023:#eda100; --y2024:#6250d6; --y2025:#1baf7a; --y2026:#2a78d6;
+  --good:#0ca30c; --warn:#fab219; --crit:#d03b3b; --good-ink:#006300;
+  --side:#0c1a2e; --side-ink:#c6d2e5; --side-mute:#7f90ab; --side-on:#ffffff; --on-dark:#f2f6fb;
+  --hero-a:#0c2a52; --hero-b:#0f5a86; --hero-c:#0d7b7a;
+  --shadow:0 1px 2px rgba(14,23,38,.05),0 8px 24px -12px rgba(14,23,38,.12);
+  --font:'Figtree',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --display:'Bricolage Grotesque','Figtree',system-ui,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#080d16; --surface:#111925; --ink:#eaf0f8; --ink2:#b0bccf; --muted:#7f8da4;
+    --grid:#1d2839; --axis:#2c3a52; --fill-soft:#172131; --line:#1d2839;
+    --s1:#3987e5; --s1-lo:#1f4f8f; --s1-hi:#86b6ef;
+    --s2:#d95926; --s2-lo:#7a3a22; --s3:#199e70; --good-ink:#0ca30c; --crit:#e0564f; color-scheme:dark;
+    --y2023:#c98500; --y2024:#9085e9; --y2025:#199e70; --y2026:#3987e5;
+    --side:#0d1626; --hero-a:#0a1f3d; --hero-b:#0b4163; --hero-c:#0a5a5a;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px -14px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#080d16; --surface:#111925; --ink:#eaf0f8; --ink2:#b0bccf; --muted:#7f8da4;
+  --grid:#1d2839; --axis:#2c3a52; --fill-soft:#172131; --line:#1d2839;
+  --s1:#3987e5; --s1-lo:#1f4f8f; --s1-hi:#86b6ef;
+  --s2:#d95926; --s2-lo:#7a3a22; --s3:#199e70; --good-ink:#0ca30c; --crit:#e0564f; color-scheme:dark;
+  --y2023:#c98500; --y2024:#9085e9; --y2025:#199e70; --y2026:#3987e5;
+  --side:#0d1626; --hero-a:#0a1f3d; --hero-b:#0b4163; --hero-c:#0a5a5a;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 28px -14px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 56px;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
+.app{display:grid;grid-template-columns:252px minmax(0,1fr);gap:28px;max-width:1440px;margin:0 auto;padding-top:16px;align-items:start}
+main{min-width:0}
+/* menu lateral */
+.side{position:sticky;top:calc(16px + env(safe-area-inset-top,0px));height:calc(100vh - 32px - env(safe-area-inset-top,0px));max-height:760px;background:var(--side);color:var(--side-ink);border-radius:22px;padding:22px 14px 16px;display:flex;flex-direction:column;gap:22px;z-index:20}
+.brand{display:flex;gap:12px;align-items:center;padding:0 8px}
+.brand svg{flex:none}
+.brand b{display:block;font-family:var(--display);font-size:18px;font-weight:700;letter-spacing:-.01em;color:var(--side-on);line-height:1.1}
+.brand span{display:block;font-size:12px;color:var(--side-mute);margin-top:3px}
+nav.tabs{display:flex;flex-direction:column;gap:3px}
+nav.tabs a{display:flex;align-items:center;gap:12px;color:var(--side-ink);text-decoration:none;padding:10px 12px;border-radius:12px;font-weight:500;font-size:14.5px;white-space:nowrap;transition:background .15s,color .15s}
+nav.tabs a svg{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;opacity:.8}
+nav.tabs a:hover{background:rgba(255,255,255,.06);color:var(--side-on)}
+nav.tabs a[aria-current="page"]{background:rgba(255,255,255,.11);color:var(--side-on);font-weight:600}
+nav.tabs a[aria-current="page"] svg{opacity:1;stroke:#7db5f5}
+nav.tabs a:focus-visible,.th:focus-visible,input:focus-visible,.seg button:focus-visible{outline:2px solid var(--s1);outline-offset:2px}
+.sidefoot{margin-top:auto;padding:14px 10px 2px;border-top:1px solid rgba(255,255,255,.09);font-size:12px;line-height:1.55;color:var(--side-mute)}
+.sidefoot b{color:var(--side-ink);font-weight:600}
+/* barra de filtros */
+.toolbar{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;justify-content:space-between;margin-bottom:18px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.pill{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink2);background:var(--surface);border:1px solid var(--line);padding:6px 12px;border-radius:99px;white-space:nowrap}
+.pill i{width:8px;height:8px;border-radius:99px;display:inline-block}
+.cyc{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--ink2);font-weight:500}
+.seg{display:inline-flex;flex-wrap:wrap;gap:2px;padding:4px;background:var(--fill-soft);border-radius:99px;border:1px solid var(--line)}
+.seg button{font:inherit;font-size:13px;font-weight:500;color:var(--ink2);background:transparent;border:0;border-radius:99px;padding:6px 13px;cursor:pointer;transition:background .15s,color .15s}
+.seg button:hover{color:var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);font-weight:700;box-shadow:0 1px 3px rgba(14,23,38,.18),inset 0 -2px 0 var(--s2)}
+#hm-c[aria-pressed="true"],#hm-n[aria-pressed="true"]{box-shadow:0 1px 3px rgba(14,23,38,.18),inset 0 -2px 0 var(--s1)}
+/* páginas */
+section.view{display:none}
+section.view.on{display:flex;flex-direction:column;gap:20px}
+.pagehead{padding:4px 2px 2px}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--s1);margin:0 0 6px}
+.pagehead h1{font-family:var(--display);font-size:34px;line-height:1.1;font-weight:700;letter-spacing:-.02em;margin:0;text-wrap:balance}
+.pagehead p.lede{color:var(--ink2);font-size:15px;margin:8px 0 0;max-width:68ch}
+h2{font-family:var(--display);font-size:18px;font-weight:650;margin:0 0 4px;letter-spacing:-.01em;line-height:1.25}
+.sub{color:var(--ink2);font-size:13.5px;margin:0 0 14px;max-width:70ch}
+.grp{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink2);margin:6px 0 -6px;display:flex;align-items:center;gap:9px}
+.grp i{width:10px;height:10px;border-radius:99px;display:inline-block}
+/* faixa de resumo */
+.hero{position:relative;overflow:hidden;border-radius:24px;padding:30px 32px;color:var(--on-dark);background:radial-gradient(120% 140% at 100% 0%,var(--hero-c) 0%,transparent 55%),linear-gradient(120deg,var(--hero-a),var(--hero-b));display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:24px 36px;align-items:center;box-shadow:var(--shadow)}
+.hero .eyebrow{color:#9fd0ff}
+.hero h2{font-size:30px;line-height:1.15;font-weight:700;letter-spacing:-.02em;margin:0;text-wrap:balance;color:var(--on-dark)}
+.hero p.hs{margin:12px 0 0;color:#cfe0f3;font-size:14.5px;max-width:52ch}
+.spark{min-width:0}
+.spark svg{display:block;width:100%;height:auto;overflow:visible}
+.spark .cap{display:flex;justify-content:space-between;font-size:12px;color:#b6cce4;margin-top:6px}
+.spark .ttl{font-size:12.5px;font-weight:600;color:#e4efff;margin:0 0 6px}
+/* indicadores */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:14px}
+.kpi{--acc:var(--s1);display:flex;flex-direction:column;gap:2px;padding:16px 18px 16px;background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);min-width:0}
+#kpi-ent .kpi,#kpi-ent2 .kpi,#kpi-bloq .kpi{--acc:var(--s2)}
+.kpi .l{order:-1;display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--ink2)}
+.kpi .l::before{content:"";width:8px;height:8px;border-radius:99px;background:var(--acc);flex:none}
+.kpi .v{font-family:var(--display);font-size:32px;font-weight:700;letter-spacing:-.025em;line-height:1.1;margin-top:6px;font-variant-numeric:tabular-nums}
+.kpi .d{font-size:12.5px;color:var(--muted);margin-top:2px}
+.panel .kpi{background:var(--fill-soft);border:0;box-shadow:none;border-radius:14px}
+.panel .kpi .v{font-size:28px}
+/* cartões */
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:20px}
+.panel{min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:22px 24px 24px;box-shadow:var(--shadow)}
+.chart{position:relative;width:100%}
+.chart.h260{height:270px}.chart.h300{height:310px}.chart.h340{height:380px}.chart.h420{height:440px}
+.phead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:8px 14px}
+.insights{display:grid;align-items:start;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:14px;margin:0;padding:0;list-style:none}
+.insights li{position:relative;padding:16px 18px 16px 52px;background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);font-size:14px;line-height:1.55;color:var(--ink2)}
+.insights li::before{content:"";position:absolute;left:18px;top:19px;width:20px;height:20px;border-radius:99px;background:var(--s1);box-shadow:0 0 0 5px color-mix(in srgb,var(--s1) 18%,transparent)}
+.insights li:last-child::before{background:var(--s2);box-shadow:0 0 0 5px color-mix(in srgb,var(--s2) 18%,transparent)}
+#ins-hist li:last-child::before{background:var(--s1);box-shadow:0 0 0 5px color-mix(in srgb,var(--s1) 18%,transparent)}
+.insights b{font-weight:700;color:var(--ink)}
+.tablewrap{overflow-x:auto;max-width:100%;border:1px solid var(--line);border-radius:14px}
+table{border-collapse:separate;border-spacing:0;width:100%;font-size:13.5px}
+th,td{padding:10px 14px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover td{background:var(--fill-soft)}
+th:first-child,td:first-child{text-align:left}
+td:first-child{font-weight:500}
+th{font-weight:700;color:var(--ink2);font-size:11px;letter-spacing:.07em;text-transform:uppercase;position:sticky;top:0;background:var(--fill-soft);z-index:1}
+.th{cursor:pointer;user-select:none}
+.th:hover{color:var(--ink)}
+.th[aria-sort="ascending"]::after{content:" ▲";font-size:9px}
+.th[aria-sort="descending"]::after{content:" ▼";font-size:9px}
+td.num{font-family:var(--mono);font-size:13px;font-variant-numeric:tabular-nums}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:3px 10px;border-radius:99px;border:1px solid var(--axis);color:var(--ink)}
+.chip.att{border-color:var(--crit);background:color-mix(in srgb,var(--crit) 10%,transparent)}
+.chip.att::before{content:"▲";color:var(--crit);font-size:10px}
+.chip.ok::before{content:"●";color:var(--good);font-size:9px}
+.ctl{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:end;margin:0 0 16px}
+.ctl label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:600;color:var(--ink2)}
+.ctl input{font:inherit;font-family:var(--mono);font-size:13px;width:92px;padding:8px 10px;border:1px solid var(--axis);background:var(--bg);color:var(--ink);border-radius:10px}
+.ctl input.search{width:230px;font-family:var(--font)}
+.bars{display:grid;gap:12px;margin:8px 0 0}
+.brow{display:grid;grid-template-columns:130px 1fr 128px;gap:12px;align-items:center;font-size:13.5px}
+.brow .t{height:10px;background:var(--fill-soft);border-radius:99px;overflow:hidden;display:flex;gap:2px}
+.brow .t b{display:block;height:100%;min-width:3px;border-radius:99px}
+.brow .n{font-family:var(--mono);text-align:right;font-size:12.5px;white-space:nowrap}
+.stack{display:flex;height:16px;gap:3px;margin:10px 0 8px;border-radius:99px;overflow:hidden}
+.stack b{display:block;height:100%;min-width:4px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12.5px;color:var(--ink2);margin-top:8px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:99px;margin-right:7px;vertical-align:-1px}
+.empty{font-size:13px;color:var(--muted)}
+p.note{font-size:13px;color:var(--ink2);max-width:72ch}
+dl.notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:16px;margin:0}
+dl.notes .nc{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:20px 22px;box-shadow:var(--shadow)}
+dl.notes dt{font-family:var(--display);font-weight:650;font-size:16px;margin:0}
+dl.notes dd{margin:8px 0 0;color:var(--ink2);font-size:14px;line-height:1.6}
+#ins-hc li::before{background:var(--s2);box-shadow:0 0 0 5px color-mix(in srgb,var(--s2) 18%,transparent)}
+@media (max-width:1040px){
+  .app{grid-template-columns:1fr;gap:16px}
+  .side{position:sticky;top:env(safe-area-inset-top,0px);height:auto;max-height:none;flex-direction:row;align-items:center;gap:10px;padding:10px 12px;border-radius:18px;overflow:hidden}
+  .brand span,.sidefoot{display:none}
+  .brand b{font-size:15px}
+  nav.tabs{flex-direction:row;overflow-x:auto;scrollbar-width:none;min-width:0;flex:1}
+  nav.tabs::-webkit-scrollbar{display:none}
+  nav.tabs a{padding:9px 12px;font-size:13.5px}
+  nav.tabs a svg{display:none}
+  .hero{grid-template-columns:1fr}
+}
+@media (max-width:560px){
+  .pagehead h1{font-size:27px}.hero{padding:22px 20px}.hero h2{font-size:24px}
+  .panel{padding:18px 16px 20px;border-radius:18px}.kpi .v{font-size:30px}
+  .brow{grid-template-columns:92px 1fr 112px}
+  .brand b{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="app">
+<aside class="side">
+  <div class="brand">
+    <svg width="38" height="38" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="12" fill="#1e5fae"/><path d="M6 22h7l3-9 5 17 4-12 2 4h7" fill="none" stroke="#fff" stroke-width="2.600" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div><b>BI Dengue</b><span>Nova Mutum · MT</span></div>
+  </div>
+  <nav class="tabs" aria-label="Seções"><a href="#resumo"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>Resumo</span></a><a href="#epidemiologia"><svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span>Epidemiologia</span></a><a href="#historico"><svg viewBox="0 0 24 24" aria-hidden="true"><line x1="5" y1="20" x2="5" y2="11"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="19" y1="20" x2="19" y2="14"/></svg><span>Histórico de casos</span></a><a href="#entomologia"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.800 12 21 12 21z"/><circle cx="12" cy="9.500" r="2.500"/></svg><span>Entomologia</span></a><a href="#hcampo"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg><span>Histórico de campo</span></a><a href="#cruzamento"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/></svg><span>Cruzamento por bairro</span></a><a href="#notas"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16"/><circle cx="12" cy="7.800" r=".6" fill="currentColor"/></svg><span>Fontes e limites</span></a></nav>
+  <div class="sidefoot"><b>Fontes</b><br>SINAN, agravo A90, até 22/10/2026<br>GeoControle, ciclos 01 a 05, emitido em 28/10/2026<br>SisPNCD, totais de produção 2023 a 2026</div>
+</aside>
+<main>
+<div class="toolbar">
+  <div class="chips"><span class="pill"><i style="background:var(--s1)"></i>SINAN · 2023 a 22/10/2026</span><span class="pill"><i style="background:var(--s2)"></i>GeoControle · ciclos 01 a 05</span><span class="pill"><i style="background:var(--y2025)"></i>SisPNCD · 2023 a 2026</span></div>
+  <div class="cyc cycsel" role="group" aria-label="Ciclo de campo"><span>Ciclo de campo</span><div id="cyc-btns" class="seg"></div></div>
+</div>
+<section class="view" id="v-resumo">
+  <div class="hero">
+    <div><p class="eyebrow">Situação de 2026</p><h2 id="hero-t"></h2><p class="hs" id="hero-s"></p></div>
+    <div class="spark"><p class="ttl">Notificações por semana epidemiológica</p><div id="hero-spark"></div></div>
+  </div>
+  <p class="grp"><i style="background:var(--s1)"></i>Epidemiologia · SINAN dengue (A90)</p>
+  <div class="kpis" id="kpi-epi"></div>
+  <p class="grp"><i style="background:var(--s2)"></i><span id="grp-ent">Entomologia</span></p>
+  <div class="kpis" id="kpi-ent"></div>
+  <h2>Leitura rápida</h2>
+  <ul class="insights" id="insights"></ul>
+  <div class="grid2">
+    <div class="panel">
+      <h2>Notificações por semana epidemiológica</h2>
+      <p class="sub">Semana de notificação, por classificação final.</p>
+      <div class="chart h300"><canvas id="c-sem1" role="img" aria-label="Notificações de dengue por semana epidemiológica, empilhadas por classificação"></canvas></div>
+    </div>
+    <div class="panel">
+      <h2>Investigação GeoControle · todas as doenças</h2>
+      <p class="sub" id="pdf-sub"></p>
+      <div class="tablewrap"><table id="t-pdf"></table></div>
+    </div>
+  </div>
+</section>
+
+<section class="view" id="v-epidemiologia">
+  <header class="pagehead"><p class="eyebrow">Epidemiologia · SINAN</p><h1>Dengue notificada em 2026</h1><p class="lede">Notificações de residentes de Nova Mutum, agravo A90, de 01/01 a 22/10/2026.</p></header>
+  <div class="panel">
+    <h2>Curva de notificações</h2>
+    <p class="sub">Semana de notificação (SE). A SE 53 de 2025 aparece como 53/25.</p>
+    <div class="chart h300"><canvas id="c-sem2" role="img" aria-label="Curva semanal de notificações por classificação final"></canvas></div>
+  </div>
+  <div class="grid2">
+    <div class="panel">
+      <h2>Faixa etária</h2>
+      <p class="sub">Notificados e confirmados por faixa de idade.</p>
+      <div class="chart h300"><canvas id="c-idade" role="img" aria-label="Notificados e confirmados por faixa etária"></canvas></div>
+    </div>
+    <div class="panel">
+      <h2>Bairros com mais notificações</h2>
+      <p class="sub">Doze maiores, com os confirmados destacados.</p>
+      <div class="chart h300"><canvas id="c-bairro" role="img" aria-label="Notificações e confirmados por bairro de residência"></canvas></div>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="panel"><h2>Classificação final</h2><p class="sub">Critério de encerramento dos confirmados.</p><div id="blk-class"></div></div>
+    <div class="panel"><h2>Sexo</h2><p class="sub">Notificados e confirmados.</p><div id="blk-sexo"></div></div>
+    <div class="panel"><h2>Laboratório</h2><p class="sub">Exames informados nas fichas. Positividade calculada sobre os exames realizados.</p><div id="blk-lab"></div></div>
+    <div class="panel"><h2>Oportunidade e gravidade</h2><p class="sub">Tempo de encerramento e desfechos.</p><div id="blk-op"></div></div>
+  </div>
+</section>
+
+<section class="view" id="v-historico">
+  <header class="pagehead"><p class="eyebrow">Histórico · SINAN</p><h1>Quatro anos de dengue em Nova Mutum</h1><p class="lede">Notificações de 2023 a 22/10/2026. 2026 está incompleto, por isso a comparação justa usa o mesmo período de cada ano.</p></header>
+  <ul class="insights" id="ins-hist"></ul>
+  <div class="grid2">
+    <div class="panel">
+      <h2>Mesmo período, 01/01 a 22/10</h2>
+      <p class="sub">Notificados e confirmados em cada ano até a mesma data.</p>
+      <div class="chart h300"><canvas id="c-h-mp" role="img" aria-label="Notificados e confirmados de 01/01 a 22/10 em cada ano"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="phead">
+        <h2>Curva mensal por ano</h2>
+        <div class="seg"><button id="hm-c" type="button" aria-pressed="true">Confirmados</button><button id="hm-n" type="button" aria-pressed="false">Notificados</button></div>
+      </div>
+      <p class="sub">Mês da notificação. Cada ano tem cor e marcador próprios. 2026 vai até outubro.</p>
+      <div class="chart h300"><canvas id="c-h-mes" role="img" aria-label="Casos por mês de notificação, quatro anos sobrepostos"></canvas></div>
+    </div>
+  </div>
+  <div class="panel">
+    <h2>Quatro anos em números</h2>
+    <p class="sub">Valores exatos de cada ano. A coluna de 2026 vai até 22/10.</p>
+    <div class="tablewrap"><table id="t-hist"></table></div>
+  </div>
+  <div class="grid2">
+    <div class="panel">
+      <h2>Perfil por idade</h2>
+      <p class="sub">Parcela dos confirmados de cada ano em cada faixa etária.</p>
+      <div class="chart h300"><canvas id="c-h-idade" role="img" aria-label="Distribuição dos confirmados por faixa etária em cada ano"></canvas></div>
+    </div>
+    <div class="panel">
+      <h2>Laboratório e sorotipos</h2>
+      <p class="sub">Exames informados nas fichas. Em 2023 quase não há RT-PCR nem sorotipo registrado.</p>
+      <div class="tablewrap"><table id="t-lab-hist"></table></div>
+    </div>
+  </div>
+  <div class="panel">
+    <h2>Confirmados por bairro de residência</h2>
+    <p class="sub">Dezesseis bairros com mais confirmados nos quatro anos. Grafias diferentes foram unificadas quando evidentes.</p>
+    <div class="tablewrap" style="max-width:760px"><table id="t-bairros-hist"></table></div>
+  </div>
+</section>
+
+<section class="view" id="v-entomologia">
+  <header class="pagehead"><p class="eyebrow" style="color:var(--s2)">Entomologia · GeoControle</p><h1>Produção de campo por ciclo</h1><p class="lede" id="ent-per"></p></header>
+  <div class="kpis" id="kpi-ent2"></div>
+  <div class="grid2">
+    <div class="panel">
+      <h2>Situação dos imóveis cadastrados</h2>
+      <p class="sub">Total de locais do cadastro de campo no ciclo escolhido, calculado a partir das visitas.</p>
+      <div id="blk-imoveis"></div>
+    </div>
+    <div class="panel">
+      <h2>Evolução por ciclo</h2>
+      <p class="sub">Fechados sem recuperação e recuperação dos fechados, ciclos 01 a 05.</p>
+      <div class="chart h260"><canvas id="c-evol" role="img" aria-label="Evolução por ciclo dos fechados sem recuperação e da recuperação dos fechados"></canvas></div>
+    </div>
+  </div>
+  <div class="panel">
+    <h2>Todos os ciclos de 2026</h2>
+    <p class="sub">Mesmos indicadores, calculados do mesmo jeito nos cinco relatórios do GeoControle. O ciclo 05 está em andamento.</p>
+    <div class="tablewrap"><table id="t-cmp"></table></div>
+  </div>
+  <div class="grid2">
+    <div class="panel">
+      <h2>Bairros com mais imóveis fechados sem recuperação</h2>
+      <p class="sub">Percentual dos locais do bairro no ciclo escolhido. Bairros com 200 locais ou mais.</p>
+      <div class="chart h420"><canvas id="c-pend" role="img" aria-label="Bairros com maior percentual de imóveis fechados sem recuperação"></canvas></div>
+    </div>
+    <div class="panel">
+      <h2>Bloqueios por mês</h2>
+      <p class="sub">Bloqueios com data de execução em 2026, da planilha.</p>
+      <div class="chart h260"><canvas id="c-bloq" role="img" aria-label="Bloqueios realizados por mês em 2026"></canvas></div>
+      <div class="kpis" id="kpi-bloq" style="margin-top:16px"></div>
+    </div>
+  </div>
+  <div class="panel">
+    <h2>Anos anteriores</h2>
+    <p class="sub">Aba comparativo da planilha, ciclos mensais de 2023 e 2024. Referência de escala.</p>
+    <div class="tablewrap" style="max-width:640px"><table id="t-comp"></table></div>
+  </div>
+</section>
+
+<section class="view" id="v-hcampo">
+  <header class="pagehead"><p class="eyebrow" style="color:var(--s2)">Entomologia · SisPNCD</p><h1>Quatro anos de visitas de campo</h1><p class="lede">Totais de produção por ciclo, de 2023 a 2026, do SisPNCD (Ministério da Saúde). O ano tem seis ciclos; 2026 vai até o ciclo 5, que está em andamento.</p></header>
+  <ul class="insights" id="ins-hc"></ul>
+  <div class="grid2">
+    <div class="panel"><h2>Fechados sem recuperação</h2><p class="sub">Percentual dos imóveis trabalhados que continuaram fechados depois das revisitas. Tracejado: ciclo 5 de 2026, em andamento.</p><div class="chart h300"><canvas id="c-hc-pend" role="img" aria-label="Fechados sem recuperação por ciclo, 2023 a 2026"></canvas></div></div>
+    <div class="panel"><h2>Recuperação dos fechados</h2><p class="sub">Percentual dos imóveis fechados que foram visitados de novo e trabalhados.</p><div class="chart h300"><canvas id="c-hc-rec" role="img" aria-label="Recuperação dos imóveis fechados por ciclo, 2023 a 2026"></canvas></div></div>
+  </div>
+  <div class="grid2">
+    <div class="panel"><h2>Imóveis trabalhados por ciclo</h2><p class="sub">Cresce com o cadastro de imóveis. O ciclo 5 de 2026 ainda está incompleto.</p><div class="chart h300"><canvas id="c-hc-trab" role="img" aria-label="Imóveis trabalhados por ciclo, 2023 a 2026"></canvas></div></div>
+    <div class="panel"><h2>Imóveis encontrados fechados</h2><p class="sub">Percentual dos imóveis trabalhados que estavam fechados na primeira visita.</p><div class="chart h300"><canvas id="c-hc-fech" role="img" aria-label="Imóveis fechados em percentual dos trabalhados por ciclo, 2023 a 2026"></canvas></div></div>
+  </div>
+  <div class="panel"><h2>Quatro anos em números</h2><p class="sub">Totais do ano e comparação justa nos ciclos 1 a 4, os quatro que estão encerrados nos quatro anos.</p><div class="tablewrap"><table id="t-hc-ano"></table></div></div>
+  <div class="grid2">
+    <div class="panel"><h2>Todos os ciclos</h2><p class="sub">Um ciclo por linha, direto do relatório do SisPNCD.</p><div class="tablewrap" style="max-height:520px;overflow:auto"><table id="t-hc-ciclo"></table></div></div>
+    <div class="panel"><h2>SisPNCD contra GeoControle, 2026</h2><p class="sub">Os dois sistemas contam o mesmo trabalho de campo, mas os números não batem.</p><div class="tablewrap"><table id="t-hc-gc"></table></div><p class="note" id="n-hc-gc" style="margin:12px 0 0"></p></div>
+  </div>
+</section>
+
+<section class="view" id="v-cruzamento">
+  <header class="pagehead"><p class="eyebrow">Casos e campo</p><h1>Casos e campo no mesmo bairro</h1><p class="lede">Cada ponto é um bairro. Eixo horizontal: imóveis fechados sem recuperação. Eixo vertical: notificações. Tamanho do ponto: confirmados.</p></header>
+  <div class="panel"><div class="chart h340"><canvas id="c-scatter" role="img" aria-label="Notificações contra percentual de imóveis fechados sem recuperação por bairro"></canvas></div></div>
+  <div class="panel">
+  <h2>Bairros para atenção</h2>
+  <p class="sub">Um bairro entra em atenção quando atinge o mínimo de casos e o mínimo de imóveis pendentes. Ajuste os limites para o seu critério.</p>
+  <div class="ctl">
+    <label for="f-conf">Confirmados (mín.)<input id="f-conf" type="number" min="0" value="2"></label>
+    <label for="f-not">ou notificados (mín.)<input id="f-not" type="number" min="0" value="20"></label>
+    <label for="f-pend">e fechados sem recuperação (mín. %)<input id="f-pend" type="number" min="0" step="0.5" value="12"></label>
+    <label for="f-q">Buscar bairro<input id="f-q" class="search" type="search" placeholder="Nome do bairro"></label>
+    <div id="f-count" class="src" style="padding-bottom:7px"></div>
+  </div>
+  <div class="tablewrap" style="max-height:560px;overflow:auto"><table id="t-bairros"></table></div>
+  <p class="note" style="margin:12px 0 0">Zona rural: notificações sem cadastro de campo, por isso não entram nos cálculos de imóveis. Os casos são do ano inteiro e o campo é do ciclo escolhido no alto da página.</p>
+  </div>
+</section>
+
+<section class="view" id="v-notas">
+  <header class="pagehead"><p class="eyebrow">Transparência</p><h1>Fontes e limites</h1><p class="lede">De onde vêm os números, como foram calculados e o que eles não dizem.</p></header>
+  <dl class="notes" id="notes"></dl>
+</section>
+</main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<script>
+const D = {"ep":{"total":592,"conf":43,"desc":544,"inv":5,"conf_lab":10,"conf_clin":33,"hosp":33,"hosp_conf":4,"obitos":0,"alarme":0,"grave":0,"dt_min":"2026-01-01","dt_max":"2026-10-22","fora_mun":5,"semanas":[{"s":"202553","n":7,"c":1,"d":6,"i":0},{"s":"202601","n":23,"c":2,"d":21,"i":0},{"s":"202602","n":33,"c":3,"d":30,"i":0},{"s":"202603","n":12,"c":3,"d":9,"i":0},{"s":"202604","n":18,"c":0,"d":18,"i":0},{"s":"202605","n":24,"c":1,"d":23,"i":0},{"s":"202606","n":27,"c":2,"d":25,"i":0},{"s":"202607","n":25,"c":0,"d":25,"i":0},{"s":"202608","n":22,"c":2,"d":20,"i":0},{"s":"202609","n":16,"c":3,"d":13,"i":0},{"s":"202610","n":21,"c":3,"d":18,"i":0},{"s":"202611","n":47,"c":3,"d":44,"i":0},{"s":"202612","n":28,"c":0,"d":28,"i":0},{"s":"202613","n":31,"c":0,"d":31,"i":0},{"s":"202614","n":20,"c":0,"d":20,"i":0},{"s":"202615","n":14,"c":2,"d":12,"i":0},{"s":"202616","n":27,"c":2,"d":25,"i":0},{"s":"202617","n":19,"c":1,"d":18,"i":0},{"s":"202618","n":6,"c":0,"d":6,"i":0},{"s":"202619","n":6,"c":1,"d":5,"i":0},{"s":"202620","n":16,"c":1,"d":15,"i":0},{"s":"202621","n":12,"c":0,"d":12,"i":0},{"s":"202622","n":5,"c":0,"d":5,"i":0},{"s":"202623","n":11,"c":2,"d":9,"i":0},{"s":"202624","n":5,"c":2,"d":3,"i":0},{"s":"202625","n":6,"c":1,"d":5,"i":0},{"s":"202626","n":6,"c":0,"d":6,"i":0},{"s":"202627","n":5,"c":0,"d":5,"i":0},{"s":"202628","n":7,"c":1,"d":6,"i":0},{"s":"202629","n":9,"c":2,"d":7,"i":0},{"s":"202630","n":4,"c":1,"d":3,"i":0},{"s":"202631","n":13,"c":2,"d":11,"i":0},{"s":"202632","n":6,"c":0,"d":6,"i":0},{"s":"202633","n":4,"c":0,"d":4,"i":0},{"s":"202634","n":11,"c":0,"d":11,"i":0},{"s":"202635","n":5,"c":0,"d":5,"i":0},{"s":"202636","n":5,"c":0,"d":5,"i":0},{"s":"202637","n":7,"c":0,"d":7,"i":0},{"s":"202638","n":4,"c":0,"d":4,"i":0},{"s":"202639","n":3,"c":0,"d":3,"i":0},{"s":"202640","n":10,"c":1,"d":9,"i":0},{"s":"202641","n":8,"c":1,"d":6,"i":1},{"s":"202642","n":4,"c":0,"d":0,"i":4}],"meses":[{"m":"2025-12","n":9,"c":2},{"m":"2026-01","n":90,"c":7},{"m":"2026-02","n":97,"c":6},{"m":"2026-03","n":130,"c":8},{"m":"2026-04","n":88,"c":5},{"m":"2026-05","n":42,"c":2},{"m":"2026-06","n":28,"c":5},{"m":"2026-07","n":33,"c":6},{"m":"2026-08","n":33,"c":0},{"m":"2026-09","n":21,"c":0},{"m":"2026-10","n":21,"c":2}],"idade":[{"f":"0-4","n":134,"c":3},{"f":"5-9","n":63,"c":7},{"f":"10-14","n":56,"c":4},{"f":"15-19","n":39,"c":3},{"f":"20-29","n":114,"c":6},{"f":"30-39","n":75,"c":7},{"f":"40-49","n":47,"c":5},{"f":"50-59","n":29,"c":2},{"f":"60-69","n":17,"c":2},{"f":"70+","n":18,"c":4}],"idade_sem":0,"sexo":{"F":{"n":313,"c":19},"M":{"n":279,"c":24}},"lab":{"ns1":{"Reagente":35,"Não reagente":322,"Inconclusivo":0,"Não realizado":231},"pcr":{"Detectável":6,"Não detectável":11,"Inconclusivo":0,"Não realizado":566},"igm":{"Reagente":5,"Não reagente":7,"Inconclusivo":0,"Não realizado":573},"soro":{"DENV-1":1,"DENV-2":3,"DENV-3":2,"DENV-4":0}},"enc_mediana":11.0,"enc_p90":14.0,"enc_pos30":2},"bl":{"n":33,"quad":260,"imov":9773,"calda_l":45.746880000000004,"tempo_h":38.121,"km":122.037,"x":0,"lag_med":7.0,"lag_ate3":0.03125,"lag_n":32,"mes":[4,1,13,2,6,3,3,1,0,0,0,0]},"pdf":{"pos":64,"neg":309,"inc":262,"ag":39,"tot":674,"doen":[["Dengue",49,532],["Atend. antirrábico",0,84],["Chikungunya",1,13],["Leishmaniose",8,16],["Leptospirose",1,2],["Malária",0,2],["Raiva",0,19],["Zika",1,2],["Esquistossomose",4,4]]},"hab":50277,"comp":{"2024":[{"m":1,"t":23932,"f":5131,"r":966},{"m":2,"t":23393,"f":5822,"r":965},{"m":3,"t":23111,"f":6203,"r":1763},{"m":4,"t":null,"f":null,"r":null},{"m":5,"t":null,"f":null,"r":null},{"m":6,"t":null,"f":null,"r":null}],"2023":[{"m":1,"t":21222,"f":4590,"r":901},{"m":2,"t":21797,"f":5381,"r":1368},{"m":3,"t":22764,"f":5316,"r":1988},{"m":4,"t":23080,"f":4812,"r":1806},{"m":5,"t":22705,"f":4859,"r":1276},{"m":6,"t":22697,"f":5080,"r":852}]},"et":{"c1":{"nome":"Ciclo 01","per":"04/01 a 07/03/2026","aberto":false,"locais":33511,"quad":1026,"quad_t":1020,"lit":26230,"df":205,"fech":6730,"rec":0,"recup":2868,"tent":2548,"sem":749,"vis":40075,"bairros":71,"linhas_pdf":73},"c2":{"nome":"Ciclo 02","per":"08/03 a 02/05/2026","aberto":false,"locais":33511,"quad":1026,"quad_t":1025,"lit":26568,"df":128,"fech":6414,"rec":7,"recup":2274,"tent":1991,"sem":738,"vis":37671,"bairros":71,"linhas_pdf":73},"c3":{"nome":"Ciclo 03","per":"03/05 a 04/07/2026","aberto":false,"locais":33511,"quad":1026,"quad_t":1026,"lit":26360,"df":95,"fech":6968,"rec":3,"recup":2511,"tent":2347,"sem":415,"vis":39766,"bairros":71,"linhas_pdf":73},"c4":{"nome":"Ciclo 04","per":"06/07 a 04/09/2026","aberto":false,"locais":33511,"quad":1026,"quad_t":1026,"lit":26828,"df":35,"fech":6408,"rec":0,"recup":1971,"tent":1716,"sem":395,"vis":38422,"bairros":71,"linhas_pdf":73},"c5":{"nome":"Ciclo 05","per":"06/09 a 31/10/2026 (em andamento)","aberto":true,"locais":33511,"quad":1026,"quad_t":991,"lit":25922,"df":13,"fech":6692,"rec":0,"recup":1310,"tent":875,"sem":943,"vis":34916,"bairros":71,"linhas_pdf":73}},"bairros":[{"b":"AEROPORTO - 004","n":1,"c":0,"bq":0,"hab":192,"e1":{"loc":239,"q":8,"qt":8,"vis":267,"f":20,"rc":16,"rf":0},"e2":{"loc":239,"q":8,"qt":8,"vis":305,"f":28,"rc":21,"rf":0},"e3":{"loc":239,"q":8,"qt":8,"vis":280,"f":25,"rc":24,"rf":0},"e4":{"loc":239,"q":8,"qt":8,"vis":266,"f":17,"rc":14,"rf":0},"e5":{"loc":239,"q":8,"qt":8,"vis":254,"f":16,"rc":7,"rf":0}},{"b":"ALTO DA COLINA - 003","n":26,"c":1,"bq":0,"hab":968,"e1":{"loc":816,"q":17,"qt":17,"vis":1018,"f":215,"rc":70,"rf":0},"e2":{"loc":816,"q":17,"qt":17,"vis":967,"f":202,"rc":60,"rf":0},"e3":{"loc":816,"q":17,"qt":17,"vis":982,"f":182,"rc":74,"rf":0},"e4":{"loc":816,"q":17,"qt":17,"vis":941,"f":153,"rc":39,"rf":0},"e5":{"loc":816,"q":17,"qt":17,"vis":879,"f":161,"rc":18,"rf":0}},{"b":"BELA VISTA - 239","n":14,"c":0,"bq":0,"hab":1497,"e1":{"loc":1476,"q":22,"qt":22,"vis":1975,"f":383,"rc":181,"rf":0},"e2":{"loc":1476,"q":22,"qt":22,"vis":1652,"f":426,"rc":77,"rf":1},"e3":{"loc":1476,"q":22,"qt":22,"vis":2070,"f":486,"rc":227,"rf":0},"e4":{"loc":1476,"q":22,"qt":22,"vis":1741,"f":463,"rc":103,"rf":0},"e5":{"loc":1476,"q":22,"qt":22,"vis":1487,"f":472,"rc":62,"rf":0}},{"b":"CENTRO I - 207","n":13,"c":3,"bq":1,"hab":1154,"e1":{"loc":1375,"q":22,"qt":22,"vis":1524,"f":123,"rc":80,"rf":0},"e2":{"loc":1375,"q":22,"qt":22,"vis":1532,"f":65,"rc":27,"rf":0},"e3":{"loc":1375,"q":22,"qt":22,"vis":1513,"f":88,"rc":35,"rf":0},"e4":{"loc":1375,"q":22,"qt":22,"vis":1442,"f":72,"rc":43,"rf":0},"e5":{"loc":1375,"q":22,"qt":22,"vis":1385,"f":69,"rc":23,"rf":0}},{"b":"CENTRO II - 643","n":5,"c":0,"bq":0,"hab":1893,"e1":{"loc":1393,"q":18,"qt":18,"vis":1534,"f":124,"rc":50,"rf":0},"e2":{"loc":1393,"q":18,"qt":18,"vis":1435,"f":118,"rc":46,"rf":0},"e3":{"loc":1393,"q":18,"qt":18,"vis":1635,"f":129,"rc":58,"rf":0},"e4":{"loc":1393,"q":18,"qt":18,"vis":1569,"f":132,"rc":74,"rf":0},"e5":{"loc":1393,"q":18,"qt":18,"vis":1533,"f":142,"rc":83,"rf":0}},{"b":"CHÁCARA FLORES - 640","n":0,"c":0,"bq":0,"hab":155,"e1":{"loc":37,"q":2,"qt":2,"vis":55,"f":7,"rc":4,"rf":0},"e2":{"loc":37,"q":2,"qt":2,"vis":38,"f":5,"rc":1,"rf":0},"e3":{"loc":37,"q":2,"qt":2,"vis":44,"f":13,"rc":4,"rf":0},"e4":{"loc":37,"q":2,"qt":2,"vis":45,"f":10,"rc":2,"rf":0},"e5":{"loc":37,"q":2,"qt":2,"vis":41,"f":18,"rc":4,"rf":0}},{"b":"CIDADE BELA - 656","n":16,"c":0,"bq":0,"hab":393,"e1":{"loc":639,"q":15,"qt":15,"vis":683,"f":46,"rc":26,"rf":0},"e2":{"loc":639,"q":15,"qt":15,"vis":642,"f":30,"rc":4,"rf":0},"e3":{"loc":639,"q":15,"qt":15,"vis":667,"f":29,"rc":6,"rf":0},"e4":{"loc":639,"q":15,"qt":15,"vis":669,"f":31,"rc":8,"rf":0},"e5":{"loc":639,"q":15,"qt":15,"vis":639,"f":51,"rc":0,"rf":0}},{"b":"CIDADE NOVA - 249","n":18,"c":2,"bq":3,"hab":2153,"e1":{"loc":1084,"q":28,"qt":28,"vis":1481,"f":321,"rc":187,"rf":0},"e2":{"loc":1084,"q":28,"qt":28,"vis":1214,"f":243,"rc":111,"rf":0},"e3":{"loc":1084,"q":28,"qt":28,"vis":1270,"f":354,"rc":70,"rf":0},"e4":{"loc":1084,"q":28,"qt":28,"vis":1157,"f":281,"rc":29,"rf":0},"e5":{"loc":1084,"q":28,"qt":27,"vis":1036,"f":293,"rc":14,"rf":0}},{"b":"COLINA II - 198","n":27,"c":1,"bq":0,"hab":1980,"e1":{"loc":820,"q":20,"qt":20,"vis":1165,"f":284,"rc":117,"rf":0},"e2":{"loc":820,"q":20,"qt":20,"vis":1131,"f":298,"rc":135,"rf":0},"e3":{"loc":820,"q":20,"qt":20,"vis":1282,"f":331,"rc":149,"rf":0},"e4":{"loc":820,"q":20,"qt":20,"vis":1309,"f":286,"rc":149,"rf":0},"e5":{"loc":820,"q":20,"qt":20,"vis":857,"f":298,"rc":33,"rf":0}},{"b":"COMERCIAL J. A. R. - 638","n":4,"c":0,"bq":0,"hab":55,"e1":{"loc":121,"q":7,"qt":7,"vis":145,"f":18,"rc":8,"rf":0},"e2":{"loc":121,"q":7,"qt":7,"vis":129,"f":21,"rc":3,"rf":0},"e3":{"loc":121,"q":7,"qt":7,"vis":147,"f":23,"rc":2,"rf":0},"e4":{"loc":121,"q":7,"qt":7,"vis":143,"f":28,"rc":11,"rf":0},"e5":{"loc":121,"q":7,"qt":7,"vis":135,"f":25,"rc":4,"rf":0}},{"b":"COMUNIDADE NOVO HORIZONTE (Vila) - 242","n":0,"c":0,"bq":0,"hab":80,"e1":{"loc":45,"q":4,"qt":4,"vis":44,"f":3,"rc":0,"rf":0},"e2":{"loc":45,"q":4,"qt":4,"vis":45,"f":6,"rc":0,"rf":0},"e3":{"loc":45,"q":4,"qt":4,"vis":53,"f":10,"rc":0,"rf":0},"e4":{"loc":45,"q":4,"qt":4,"vis":45,"f":1,"rc":0,"rf":0},"e5":{"loc":45,"q":4,"qt":4,"vis":45,"f":6,"rc":0,"rf":0}},{"b":"COND. NOVO HORIZONTE I - 225","n":10,"c":1,"bq":0,"hab":960,"e1":{"loc":273,"q":10,"qt":10,"vis":289,"f":0,"rc":0,"rf":0},"e2":{"loc":273,"q":10,"qt":10,"vis":272,"f":0,"rc":0,"rf":0},"e3":{"loc":273,"q":10,"qt":10,"vis":293,"f":0,"rc":0,"rf":0},"e4":{"loc":273,"q":10,"qt":10,"vis":291,"f":0,"rc":0,"rf":0},"e5":{"loc":273,"q":10,"qt":10,"vis":273,"f":0,"rc":0,"rf":0}},{"b":"COND. NOVO HORIZONTE II - 226","n":15,"c":0,"bq":0,"hab":823,"e1":{"loc":288,"q":14,"qt":14,"vis":303,"f":0,"rc":0,"rf":0},"e2":{"loc":288,"q":14,"qt":14,"vis":288,"f":0,"rc":0,"rf":0},"e3":{"loc":288,"q":14,"qt":14,"vis":304,"f":1,"rc":0,"rf":0},"e4":{"loc":288,"q":14,"qt":14,"vis":304,"f":0,"rc":0,"rf":0},"e5":{"loc":288,"q":14,"qt":14,"vis":288,"f":0,"rc":0,"rf":0}},{"b":"Condominio Porto Fino","n":0,"c":0,"bq":0,"hab":0,"e1":{"loc":360,"q":25,"qt":22,"vis":353,"f":0,"rc":0,"rf":0},"e2":{"loc":360,"q":25,"qt":25,"vis":360,"f":0,"rc":0,"rf":0},"e3":{"loc":360,"q":25,"qt":25,"vis":373,"f":0,"rc":0,"rf":0},"e4":{"loc":360,"q":25,"qt":25,"vis":371,"f":0,"rc":0,"rf":0},"e5":{"loc":360,"q":25,"qt":25,"vis":360,"f":0,"rc":0,"rf":0}},{"b":"CONDOMINIO VILLA JARDIM - 657","n":0,"c":0,"bq":0,"hab":2768,"e1":{"loc":284,"q":19,"qt":18,"vis":290,"f":0,"rc":0,"rf":0},"e2":{"loc":284,"q":19,"qt":19,"vis":284,"f":0,"rc":0,"rf":0},"e3":{"loc":284,"q":19,"qt":19,"vis":299,"f":0,"rc":0,"rf":0},"e4":{"loc":284,"q":19,"qt":19,"vis":298,"f":0,"rc":0,"rf":0},"e5":{"loc":284,"q":19,"qt":19,"vis":284,"f":0,"rc":0,"rf":0}},{"b":"CURIÓ - 258","n":0,"c":0,"bq":0,"hab":626,"e1":{"loc":139,"q":3,"qt":3,"vis":151,"f":18,"rc":12,"rf":0},"e2":{"loc":139,"q":3,"qt":3,"vis":150,"f":16,"rc":5,"rf":0},"e3":{"loc":139,"q":3,"qt":3,"vis":158,"f":21,"rc":9,"rf":0},"e4":{"loc":139,"q":3,"qt":3,"vis":152,"f":18,"rc":5,"rf":0},"e5":{"loc":139,"q":3,"qt":3,"vis":141,"f":14,"rc":2,"rf":0}},{"b":"EDELMINA QUERUBIM - 209","n":53,"c":3,"bq":2,"hab":297,"e1":{"loc":939,"q":36,"qt":36,"vis":1043,"f":378,"rc":45,"rf":0},"e2":{"loc":939,"q":36,"qt":36,"vis":1168,"f":385,"rc":125,"rf":0},"e3":{"loc":939,"q":36,"qt":36,"vis":1215,"f":376,"rc":107,"rf":1},"e4":{"loc":939,"q":36,"qt":36,"vis":1118,"f":409,"rc":74,"rf":0},"e5":{"loc":939,"q":36,"qt":31,"vis":879,"f":360,"rc":26,"rf":0}},{"b":"EDELMINA QUERUBIM II","n":0,"c":0,"bq":1,"hab":1234,"e1":{"loc":194,"q":9,"qt":9,"vis":225,"f":68,"rc":21,"rf":0},"e2":{"loc":194,"q":9,"qt":9,"vis":191,"f":83,"rc":8,"rf":0},"e3":{"loc":194,"q":9,"qt":9,"vis":244,"f":70,"rc":30,"rf":0},"e4":{"loc":194,"q":9,"qt":9,"vis":218,"f":67,"rc":10,"rf":0},"e5":{"loc":194,"q":9,"qt":9,"vis":205,"f":73,"rc":10,"rf":0}},{"b":"ESPLANADA DO SOL - 210","n":2,"c":1,"bq":1,"hab":8,"e1":{"loc":112,"q":8,"qt":8,"vis":119,"f":54,"rc":2,"rf":0},"e2":{"loc":112,"q":8,"qt":8,"vis":117,"f":69,"rc":4,"rf":0},"e3":{"loc":112,"q":8,"qt":8,"vis":116,"f":30,"rc":0,"rf":0},"e4":{"loc":112,"q":8,"qt":8,"vis":115,"f":26,"rc":0,"rf":0},"e5":{"loc":112,"q":8,"qt":7,"vis":101,"f":28,"rc":0,"rf":0}},{"b":"FLOR DO CERRADO - 212","n":7,"c":1,"bq":1,"hab":0,"e1":{"loc":419,"q":14,"qt":14,"vis":541,"f":183,"rc":52,"rf":0},"e2":{"loc":419,"q":14,"qt":14,"vis":513,"f":190,"rc":61,"rf":0},"e3":{"loc":419,"q":14,"qt":14,"vis":659,"f":216,"rc":110,"rf":0},"e4":{"loc":419,"q":14,"qt":14,"vis":499,"f":172,"rc":37,"rf":0},"e5":{"loc":419,"q":14,"qt":14,"vis":480,"f":182,"rc":35,"rf":0}},{"b":"INDUSTRIAL H. S. R. - 639","n":1,"c":0,"bq":0,"hab":468,"e1":{"loc":35,"q":2,"qt":2,"vis":35,"f":0,"rc":0,"rf":0},"e2":{"loc":35,"q":2,"qt":2,"vis":38,"f":0,"rc":0,"rf":0},"e3":{"loc":35,"q":2,"qt":2,"vis":35,"f":1,"rc":0,"rf":0},"e4":{"loc":35,"q":2,"qt":2,"vis":35,"f":3,"rc":0,"rf":0},"e5":{"loc":35,"q":2,"qt":2,"vis":43,"f":1,"rc":0,"rf":0}},{"b":"INDUSTRIAL MARCOS F.\n M. - 648","n":0,"c":0,"bq":0,"hab":278,"e1":{"loc":112,"q":7,"qt":7,"vis":118,"f":2,"rc":1,"rf":0},"e2":{"loc":112,"q":7,"qt":7,"vis":111,"f":1,"rc":0,"rf":0},"e3":{"loc":112,"q":7,"qt":7,"vis":116,"f":1,"rc":0,"rf":0},"e4":{"loc":112,"q":7,"qt":7,"vis":118,"f":3,"rc":2,"rf":0},"e5":{"loc":112,"q":7,"qt":6,"vis":91,"f":1,"rc":0,"rf":0}},{"b":"INDUSTRIAL NORTE - 214","n":0,"c":0,"bq":0,"hab":928,"e1":{"loc":330,"q":8,"qt":8,"vis":405,"f":65,"rc":55,"rf":0},"e2":{"loc":330,"q":8,"qt":8,"vis":331,"f":20,"rc":0,"rf":0},"e3":{"loc":330,"q":8,"qt":8,"vis":350,"f":9,"rc":1,"rf":0},"e4":{"loc":330,"q":8,"qt":8,"vis":353,"f":10,"rc":2,"rf":0},"e5":{"loc":330,"q":8,"qt":8,"vis":340,"f":16,"rc":8,"rf":0}},{"b":"INDUSTRIAL SUL- 215","n":2,"c":0,"bq":0,"hab":979,"e1":{"loc":292,"q":8,"qt":8,"vis":300,"f":2,"rc":0,"rf":0},"e2":{"loc":292,"q":8,"qt":8,"vis":293,"f":2,"rc":0,"rf":0},"e3":{"loc":292,"q":8,"qt":8,"vis":310,"f":2,"rc":1,"rf":0},"e4":{"loc":292,"q":8,"qt":8,"vis":310,"f":5,"rc":0,"rf":0},"e5":{"loc":292,"q":8,"qt":8,"vis":291,"f":3,"rc":0,"rf":0}},{"b":"JARDIM ÁGATA - 216","n":24,"c":3,"bq":2,"hab":66,"e1":{"loc":455,"q":12,"qt":12,"vis":496,"f":158,"rc":29,"rf":0},"e2":{"loc":455,"q":12,"qt":12,"vis":447,"f":142,"rc":6,"rf":0},"e3":{"loc":455,"q":12,"qt":12,"vis":468,"f":157,"rc":13,"rf":0},"e4":{"loc":455,"q":12,"qt":12,"vis":461,"f":133,"rc":8,"rf":0},"e5":{"loc":455,"q":12,"qt":12,"vis":459,"f":146,"rc":4,"rf":0}},{"b":"JARDIM AMÉRICA - 247","n":5,"c":0,"bq":1,"hab":176,"e1":{"loc":129,"q":11,"qt":11,"vis":240,"f":62,"rc":23,"rf":0},"e2":{"loc":129,"q":11,"qt":11,"vis":174,"f":60,"rc":17,"rf":0},"e3":{"loc":129,"q":11,"qt":11,"vis":199,"f":70,"rc":27,"rf":0},"e4":{"loc":129,"q":11,"qt":11,"vis":287,"f":80,"rc":47,"rf":0},"e5":{"loc":129,"q":11,"qt":11,"vis":157,"f":83,"rc":7,"rf":0}},{"b":"JARDIM AMÉRICA II - 646","n":4,"c":1,"bq":0,"hab":3,"e1":{"loc":361,"q":8,"qt":8,"vis":238,"f":43,"rc":0,"rf":0},"e2":{"loc":361,"q":8,"qt":8,"vis":233,"f":72,"rc":2,"rf":0},"e3":{"loc":361,"q":8,"qt":8,"vis":313,"f":88,"rc":2,"rf":0},"e4":{"loc":361,"q":8,"qt":8,"vis":416,"f":64,"rc":8,"rf":0},"e5":{"loc":361,"q":8,"qt":8,"vis":389,"f":86,"rc":8,"rf":0}},{"b":"JARDIM ARAGUAIA - 645","n":2,"c":1,"bq":0,"hab":0,"e1":{"loc":152,"q":5,"qt":5,"vis":161,"f":2,"rc":0,"rf":0},"e2":{"loc":152,"q":5,"qt":5,"vis":152,"f":36,"rc":0,"rf":0},"e3":{"loc":152,"q":5,"qt":5,"vis":152,"f":4,"rc":0,"rf":0},"e4":{"loc":152,"q":5,"qt":5,"vis":155,"f":5,"rc":0,"rf":0},"e5":{"loc":152,"q":5,"qt":5,"vis":152,"f":11,"rc":0,"rf":0}},{"b":"JARDIM ARAGUAIA II - 647","n":0,"c":0,"bq":0,"hab":0,"e1":{"loc":140,"q":7,"qt":7,"vis":155,"f":5,"rc":0,"rf":0},"e2":{"loc":140,"q":7,"qt":7,"vis":140,"f":7,"rc":0,"rf":0},"e3":{"loc":140,"q":7,"qt":7,"vis":145,"f":2,"rc":0,"rf":0},"e4":{"loc":140,"q":7,"qt":7,"vis":147,"f":15,"rc":0,"rf":0},"e5":{"loc":140,"q":7,"qt":3,"vis":26,"f":1,"rc":0,"rf":0}},{"b":"JARDIM ARAGUAIA III - 659","n":0,"c":0,"bq":0,"hab":1274,"e1":{"loc":118,"q":9,"qt":9,"vis":123,"f":0,"rc":0,"rf":0},"e2":{"loc":118,"q":9,"qt":9,"vis":118,"f":0,"rc":0,"rf":0},"e3":{"loc":118,"q":9,"qt":9,"vis":121,"f":0,"rc":0,"rf":0},"e4":{"loc":118,"q":9,"qt":9,"vis":123,"f":1,"rc":0,"rf":0},"e5":{"loc":118,"q":9,"qt":9,"vis":118,"f":2,"rc":0,"rf":0}},{"b":"JARDIM CALIFÓRNIA - 644","n":0,"c":0,"bq":0,"hab":1383,"e1":{"loc":376,"q":5,"qt":5,"vis":384,"f":2,"rc":0,"rf":0},"e2":{"loc":376,"q":5,"qt":5,"vis":378,"f":2,"rc":0,"rf":0},"e3":{"loc":376,"q":5,"qt":5,"vis":379,"f":2,"rc":0,"rf":0},"e4":{"loc":376,"q":5,"qt":5,"vis":377,"f":2,"rc":0,"rf":0},"e5":{"loc":376,"q":5,"qt":5,"vis":376,"f":2,"rc":0,"rf":0}},{"b":"JARDIM DAS ARARAS - 241","n":0,"c":0,"bq":0,"hab":998,"e1":{"loc":205,"q":12,"qt":12,"vis":210,"f":0,"rc":0,"rf":0},"e2":{"loc":205,"q":12,"qt":12,"vis":205,"f":0,"rc":0,"rf":0},"e3":{"loc":205,"q":12,"qt":12,"vis":213,"f":0,"rc":0,"rf":0},"e4":{"loc":205,"q":12,"qt":12,"vis":215,"f":0,"rc":0,"rf":0},"e5":{"loc":205,"q":12,"qt":10,"vis":178,"f":0,"rc":0,"rf":0}},{"b":"JARDIM DAS ORQUÍDEAS - 240","n":8,"c":2,"bq":1,"hab":431,"e1":{"loc":1547,"q":32,"qt":32,"vis":1882,"f":328,"rc":235,"rf":0},"e2":{"loc":1547,"q":32,"qt":32,"vis":1884,"f":304,"rc":232,"rf":0},"e3":{"loc":1547,"q":32,"qt":32,"vis":1930,"f":367,"rc":235,"rf":0},"e4":{"loc":1547,"q":32,"qt":32,"vis":1805,"f":383,"rc":198,"rf":0},"e5":{"loc":1547,"q":32,"qt":32,"vis":1911,"f":442,"rc":189,"rf":0}},{"b":"JARDIM EUROPA - 217","n":7,"c":0,"bq":0,"hab":222,"e1":{"loc":610,"q":30,"qt":30,"vis":902,"f":236,"rc":104,"rf":0},"e2":{"loc":610,"q":30,"qt":30,"vis":701,"f":184,"rc":27,"rf":0},"e3":{"loc":610,"q":30,"qt":30,"vis":746,"f":250,"rc":59,"rf":1},"e4":{"loc":610,"q":30,"qt":30,"vis":703,"f":226,"rc":33,"rf":0},"e5":{"loc":610,"q":30,"qt":27,"vis":591,"f":212,"rc":36,"rf":0}},{"b":"JARDIM I - 199","n":4,"c":1,"bq":1,"hab":1226,"e1":{"loc":457,"q":12,"qt":12,"vis":596,"f":128,"rc":108,"rf":0},"e2":{"loc":457,"q":12,"qt":12,"vis":543,"f":118,"rc":85,"rf":0},"e3":{"loc":457,"q":12,"qt":12,"vis":537,"f":102,"rc":68,"rf":0},"e4":{"loc":457,"q":12,"qt":12,"vis":571,"f":126,"rc":99,"rf":0},"e5":{"loc":457,"q":12,"qt":12,"vis":525,"f":120,"rc":68,"rf":0}},{"b":"JARDIM II - 218","n":2,"c":0,"bq":0,"hab":238,"e1":{"loc":407,"q":11,"qt":11,"vis":524,"f":156,"rc":95,"rf":0},"e2":{"loc":407,"q":11,"qt":11,"vis":505,"f":149,"rc":106,"rf":0},"e3":{"loc":407,"q":11,"qt":11,"vis":541,"f":173,"rc":117,"rf":0},"e4":{"loc":407,"q":11,"qt":11,"vis":526,"f":162,"rc":107,"rf":0},"e5":{"loc":407,"q":11,"qt":11,"vis":425,"f":155,"rc":15,"rf":0}},{"b":"JARDIM IMPERIAL - 245","n":8,"c":0,"bq":0,"hab":1092,"e1":{"loc":418,"q":8,"qt":8,"vis":426,"f":38,"rc":0,"rf":0},"e2":{"loc":418,"q":8,"qt":8,"vis":423,"f":28,"rc":0,"rf":0},"e3":{"loc":418,"q":8,"qt":8,"vis":449,"f":51,"rc":6,"rf":0},"e4":{"loc":418,"q":8,"qt":8,"vis":424,"f":35,"rc":4,"rf":0},"e5":{"loc":418,"q":8,"qt":8,"vis":423,"f":58,"rc":4,"rf":0}},{"b":"JARDIM ITÁLIA - 248","n":4,"c":1,"bq":1,"hab":599,"e1":{"loc":221,"q":12,"qt":12,"vis":268,"f":21,"rc":8,"rf":0},"e2":{"loc":221,"q":12,"qt":12,"vis":238,"f":17,"rc":7,"rf":0},"e3":{"loc":221,"q":12,"qt":12,"vis":251,"f":18,"rc":6,"rf":0},"e4":{"loc":221,"q":12,"qt":12,"vis":255,"f":64,"rc":20,"rf":0},"e5":{"loc":221,"q":12,"qt":12,"vis":232,"f":23,"rc":6,"rf":0}},{"b":"JARDIM MONTREAL - 649","n":7,"c":0,"bq":0,"hab":867,"e1":{"loc":617,"q":18,"qt":18,"vis":603,"f":73,"rc":2,"rf":0},"e2":{"loc":617,"q":18,"qt":18,"vis":573,"f":74,"rc":6,"rf":0},"e3":{"loc":617,"q":18,"qt":18,"vis":606,"f":163,"rc":6,"rf":0},"e4":{"loc":617,"q":18,"qt":18,"vis":595,"f":146,"rc":4,"rf":0},"e5":{"loc":617,"q":18,"qt":18,"vis":620,"f":207,"rc":2,"rf":0}},{"b":"JARDIM PRIMAVERA I - 220","n":9,"c":0,"bq":0,"hab":723,"e1":{"loc":440,"q":12,"qt":12,"vis":535,"f":52,"rc":33,"rf":0},"e2":{"loc":440,"q":12,"qt":12,"vis":469,"f":44,"rc":17,"rf":0},"e3":{"loc":440,"q":12,"qt":12,"vis":502,"f":38,"rc":14,"rf":0},"e4":{"loc":440,"q":12,"qt":12,"vis":458,"f":35,"rc":2,"rf":0},"e5":{"loc":440,"q":12,"qt":12,"vis":453,"f":34,"rc":4,"rf":0}},{"b":"JARDIM PRIMAVERA II - 221","n":10,"c":0,"bq":0,"hab":1201,"e1":{"loc":266,"q":10,"qt":10,"vis":366,"f":83,"rc":69,"rf":0},"e2":{"loc":266,"q":10,"qt":10,"vis":275,"f":17,"rc":9,"rf":0},"e3":{"loc":266,"q":10,"qt":10,"vis":310,"f":24,"rc":9,"rf":0},"e4":{"loc":266,"q":10,"qt":10,"vis":313,"f":21,"rc":13,"rf":0},"e5":{"loc":266,"q":10,"qt":10,"vis":267,"f":21,"rc":1,"rf":0}},{"b":"JARDIM PRIMAVERA III - 222","n":7,"c":0,"bq":1,"hab":813,"e1":{"loc":395,"q":12,"qt":12,"vis":471,"f":63,"rc":51,"rf":0},"e2":{"loc":395,"q":12,"qt":12,"vis":407,"f":27,"rc":13,"rf":0},"e3":{"loc":395,"q":12,"qt":12,"vis":472,"f":30,"rc":19,"rf":0},"e4":{"loc":395,"q":12,"qt":12,"vis":449,"f":27,"rc":10,"rf":0},"e5":{"loc":395,"q":12,"qt":12,"vis":395,"f":18,"rc":0,"rf":0}},{"b":"LÍRIOS DO CAMPO I - 223","n":20,"c":0,"bq":0,"hab":1453,"e1":{"loc":720,"q":22,"qt":22,"vis":806,"f":215,"rc":44,"rf":0},"e2":{"loc":720,"q":22,"qt":22,"vis":778,"f":312,"rc":35,"rf":0},"e3":{"loc":720,"q":22,"qt":22,"vis":827,"f":118,"rc":8,"rf":0},"e4":{"loc":720,"q":22,"qt":22,"vis":782,"f":121,"rc":1,"rf":0},"e5":{"loc":720,"q":22,"qt":22,"vis":748,"f":115,"rc":8,"rf":0}},{"b":"LÍRIOS DO CAMPO II - 224","n":9,"c":1,"bq":0,"hab":340,"e1":{"loc":295,"q":6,"qt":6,"vis":299,"f":56,"rc":4,"rf":0},"e2":{"loc":295,"q":6,"qt":6,"vis":310,"f":52,"rc":11,"rf":0},"e3":{"loc":295,"q":6,"qt":6,"vis":330,"f":75,"rc":17,"rf":0},"e4":{"loc":295,"q":6,"qt":6,"vis":316,"f":66,"rc":8,"rf":0},"e5":{"loc":295,"q":6,"qt":4,"vis":227,"f":53,"rc":3,"rf":0}},{"b":"MONT SERRAT - 250","n":6,"c":0,"bq":0,"hab":147,"e1":{"loc":1804,"q":45,"qt":44,"vis":2101,"f":440,"rc":83,"rf":0},"e2":{"loc":1804,"q":45,"qt":45,"vis":2098,"f":460,"rc":107,"rf":0},"e3":{"loc":1804,"q":45,"qt":45,"vis":1953,"f":372,"rc":55,"rf":0},"e4":{"loc":1804,"q":45,"qt":45,"vis":1920,"f":391,"rc":49,"rf":0},"e5":{"loc":1804,"q":45,"qt":45,"vis":1834,"f":472,"rc":16,"rf":0}},{"b":"NOSSA SENHORA APARECIDA - 002","n":11,"c":3,"bq":2,"hab":1466,"e1":{"loc":704,"q":11,"qt":11,"vis":876,"f":169,"rc":119,"rf":0},"e2":{"loc":704,"q":11,"qt":11,"vis":826,"f":150,"rc":108,"rf":6},"e3":{"loc":704,"q":11,"qt":11,"vis":839,"f":149,"rc":87,"rf":0},"e4":{"loc":704,"q":11,"qt":11,"vis":861,"f":101,"rc":55,"rf":0},"e5":{"loc":704,"q":11,"qt":11,"vis":796,"f":147,"rc":83,"rf":0}},{"b":"PARQUE DAS ÁGUIAS - 227","n":6,"c":0,"bq":0,"hab":335,"e1":{"loc":136,"q":6,"qt":6,"vis":160,"f":60,"rc":16,"rf":0},"e2":{"loc":136,"q":6,"qt":6,"vis":145,"f":47,"rc":10,"rf":0},"e3":{"loc":136,"q":6,"qt":6,"vis":155,"f":51,"rc":12,"rf":0},"e4":{"loc":136,"q":6,"qt":6,"vis":159,"f":54,"rc":10,"rf":0},"e5":{"loc":136,"q":6,"qt":6,"vis":151,"f":57,"rc":10,"rf":0}},{"b":"PARQUE DAS ANDORINHAS - 650","n":5,"c":1,"bq":0,"hab":0,"e1":{"loc":282,"q":9,"qt":9,"vis":600,"f":163,"rc":113,"rf":0},"e2":{"loc":282,"q":9,"qt":9,"vis":590,"f":153,"rc":73,"rf":0},"e3":{"loc":282,"q":9,"qt":9,"vis":485,"f":165,"rc":54,"rf":0},"e4":{"loc":282,"q":9,"qt":9,"vis":403,"f":155,"rc":40,"rf":0},"e5":{"loc":282,"q":9,"qt":9,"vis":389,"f":173,"rc":35,"rf":0}},{"b":"PARQUE DO SOL - 197","n":9,"c":0,"bq":0,"hab":296,"e1":{"loc":611,"q":15,"qt":15,"vis":744,"f":135,"rc":64,"rf":0},"e2":{"loc":611,"q":15,"qt":15,"vis":714,"f":155,"rc":64,"rf":0},"e3":{"loc":611,"q":15,"qt":15,"vis":704,"f":155,"rc":65,"rf":0},"e4":{"loc":611,"q":15,"qt":15,"vis":800,"f":147,"rc":73,"rf":0},"e5":{"loc":611,"q":15,"qt":15,"vis":682,"f":164,"rc":51,"rf":0}},{"b":"PARQUE DOS INGÁS - 642","n":0,"c":0,"bq":0,"hab":1087,"e1":{"loc":457,"q":12,"qt":12,"vis":694,"f":115,"rc":61,"rf":0},"e2":{"loc":457,"q":12,"qt":12,"vis":592,"f":88,"rc":85,"rf":0},"e3":{"loc":457,"q":12,"qt":12,"vis":628,"f":98,"rc":85,"rf":0},"e4":{"loc":457,"q":12,"qt":12,"vis":594,"f":94,"rc":74,"rf":0},"e5":{"loc":457,"q":12,"qt":12,"vis":543,"f":106,"rc":44,"rf":0}},{"b":"PARQUE NOVA MUTUM - 654","n":0,"c":0,"bq":0,"hab":540,"e1":{"loc":224,"q":7,"qt":7,"vis":246,"f":4,"rc":3,"rf":0},"e2":{"loc":224,"q":7,"qt":7,"vis":227,"f":2,"rc":1,"rf":0},"e3":{"loc":224,"q":7,"qt":7,"vis":237,"f":2,"rc":0,"rf":0},"e4":{"loc":224,"q":7,"qt":7,"vis":279,"f":3,"rc":0,"rf":0},"e5":{"loc":224,"q":7,"qt":7,"vis":224,"f":2,"rc":0,"rf":0}},{"b":"PONTAL DO MARAPE - 557","n":4,"c":1,"bq":0,"hab":10,"e1":{"loc":342,"q":23,"qt":22,"vis":341,"f":22,"rc":1,"rf":0},"e2":{"loc":342,"q":23,"qt":22,"vis":339,"f":23,"rc":1,"rf":0},"e3":{"loc":342,"q":23,"qt":23,"vis":344,"f":7,"rc":1,"rf":0},"e4":{"loc":342,"q":23,"qt":23,"vis":359,"f":23,"rc":7,"rf":0},"e5":{"loc":342,"q":23,"qt":22,"vis":344,"f":24,"rc":2,"rf":0}},{"b":"RANCHÃO - 007","n":3,"c":1,"bq":0,"hab":1016,"e1":{"loc":545,"q":40,"qt":40,"vis":557,"f":9,"rc":9,"rf":0},"e2":{"loc":545,"q":40,"qt":40,"vis":551,"f":2,"rc":2,"rf":0},"e3":{"loc":545,"q":40,"qt":40,"vis":545,"f":0,"rc":0,"rf":0},"e4":{"loc":545,"q":40,"qt":40,"vis":547,"f":2,"rc":2,"rf":0},"e5":{"loc":545,"q":40,"qt":35,"vis":507,"f":0,"rc":0,"rf":0}},{"b":"RESERVA TÉCNICA - 228","n":1,"c":1,"bq":2,"hab":1958,"e1":{"loc":959,"q":22,"qt":22,"vis":1134,"f":115,"rc":57,"rf":0},"e2":{"loc":959,"q":22,"qt":22,"vis":974,"f":72,"rc":46,"rf":0},"e3":{"loc":959,"q":22,"qt":22,"vis":1085,"f":52,"rc":33,"rf":0},"e4":{"loc":959,"q":22,"qt":22,"vis":1074,"f":75,"rc":45,"rf":0},"e5":{"loc":959,"q":22,"qt":22,"vis":976,"f":85,"rc":17,"rf":0}},{"b":"RESIDENCIAL ARARA AZUL - 229","n":18,"c":1,"bq":2,"hab":594,"e1":{"loc":401,"q":12,"qt":12,"vis":421,"f":39,"rc":1,"rf":0},"e2":{"loc":401,"q":12,"qt":12,"vis":410,"f":33,"rc":0,"rf":0},"e3":{"loc":401,"q":12,"qt":12,"vis":414,"f":67,"rc":1,"rf":0},"e4":{"loc":401,"q":12,"qt":12,"vis":421,"f":59,"rc":1,"rf":0},"e5":{"loc":401,"q":12,"qt":11,"vis":373,"f":49,"rc":1,"rf":0}},{"b":"RESIDENCIAL BEIJA-FLOR\n - 230","n":20,"c":0,"bq":0,"hab":923,"e1":{"loc":1030,"q":27,"qt":27,"vis":1552,"f":314,"rc":219,"rf":0},"e2":{"loc":1030,"q":27,"qt":27,"vis":1524,"f":324,"rc":196,"rf":0},"e3":{"loc":1030,"q":27,"qt":27,"vis":1467,"f":360,"rc":159,"rf":1},"e4":{"loc":1030,"q":27,"qt":27,"vis":1594,"f":320,"rc":184,"rf":0},"e5":{"loc":1030,"q":27,"qt":27,"vis":1361,"f":385,"rc":185,"rf":0}},{"b":"RESIDENCIAL DAS ACÁCIAS - 232","n":4,"c":0,"bq":0,"hab":715,"e1":{"loc":241,"q":11,"qt":11,"vis":391,"f":54,"rc":20,"rf":0},"e2":{"loc":241,"q":11,"qt":11,"vis":253,"f":11,"rc":0,"rf":0},"e3":{"loc":241,"q":11,"qt":11,"vis":250,"f":11,"rc":0,"rf":0},"e4":{"loc":241,"q":11,"qt":11,"vis":251,"f":8,"rc":0,"rf":0},"e5":{"loc":241,"q":11,"qt":11,"vis":242,"f":13,"rc":0,"rf":0}},{"b":"RESIDENCIAL DAS PALMEIRAS - 233","n":12,"c":2,"bq":3,"hab":103,"e1":{"loc":618,"q":19,"qt":19,"vis":850,"f":267,"rc":96,"rf":0},"e2":{"loc":618,"q":19,"qt":19,"vis":753,"f":249,"rc":73,"rf":0},"e3":{"loc":618,"q":19,"qt":19,"vis":890,"f":271,"rc":117,"rf":0},"e4":{"loc":618,"q":19,"qt":19,"vis":824,"f":248,"rc":78,"rf":0},"e5":{"loc":618,"q":19,"qt":19,"vis":704,"f":235,"rc":43,"rf":0}},{"b":"RESIDENCIAL DOS BURITIS - 231","n":11,"c":1,"bq":1,"hab":1241,"e1":{"loc":362,"q":16,"qt":16,"vis":421,"f":31,"rc":18,"rf":0},"e2":{"loc":362,"q":16,"qt":16,"vis":362,"f":14,"rc":0,"rf":0},"e3":{"loc":362,"q":16,"qt":16,"vis":649,"f":230,"rc":100,"rf":0},"e4":{"loc":362,"q":16,"qt":16,"vis":373,"f":27,"rc":0,"rf":0},"e5":{"loc":362,"q":16,"qt":16,"vis":362,"f":13,"rc":0,"rf":0}},{"b":"RESIDENCIAL DOS IPÊS - 234","n":1,"c":0,"bq":1,"hab":1885,"e1":{"loc":245,"q":11,"qt":11,"vis":244,"f":76,"rc":2,"rf":0},"e2":{"loc":245,"q":11,"qt":11,"vis":228,"f":57,"rc":0,"rf":0},"e3":{"loc":245,"q":11,"qt":11,"vis":256,"f":87,"rc":2,"rf":0},"e4":{"loc":245,"q":11,"qt":11,"vis":264,"f":92,"rc":8,"rf":0},"e5":{"loc":245,"q":11,"qt":5,"vis":111,"f":39,"rc":1,"rf":0}},{"b":"RESIDENCIAL ELDORADO\n - 651","n":3,"c":0,"bq":0,"hab":936,"e1":{"loc":282,"q":9,"qt":9,"vis":280,"f":56,"rc":1,"rf":0},"e2":{"loc":282,"q":9,"qt":9,"vis":280,"f":68,"rc":10,"rf":0},"e3":{"loc":282,"q":9,"qt":9,"vis":270,"f":86,"rc":2,"rf":0},"e4":{"loc":282,"q":9,"qt":9,"vis":200,"f":56,"rc":0,"rf":0},"e5":{"loc":282,"q":9,"qt":6,"vis":172,"f":57,"rc":0,"rf":0}},{"b":"RESIDENCIAL FLAMBOYANTS - 211","n":15,"c":1,"bq":1,"hab":898,"e1":{"loc":514,"q":24,"qt":24,"vis":709,"f":203,"rc":75,"rf":0},"e2":{"loc":514,"q":24,"qt":24,"vis":700,"f":224,"rc":78,"rf":0},"e3":{"loc":514,"q":24,"qt":24,"vis":635,"f":201,"rc":47,"rf":0},"e4":{"loc":514,"q":24,"qt":24,"vis":596,"f":200,"rc":46,"rf":0},"e5":{"loc":514,"q":24,"qt":24,"vis":562,"f":194,"rc":23,"rf":0}},{"b":"RESIDENCIAL PARAÍSO - 244","n":12,"c":0,"bq":0,"hab":859,"e1":{"loc":350,"q":7,"qt":7,"vis":407,"f":36,"rc":27,"rf":0},"e2":{"loc":350,"q":7,"qt":7,"vis":374,"f":32,"rc":13,"rf":0},"e3":{"loc":350,"q":7,"qt":7,"vis":407,"f":50,"rc":23,"rf":0},"e4":{"loc":350,"q":7,"qt":7,"vis":382,"f":52,"rc":7,"rf":0},"e5":{"loc":350,"q":7,"qt":7,"vis":371,"f":47,"rc":9,"rf":0}},{"b":"RESIDENCIAL TURIM - 660","n":0,"c":0,"bq":0,"hab":0,"e1":{"loc":1543,"q":46,"qt":46,"vis":1600,"f":0,"rc":0,"rf":0},"e2":{"loc":1543,"q":46,"qt":46,"vis":1667,"f":0,"rc":0,"rf":0},"e3":{"loc":1543,"q":46,"qt":46,"vis":1599,"f":0,"rc":0,"rf":0},"e4":{"loc":1543,"q":46,"qt":46,"vis":1610,"f":0,"rc":0,"rf":0},"e5":{"loc":1543,"q":46,"qt":46,"vis":1561,"f":3,"rc":1,"rf":0}},{"b":"RESIDENCIAL VENEZA - 652","n":1,"c":0,"bq":0,"hab":75,"e1":{"loc":389,"q":12,"qt":12,"vis":397,"f":44,"rc":0,"rf":0},"e2":{"loc":389,"q":12,"qt":12,"vis":365,"f":41,"rc":1,"rf":0},"e3":{"loc":389,"q":12,"qt":12,"vis":397,"f":58,"rc":3,"rf":0},"e4":{"loc":389,"q":12,"qt":12,"vis":394,"f":53,"rc":6,"rf":0},"e5":{"loc":389,"q":12,"qt":12,"vis":383,"f":66,"rc":0,"rf":0}},{"b":"RESIDENCIAL VITÓRIA - 236","n":3,"c":0,"bq":1,"hab":136,"e1":{"loc":324,"q":11,"qt":11,"vis":441,"f":118,"rc":30,"rf":0},"e2":{"loc":324,"q":11,"qt":11,"vis":391,"f":136,"rc":24,"rf":0},"e3":{"loc":324,"q":11,"qt":11,"vis":434,"f":141,"rc":38,"rf":0},"e4":{"loc":324,"q":11,"qt":11,"vis":392,"f":119,"rc":20,"rf":0},"e5":{"loc":324,"q":11,"qt":11,"vis":351,"f":123,"rc":23,"rf":0}},{"b":"RURAL","n":80,"c":5,"bq":0,"hab":0},{"b":"SANTA TEREZINHA - 237","n":12,"c":2,"bq":2,"hab":890,"e1":{"loc":303,"q":12,"qt":12,"vis":452,"f":139,"rc":110,"rf":0},"e2":{"loc":303,"q":12,"qt":12,"vis":460,"f":147,"rc":112,"rf":0},"e3":{"loc":303,"q":12,"qt":12,"vis":486,"f":148,"rc":106,"rf":0},"e4":{"loc":303,"q":12,"qt":12,"vis":520,"f":144,"rc":90,"rf":0},"e5":{"loc":303,"q":12,"qt":12,"vis":481,"f":144,"rc":78,"rf":0}},{"b":"SANTO INACIO - 653","n":1,"c":1,"bq":0,"hab":3,"e1":{"loc":109,"q":6,"qt":6,"vis":98,"f":3,"rc":0,"rf":0},"e2":{"loc":109,"q":6,"qt":6,"vis":97,"f":3,"rc":2,"rf":0},"e3":{"loc":109,"q":6,"qt":6,"vis":116,"f":4,"rc":2,"rf":0},"e4":{"loc":109,"q":6,"qt":6,"vis":113,"f":3,"rc":0,"rf":0},"e5":{"loc":109,"q":6,"qt":6,"vis":111,"f":3,"rc":1,"rf":0}},{"b":"SÃO MANOEL (Vila) - 08","n":0,"c":0,"bq":0,"hab":116,"e1":{"loc":226,"q":19,"qt":19,"vis":232,"f":11,"rc":0,"rf":0},"e2":{"loc":226,"q":19,"qt":19,"vis":227,"f":6,"rc":1,"rf":0},"e3":{"loc":226,"q":19,"qt":19,"vis":225,"f":7,"rc":0,"rf":0},"e4":{"loc":226,"q":19,"qt":19,"vis":225,"f":3,"rc":1,"rf":0},"e5":{"loc":226,"q":19,"qt":19,"vis":223,"f":7,"rc":0,"rf":0}},{"b":"TOPÁZIO RESIDENCIAL - 246","n":6,"c":0,"bq":1,"hab":565,"e1":{"loc":212,"q":8,"qt":8,"vis":226,"f":34,"rc":10,"rf":0},"e2":{"loc":212,"q":8,"qt":8,"vis":215,"f":23,"rc":3,"rf":0},"e3":{"loc":212,"q":8,"qt":8,"vis":225,"f":25,"rc":5,"rf":0},"e4":{"loc":212,"q":8,"qt":8,"vis":227,"f":36,"rc":11,"rf":0},"e5":{"loc":212,"q":8,"qt":8,"vis":214,"f":25,"rc":2,"rf":0}},{"b":"VILA UNIÃO - 641","n":4,"c":0,"bq":1,"hab":489,"e1":{"loc":147,"q":6,"qt":6,"vis":153,"f":38,"rc":1,"rf":0},"e2":{"loc":147,"q":6,"qt":6,"vis":150,"f":41,"rc":3,"rf":0},"e3":{"loc":147,"q":6,"qt":6,"vis":165,"f":42,"rc":1,"rf":0},"e4":{"loc":147,"q":6,"qt":6,"vis":153,"f":44,"rc":0,"rf":0},"e5":{"loc":147,"q":6,"qt":6,"vis":149,"f":41,"rc":1,"rf":0}}],"hist":{"anos":[{"ano":"2023","n":945,"c":242,"d":703,"i":0,"dengue":242,"alarme":0,"grave":0,"lab":13,"clin":229,"hosp":14,"hosp_c":8,"obito":0,"obito_outras":1,"n_mp":859,"c_mp":226,"ns1_p":91,"ns1_r":455,"pcr_p":0,"pcr_r":3,"soro":{"DENV-1":0,"DENV-2":0,"DENV-3":0,"DENV-4":0},"enc_med":13.0,"F":116,"M":126,"nF":500,"nM":445,"gest_c":1},{"ano":"2024","n":4398,"c":1979,"d":2419,"i":0,"dengue":1811,"alarme":166,"grave":2,"lab":246,"clin":1732,"hosp":266,"hosp_c":249,"obito":2,"obito_outras":2,"n_mp":4084,"c_mp":1899,"ns1_p":87,"ns1_r":254,"pcr_p":137,"pcr_r":266,"soro":{"DENV-1":16,"DENV-2":121,"DENV-3":0,"DENV-4":0},"enc_med":30.0,"F":1005,"M":973,"nF":2321,"nM":2075,"gest_c":20},{"ano":"2025","n":3192,"c":1022,"d":2170,"i":0,"dengue":970,"alarme":52,"grave":0,"lab":37,"clin":985,"hosp":159,"hosp_c":87,"obito":0,"obito_outras":0,"n_mp":2856,"c_mp":970,"ns1_p":17,"ns1_r":159,"pcr_p":12,"pcr_r":90,"soro":{"DENV-1":0,"DENV-2":12,"DENV-3":0,"DENV-4":0},"enc_med":39.0,"F":541,"M":481,"nF":1670,"nM":1522,"gest_c":19},{"ano":"2026","n":592,"c":43,"d":544,"i":5,"dengue":43,"alarme":0,"grave":0,"lab":10,"clin":33,"hosp":33,"hosp_c":4,"obito":0,"obito_outras":0,"n_mp":592,"c_mp":43,"ns1_p":35,"ns1_r":357,"pcr_p":6,"pcr_r":17,"soro":{"DENV-1":1,"DENV-2":3,"DENV-3":2,"DENV-4":0},"enc_med":11.0,"F":19,"M":24,"nF":313,"nM":279,"gest_c":0}],"mensal":{"2026":[{"n":93,"c":9},{"n":98,"c":5},{"n":127,"c":9},{"n":94,"c":5},{"n":42,"c":2},{"n":28,"c":5},{"n":30,"c":4},{"n":34,"c":2},{"n":23,"c":0},{"n":23,"c":2},{"n":0,"c":0},{"n":0,"c":0}],"2025":[{"n":390,"c":122},{"n":293,"c":123},{"n":369,"c":152},{"n":403,"c":157},{"n":526,"c":202},{"n":288,"c":86},{"n":149,"c":35},{"n":185,"c":46},{"n":155,"c":38},{"n":134,"c":13},{"n":154,"c":31},{"n":146,"c":17}],"2024":[{"n":124,"c":19},{"n":238,"c":78},{"n":427,"c":224},{"n":1097,"c":537},{"n":1199,"c":646},{"n":571,"c":248},{"n":178,"c":75},{"n":123,"c":22},{"n":82,"c":38},{"n":76,"c":21},{"n":92,"c":15},{"n":191,"c":56}],"2023":[{"n":75,"c":19},{"n":134,"c":46},{"n":130,"c":44},{"n":117,"c":31},{"n":115,"c":22},{"n":103,"c":23},{"n":64,"c":17},{"n":56,"c":11},{"n":43,"c":10},{"n":33,"c":3},{"n":34,"c":9},{"n":41,"c":7}]},"idade":{"2026":[{"f":"0-4","n":134,"c":3},{"f":"5-9","n":63,"c":7},{"f":"10-14","n":56,"c":4},{"f":"15-19","n":39,"c":3},{"f":"20-29","n":114,"c":6},{"f":"30-39","n":75,"c":7},{"f":"40-49","n":47,"c":5},{"f":"50-59","n":29,"c":2},{"f":"60-69","n":17,"c":2},{"f":"70+","n":18,"c":4}],"2025":[{"f":"0-4","n":445,"c":61},{"f":"5-9","n":336,"c":85},{"f":"10-14","n":285,"c":99},{"f":"15-19","n":278,"c":107},{"f":"20-29","n":579,"c":164},{"f":"30-39","n":515,"c":189},{"f":"40-49","n":341,"c":147},{"f":"50-59","n":198,"c":75},{"f":"60-69","n":124,"c":57},{"f":"70+","n":91,"c":38}],"2024":[{"f":"0-4","n":562,"c":145},{"f":"5-9","n":488,"c":212},{"f":"10-14","n":417,"c":218},{"f":"15-19","n":410,"c":198},{"f":"20-29","n":841,"c":359},{"f":"30-39","n":667,"c":312},{"f":"40-49","n":457,"c":234},{"f":"50-59","n":297,"c":163},{"f":"60-69","n":160,"c":89},{"f":"70+","n":99,"c":49}],"2023":[{"f":"0-4","n":125,"c":32},{"f":"5-9","n":92,"c":19},{"f":"10-14","n":62,"c":19},{"f":"15-19","n":87,"c":20},{"f":"20-29","n":237,"c":65},{"f":"30-39","n":162,"c":34},{"f":"40-49","n":97,"c":30},{"f":"50-59","n":51,"c":16},{"f":"60-69","n":20,"c":5},{"f":"70+","n":12,"c":2}]},"bairros":[{"k":"CENTRO I","b":"CENTRO I - 207","campo":true,"n2026":13,"n2025":133,"n2024":343,"n2023":92,"c2026":3,"c2025":48,"c2024":189,"c2023":24},{"k":"EDELMINA QUERUBIM","b":"EDELMINA QUERUBIM - 209","campo":true,"n2026":53,"n2025":355,"n2024":314,"n2023":45,"c2026":3,"c2025":124,"c2024":104,"c2023":8},{"k":"RURAL","b":"RURAL","campo":true,"n2026":80,"n2025":201,"n2024":216,"n2023":64,"c2026":5,"c2025":53,"c2024":103,"c2023":24},{"k":"BELA VISTA","b":"BELA VISTA - 239","campo":true,"n2026":14,"n2025":125,"n2024":210,"n2023":40,"c2026":0,"c2025":46,"c2024":108,"c2023":13},{"k":"CIDADE NOVA","b":"CIDADE NOVA - 249","campo":true,"n2026":18,"n2025":127,"n2024":184,"n2023":28,"c2026":2,"c2025":35,"c2024":90,"c2023":4},{"k":"COLINA II","b":"COLINA II - 198","campo":true,"n2026":27,"n2025":162,"n2024":236,"n2023":73,"c2026":1,"c2025":38,"c2024":75,"c2023":10},{"k":"RESIDENCIAL BEIJA FLOR","b":"RESIDENCIAL BEIJA-FLOR\n - 230","campo":true,"n2026":20,"n2025":120,"n2024":253,"n2023":29,"c2026":0,"c2025":37,"c2024":79,"c2023":5},{"k":"RESIDENCIAL DAS PALMEIRAS","b":"RESIDENCIAL DAS PALMEIRAS - 233","campo":true,"n2026":12,"n2025":86,"n2024":115,"n2023":29,"c2026":2,"c2025":46,"c2024":53,"c2023":16},{"k":"LIRIOS DO CAMPO I","b":"LÍRIOS DO CAMPO I - 223","campo":true,"n2026":20,"n2025":85,"n2024":124,"n2023":32,"c2026":0,"c2025":28,"c2024":59,"c2023":12},{"k":"ALTO DA COLINA","b":"ALTO DA COLINA - 003","campo":true,"n2026":26,"n2025":121,"n2024":177,"n2023":36,"c2026":1,"c2025":40,"c2024":55,"c2023":2},{"k":"JARDIM DAS ORQUIDEAS","b":"JARDIM DAS ORQUÍDEAS - 240","campo":true,"n2026":8,"n2025":60,"n2024":93,"n2023":30,"c2026":2,"c2025":19,"c2024":61,"c2023":9},{"k":"JARDIM AGATA","b":"JARDIM ÁGATA - 216","campo":true,"n2026":24,"n2025":83,"n2024":138,"n2023":15,"c2026":3,"c2025":21,"c2024":63,"c2023":3},{"k":"RESIDENCIAL FLAMBOYANTS","b":"RESIDENCIAL FLAMBOYANTS - 211","campo":true,"n2026":15,"n2025":53,"n2024":102,"n2023":9,"c2026":1,"c2025":15,"c2024":63,"c2023":5},{"k":"JARDIM I","b":"JARDIM I - 199","campo":true,"n2026":4,"n2025":82,"n2024":80,"n2023":19,"c2026":1,"c2025":35,"c2024":39,"c2023":7},{"k":"PARQUE DO SOL","b":"PARQUE DO SOL - 197","campo":true,"n2026":9,"n2025":81,"n2024":96,"n2023":27,"c2026":0,"c2025":32,"c2024":39,"c2023":10},{"k":"NOSSA SENHORA APARECIDA","b":"NOSSA SENHORA APARECIDA - 002","campo":true,"n2026":11,"n2025":48,"n2024":94,"n2023":13,"c2026":3,"c2025":19,"c2024":54,"c2023":4},{"k":"Demais bairros","b":"Demais bairros","campo":false,"n2026":238,"n2025":1227,"n2024":1566,"n2023":359,"c2026":16,"c2025":367,"c2024":714,"c2023":85},{"k":"Sem bairro informado","b":"Sem bairro informado","campo":false,"n2026":0,"n2025":43,"n2024":57,"n2023":5,"c2026":0,"c2025":19,"c2024":31,"c2023":1}]}};
+const nf=new Intl.NumberFormat('pt-BR'), nf1=new Intl.NumberFormat('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1});
+const f0=v=>nf.format(Math.round(v)), f1=v=>nf1.format(v), pc=(a,b)=>b?a/b*100:0, pct=(a,b)=>f1(pc(a,b))+'%';
+const $=id=>document.getElementById(id);
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const small=new Set(['DE','DA','DO','DAS','DOS']), roman=new Set(['I','II','III','IV','J','A','R','H','S','F','M']);
+const clean=s=>s.replace(/\s*-\s*\d+\s*$/,'').split(' ').map(w=>{const u=w.toUpperCase(); if(roman.has(u)&&w.length<=3)return u; if(small.has(u))return w.toLowerCase(); return w.charAt(0).toUpperCase()+w.slice(1).toLowerCase();}).join(' ');
+const ep=D.ep, bl=D.bl, pdf=D.pdf, HAB=D.hab;
+const br=d=>d.split('-').reverse().join('/');
+const metr=c=>{const ab=c.lit+c.recup, pend=c.fech-c.recup; return {ab,pend,sem:c.locais-ab-pend-c.rec,quadp:pc(c.quad_t,c.quad),pendp:pc(pend,c.locais),recp:pc(c.recup,c.fech)};};
+const ATTR={cyc:'c5'};
+let et,M,B,Bc,abertos,fechPend,semArea,cyc;
+
+
+function spark(v,la,lb){const W=440,H=130,p=8,mx=Math.max(...v),st=(W-2*p)/(v.length-1),X=i=>p+i*st,Y=x=>H-p-(x/mx)*(H-2*p-20);
+  const q=v.map((x,i)=>[X(i),Y(x)]), line=q.map((a,i)=>(i?'L':'M')+a[0].toFixed(1)+' '+a[1].toFixed(1)).join(' '), area=line+` L${X(v.length-1).toFixed(1)} ${H-p} L${X(0).toFixed(1)} ${H-p} Z`, im=v.indexOf(mx), il=v.length-1;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Notificações por semana epidemiológica, de ${la} a ${lb}. Pico de ${mx}."><defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8ec5ff" stop-opacity=".5"/><stop offset="1" stop-color="#8ec5ff" stop-opacity="0"/></linearGradient></defs><line x1="${p}" y1="${H-p}" x2="${W-p}" y2="${H-p}" stroke="#ffffff" stroke-opacity=".18"/><path d="${area}" fill="url(#sg)"/><path d="${line}" fill="none" stroke="#a9d4ff" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/><circle cx="${q[im][0]}" cy="${q[im][1]}" r="4.500" fill="#fff" stroke="#a9d4ff" stroke-width="2"/><text x="${q[im][0]+9}" y="${q[im][1]+4}" fill="#fff" font-size="13" font-weight="700" font-family="Figtree,sans-serif">${mx}</text><circle cx="${q[il][0]}" cy="${q[il][1]}" r="4" fill="#fff"/></svg><div class="cap"><span>SE ${la}</span><span>pico: ${mx} notificações · SE ${wkLabel(sem[im].s)}</span><span>SE ${lb}</span></div>`;}
+
+/* ---------- ciclo de campo ---------- */
+function setCycle(c){
+  cyc=c; et=D.et[c]; M=metr(et); abertos=M.ab; fechPend=M.pend; semArea=M.sem;
+  B=D.bairros.map(r=>{const e=r['e'+c.slice(1)]; const z=e||{loc:0,q:0,qt:0,vis:0,f:0,rc:0,rf:0};
+    return {...r,...z,nome:clean(r.b),pend:z.loc?Math.max(0,pc(z.f-z.rc,z.loc)):null,cobq:z.q?pc(z.qt,z.q):null};});
+  Bc=B.filter(r=>r.loc>0);
+  Object.keys(D.et).forEach(k=>$('cy-'+k).setAttribute('aria-pressed',k===c));
+  renderData(); route(true);
+}
+function attention(r){const mc=+$('f-conf').value||0, mn=+$('f-not').value||0, mp=+$('f-pend').value||0; return (r.c>=mc||r.n>=mn) && (r.pend||0)>=mp;}
+const kpiHTML=a=>a.map(k=>`<div class="kpi"><div class="v">${k[0]}</div><div class="l">${k[1]}</div><div class="d">${k[2]}</div></div>`).join('');
+const bar=(label,parts,right)=>`<div class="brow"><span>${label}</span><div class="t">${parts.map(p=>`<b style="width:${p[0]}%;background:${p[1]}"></b>`).join('')}</div><span class="n">${right}</span></div>`;
+const seg=(arr)=>`<div class="stack">${arr.map(a=>`<b style="width:${a[1]}%;background:${a[2]}" title="${a[0]}"></b>`).join('')}</div><div class="legend">${arr.map(a=>`<span><i style="background:${a[2]}"></i>${a[0]}: ${f0(a[3])} (${f1(a[1])}%)</span>`).join('')}</div>`;
+
+/* ---------- blocos que não dependem do ciclo ---------- */
+const kEpi=[
+ [f0(ep.total),'Notificações','de '+br(ep.dt_min)+' a '+br(ep.dt_max)],
+ [f0(ep.conf),'Casos confirmados',pct(ep.conf,ep.total)+' das notificações'],
+ [f0(ep.inv),'Em investigação','sem classificação final'],
+ [f0(ep.hosp),'Internações','entre notificados; '+ep.hosp_conf+' em confirmados'],
+ [f0(ep.obitos),'Óbitos','sem alarme ou grave registrado'],
+ [f0(pc(ep.conf,HAB)*1000),'Confirmados por 100 mil','base: '+f0(HAB)+' hab. do cadastro de campo']
+];
+$('kpi-epi').innerHTML=kpiHTML(kEpi);
+$('kpi-bloq').innerHTML=kpiHTML([[f0(bl.quad),'Quarteirões',''],[f0(bl.imov),'Imóveis trabalhados',''],[f1(bl.calda_l),'Litros de calda',''],[f1(bl.tempo_h),'Horas de aplicação',''],[f0(bl.km),'Km percorridos','']]);
+$('pdf-sub').textContent=`${pdf.tot} investigações · ${pdf.pos} positivas · ${pdf.neg} negativas · ${pdf.inc} inconclusivas · ${pdf.ag} aguardando.`;
+$('t-pdf').innerHTML='<thead><tr><th>Doença</th><th>Positivos</th><th>Notificados</th></tr></thead><tbody>'+pdf.doen.map(r=>`<tr><td>${r[0]}</td><td class="num">${r[1]}</td><td class="num">${r[2]}</td></tr>`).join('')+'</tbody>';
+const sem=ep.semanas;
+$('blk-class').innerHTML='<div class="bars">'+
+ bar('Clínico-epid.',[[pc(ep.conf_clin,ep.total),'var(--s1)']],ep.conf_clin+' confirmados')+
+ bar('Laboratório',[[pc(ep.conf_lab,ep.total),'var(--s1)']],ep.conf_lab+' confirmados')+
+ bar('Descartados',[[pc(ep.desc,ep.total),'var(--s1-lo)']],f0(ep.desc))+
+ bar('Em investigação',[[pc(ep.inv,ep.total),'var(--s3)']],f0(ep.inv))+'</div>';
+const sx=ep.sexo;
+$('blk-sexo').innerHTML='<div class="bars">'+
+ bar('Feminino',[[pc(sx.F.c,sx.F.n),'var(--s1)'],[100-pc(sx.F.c,sx.F.n),'var(--s1-lo)']],f0(sx.F.n)+' · '+sx.F.c+' conf.')+
+ bar('Masculino',[[pc(sx.M.c,sx.M.n),'var(--s1)'],[100-pc(sx.M.c,sx.M.n),'var(--s1-lo)']],f0(sx.M.n)+' · '+sx.M.c+' conf.')+'</div>'+
+ `<p class="note" style="margin-top:10px">Confirmados entre os notificados: feminino ${pct(sx.F.c,sx.F.n)}, masculino ${pct(sx.M.c,sx.M.n)}.</p>`;
+const L=ep.lab, real=o=>o['Reagente']+o['Não reagente']+(o['Inconclusivo']||0);
+const lrow=(nome,pos,tot,rot)=>bar(nome,[[pc(pos,tot),'var(--s1)']],`${pos} de ${tot}`)+`<div class="d" style="font-size:12px;color:var(--muted);margin:-4px 0 4px 140px">${rot} · positividade ${pct(pos,tot)}</div>`;
+$('blk-lab').innerHTML='<div class="bars">'+
+ lrow('NS1',L.ns1['Reagente'],real(L.ns1),'reagentes entre realizados')+
+ lrow('RT-PCR',L.pcr['Detectável'],L.pcr['Detectável']+L.pcr['Não detectável'],'detectáveis entre realizados')+
+ lrow('IgM',L.igm['Reagente'],real(L.igm),'reagentes entre realizados')+'</div>'+
+ `<p class="note" style="margin-top:8px">Sorotipos identificados: ${Object.entries(L.soro).filter(e=>e[1]>0).map(e=>e[0]+' ('+e[1]+')').join(', ')}. Amostra pequena, sem inferência de predominância.</p>`;
+$('blk-op').innerHTML=`<div class="kpis" style="margin:0"><div class="kpi"><div class="v">${f0(ep.enc_mediana)} d</div><div class="l">Mediana até o encerramento</div><div class="d">percentil 90: ${f0(ep.enc_p90)} dias</div></div><div class="kpi"><div class="v">${f0(ep.enc_pos30)}</div><div class="l">Encerrados após 30 dias</div><div class="d">${f0(ep.inv)} ainda sem classificação</div></div><div class="kpi"><div class="v">${f0(ep.alarme+ep.grave)}</div><div class="l">Alarme ou grave</div><div class="d">${f0(ep.obitos)} óbitos</div></div></div>`;
+const mn=['Jan','Fev','Mar','Abr','Mai','Jun'];
+let comp='<thead><tr><th>Ciclo</th><th>Trabalhados</th><th>Fechados</th><th>Recuperados</th></tr></thead><tbody>';
+['2023','2024'].forEach(y=>D.comp[y].forEach(r=>{ if(r.t) comp+=`<tr><td>${mn[r.m-1]}/${y}</td><td class="num">${f0(r.t)}</td><td class="num">${f0(r.f)}</td><td class="num">${f0(r.r)}</td></tr>`;}));
+$('t-comp').innerHTML=comp+'</tbody>';
+
+/* ---------- blocos que dependem do ciclo ---------- */
+function renderData(){
+  const lab=et.nome+' · '+et.per;
+  $('grp-ent').textContent='Entomologia · '+et.nome.toLowerCase()+' e bloqueios';
+  $('ent-per').textContent=lab+' · GeoControle, Acompanhamento de Produção, emitido em 28/10/2026';
+  const kEnt=[
+   [f0(et.locais),'Imóveis cadastrados',f0(et.bairros)+' bairros'+(et.agentes?' · '+et.agentes+' agentes':'')],
+   [pct(et.quad_t,et.quad),'Quadras trabalhadas',f0(et.quad_t)+' de '+f0(et.quad)],
+   [pct(fechPend,et.locais),'Fechados sem recuperação',f0(fechPend)+' imóveis'],
+   [pct(et.recup,et.fech),'Fechados recuperados',f0(et.recup)+' de '+f0(et.fech)],
+   [f0(et.rec),'Recusas',f0(Bc.filter(r=>r.rf>0).length)+' bairros com recusa'],
+   [f0(bl.n),'Bloqueios em 2026','mediana de '+f0(bl.lag_med)+' dias até o bloqueio']
+  ];
+  $('kpi-ent').innerHTML=kpiHTML(kEnt); $('kpi-ent2').innerHTML=kpiHTML(kEnt);
+  {const a25=HA.find(x=>x.ano==='2025'), a26=HA.find(x=>x.ano==='2026'), dn=Math.round((1-a26.c_mp/a25.c_mp)*100);
+   $('hero-t').textContent=`Em 2026, ${Math.abs(dn)}% ${dn>=0?'menos':'mais'} casos confirmados que em 2025 no mesmo período`;
+   $('hero-s').textContent=`${f0(ep.total)} notificações e ${f0(ep.conf)} confirmados até ${br(ep.dt_max)}. No campo, o ${et.nome.toLowerCase()} tem ${f1(M.pendp)}% dos imóveis fechados sem recuperação${et.aberto?' (ciclo em andamento)':''}.`;
+   $('hero-spark').innerHTML=spark(sem.map(r=>r.n),wkLabel(sem[0].s),wkLabel(sem[sem.length-1].s));}
+
+  /* leitura rápida */
+  const topC=[...B].filter(r=>r.c>0&&r.loc>0).sort((a,b)=>b.c-a.c);
+  const top5=topC.slice(0,5).reduce((s,r)=>s+r.c,0);
+  const rural=B.find(r=>r.b==='RURAL');
+  const last8=sem.slice(-8).reduce((s,r)=>s+r.n,0), prev8=sem.slice(-16,-8).reduce((s,r)=>s+r.n,0);
+  const ki=Object.keys(D.et), ix=ki.indexOf(cyc), prev=ix>0?D.et[ki[ix-1]]:null, mpv=prev?metr(prev):null;
+  const campo=`<b>Campo, ${et.nome.toLowerCase()}:</b> ${pct(et.quad_t,et.quad)} das quadras trabalhadas, ${pct(fechPend,et.locais)} dos imóveis fechados sem recuperação e ${f0(et.rec)} recusas.`+(prev?` No ${prev.nome.toLowerCase()} eram ${f1(mpv.pendp)}%.`:'')+(et.aberto?` O ${et.nome.toLowerCase()} ainda está em andamento, então o número pode cair com as revisitas.`:'')+` Foram ${f0(bl.n)} bloqueios para ${f0(ep.conf)} confirmados, com mediana de ${f0(bl.lag_med)} dias entre a notificação e o bloqueio.`;
+  $('insights').innerHTML=[
+   `<b>${f0(ep.conf)} confirmados em ${f0(ep.total)} notificações (${pct(ep.conf,ep.total)}).</b> ${pct(ep.conf_clin,ep.conf)} fecharam por critério clínico-epidemiológico e ${pct(ep.conf_lab,ep.conf)} por laboratório.`,
+   `<b>Cinco bairros com cadastro de campo reúnem ${pct(top5,ep.conf)} dos confirmados:</b> ${topC.slice(0,5).map(r=>r.nome+' ('+r.c+')').join(', ')}. A zona rural soma ${rural?rural.n:0} notificações e ${rural?rural.c:0} confirmados, sem cobertura de campo.`,
+   `<b>Ritmo recente:</b> ${f0(last8)} notificações nas últimas 8 semanas, contra ${f0(prev8)} nas 8 anteriores.`,
+   campo].map(t=>`<li>${t}</li>`).join('');
+  /* situação e tipo */
+  $('blk-imoveis').innerHTML=seg([['Trabalhados abertos',pc(abertos,et.locais),'var(--s2)',abertos],['Fechados sem recuperação',pc(fechPend,et.locais),'var(--s2-lo)',fechPend],['Sem área trabalhada',pc(semArea,et.locais),'var(--axis)',semArea],['Recusados',pc(et.rec,et.locais),'var(--ink)',et.rec]])+
+   `<p class="note" style="margin-top:12px">Dos ${f0(et.fech)} imóveis encontrados fechados, ${f0(et.recup)} foram recuperados em nova visita. Tentativas registradas: ${f0(et.tent)}. Abertos = visitas LIT mais recuperados; sem área = locais que sobram depois dos demais grupos.</p>`;
+  const ks=Object.keys(D.et), ms=ks.map(k=>metr(D.et[k]));
+  const rowsC=[['Imóveis cadastrados',c=>f0(c.locais)],['Quadras trabalhadas',(c,m)=>f1(m.quadp)+'%'],['Abertos (% dos imóveis)',(c,m)=>f1(pc(m.ab,c.locais))+'%'],['Fechados encontrados',c=>f0(c.fech)],['Recuperados (% dos fechados)',(c,m)=>f1(m.recp)+'%'],['Fechados sem recuperação',(c,m)=>f0(m.pend)],['Fechados sem recuperação (%)',(c,m)=>f1(m.pendp)+'%'],['Recusas',c=>f0(c.rec)],['Tentativas',c=>f0(c.tent)],['Visitas',c=>f0(c.vis)]];
+  $('t-cmp').innerHTML='<thead><tr><th>Indicador</th>'+ks.map(k=>`<th>${D.et[k].nome}<br><span style="font-weight:400">${D.et[k].per.replace(' (em andamento)','')}${D.et[k].aberto?'<br>em andamento':''}</span></th>`).join('')+'</tr></thead><tbody>'+rowsC.map(r=>`<tr><td>${r[0]}</td>${ks.map((k,i)=>`<td class="num">${r[1](D.et[k],ms[i])}</td>`).join('')}</tr>`).join('')+'</tbody>';
+  renderTable();
+  /* notas */
+  const notes=[
+   ['Epidemiologia (SINAN)',`Base DENGON com ${f0(ep.total)} notificações de dengue (agravo A90) de 2026, notificadas até ${br(ep.dt_max)}. Confirmado = classificação final dengue (códigos 10, 11 ou 12). Descartado = código 5. Fichas sem classificação ficam em investigação. ${ep.fora_mun} notificações têm município de notificação diferente de Nova Mutum; todas têm residência no município. A página usa apenas totais agregados: nomes, endereços e documentos da base não foram carregados.`],
+   ['Diferença entre 43 e 49 casos',`O SINAN exportado traz ${ep.conf} confirmados em ${f0(ep.total)} notificações. O relatório do GeoControle de 28/10 traz 49 positivos em 532 investigações de dengue. As fontes têm datas de corte e critérios de contagem diferentes (positivo na investigação contra classificação final), e esta página não consegue dizer qual explica a diferença. Vale reexportar o SINAN com o mesmo período do GeoControle e comparar.`],
+   ['Histórico 2023–2026',`Quatro bases DENGON do SINAN (agravo A90), uma por ano de notificação: 2023 (${HA[0].n}), 2024 (${HA[1].n}), 2025 (${HA[2].n}) e 2026 (${HA[3].n}, até 22/10), todas com residência em Nova Mutum. Mesma regra de classificação nos quatro anos (confirmado = códigos 10, 11 ou 12). Óbito por dengue = evolução 2; óbito por outras causas = evolução 3. A comparação justa entre anos usa o mesmo período, 01/01 a 22/10. Em 2026 a mediana até o encerramento considera só as fichas já encerradas. Nos bairros, grafias diferentes foram unificadas quando evidentes; ${f0(by[by.length-1].c2023+by[by.length-1].c2024+by[by.length-1].c2025+by[by.length-1].c2026)} confirmados estão sem bairro informado. Não há taxa por 100 mil no histórico por falta de população de cada ano.`],
+   ['Entomologia (GeoControle)',`Cinco relatórios Acompanhamento de Produção do GeoControle, ciclos 01 a 05 de 2026, emitidos em 28/10/2026. Em cada um, a soma dos 71 bairros (73 linhas) confere com a linha TOTAL do relatório em todas as colunas. Ciclos 01 a 04 estão encerrados. O ciclo 05 (06/09 a 31/10) está em andamento e os números mudam com as revisitas. Bela Vista I e II e Jardim das Orquídeas I e II foram somados para casar com o SINAN. Abertos = visitas LIT + recuperados; fechados sem recuperação = fechados − recuperados; sem área = locais que sobram depois dos demais grupos.`],
+   ['Diferença para a planilha antiga',`A planilha RELATORIO 2026 mostrava, no ciclo 01, 32.835 imóveis e 2.578 recuperados. O relatório do GeoControle do ciclo 01 traz 33.511 e 2.868. Esta página usa só o GeoControle. Tipo de imóvel e produção por supervisora existiam só na planilha e foram retirados.`],
+   ['Histórico de campo (SisPNCD)',`Relatório de Totais de Produção do SisPNCD (módulo web do Ministério da Saúde), município de Nova Mutum, tipo 2 (levantamento de índice mais tratamento), emitido em 28/10/2026, com os ciclos de 2023 a 2026. Cada ano tem seis ciclos; 2026 tem cinco e o quinto está em andamento, por isso as comparações entre anos usam os ciclos 1 a 4. Em cada relatório, o total confere com a soma dos ciclos. O SisPNCD não traz o cadastro de imóveis, então os percentuais do histórico usam os imóveis trabalhados como base. Eles não são comparáveis com o painel de Entomologia, que usa o cadastro do GeoControle. Os números de 2026 também diferem entre os dois sistemas, como mostra a tabela da aba.`],
+   ['Bloqueios',`Vêm da aba Bloqueio Gravado da planilha, com data de execução em 2026 e coluna Bloqueio igual a Sim, e não mudam com o ciclo escolhido. O tempo até o bloqueio é calculado entre a data de notificação e a data do bloqueio, em ${bl.lag_n} bloqueios com as duas datas válidas; ${pct(bl.lag_ate3*bl.lag_n,bl.lag_n)} saíram em até 3 dias. Confira os registros de data antes de usar como indicador de desempenho. A planilha não foi atualizada com os ciclos mais recentes.`],
+   ['Cruzamento por bairro',`Os casos são do ano inteiro e o campo é o do ciclo escolhido. Os nomes dos bairros diferem entre SINAN e campo (por exemplo Edelmina Querubim Marchetti e Edelmina Querubim). Padronizei pelo nome, com ajustes manuais para nove grafias. ${f0(Bc.reduce((s,r)=>s+r.n,0))} das ${f0(ep.total)} notificações casaram com bairro cadastrado; as ${rural?rural.n:0} da zona rural ficam sem cadastro de campo.`.replace('${rural?rural.n:0}',String((B.find(r=>r.b==='RURAL')||{n:0}).n))],
+   ['Taxa por 100 mil',`Usa a soma da coluna Habitantes do cadastro de campo da planilha (${f0(HAB)}) como população. Substitua pela estimativa oficial do IBGE antes de usar a taxa em relatório.`],
+   ['Atualização',`A página é uma fotografia dos arquivos enviados em 28/10/2026. Para atualizar, envie uma nova exportação do SINAN, a planilha atual e o relatório de produção do GeoControle.`]
+  ];
+  $('notes').innerHTML=notes.map(n=>`<div class="nc"><dt>${n[0]}</dt><dd>${n[1]}</dd></div>`).join('');
+}
+
+/* tabela por bairro */
+let sortK='c', sortD=-1;
+const cols=[['nome','Bairro',0],['n','Notificados',1],['c','Confirmados',1],['cobq','Quadras trab. %',1],['pend','Fechados sem recup. %',1],['rf','Recusas',1],['bq','Bloqueios',1],['flag','Situação',1]];
+function renderTable(){
+  const q=($('f-q').value||'').toLowerCase();
+  let rows=B.filter(r=>r.nome.toLowerCase().includes(q)).map(r=>({...r,flag:r.loc?(attention(r)?1:0):-1}));
+  rows.sort((a,b)=>{const x=a[sortK],y=b[sortK]; if(x==null&&y==null)return 0; if(x==null)return 1; if(y==null)return -1; return (typeof x==='string'?x.localeCompare(y,'pt'):x-y)*sortD;});
+  $('t-bairros').innerHTML='<thead><tr>'+cols.map(c=>`<th class="th" tabindex="0" data-k="${c[0]}" aria-sort="${sortK===c[0]?(sortD>0?'ascending':'descending'):'none'}">${c[1]}</th>`).join('')+'</tr></thead><tbody>'+
+   rows.map(r=>`<tr><td>${r.nome}</td><td class="num">${r.n}</td><td class="num">${r.c}</td><td class="num">${r.cobq==null?'–':f1(r.cobq)}</td><td class="num">${r.pend==null?'–':f1(r.pend)}</td><td class="num">${r.loc?r.rf:'–'}</td><td class="num">${r.loc?r.bq:'–'}</td><td>${r.flag===1?'<span class="chip att">Atenção</span>':r.flag===0?'<span class="chip ok">Sem alerta</span>':'<span class="empty">Sem cadastro de campo</span>'}</td></tr>`).join('')+'</tbody>';
+  $('f-count').textContent=Bc.filter(attention).length+' bairros em atenção de '+Bc.length+' · '+et.nome.toLowerCase();
+  document.querySelectorAll('.th').forEach(h=>{const go=()=>{const k=h.dataset.k; if(sortK===k)sortD*=-1; else{sortK=k;sortD=k==='nome'?1:-1;} renderTable(); renderCharts('cruzamento');}; h.onclick=go; h.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go();}};});
+}
+['f-conf','f-not','f-pend','f-q'].forEach(id=>$(id).addEventListener('input',()=>{renderTable();renderCharts('cruzamento');}));
+Object.keys(D.et).forEach(k=>{const b=document.createElement('button'); b.type='button'; b.id='cy-'+k; b.textContent=k.slice(1)+(D.et[k].aberto?' · em andamento':''); b.onclick=()=>setCycle(k); $('cyc-btns').appendChild(b);});
+
+/* ---------- gráficos ---------- */
+const charts={};
+function theme(){if(window.ChartDataLabels&&!theme.r){Chart.register(ChartDataLabels);Chart.defaults.set('plugins.datalabels',{display:false});theme.r=1;}Chart.defaults.font.family=css('--font');Chart.defaults.font.size=12.5;Chart.defaults.color=css('--ink2');Chart.defaults.borderColor=css('--grid');}
+function mk(id,cfg){ if(charts[id])charts[id].destroy(); const el=$(id); if(!el||!el.offsetParent)return; charts[id]=new Chart(el,cfg);}
+const common=()=>({responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{position:'top',align:'start',labels:{usePointStyle:true,pointStyle:'circle',boxWidth:8,boxHeight:8,padding:16}},tooltip:{backgroundColor:css('--surface'),titleColor:css('--ink'),bodyColor:css('--ink2'),borderColor:css('--axis'),borderWidth:1,padding:12,cornerRadius:12,boxPadding:5,usePointStyle:true,titleFont:{weight:'700',size:13},bodyFont:{size:12.5}}}});
+const wkLabel=s=>{const y=s.slice(2,4),w=+s.slice(4);return w>=52&&s.slice(0,4)==='2025'?w+'/'+y:String(w);};
+function weekly(id){
+  mk(id,{type:'bar',data:{labels:sem.map(r=>wkLabel(r.s)),datasets:[
+    {label:'Confirmado',data:sem.map(r=>r.c),backgroundColor:css('--s1'),borderSkipped:false,stack:'a'},
+    {label:'Descartado',data:sem.map(r=>r.d),backgroundColor:css('--s1-lo'),borderSkipped:false,stack:'a'},
+    {label:'Em investigação',data:sem.map(r=>r.i),backgroundColor:css('--s3'),borderRadius:{topLeft:7,topRight:7},borderSkipped:false,stack:'a'}]},
+   options:{...common(),scales:{x:{stacked:true,grid:{display:false},ticks:{maxTicksLimit:14,autoSkip:true},title:{display:true,text:'Semana epidemiológica de notificação',color:css('--muted')}},y:{stacked:true,beginAtZero:true,grid:{color:css('--grid')},border:{display:false},title:{display:true,text:'Notificações',color:css('--muted')}}},
+   plugins:{...common().plugins,tooltip:{...common().plugins.tooltip,callbacks:{title:i=>'SE '+wkLabel(sem[i[0].dataIndex].s),footer:i=>'Total: '+sem[i[0].dataIndex].n}}}}});
+}
+function renderCharts(tab){
+  theme();
+  if(tab==='resumo') weekly('c-sem1');
+  if(tab==='epidemiologia'){
+    weekly('c-sem2');
+    mk('c-idade',{type:'bar',data:{labels:ep.idade.map(r=>r.f),datasets:[{label:'Notificados',data:ep.idade.map(r=>r.n),backgroundColor:css('--s1-lo'),borderRadius:{topLeft:7,topRight:7},borderSkipped:false},{label:'Confirmados',data:ep.idade.map(r=>r.c),backgroundColor:css('--s1'),borderRadius:{topLeft:7,topRight:7},borderSkipped:false}]},
+      options:{...common(),scales:{x:{grid:{display:false},title:{display:true,text:'Anos',color:css('--muted')}},y:{beginAtZero:true,border:{display:false},grid:{color:css('--grid')}}},plugins:{...common().plugins,tooltip:{...common().plugins.tooltip,callbacks:{afterBody:i=>{const r=ep.idade[i[0].dataIndex];return 'Confirmados entre notificados: '+pct(r.c,r.n);}}}}}});
+    const top=[...B].sort((a,b)=>b.n-a.n).slice(0,12);
+    mk('c-bairro',{type:'bar',data:{labels:top.map(r=>r.nome),datasets:[{label:'Confirmados',data:top.map(r=>r.c),backgroundColor:css('--s1'),stack:'a',borderSkipped:false},{label:'Demais notificados',data:top.map(r=>r.n-r.c),backgroundColor:css('--s1-lo'),stack:'a',borderRadius:{topRight:7,bottomRight:7},borderSkipped:false}]},
+      options:{...common(),indexAxis:'y',scales:{x:{stacked:true,beginAtZero:true,grid:{color:css('--grid')},border:{display:false}},y:{stacked:true,grid:{display:false},ticks:{autoSkip:false,font:{size:11.5}}}}}});
+  }
+  if(tab==='historico') chartsHist();
+  if(tab==='hcampo') chartsCampo();
+  if(tab==='entomologia'){
+    const t=Bc.filter(r=>r.loc>=200).sort((a,b)=>b.pend-a.pend).slice(0,12);
+    mk('c-pend',{type:'bar',data:{labels:t.map(r=>r.nome),datasets:[{label:'Fechados sem recuperação (%)',data:t.map(r=>+r.pend.toFixed(1)),backgroundColor:css('--s2'),borderRadius:{topRight:7,bottomRight:7},borderSkipped:false}]},
+      options:{...common(),indexAxis:'y',layout:{padding:{right:46}},plugins:{...common().plugins,legend:{display:false},datalabels:{display:true,anchor:'end',align:'end',color:css('--ink2'),font:{weight:'700',size:11.5},formatter:v=>v+'%'},tooltip:{...common().plugins.tooltip,callbacks:{label:c=>c.parsed.x+'% dos locais · '+f0(t[c.dataIndex].f-t[c.dataIndex].rc)+' imóveis'}}},scales:{x:{beginAtZero:true,grid:{color:css('--grid')},border:{display:false},ticks:{callback:v=>v+'%'}},y:{grid:{display:false},ticks:{autoSkip:false,font:{size:11.5}}}}}});
+    const ks=Object.keys(D.et), ms=ks.map(k=>metr(D.et[k]));
+    mk('c-evol',{type:'line',data:{labels:ks.map(k=>D.et[k].nome.replace('Ciclo ','C')+(D.et[k].aberto?' (parcial)':'')),datasets:[{label:'Fechados sem recuperação (%)',data:ms.map(m=>+m.pendp.toFixed(1)),borderColor:css('--s2'),backgroundColor:css('--s2'),borderWidth:2,pointRadius:4,tension:0},{label:'Recuperados (% dos fechados)',data:ms.map(m=>+m.recp.toFixed(1)),borderColor:css('--ink2'),backgroundColor:css('--ink2'),borderWidth:2,pointRadius:4,borderDash:[5,4],tension:0}]},options:{...common(),scales:{x:{grid:{display:false}},y:{beginAtZero:true,grid:{color:css('--grid')},border:{display:false},ticks:{callback:v=>v+'%'}}}}});
+    const mm=MS.slice(0,10);
+    mk('c-bloq',{type:'bar',data:{labels:mm,datasets:[{label:'Bloqueios',data:bl.mes.slice(0,10),backgroundColor:css('--s2'),borderRadius:{topLeft:7,topRight:7},borderSkipped:false}]},
+      options:{...common(),plugins:{...common().plugins,legend:{display:false}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,ticks:{precision:0},border:{display:false},grid:{color:css('--grid')}}}}});
+  }
+  if(tab==='cruzamento'){
+    const a=Bc.filter(attention), o=Bc.filter(r=>!attention(r));
+    const pt=r=>({x:+r.pend.toFixed(1),y:r.n,r:Math.min(4+r.c*2.2,16),nome:r.nome,c:r.c});
+    mk('c-scatter',{type:'bubble',data:{datasets:[
+      {label:'Em atenção',data:a.map(pt),backgroundColor:css('--crit')+'cc',borderColor:css('--surface'),borderWidth:2},
+      {label:'Sem alerta',data:o.map(pt),backgroundColor:css('--s1')+'b3',borderColor:css('--surface'),borderWidth:2}]},
+      options:{...common(),scales:{x:{beginAtZero:true,title:{display:true,text:'Imóveis fechados sem recuperação (% dos locais)',color:css('--muted')},grid:{color:css('--grid')},border:{display:false},ticks:{callback:v=>v+'%'}},y:{beginAtZero:true,title:{display:true,text:'Notificações',color:css('--muted')},grid:{color:css('--grid')},border:{display:false}}},
+      plugins:{...common().plugins,tooltip:{...common().plugins.tooltip,callbacks:{title:i=>i[0].raw.nome,label:c=>[c.raw.y+' notificações · '+c.raw.c+' confirmados','Fechados sem recuperação: '+c.raw.x+'%']}}}}});
+  }
+}
+
+
+/* ---------- histórico 2023–2026 ---------- */
+const H=D.hist, HA=H.anos, YR=HA.map(a=>a.ano), ycol=y=>css('--y'+y);
+const yl=y=>y==='2026'?'2026 (até 22/10)':y;
+const sh=(a,b)=>b?f1(pc(a,b))+'%':'–';
+const Hrows=[
+ ['Notificações',a=>f0(a.n)],['Confirmados',a=>f0(a.c)],['Confirmados entre notificados',a=>sh(a.c,a.n)],['Descartados',a=>f0(a.d)],['Em investigação',a=>f0(a.i)],
+ ['Dengue com sinais de alarme',a=>f0(a.alarme)],['Dengue grave',a=>f0(a.grave)],['Internações entre confirmados',a=>f0(a.hosp_c)],['Óbitos por dengue',a=>f0(a.obito)],['Óbitos por outras causas',a=>f0(a.obito_outras)],['Gestantes confirmadas',a=>f0(a.gest_c)],
+ ['Confirmados por laboratório',a=>sh(a.lab,a.c)],['Mediana até o encerramento (dias)',a=>f0(a.enc_med)],
+ ['Notificações até 22/10',a=>f0(a.n_mp)],['Confirmados até 22/10',a=>f0(a.c_mp)]];
+$('t-hist').innerHTML='<thead><tr><th>Indicador</th>'+HA.map(a=>`<th>${yl(a.ano)}</th>`).join('')+'</tr></thead><tbody>'+Hrows.map(r=>`<tr><td>${r[0]}</td>${HA.map(a=>`<td class="num">${r[1](a)}</td>`).join('')}</tr>`).join('')+'</tbody>';
+$('t-lab-hist').innerHTML='<thead><tr><th>Exame</th>'+HA.map(a=>`<th>${a.ano}</th>`).join('')+'</tr></thead><tbody>'+
+ [['NS1 realizados',a=>f0(a.ns1_r)],['NS1 reagente (%)',a=>sh(a.ns1_p,a.ns1_r)],['RT-PCR realizados',a=>f0(a.pcr_r)],['RT-PCR detectável (%)',a=>sh(a.pcr_p,a.pcr_r)],...['DENV-1','DENV-2','DENV-3','DENV-4'].map(s=>[s+' identificados',a=>f0(a.soro[s])])].map(r=>`<tr><td>${r[0]}</td>${HA.map(a=>`<td class="num">${r[1](a)}</td>`).join('')}</tr>`).join('')+'</tbody>';
+const by=H.bairros;
+$('t-bairros-hist').innerHTML='<thead><tr><th>Bairro (confirmados)</th>'+YR.map(y=>`<th>${y}</th>`).join('')+'<th>Total</th></tr></thead><tbody>'+by.map(r=>{const t=YR.reduce((s,y)=>s+r['c'+y],0);return `<tr><td>${(r.k==='Demais bairros'||r.k==='Sem bairro informado')?r.b:clean(r.b)}</td>${YR.map(y=>`<td class="num">${f0(r['c'+y])}</td>`).join('')}<td class="num"><b>${f0(t)}</b></td></tr>`;}).join('')+'<tr><td><b>Total</b></td>'+YR.map(y=>`<td class="num"><b>${f0(by.reduce((s,r)=>s+r['c'+y],0))}</b></td>`).join('')+`<td class="num"><b>${f0(by.reduce((s,r)=>s+YR.reduce((q,y)=>q+r['c'+y],0),0))}</b></td></tr></tbody>`;
+{const a=Object.fromEntries(HA.map(x=>[x.ano,x]));
+ const dn=(k)=>Math.round((1-a['2026'][k]/a['2025'][k])*100);
+ const d3=YR.filter(y=>a[y].soro['DENV-3']>0);
+ $('ins-hist').innerHTML=[
+  `<b>Mesmo período (01/01 a 22/10):</b> 2026 tem ${f0(a['2026'].c_mp)} confirmados e ${f0(a['2026'].n_mp)} notificações, contra ${f0(a['2025'].c_mp)} e ${f0(a['2025'].n_mp)} em 2025, ${f0(a['2024'].c_mp)} e ${f0(a['2024'].n_mp)} em 2024 e ${f0(a['2023'].c_mp)} e ${f0(a['2023'].n_mp)} em 2023. Frente a 2025, são ${dn('c_mp')}% menos confirmados e ${dn('n_mp')}% menos notificações.`,
+  `<b>2024 foi o ano de maior carga:</b> ${f0(a['2024'].n)} notificações, ${f0(a['2024'].c)} confirmados, ${a['2024'].alarme} com sinais de alarme, ${a['2024'].grave} graves e ${a['2024'].obito} óbitos por dengue. O pico mensal de confirmados foi em maio (${H.mensal['2024'][4].c}).`,
+  `<b>Confirmados entre notificados:</b> ${sh(a['2023'].c,a['2023'].n)} em 2023, ${sh(a['2024'].c,a['2024'].n)} em 2024, ${sh(a['2025'].c,a['2025'].n)} em 2025 e ${sh(a['2026'].c,a['2026'].n)} em 2026. A queda em 2026 pode refletir menos casos, ou critério de encerramento e fichas ainda abertas diferentes. Vale conferir.`,
+  `<b>Sorotipos:</b> entre os tipados, DENV-2 predominou em 2024 (${a['2024'].soro['DENV-2']}) e 2025 (${a['2025'].soro['DENV-2']}). Em 2026 aparecem DENV-3 (${a['2026'].soro['DENV-3']}), DENV-2 (${a['2026'].soro['DENV-2']}) e DENV-1 (${a['2026'].soro['DENV-1']}); ${d3.length===1&&d3[0]==='2026'?'DENV-3 não aparece em nenhum ano anterior nesta base':'DENV-3 já aparecia em anos anteriores'}. Amostra pequena, o resultado merece confirmação laboratorial.`
+ ].map(t=>`<li>${t}</li>`).join('');}
+let hMode='c';
+['c','n'].forEach(m=>{$('hm-'+m).onclick=()=>{hMode=m;['c','n'].forEach(x=>$('hm-'+x).setAttribute('aria-pressed',x===m));renderCharts('historico');};});
+const MS=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'], PS={'2023':'rect','2024':'triangle','2025':'rectRot','2026':'circle'};
+function chartsHist(){
+  mk('c-h-mp',{type:'bar',data:{labels:YR,datasets:[{label:'Notificados',data:HA.map(a=>a.n_mp),backgroundColor:css('--s1-lo'),borderRadius:{topLeft:7,topRight:7},borderSkipped:false},{label:'Confirmados',data:HA.map(a=>a.c_mp),backgroundColor:css('--s1'),borderRadius:{topLeft:7,topRight:7},borderSkipped:false}]},
+    options:{...common(),layout:{padding:{top:22}},plugins:{...common().plugins,datalabels:{display:true,anchor:'end',align:'end',color:css('--ink2'),font:{weight:'700',size:11.5},formatter:v=>f0(v)}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,border:{display:false},grid:{color:css('--grid')}}}}});
+  mk('c-h-mes',{type:'line',data:{labels:MS,datasets:YR.map(y=>({label:y,data:H.mensal[y].map((m,i)=>(y==='2026'&&i>9)?null:m[hMode]),borderColor:ycol(y),backgroundColor:ycol(y),borderWidth:y==='2026'?3:2,pointStyle:PS[y],pointRadius:y==='2026'?5:4,tension:0,spanGaps:false}))},
+    options:{...common(),plugins:{...common().plugins,legend:{...common().plugins.legend,labels:{...common().plugins.legend.labels,pointStyle:'line',boxWidth:22}}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,border:{display:false},grid:{color:css('--grid')},title:{display:true,text:hMode==='c'?'Confirmados por mês de notificação':'Notificados por mês de notificação',color:css('--muted')}}}}});
+  const tc=y=>H.idade[y].reduce((s,r)=>s+r.c,0);
+  mk('c-h-idade',{type:'bar',data:{labels:H.idade['2026'].map(r=>r.f),datasets:YR.map(y=>({label:y,data:H.idade[y].map(r=>+(pc(r.c,tc(y))).toFixed(1)),backgroundColor:ycol(y),borderRadius:{topLeft:4,topRight:4},borderSkipped:false}))},
+    options:{...common(),plugins:{...common().plugins,tooltip:{...common().plugins.tooltip,callbacks:{label:c=>c.dataset.label+': '+c.parsed.y+'% dos confirmados ('+H.idade[c.dataset.label][c.dataIndex].c+')'}}},scales:{x:{grid:{display:false},title:{display:true,text:'Faixa etária, em anos',color:css('--muted')}},y:{beginAtZero:true,border:{display:false},grid:{color:css('--grid')},ticks:{callback:v=>v+'%'},title:{display:true,text:'Parcela dos confirmados do ano',color:css('--muted')}}}}});
+}
+
+/* ---------- histórico de campo (SisPNCD) ---------- */
+const SP={"anos": {"2023": [{"c": 1, "trab": 21222, "insp": 21222, "rec": 6, "fech": 4590, "recup": 901, "focal": 116, "perif": 0}, {"c": 2, "trab": 21797, "insp": 21797, "rec": 15, "fech": 5381, "recup": 1368, "focal": 198, "perif": 0}, {"c": 3, "trab": 22764, "insp": 22764, "rec": 1, "fech": 5316, "recup": 1988, "focal": 119, "perif": 0}, {"c": 4, "trab": 23080, "insp": 23074, "rec": 0, "fech": 4812, "recup": 1806, "focal": 142, "perif": 0}, {"c": 5, "trab": 22705, "insp": 22555, "rec": 1, "fech": 4859, "recup": 1276, "focal": 218, "perif": 0}, {"c": 6, "trab": 22697, "insp": 22536, "rec": 0, "fech": 5080, "recup": 852, "focal": 116, "perif": 0}], "2024": [{"c": 1, "trab": 24508, "insp": 24508, "rec": 0, "fech": 5158, "recup": 933, "focal": 190, "perif": 0}, {"c": 2, "trab": 24514, "insp": 24414, "rec": 0, "fech": 5995, "recup": 931, "focal": 154, "perif": 0}, {"c": 3, "trab": 24995, "insp": 24995, "rec": 0, "fech": 6153, "recup": 2059, "focal": 128, "perif": 0}, {"c": 4, "trab": 24887, "insp": 24887, "rec": 0, "fech": 5675, "recup": 1389, "focal": 86, "perif": 0}, {"c": 5, "trab": 25073, "insp": 25073, "rec": 0, "fech": 5489, "recup": 1432, "focal": 27, "perif": 0}, {"c": 6, "trab": 25130, "insp": 25130, "rec": 0, "fech": 5859, "recup": 1143, "focal": 26, "perif": 0}], "2025": [{"c": 1, "trab": 27516, "insp": 27516, "rec": 0, "fech": 5759, "recup": 1480, "focal": 9, "perif": 0}, {"c": 2, "trab": 27108, "insp": 27108, "rec": 0, "fech": 5765, "recup": 948, "focal": 6, "perif": 0}, {"c": 3, "trab": 27731, "insp": 27728, "rec": 0, "fech": 6295, "recup": 1304, "focal": 5, "perif": 0}, {"c": 4, "trab": 28339, "insp": 28339, "rec": 0, "fech": 7614, "recup": 2447, "focal": 2, "perif": 0}, {"c": 5, "trab": 27481, "insp": 27468, "rec": 0, "fech": 7132, "recup": 2289, "focal": 90, "perif": 0}, {"c": 6, "trab": 28083, "insp": 28083, "rec": 0, "fech": 6610, "recup": 2207, "focal": 62, "perif": 0}], "2026": [{"c": 1, "trab": 29286, "insp": 29286, "rec": 0, "fech": 6773, "recup": 2788, "focal": 85, "perif": 0}, {"c": 2, "trab": 28965, "insp": 28965, "rec": 0, "fech": 6450, "recup": 2216, "focal": 99, "perif": 0}, {"c": 3, "trab": 28541, "insp": 28541, "rec": 0, "fech": 6816, "recup": 2500, "focal": 73, "perif": 0}, {"c": 4, "trab": 28665, "insp": 28665, "rec": 0, "fech": 6401, "recup": 1943, "focal": 91, "perif": 0}, {"c": 5, "trab": 20862, "insp": 20862, "rec": 0, "fech": 5072, "recup": 943, "focal": 93, "perif": 0}]}, "tot": {"2023": {"trab": 134265, "insp": 133948, "rec": 23, "fech": 30038, "recup": 8191, "focal": 909, "perif": 0}, "2024": {"trab": 149107, "insp": 149007, "rec": 0, "fech": 34329, "recup": 7887, "focal": 611, "perif": 0}, "2025": {"trab": 166258, "insp": 166242, "rec": 0, "fech": 39175, "recup": 10675, "focal": 174, "perif": 0}, "2026": {"trab": 136319, "insp": 136319, "rec": 0, "fech": 31512, "recup": 10390, "focal": 441, "perif": 0}}};
+const SPY=Object.keys(SP.anos);
+const sumC=(y,n)=>{const t={trab:0,insp:0,rec:0,fech:0,recup:0,focal:0,perif:0}; SP.anos[y].filter(r=>r.c<=n).forEach(r=>Object.keys(t).forEach(k=>t[k]+=r[k])); return t;};
+const m4=y=>{const t=sumC(y,4); return {...t,recp:pc(t.recup,t.fech),pendp:pc(t.fech-t.recup,t.trab),fechp:pc(t.fech,t.trab),med:t.trab/4};};
+{const a=Object.fromEntries(SPY.map(y=>[y,m4(y)]));
+ const gcRec=Object.values(D.et).reduce((s,e)=>s+e.rec,0), gcN=Object.values(D.et).filter(e=>e.rec>0).map(e=>e.nome.toLowerCase());
+ const best=SPY.reduce((x,y)=>a[y].recp>a[x].recp?y:x), worst=SPY.reduce((x,y)=>a[y].recp<a[x].recp?y:x);
+ $('ins-hc').innerHTML=[
+  `<b>O campo trabalha mais imóveis a cada ano.</b> A média por ciclo (ciclos 1 a 4) foi ${SPY.map(y=>f0(a[y].med)+' em '+y).join(', ')}, acompanhando o crescimento do cadastro.`,
+  `<b>Recuperação dos fechados (ciclos 1 a 4):</b> ${SPY.map(y=>f1(a[y].recp)+'% em '+y).join(', ')}. A maior foi em ${best} e a menor em ${worst}.`,
+  `<b>Fechados sem recuperação (% dos trabalhados, ciclos 1 a 4):</b> ${SPY.map(y=>f1(a[y].pendp)+'% em '+y).join(', ')}.`,
+  `<b>Recusas:</b> o SisPNCD registra ${SPY.map(y=>SP.tot[y].rec+' em '+y).join(', ')}. O GeoControle registra ${gcRec} recusas em 2026 (${gcN.join(' e ')}). Vale conferir o lançamento das recusas no SisPNCD.`
+ ].map(t=>`<li>${t}</li>`).join('');
+ const row=(lab,fn)=>`<tr><td>${lab}</td>${SPY.map(y=>`<td class="num">${fn(y)}</td>`).join('')}</tr>`;
+ const sub=t=>`<tr><td colspan="${SPY.length+1}" style="background:var(--fill-soft);font-weight:700;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink2)">${t}</td></tr>`;
+ const T=y=>({...SP.tot[y]});
+ $('t-hc-ano').innerHTML='<thead><tr><th>Indicador</th>'+SPY.map(y=>`<th>${y==='2026'?'2026 (ciclos 1 a 5)':y}</th>`).join('')+'</tr></thead><tbody>'+
+  sub('Total do ano')+row('Ciclos',y=>SP.anos[y].length+(y==='2026'?' · o 5 em andamento':''))+row('Imóveis trabalhados',y=>f0(T(y).trab))+row('Recusados',y=>f0(T(y).rec))+row('Fechados',y=>f0(T(y).fech))+row('Recuperados',y=>f0(T(y).recup))+row('Recuperados dos fechados (%)',y=>f1(pc(T(y).recup,T(y).fech))+'%')+row('Tratamento focal',y=>f0(T(y).focal))+
+  sub('Mesmo período, ciclos 1 a 4')+row('Imóveis trabalhados por ciclo (média)',y=>f0(a[y].med))+row('Fechados (% dos trabalhados)',y=>f1(a[y].fechp)+'%')+row('Recuperados dos fechados (%)',y=>f1(a[y].recp)+'%')+row('Fechados sem recuperação',y=>f0(a[y].fech-a[y].recup))+row('Fechados sem recuperação (% dos trabalhados)',y=>f1(a[y].pendp)+'%')+'</tbody>';
+ let tc='<thead><tr><th>Ciclo</th><th>Trabalhados</th><th>Recusados</th><th>Fechados</th><th>Recuperados</th><th>Recup. %</th><th>Sem recup. %</th></tr></thead><tbody>';
+ SPY.slice().reverse().forEach(y=>SP.anos[y].slice().reverse().forEach(r=>{tc+=`<tr><td>${r.c}/${y}${y==='2026'&&r.c===5?' · parcial':''}</td><td class="num">${f0(r.trab)}</td><td class="num">${r.rec}</td><td class="num">${f0(r.fech)}</td><td class="num">${f0(r.recup)}</td><td class="num">${f1(pc(r.recup,r.fech))}%</td><td class="num">${f1(pc(r.fech-r.recup,r.trab))}%</td></tr>`;}));
+ $('t-hc-ciclo').innerHTML=tc+'</tbody>';
+ let tg='<thead><tr><th>Ciclo</th><th>Fechados SisPNCD</th><th>Fechados GeoControle</th><th>Recup. SisPNCD</th><th>Recup. GeoControle</th></tr></thead><tbody>';
+ SP.anos['2026'].forEach(r=>{const e=D.et['c'+r.c]; tg+=`<tr><td>${r.c}/2026</td><td class="num">${f0(r.fech)}</td><td class="num">${f0(e.fech)}</td><td class="num">${f0(r.recup)}</td><td class="num">${f0(e.recup)}</td></tr>`;});
+ $('t-hc-gc').innerHTML=tg+'</tbody>';
+ $('n-hc-gc').textContent='O painel de Entomologia usa só o GeoControle, com os imóveis do cadastro como base. Este histórico usa o SisPNCD, que não traz cadastro, então a base é o total de imóveis trabalhados.';
+}
+function chartsCampo(){
+  const lbl=[1,2,3,4,5,6].map(n=>'Ciclo '+n);
+  const line=(id,fn,unit,fmt)=>mk(id,{type:'line',data:{labels:lbl,datasets:SPY.map(y=>({label:y,data:lbl.map((_,i)=>{const r=SP.anos[y][i];return r?+fn(r).toFixed(1):null;}),borderColor:ycol(y),backgroundColor:ycol(y),borderWidth:y==='2026'?3:2,pointStyle:PS[y],pointRadius:y==='2026'?5:4,tension:0,spanGaps:false,segment:y==='2026'?{borderDash:c=>c.p1DataIndex===4?[5,4]:undefined}:{}}))},
+    options:{...common(),plugins:{...common().plugins,legend:{...common().plugins.legend,labels:{...common().plugins.legend.labels,pointStyle:'line',boxWidth:22}},tooltip:{...common().plugins.tooltip,callbacks:{label:c=>c.dataset.label+': '+fmt(c.parsed.y)+unit+(c.dataset.label==='2026'&&c.dataIndex===4?' (parcial)':'')}}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,border:{display:false},grid:{color:css('--grid')},ticks:{callback:v=>fmt(v)+unit}}}}});
+  line('c-hc-pend',r=>pc(r.fech-r.recup,r.trab),'%',v=>f1(v));
+  line('c-hc-rec',r=>pc(r.recup,r.fech),'%',v=>f1(v));
+  line('c-hc-trab',r=>r.trab,'',v=>f0(v));
+  line('c-hc-fech',r=>pc(r.fech,r.trab),'%',v=>f1(v));
+}
+
+/* ---------- navegação por hash ---------- */
+const tabs=['resumo','epidemiologia','historico','entomologia','hcampo','cruzamento','notas'];
+function curTab(){return tabs.includes(location.hash.slice(1))?location.hash.slice(1):'resumo';}
+function route(keepScroll){
+  const t=curTab();
+  tabs.forEach(x=>$('v-'+x).classList.toggle('on',x===t));
+  document.querySelectorAll('nav.tabs a').forEach(a=>{if(a.getAttribute('href')==='#'+t)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
+  document.querySelector('.cycsel').style.visibility=['resumo','entomologia','cruzamento'].includes(t)?'visible':'hidden';
+  renderCharts(t); if(keepScroll!==true) window.scrollTo(0,0);
+}
+window.addEventListener('hashchange',()=>route());
+const redraw=()=>renderCharts(curTab());
+if(window.matchMedia)matchMedia('(prefers-color-scheme: dark)').addEventListener('change',redraw);
+new MutationObserver(redraw).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+setCycle('c5');
+</script>
+
+</body></html>

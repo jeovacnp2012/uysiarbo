@@ -95,3 +95,212 @@ func (q *Queries) BiPorBairro(ctx context.Context, arg BiPorBairroParams) ([]BiP
 	}
 	return items, nil
 }
+
+const biPositivosPorTipo = `-- name: BiPositivosPorTipo :many
+SELECT l.tipo, count(DISTINCT l.id)::int AS locais
+FROM visitas v JOIN locais l ON l.id = v.local_id JOIN amostras a ON a.visita_id = v.id
+WHERE v.deleted_at IS NULL AND v.ativo AND v.pendencia = 'nenhuma' AND l.deleted_at IS NULL
+  AND a.deleted_at IS NULL AND a.status = 'concluido' AND (a.total_aegypti + a.total_albopictus) > 0
+  AND ($1::bigint IS NULL OR v.ciclo_id = $1::bigint)
+  AND ($2::bigint IS NULL OR v.agente_id = $2::bigint)
+  AND ($3::bigint IS NULL OR v.atividade_id = $3::bigint)
+  AND ($4::bigint IS NULL OR l.bairro_id = $4::bigint)
+  AND ($5::bigint IS NULL OR v.agente_id = $5::bigint)
+  AND ($6::bigint IS NULL OR usuario_ve_bairro($6::bigint, l.bairro_id))
+GROUP BY l.tipo
+ORDER BY locais DESC, l.tipo
+`
+
+type BiPositivosPorTipoParams struct {
+	CicloID        pgtype.Int8 `json:"ciclo_id"`
+	AgenteID       pgtype.Int8 `json:"agente_id"`
+	AtividadeID    pgtype.Int8 `json:"atividade_id"`
+	BairroID       pgtype.Int8 `json:"bairro_id"`
+	SomenteAgente  pgtype.Int8 `json:"somente_agente"`
+	SomenteUsuario pgtype.Int8 `json:"somente_usuario"`
+}
+
+type BiPositivosPorTipoRow struct {
+	Tipo   string `json:"tipo"`
+	Locais int32  `json:"locais"`
+}
+
+// Locais positivos (tubito concluído com Aedes) por tipo de local.
+func (q *Queries) BiPositivosPorTipo(ctx context.Context, arg BiPositivosPorTipoParams) ([]BiPositivosPorTipoRow, error) {
+	rows, err := q.db.Query(ctx, biPositivosPorTipo,
+		arg.CicloID,
+		arg.AgenteID,
+		arg.AtividadeID,
+		arg.BairroID,
+		arg.SomenteAgente,
+		arg.SomenteUsuario,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []BiPositivosPorTipoRow
+	for rows.Next() {
+		var i BiPositivosPorTipoRow
+		if err := rows.Scan(&i.Tipo, &i.Locais); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const biTotais = `-- name: BiTotais :one
+WITH vis AS (
+    SELECT v.id, v.local_id, v.pendencia, l.quarteirao_id
+    FROM visitas v JOIN locais l ON l.id = v.local_id
+    WHERE v.deleted_at IS NULL AND v.ativo AND l.deleted_at IS NULL
+      AND ($3::bigint IS NULL OR v.ciclo_id = $3::bigint)
+      AND ($4::bigint IS NULL OR v.agente_id = $4::bigint)
+      AND ($5::bigint IS NULL OR v.atividade_id = $5::bigint)
+      AND ($1::bigint IS NULL OR l.bairro_id = $1::bigint)
+      AND ($6::bigint IS NULL OR v.agente_id = $6::bigint)
+      AND ($2::bigint IS NULL OR usuario_ve_bairro($2::bigint, l.bairro_id))
+)
+SELECT
+    (SELECT count(*) FROM quarteiroes q JOIN bairros b ON b.id = q.bairro_id
+      WHERE q.ativo AND b.deleted_at IS NULL
+        AND ($1::bigint IS NULL OR q.bairro_id = $1::bigint)
+        AND ($2::bigint IS NULL OR usuario_ve_bairro($2::bigint, q.bairro_id)))::int AS quarteiroes,
+    (SELECT count(DISTINCT quarteirao_id) FROM vis WHERE pendencia = 'nenhuma')::int AS quarteiroes_visitados,
+    (SELECT count(*) FROM locais l
+      WHERE l.ativo AND l.deleted_at IS NULL
+        AND ($1::bigint IS NULL OR l.bairro_id = $1::bigint)
+        AND ($2::bigint IS NULL OR usuario_ve_bairro($2::bigint, l.bairro_id)))::int AS locais,
+    (SELECT count(DISTINCT local_id) FROM vis WHERE pendencia = 'nenhuma')::int AS locais_visitados,
+    (SELECT count(DISTINCT local_id) FROM vis WHERE pendencia = 'fechado')::int AS fechados,
+    (SELECT count(*) FROM vis JOIN amostras a ON a.visita_id = vis.id
+      WHERE a.deleted_at IS NULL AND a.status = 'concluido' AND (a.total_aegypti + a.total_albopictus) > 0)::int AS amostras_positivas,
+    (SELECT count(*) FROM vis JOIN amostras a ON a.visita_id = vis.id
+      WHERE a.deleted_at IS NULL AND a.status = 'concluido' AND (a.total_aegypti + a.total_albopictus) = 0)::int AS amostras_negativas
+`
+
+type BiTotaisParams struct {
+	BairroID       pgtype.Int8 `json:"bairro_id"`
+	SomenteUsuario pgtype.Int8 `json:"somente_usuario"`
+	CicloID        pgtype.Int8 `json:"ciclo_id"`
+	AgenteID       pgtype.Int8 `json:"agente_id"`
+	AtividadeID    pgtype.Int8 `json:"atividade_id"`
+	SomenteAgente  pgtype.Int8 `json:"somente_agente"`
+}
+
+type BiTotaisRow struct {
+	Quarteiroes          int32 `json:"quarteiroes"`
+	QuarteiroesVisitados int32 `json:"quarteiroes_visitados"`
+	Locais               int32 `json:"locais"`
+	LocaisVisitados      int32 `json:"locais_visitados"`
+	Fechados             int32 `json:"fechados"`
+	AmostrasPositivas    int32 `json:"amostras_positivas"`
+	AmostrasNegativas    int32 `json:"amostras_negativas"`
+}
+
+// Quarteirões e locais (total e visitados), imóveis fechados e tubitos positivos/negativos do filtro.
+func (q *Queries) BiTotais(ctx context.Context, arg BiTotaisParams) (BiTotaisRow, error) {
+	row := q.db.QueryRow(ctx, biTotais,
+		arg.BairroID,
+		arg.SomenteUsuario,
+		arg.CicloID,
+		arg.AgenteID,
+		arg.AtividadeID,
+		arg.SomenteAgente,
+	)
+	var i BiTotaisRow
+	err := row.Scan(
+		&i.Quarteiroes,
+		&i.QuarteiroesVisitados,
+		&i.Locais,
+		&i.LocaisVisitados,
+		&i.Fechados,
+		&i.AmostrasPositivas,
+		&i.AmostrasNegativas,
+	)
+	return i, err
+}
+
+const biVisitasPorBairro = `-- name: BiVisitasPorBairro :many
+SELECT b.nome AS bairro, count(*)::int AS visitas,
+       COALESCE(sum(v.dep_a1) FILTER (WHERE v.pendencia = 'nenhuma'), 0)::int AS a1,
+       COALESCE(sum(v.dep_a2) FILTER (WHERE v.pendencia = 'nenhuma'), 0)::int AS a2,
+       COALESCE(sum(v.dep_b)  FILTER (WHERE v.pendencia = 'nenhuma'), 0)::int AS b,
+       COALESCE(sum(v.dep_c)  FILTER (WHERE v.pendencia = 'nenhuma'), 0)::int AS c,
+       COALESCE(sum(v.dep_d1) FILTER (WHERE v.pendencia = 'nenhuma'), 0)::int AS d1,
+       COALESCE(sum(v.dep_d2) FILTER (WHERE v.pendencia = 'nenhuma'), 0)::int AS d2,
+       COALESCE(sum(v.dep_e)  FILTER (WHERE v.pendencia = 'nenhuma'), 0)::int AS e
+FROM visitas v JOIN locais l ON l.id = v.local_id JOIN bairros b ON b.id = l.bairro_id
+WHERE v.deleted_at IS NULL AND v.ativo AND l.deleted_at IS NULL
+  AND ($1::bigint IS NULL OR v.ciclo_id = $1::bigint)
+  AND ($2::bigint IS NULL OR v.agente_id = $2::bigint)
+  AND ($3::bigint IS NULL OR v.atividade_id = $3::bigint)
+  AND ($4::bigint IS NULL OR l.bairro_id = $4::bigint)
+  AND ($5::bigint IS NULL OR v.agente_id = $5::bigint)
+  AND ($6::bigint IS NULL OR usuario_ve_bairro($6::bigint, l.bairro_id))
+GROUP BY b.id, b.nome
+ORDER BY b.nome
+`
+
+type BiVisitasPorBairroParams struct {
+	CicloID        pgtype.Int8 `json:"ciclo_id"`
+	AgenteID       pgtype.Int8 `json:"agente_id"`
+	AtividadeID    pgtype.Int8 `json:"atividade_id"`
+	BairroID       pgtype.Int8 `json:"bairro_id"`
+	SomenteAgente  pgtype.Int8 `json:"somente_agente"`
+	SomenteUsuario pgtype.Int8 `json:"somente_usuario"`
+}
+
+type BiVisitasPorBairroRow struct {
+	Bairro  string `json:"bairro"`
+	Visitas int32  `json:"visitas"`
+	A1      int32  `json:"a1"`
+	A2      int32  `json:"a2"`
+	B       int32  `json:"b"`
+	C       int32  `json:"c"`
+	D1      int32  `json:"d1"`
+	D2      int32  `json:"d2"`
+	E       int32  `json:"e"`
+}
+
+// Visitas e depósitos por bairro (todas as visitas do filtro; os depósitos só das sem pendência).
+func (q *Queries) BiVisitasPorBairro(ctx context.Context, arg BiVisitasPorBairroParams) ([]BiVisitasPorBairroRow, error) {
+	rows, err := q.db.Query(ctx, biVisitasPorBairro,
+		arg.CicloID,
+		arg.AgenteID,
+		arg.AtividadeID,
+		arg.BairroID,
+		arg.SomenteAgente,
+		arg.SomenteUsuario,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []BiVisitasPorBairroRow
+	for rows.Next() {
+		var i BiVisitasPorBairroRow
+		if err := rows.Scan(
+			&i.Bairro,
+			&i.Visitas,
+			&i.A1,
+			&i.A2,
+			&i.B,
+			&i.C,
+			&i.D1,
+			&i.D2,
+			&i.E,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

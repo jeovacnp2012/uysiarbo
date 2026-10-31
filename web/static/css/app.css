@@ -2251,3 +2251,26 @@ select.sb-nativo {
 .banner-texto { position: absolute; white-space: pre-wrap; line-height: 1.2; cursor: move; outline: 1px dashed transparent; }
 .banner-texto.sel, .banner-texto:hover { outline-color: rgba(255, 255, 255, .9); box-shadow: 0 0 0 1px rgba(0, 0, 0, .5); }
 .banner-item.sel { border-color: var(--marca, #155a9e); }
+
+/* B.I. (gráficos como no Geo Controle) */
+.bi-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1rem; margin: 1rem 0; }
+.bi-kpi { --cor: var(--marca); display: grid; gap: 0.25rem; padding: 1rem 1.1rem; background: var(--superficie, #fff); border: 1px solid var(--borda, #e2e8f0); border-top: 4px solid var(--cor); border-radius: 0.75rem; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06); }
+.bi-azul { --cor: #2563eb; }
+.bi-verde { --cor: #16a34a; }
+.bi-laranja { --cor: #f59e0b; }
+.bi-ok { --cor: #16a34a; }
+.bi-alerta { --cor: #f59e0b; }
+.bi-risco { --cor: #dc2626; }
+.bi-sem-dados { --cor: #94a3b8; }
+.bi-kpi-titulo { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--cor); }
+.bi-kpi-valor { font-size: 2rem; line-height: 1.1; color: var(--cor); font-variant-numeric: tabular-nums; }
+.bi-kpi-legenda, .bi-faixas, .bi-kpi-pct { font-size: 0.8rem; opacity: 0.75; }
+.bi-barra { height: 0.5rem; background: rgba(127, 127, 127, 0.18); border-radius: 999px; overflow: hidden; }
+.bi-barra i { display: block; height: 100%; background: var(--cor); border-radius: 999px; }
+.bi-selo { justify-self: start; padding: 0.1rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; color: #fff; background: var(--cor); }
+.bi-graficos { display: grid; grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr)); gap: 1rem; }
+.bi-grafico { padding: 1rem; min-width: 0; }
+.bi-grafico h3 { margin: 0 0 0.5rem; font-size: 1rem; }
+.bi-largo { grid-column: 1 / -1; }
+.bi-tabela { margin-top: 1rem; padding: 0.75rem 1rem; }
+.bi-tabela summary { cursor: pointer; font-weight: 600; }

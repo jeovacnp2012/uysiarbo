@@ -1,9 +1,12 @@
 package views
 
-import "strconv"
+import (
+	"math"
+	"strconv"
+)
 
 type BiLinha struct {
-	Bairro                                       string
+	Bairro                                      string
 	Locais, Pesquisados, Positivos, Recipientes int
 }
 
@@ -12,6 +15,14 @@ func (b BiLinha) IIP() string       { return razao(b.Positivos, b.Pesquisados) }
 func (b BiLinha) Breteau() string   { return razao(b.Recipientes, b.Pesquisados) }
 func (b BiLinha) Cobertura() string { return razao(b.Pesquisados, b.Locais) }
 
+// CoberturaNum é a cobertura em % com uma casa, para os gráficos.
+func (b BiLinha) CoberturaNum() float64 {
+	if b.Locais <= 0 {
+		return 0
+	}
+	return math.Round(float64(b.Pesquisados)*1000/float64(b.Locais)) / 10
+}
+
 func razao(parte, total int) string {
 	if total <= 0 {
 		return "—"
@@ -19,11 +30,63 @@ func razao(parte, total int) string {
 	return strconv.FormatFloat(float64(parte)*100/float64(total), 'f', 1, 64) + "%"
 }
 
+// BiGraficos são as séries dos gráficos, serializadas em JSON para o bi.js.
+type BiGraficos struct {
+	VisitasBairros    []string  `json:"visitasBairros"`
+	Visitas           []int     `json:"visitas"`
+	Depositos         []int     `json:"depositos"`
+	PosBairros        []string  `json:"posBairros"`
+	PosBairro         []int     `json:"posBairro"`
+	CobBairros        []string  `json:"cobBairros"`
+	Cobertura         []float64 `json:"cobertura"`
+	AmostrasPositivas int       `json:"amostrasPositivas"`
+	AmostrasNegativas int       `json:"amostrasNegativas"`
+	TipoLocais        []string  `json:"tipoLocais"`
+	TipoValores       []int     `json:"tipoValores"`
+	CoberturaCiclo    float64   `json:"coberturaCiclo"`
+}
+
 type BiData struct {
-	Ciclos, Atividades, Agentes []CidadeOpcao
-	Todos                       bool
-	Linhas                      []BiLinha
-	Total                       BiLinha
+	Ciclos, Atividades, Agentes, Bairros []CidadeOpcao
+	Todos                                bool
+	Linhas                               []BiLinha
+	Total                                BiLinha
+	Graficos                             BiGraficos
+	Quarteiroes, QuarteiroesVisitados    int
+	LocaisAtivos, LocaisVisitados        int
+	Fechados                             int
+}
+
+func pct(parte, total int) float64 {
+	if total <= 0 {
+		return 0
+	}
+	return math.Round(float64(parte)*1000/float64(total)) / 10
+}
+
+func pctTexto(parte, total int) string { return strconv.FormatFloat(pct(parte, total), 'f', 1, 64) + "%" }
+
+// pctLargura é o estilo da barra de progresso, limitado a 100%.
+func pctLargura(parte, total int) string {
+	v := pct(parte, total)
+	if v > 100 {
+		v = 100
+	}
+	return "width:" + strconv.FormatFloat(v, 'f', 1, 64) + "%"
+}
+
+// classeIndice classifica IIP/Breteau pela faixa do PNCD: < 1% satisfatório, 1 a 3,9% alerta, acima risco de surto.
+func classeIndice(parte, total int) (string, string) {
+	v := pct(parte, total)
+	switch {
+	case total <= 0:
+		return "sem-dados", "Sem dados"
+	case v < 1:
+		return "ok", "Satisfatório"
+	case v <= 3.9:
+		return "alerta", "Alerta"
+	}
+	return "risco", "Risco de surto"
 }
 
 templ Bi(l Layout, d BiData) {
@@ -40,11 +103,11 @@ templ Bi(l Layout, d BiData) {
 				</select>
 			</label>
 			<label class="campo">
-				<span>Atividade</span>
-				<select name="atividade" onchange="this.form.submit()">
-					<option value="">Todas</option>
-					for _, a := range d.Atividades {
-						<option value={ strconv.FormatInt(a.ID, 10) } selected?={ a.Selecionada }>{ a.Rotulo }</option>
+				<span>Bairro</span>
+				<select name="bairro" onchange="this.form.submit()">
+					<option value="">Todos os bairros</option>
+					for _, b := range d.Bairros {
+						<option value={ strconv.FormatInt(b.ID, 10) } selected?={ b.Selecionada }>{ b.Rotulo }</option>
 					}
 				</select>
 			</label>
@@ -57,45 +120,113 @@ templ Bi(l Layout, d BiData) {
 					}
 				</select>
 			</label>
+			<label class="campo">
+				<span>Atividade</span>
+				<select name="atividade" onchange="this.form.submit()">
+					<option value="">Todas</option>
+					for _, a := range d.Atividades {
+						<option value={ strconv.FormatInt(a.ID, 10) } selected?={ a.Selecionada }>{ a.Rotulo }</option>
+					}
+				</select>
+			</label>
 		</form>
-		<div class="grade-cartoes">
-			@dashNumero("IIP", d.Total.Positivos, d.Total.IIP()+" dos imóveis pesquisados")
-			@dashNumero("Recipientes positivos", d.Total.Recipientes, "Breteau "+d.Total.Breteau())
-			@dashNumero("Imóveis pesquisados", d.Total.Pesquisados, "Cobertura "+d.Total.Cobertura()+" dos locais ativos")
+		<div class="bi-kpis">
+			@biKpi("Quarteirões", strconv.Itoa(d.QuarteiroesVisitados)+"/"+strconv.Itoa(d.Quarteiroes), "visitados", pctLargura(d.QuarteiroesVisitados, d.Quarteiroes), pctTexto(d.QuarteiroesVisitados, d.Quarteiroes), "azul")
+			@biKpi("Locais", strconv.Itoa(d.LocaisVisitados)+"/"+strconv.Itoa(d.LocaisAtivos), "visitados", pctLargura(d.LocaisVisitados, d.LocaisAtivos), pctTexto(d.LocaisVisitados, d.LocaisAtivos), "verde")
+			@biKpi("Imóveis fechados", strconv.Itoa(d.Fechados), "de "+strconv.Itoa(d.LocaisAtivos)+" imóveis", pctLargura(d.Fechados, d.LocaisAtivos), pctTexto(d.Fechados, d.LocaisAtivos), "laranja")
+			@biIndice("Índice de Infestação Predial (IIP)", d.Total.Positivos, d.Total.Pesquisados, "imóveis positivos", "imóveis pesquisados")
+			@biIndice("Índice de Breteau (IB)", d.Total.Recipientes, d.Total.Pesquisados, "recipientes positivos", "imóveis pesquisados")
 		</div>
-		<div class="cartao tabela-rolavel">
-			<table class="tabela">
-				<thead>
-					<tr>
-						<th>Bairro</th>
-						<th>Locais ativos</th>
-						<th>Pesquisados</th>
-						<th>Positivos</th>
-						<th>Recipientes +</th>
-						<th>IIP</th>
-						<th>Breteau</th>
-						<th>Cobertura</th>
-					</tr>
-				</thead>
-				<tbody>
-					if len(d.Linhas) == 0 {
-						<tr><td colspan="8">Nenhuma visita sem pendência no período.</td></tr>
-					}
-					for _, b := range d.Linhas {
+		<div class="bi-graficos">
+			<section class="cartao bi-grafico bi-largo">
+				<h3>Visitas por bairro</h3>
+				<div id="bi-visitas"></div>
+			</section>
+			<section class="cartao bi-grafico">
+				<h3>Depósitos encontrados</h3>
+				<div id="bi-depositos"></div>
+			</section>
+			<section class="cartao bi-grafico">
+				<h3>Locais positivos por bairro (top 10)</h3>
+				<div id="bi-positivos"></div>
+			</section>
+			<section class="cartao bi-grafico bi-largo">
+				<h3>Cobertura dos bairros</h3>
+				<div id="bi-cobertura"></div>
+			</section>
+			<section class="cartao bi-grafico">
+				<h3>Amostras positivas e negativas</h3>
+				<div id="bi-amostras"></div>
+			</section>
+			<section class="cartao bi-grafico">
+				<h3>Locais positivos por tipo</h3>
+				<div id="bi-tipos"></div>
+			</section>
+			<section class="cartao bi-grafico">
+				<h3>Cobertura do ciclo</h3>
+				<div id="bi-ciclo"></div>
+			</section>
+		</div>
+		@templ.JSONScript("bi-dados", d.Graficos)
+		<details class="cartao bi-tabela">
+			<summary>Tabela por bairro</summary>
+			<div class="tabela-rolavel">
+				<table class="tabela">
+					<thead>
 						<tr>
-							<td>{ b.Bairro }</td>
-							<td>{ strconv.Itoa(b.Locais) }</td>
-							<td>{ strconv.Itoa(b.Pesquisados) }</td>
-							<td>{ strconv.Itoa(b.Positivos) }</td>
-							<td>{ strconv.Itoa(b.Recipientes) }</td>
-							<td>{ b.IIP() }</td>
-							<td>{ b.Breteau() }</td>
-							<td>{ b.Cobertura() }</td>
+							<th>Bairro</th>
+							<th>Locais ativos</th>
+							<th>Pesquisados</th>
+							<th>Positivos</th>
+							<th>Recipientes +</th>
+							<th>IIP</th>
+							<th>Breteau</th>
+							<th>Cobertura</th>
 						</tr>
-					}
-				</tbody>
-			</table>
-		</div>
-		<p class="subtitulo">IIP = imóveis positivos ÷ pesquisados. Breteau = recipientes positivos ÷ imóveis pesquisados (x 100). Cobertura = pesquisados ÷ locais ativos do bairro. Positivo é o imóvel com tubito concluído com Aedes aegypti ou albopictus.</p>
+					</thead>
+					<tbody>
+						if len(d.Linhas) == 0 {
+							<tr><td colspan="8">Nenhuma visita sem pendência no período.</td></tr>
+						}
+						for _, b := range d.Linhas {
+							<tr>
+								<td>{ b.Bairro }</td>
+								<td>{ strconv.Itoa(b.Locais) }</td>
+								<td>{ strconv.Itoa(b.Pesquisados) }</td>
+								<td>{ strconv.Itoa(b.Positivos) }</td>
+								<td>{ strconv.Itoa(b.Recipientes) }</td>
+								<td>{ b.IIP() }</td>
+								<td>{ b.Breteau() }</td>
+								<td>{ b.Cobertura() }</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		</details>
+		<p class="subtitulo">IIP = imóveis positivos ÷ pesquisados x 100. Breteau = recipientes positivos ÷ imóveis pesquisados x 100. Faixas: abaixo de 1% satisfatório, de 1% a 3,9% alerta, acima de 3,9% risco de surto. Cobertura = pesquisados ÷ locais ativos. Positivo é o imóvel com tubito concluído com Aedes aegypti ou albopictus.</p>
+		<script src={ asset("/static/vendor/apexcharts.min.js") }></script>
+		<script src={ asset("/static/js/bi.js") }></script>
 	}
+}
+
+templ biKpi(titulo, valor, legenda, largura, percentual, cor string) {
+	<div class={ "bi-kpi bi-" + cor }>
+		<span class="bi-kpi-titulo">{ titulo }</span>
+		<strong class="bi-kpi-valor">{ valor }</strong>
+		<span class="bi-kpi-legenda">{ legenda }</span>
+		<div class="bi-barra"><i style={ largura }></i></div>
+		<span class="bi-kpi-pct">{ percentual }</span>
+	</div>
+}
+
+templ biIndice(titulo string, parte, total int, rotParte, rotTotal string) {
+	{{ classe, rotulo := classeIndice(parte, total) }}
+	<div class={ "bi-kpi bi-indice bi-" + classe }>
+		<span class="bi-kpi-titulo">{ titulo }</span>
+		<strong class="bi-kpi-valor">{ pctTexto(parte, total) }</strong>
+		<span class="bi-selo">{ rotulo }</span>
+		<span class="bi-kpi-legenda">{ strconv.Itoa(parte) } { rotParte } · { strconv.Itoa(total) } { rotTotal }</span>
+		<span class="bi-faixas">&lt; 1% satisfatório · 1–3,9% alerta · &gt; 3,9% risco</span>
+	</div>
 }

@@ -18,3 +18,6 @@ Abra **B.I.** no menu. A tabela traz, por bairro, para o ciclo, a atividade e o 
 Por padrão aparece o ciclo em andamento. Quem só vê as próprias visitas ou os próprios bairros enxerga só esse recorte.
 
 > As fórmulas seguem o padrão do programa de controle da dengue e ainda serão validadas com a área técnica.
+
+## Gráficos
+Abaixo dos cartões (quarteirões e locais visitados, imóveis fechados, IIP e Breteau, com a faixa: abaixo de 1% satisfatório, de 1% a 3,9% alerta, acima de 3,9% risco de surto) ficam os gráficos: visitas por bairro, depósitos encontrados (A1 a E), locais positivos por bairro (top 10), cobertura dos bairros, amostras positivas e negativas, locais positivos por tipo e a cobertura do ciclo. Filtre por ciclo, bairro, agente e atividade; a tabela por bairro fica numa seção que se abre sob os gráficos.
