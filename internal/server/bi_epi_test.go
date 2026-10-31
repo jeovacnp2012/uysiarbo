@@ -26,11 +26,12 @@ func TestBiEpidemiologico(t *testing.T) {
 	insere("aguardando", "2026-03-13")
 	insere("positivo", "2020-01-05") // fora do período filtrado
 
-	quer(t, ana.get("/bi-epidemiologico?de=2026-01-01&ate=2026-12-31"), http.StatusOK,
-		"B.I. Epidemiológico", "Dengue", "SE 10/2026", "Sem bairro", "taxa de confirmação 66.7%")
-	// sem filtro de doença o ano de 2020 não entra; com período amplo, entra
-	quer(t, ana.get("/bi-epidemiologico?de=2020-01-01&ate=2026-12-31"), http.StatusOK, "SE 2/2020")
-	quer(t, ana.get("/bi-epidemiologico?de=2026-01-01&ate=2026-12-31&doenca="+s64(doenca)), http.StatusOK, "Dengue")
+	quer(t, ana.get("/bi-epidemiologico?ano=2026"), http.StatusOK,
+		"B.I. Epidemiológico", "4 investigações em 2026, 2 confirmadas", "Taxa de confirmação de 66.7%", "Dengue", "SE 10/2026", "Sem bairro",
+		"Quatro anos de investigações", "Produção de campo por ciclo", "Fontes e limites", `id="bie-dados"`)
+	// outro ano e filtro por doença
+	quer(t, ana.get("/bi-epidemiologico?ano=2020"), http.StatusOK, "1 investigações em 2020, 1 confirmadas", "SE 2/2020")
+	quer(t, ana.get("/bi-epidemiologico?ano=2026&doenca="+s64(doenca)), http.StatusOK, "Dengue: 4 investigações em 2026")
 
 	sem := m.usuarioCom(t, "Sem Bi", "sembi@nm.gov.br", "visita_visualizar")
 	quer(t, sem.get("/bi-epidemiologico"), http.StatusForbidden)

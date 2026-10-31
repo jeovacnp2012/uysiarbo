@@ -11,6 +11,273 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const campoFechadosPorBairro = `-- name: CampoFechadosPorBairro :many
+WITH vl AS (
+    SELECT v.ciclo_id, v.local_id, l.bairro_id,
+           bool_or(v.pendencia = 'fechado') AS teve_fechado,
+           bool_or(v.pendencia = 'nenhuma') AS trabalhado
+    FROM visitas v JOIN ciclos c ON c.id = v.ciclo_id JOIN locais l ON l.id = v.local_id
+    WHERE v.deleted_at IS NULL AND v.ativo AND c.deleted_at IS NULL AND l.deleted_at IS NULL
+      AND extract(year FROM c.data_inicio) = $1::int
+      AND ($2::bigint IS NULL OR v.agente_id = $2::bigint)
+      AND ($3::bigint IS NULL OR usuario_ve_bairro($3::bigint, l.bairro_id))
+    GROUP BY v.ciclo_id, v.local_id, l.bairro_id
+)
+SELECT b.nome AS bairro, count(*)::int AS imoveis,
+       count(*) FILTER (WHERE vl.teve_fechado AND NOT vl.trabalhado)::int AS fechados_sem_rec
+FROM vl JOIN bairros b ON b.id = vl.bairro_id
+GROUP BY b.id, b.nome
+ORDER BY b.nome
+`
+
+type CampoFechadosPorBairroParams struct {
+	Ano            int32       `json:"ano"`
+	SomenteAgente  pgtype.Int8 `json:"somente_agente"`
+	SomenteUsuario pgtype.Int8 `json:"somente_usuario"`
+}
+
+type CampoFechadosPorBairroRow struct {
+	Bairro         string `json:"bairro"`
+	Imoveis        int32  `json:"imoveis"`
+	FechadosSemRec int32  `json:"fechados_sem_rec"`
+}
+
+// Por bairro, nos ciclos que começam no ano: imóveis visitados e fechados sem recuperação.
+func (q *Queries) CampoFechadosPorBairro(ctx context.Context, arg CampoFechadosPorBairroParams) ([]CampoFechadosPorBairroRow, error) {
+	rows, err := q.db.Query(ctx, campoFechadosPorBairro, arg.Ano, arg.SomenteAgente, arg.SomenteUsuario)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []CampoFechadosPorBairroRow
+	for rows.Next() {
+		var i CampoFechadosPorBairroRow
+		if err := rows.Scan(&i.Bairro, &i.Imoveis, &i.FechadosSemRec); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const campoPorCiclo = `-- name: CampoPorCiclo :many
+WITH vl AS (
+    SELECT v.ciclo_id, v.local_id,
+           bool_or(v.pendencia = 'fechado') AS teve_fechado,
+           bool_or(v.pendencia = 'nenhuma') AS trabalhado,
+           count(*) AS visitas
+    FROM visitas v JOIN ciclos c ON c.id = v.ciclo_id JOIN locais l ON l.id = v.local_id
+    WHERE v.deleted_at IS NULL AND v.ativo AND c.deleted_at IS NULL AND l.deleted_at IS NULL
+      AND extract(year FROM c.data_inicio) BETWEEN $1::int AND $2::int
+      AND ($3::bigint IS NULL OR v.agente_id = $3::bigint)
+      AND ($4::bigint IS NULL OR usuario_ve_bairro($4::bigint, l.bairro_id))
+    GROUP BY v.ciclo_id, v.local_id
+), pos AS (
+    SELECT v.ciclo_id, count(DISTINCT v.local_id) AS positivos
+    FROM visitas v JOIN amostras a ON a.visita_id = v.id
+    WHERE v.deleted_at IS NULL AND v.ativo AND v.pendencia = 'nenhuma' AND a.deleted_at IS NULL
+      AND a.status = 'concluido' AND (a.total_aegypti + a.total_albopictus) > 0
+    GROUP BY v.ciclo_id
+)
+SELECT c.id AS ciclo_id, c.nome AS ciclo, extract(year FROM c.data_inicio)::int AS ano, c.data_inicio,
+       COALESCE(sum(vl.visitas), 0)::int AS visitas,
+       count(vl.local_id)::int AS imoveis,
+       count(*) FILTER (WHERE vl.teve_fechado)::int AS fechados,
+       count(*) FILTER (WHERE vl.teve_fechado AND vl.trabalhado)::int AS recuperados,
+       count(*) FILTER (WHERE vl.teve_fechado AND NOT vl.trabalhado)::int AS fechados_sem_rec,
+       COALESCE(max(pos.positivos), 0)::int AS positivos
+FROM ciclos c
+JOIN vl ON vl.ciclo_id = c.id
+LEFT JOIN pos ON pos.ciclo_id = c.id
+GROUP BY c.id, c.nome, c.data_inicio
+ORDER BY c.data_inicio
+`
+
+type CampoPorCicloParams struct {
+	AnoDe          int32       `json:"ano_de"`
+	AnoAte         int32       `json:"ano_ate"`
+	SomenteAgente  pgtype.Int8 `json:"somente_agente"`
+	SomenteUsuario pgtype.Int8 `json:"somente_usuario"`
+}
+
+type CampoPorCicloRow struct {
+	CicloID        int64       `json:"ciclo_id"`
+	Ciclo          string      `json:"ciclo"`
+	Ano            int32       `json:"ano"`
+	DataInicio     pgtype.Date `json:"data_inicio"`
+	Visitas        int32       `json:"visitas"`
+	Imoveis        int32       `json:"imoveis"`
+	Fechados       int32       `json:"fechados"`
+	Recuperados    int32       `json:"recuperados"`
+	FechadosSemRec int32       `json:"fechados_sem_rec"`
+	Positivos      int32       `json:"positivos"`
+}
+
+// Trabalho de campo por ciclo (ciclos que começam entre os anos informados): imóveis visitados, fechados,
+// recuperados (fechado e depois trabalhado no mesmo ciclo), fechados sem recuperação e imóveis positivos.
+func (q *Queries) CampoPorCiclo(ctx context.Context, arg CampoPorCicloParams) ([]CampoPorCicloRow, error) {
+	rows, err := q.db.Query(ctx, campoPorCiclo,
+		arg.AnoDe,
+		arg.AnoAte,
+		arg.SomenteAgente,
+		arg.SomenteUsuario,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []CampoPorCicloRow
+	for rows.Next() {
+		var i CampoPorCicloRow
+		if err := rows.Scan(
+			&i.CicloID,
+			&i.Ciclo,
+			&i.Ano,
+			&i.DataInicio,
+			&i.Visitas,
+			&i.Imoveis,
+			&i.Fechados,
+			&i.Recuperados,
+			&i.FechadosSemRec,
+			&i.Positivos,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const epiOportunidade = `-- name: EpiOportunidade :one
+SELECT count(*)::int AS total,
+       count(*) FILTER (WHERE i.situacao = 'encerrada')::int AS encerradas,
+       count(*) FILTER (WHERE i.situacao = 'em_atendimento')::int AS em_atendimento,
+       count(*) FILTER (WHERE i.situacao = 'aguardando')::int AS aguardando,
+       count(*) FILTER (WHERE i.situacao = 'encerrada' AND i.encerrada_em IS NOT NULL AND i.data_inicio IS NOT NULL
+                          AND i.encerrada_em::date - i.data_inicio <= 7)::int AS ate_7,
+       count(*) FILTER (WHERE i.situacao = 'encerrada' AND i.encerrada_em IS NOT NULL AND i.data_inicio IS NOT NULL
+                          AND i.encerrada_em::date - i.data_inicio <= 30)::int AS ate_30,
+       count(*) FILTER (WHERE i.situacao = 'encerrada' AND i.encerrada_em IS NOT NULL AND i.data_inicio IS NOT NULL
+                          AND i.encerrada_em::date >= i.data_inicio)::int AS com_tempo,
+       COALESCE(percentile_cont(0.5) WITHIN GROUP (ORDER BY (i.encerrada_em::date - i.data_inicio))
+                FILTER (WHERE i.situacao = 'encerrada' AND i.encerrada_em IS NOT NULL AND i.data_inicio IS NOT NULL
+                          AND i.encerrada_em::date >= i.data_inicio), 0)::float8 AS mediana_dias
+FROM investigacoes i
+WHERE i.deleted_at IS NULL
+  AND ($1::date IS NULL OR i.data_inicio >= $1::date)
+  AND ($2::date IS NULL OR i.data_inicio <= $2::date)
+  AND ($3::bigint IS NULL OR i.doenca_id = $3::bigint)
+  AND ($4::bigint IS NULL OR i.criado_por = $4::bigint OR i.responsavel_id = $4::bigint)
+`
+
+type EpiOportunidadeParams struct {
+	DataDe         pgtype.Date `json:"data_de"`
+	DataAte        pgtype.Date `json:"data_ate"`
+	DoencaID       pgtype.Int8 `json:"doenca_id"`
+	SomenteUsuario pgtype.Int8 `json:"somente_usuario"`
+}
+
+type EpiOportunidadeRow struct {
+	Total         int32   `json:"total"`
+	Encerradas    int32   `json:"encerradas"`
+	EmAtendimento int32   `json:"em_atendimento"`
+	Aguardando    int32   `json:"aguardando"`
+	Ate7          int32   `json:"ate_7"`
+	Ate30         int32   `json:"ate_30"`
+	ComTempo      int32   `json:"com_tempo"`
+	MedianaDias   float64 `json:"mediana_dias"`
+}
+
+// Situação e tempo de encerramento (data de início até o encerramento) das investigações do período.
+func (q *Queries) EpiOportunidade(ctx context.Context, arg EpiOportunidadeParams) (EpiOportunidadeRow, error) {
+	row := q.db.QueryRow(ctx, epiOportunidade,
+		arg.DataDe,
+		arg.DataAte,
+		arg.DoencaID,
+		arg.SomenteUsuario,
+	)
+	var i EpiOportunidadeRow
+	err := row.Scan(
+		&i.Total,
+		&i.Encerradas,
+		&i.EmAtendimento,
+		&i.Aguardando,
+		&i.Ate7,
+		&i.Ate30,
+		&i.ComTempo,
+		&i.MedianaDias,
+	)
+	return i, err
+}
+
+const epiPorAnoMesmoPeriodo = `-- name: EpiPorAnoMesmoPeriodo :many
+SELECT extract(year FROM i.data_inicio)::int AS ano,
+       count(*)::int AS total,
+       count(*) FILTER (WHERE i.resultado = 'positivo')::int AS confirmados,
+       count(*) FILTER (WHERE i.resultado = 'negativo')::int AS descartados
+FROM investigacoes i
+WHERE i.deleted_at IS NULL AND i.data_inicio IS NOT NULL
+  AND i.data_inicio >= $1::date AND i.data_inicio <= $2::date
+  AND (extract(month FROM i.data_inicio)::int * 100 + extract(day FROM i.data_inicio)::int) <= $3::int
+  AND ($4::bigint IS NULL OR i.doenca_id = $4::bigint)
+  AND ($5::bigint IS NULL OR i.criado_por = $5::bigint OR i.responsavel_id = $5::bigint)
+GROUP BY 1
+ORDER BY 1
+`
+
+type EpiPorAnoMesmoPeriodoParams struct {
+	Desde          pgtype.Date `json:"desde"`
+	Ate            pgtype.Date `json:"ate"`
+	MesDia         int32       `json:"mes_dia"`
+	DoencaID       pgtype.Int8 `json:"doenca_id"`
+	SomenteUsuario pgtype.Int8 `json:"somente_usuario"`
+}
+
+type EpiPorAnoMesmoPeriodoRow struct {
+	Ano         int32 `json:"ano"`
+	Total       int32 `json:"total"`
+	Confirmados int32 `json:"confirmados"`
+	Descartados int32 `json:"descartados"`
+}
+
+// Total e confirmados por ano até o mesmo dia do ano (mes*100+dia), para comparar os anos de forma justa.
+func (q *Queries) EpiPorAnoMesmoPeriodo(ctx context.Context, arg EpiPorAnoMesmoPeriodoParams) ([]EpiPorAnoMesmoPeriodoRow, error) {
+	rows, err := q.db.Query(ctx, epiPorAnoMesmoPeriodo,
+		arg.Desde,
+		arg.Ate,
+		arg.MesDia,
+		arg.DoencaID,
+		arg.SomenteUsuario,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []EpiPorAnoMesmoPeriodoRow
+	for rows.Next() {
+		var i EpiPorAnoMesmoPeriodoRow
+		if err := rows.Scan(
+			&i.Ano,
+			&i.Total,
+			&i.Confirmados,
+			&i.Descartados,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const epiPorBairro = `-- name: EpiPorBairro :many
 SELECT COALESCE(b.nome, '')::text AS bairro,
        count(*)::int AS total,
@@ -68,7 +335,9 @@ func (q *Queries) EpiPorBairro(ctx context.Context, arg EpiPorBairroParams) ([]E
 const epiPorDia = `-- name: EpiPorDia :many
 SELECT i.data_inicio::date AS dia,
        count(*)::int AS total,
-       count(*) FILTER (WHERE i.resultado = 'positivo')::int AS confirmados
+       count(*) FILTER (WHERE i.resultado = 'positivo')::int AS confirmados,
+       count(*) FILTER (WHERE i.resultado = 'negativo')::int AS descartados,
+       count(*) FILTER (WHERE i.resultado = 'inconclusivo')::int AS inconclusivos
 FROM investigacoes i
 WHERE i.deleted_at IS NULL AND i.data_inicio IS NOT NULL
   AND ($1::date IS NULL OR i.data_inicio >= $1::date)
@@ -87,9 +356,11 @@ type EpiPorDiaParams struct {
 }
 
 type EpiPorDiaRow struct {
-	Dia         pgtype.Date `json:"dia"`
-	Total       int32       `json:"total"`
-	Confirmados int32       `json:"confirmados"`
+	Dia           pgtype.Date `json:"dia"`
+	Total         int32       `json:"total"`
+	Confirmados   int32       `json:"confirmados"`
+	Descartados   int32       `json:"descartados"`
+	Inconclusivos int32       `json:"inconclusivos"`
 }
 
 func (q *Queries) EpiPorDia(ctx context.Context, arg EpiPorDiaParams) ([]EpiPorDiaRow, error) {
@@ -106,7 +377,13 @@ func (q *Queries) EpiPorDia(ctx context.Context, arg EpiPorDiaParams) ([]EpiPorD
 	var items []EpiPorDiaRow
 	for rows.Next() {
 		var i EpiPorDiaRow
-		if err := rows.Scan(&i.Dia, &i.Total, &i.Confirmados); err != nil {
+		if err := rows.Scan(
+			&i.Dia,
+			&i.Total,
+			&i.Confirmados,
+			&i.Descartados,
+			&i.Inconclusivos,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -174,6 +451,64 @@ func (q *Queries) EpiPorDoenca(ctx context.Context, arg EpiPorDoencaParams) ([]E
 			&i.Descartados,
 			&i.Inconclusivos,
 			&i.EmInvestigacao,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const epiPorMes = `-- name: EpiPorMes :many
+SELECT extract(year FROM i.data_inicio)::int AS ano, extract(month FROM i.data_inicio)::int AS mes,
+       count(*)::int AS total,
+       count(*) FILTER (WHERE i.resultado = 'positivo')::int AS confirmados
+FROM investigacoes i
+WHERE i.deleted_at IS NULL AND i.data_inicio IS NOT NULL
+  AND i.data_inicio >= $1::date AND i.data_inicio <= $2::date
+  AND ($3::bigint IS NULL OR i.doenca_id = $3::bigint)
+  AND ($4::bigint IS NULL OR i.criado_por = $4::bigint OR i.responsavel_id = $4::bigint)
+GROUP BY 1, 2
+ORDER BY 1, 2
+`
+
+type EpiPorMesParams struct {
+	Desde          pgtype.Date `json:"desde"`
+	Ate            pgtype.Date `json:"ate"`
+	DoencaID       pgtype.Int8 `json:"doenca_id"`
+	SomenteUsuario pgtype.Int8 `json:"somente_usuario"`
+}
+
+type EpiPorMesRow struct {
+	Ano         int32 `json:"ano"`
+	Mes         int32 `json:"mes"`
+	Total       int32 `json:"total"`
+	Confirmados int32 `json:"confirmados"`
+}
+
+// Investigações por ano e mês de início, para o histórico de vários anos.
+func (q *Queries) EpiPorMes(ctx context.Context, arg EpiPorMesParams) ([]EpiPorMesRow, error) {
+	rows, err := q.db.Query(ctx, epiPorMes,
+		arg.Desde,
+		arg.Ate,
+		arg.DoencaID,
+		arg.SomenteUsuario,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []EpiPorMesRow
+	for rows.Next() {
+		var i EpiPorMesRow
+		if err := rows.Scan(
+			&i.Ano,
+			&i.Mes,
+			&i.Total,
+			&i.Confirmados,
 		); err != nil {
 			return nil, err
 		}
