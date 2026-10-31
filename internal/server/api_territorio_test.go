@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"uysiarbo/internal/cifra"
 	"uysiarbo/internal/db/sqlccliente"
 )
 
@@ -294,7 +295,7 @@ func TestAPIDeLocais(t *testing.T) {
 		t.Errorf("alterado: %+v", l2)
 	}
 	banco, _ := m.cliQ.GetLocal(t.Context(), comCPF)
-	if banco.ProprietarioCpf != "52998224725" {
+	if cifra.Decifrar(banco.ProprietarioCpf) != "52998224725" {
 		t.Errorf("o CPF não pode se perder numa alteração pela API: %q", banco.ProprietarioCpf)
 	}
 	quemAPI(t, api.req(http.MethodPatch, "/api/v1/locais/"+s64(comCPF), `{"ativo":false}`), http.StatusOK, "")

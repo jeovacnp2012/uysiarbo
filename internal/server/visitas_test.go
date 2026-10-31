@@ -55,7 +55,9 @@ func (m *mundo) cenarioVisita(t *testing.T, ana *navegador) cenarioDeVisita {
 	b := m.criarBairro(t, cid, "Rua das Palmeiras")
 	q := m.criarQuarteirao(t, b, "1")
 	loc := umLocal(t, m, ana, b, q, "numero", "10")
-	agora := time.Now().UTC()
+	// o dia vale no fuso da empresa (Cuiabá), não em UTC: depois das 20h locais o dia UTC já é o seguinte
+	cuiaba, _ := time.LoadLocation("America/Cuiaba")
+	agora := time.Now().In(cuiaba)
 	ini, fim := agora.AddDate(0, 0, -60).Format("2006-01-02"), agora.AddDate(0, 0, 60).Format("2006-01-02")
 	quer(t, ana.post("/ciclos", formCiclo("01 Ciclo", ini, fim, url.Values{"atividade": {"1", "3"}})), http.StatusSeeOther)
 	cs, _ := m.cliQ.ListCiclos(t.Context())
